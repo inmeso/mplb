@@ -15,7 +15,7 @@
  * In this module, most of variables will not change the value when the code
  * is running.
  */
-extern std::string MODELNAME;
+std::vector<std::string> LATTICENAME;
 /*!
  *NUMXI:total number of discrete velocity/lattice
  */
@@ -76,7 +76,6 @@ extern int* OPP;
  * Number of macroscopic variables
  */
 extern int NUMMACROVAR;
-
 /*
  * The type of macroscopic variables
  */
@@ -91,6 +90,10 @@ extern int* VARIABLECOMPINDEX;
  *Name of all macroscopic variables
  */
 extern std::vector<std::string> MACROVARNAME;
+void SetLatticeName(const std::vector<std::string> latticeName);
+const std::vector<std::string> LatticeName();
+void AllocateMacroVarProperty(const int macroVarNum);
+void AllocateXi(const int length);
 inline const int ComponentNum() { return NUMCOMPONENTS; }
 inline const int MacroVarsNum() { return NUMMACROVAR; }
 inline const int SizeF() { return NUMXI; }
@@ -105,7 +108,10 @@ inline const int SizeofTau() { return NUMCOMPONENTS; }
  * distribution function
  */
 void SetupMacroVars();
-/*!
+void DefineComponents(std::vector<std::string> compoNames,
+                      std::vector<int> compoId,
+                      std::vector<std::string> lattNames);
+    /*!
  * Setup the D2Q9 model
  */
 void SetupD2Q9Latt();
@@ -166,13 +172,10 @@ void KerCalcTau(const int* nodeType, const Real* kn, const Real* macroVars,
 
 void SetupModel();
 /*!
- * Free the pointer memory other than lattice XI
+ * Free the pointer memory
  */
 void DestroyModel();
-/*!
- * Free the pointer memory of XI related
- */
-void DestroyLatt();
+
 void KerCutCellCalcPolyFeq3D(const int* polyOrder, const int* nodeType,
                              const Real* macroVars, Real* feq);
 void KerCalcTau3D(const int* nodeType, const Real* kn, const Real* macroVars,

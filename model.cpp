@@ -8,23 +8,38 @@
  *   and necessary constants
  **/
 #include "model.h"
-
-std::string MODELNAME;
-int NUMXI = 9;
-int FEQORDER = 2;
-int LATTDIM = 2;
-Real CS = 1;
-Real* XI;
-Real* WEIGHTS;
-int* OPP;
-int NUMMACROVAR = 3;
-int* VARIABLETYPE;
-int* VARIABLECOMPINDEX;
-int NUMCOMPONENTS = 1;
-int* COMPOINDEX;
-Real XIMAXVALUE;
-int THERMALPROBLEM = 0;
+#include <map>
+int NUMXI{9};
+int FEQORDER{2};
+int LATTDIM{2};
+Real CS{1};
+Real* XI{nullptr};
+Real* WEIGHTS{nullptr};
+int* OPP{nullptr};
+int NUMMACROVAR{3};
+int* VARIABLETYPE{nullptr};
+int* VARIABLECOMPINDEX{nullptr};
+int NUMCOMPONENTS{1};
+int* COMPOINDEX{nullptr};
+Real XIMAXVALUE{1};
+int THERMALPROBLEM{0};
 std::vector<std::string> MACROVARNAME;
+std::vector<std::string> LATTICENAME;
+
+struct lattice {
+    int lattDim;
+    int length;
+    Real cs;
+};
+
+lattice d2q9{2, 9, sqrt(3)};
+lattice d3q19{3, 19, sqrt(3)};
+lattice d3q15{3, 15, sqrt(3)};
+lattice d2q16{2, 16, 1};
+lattice d2q36{2, 36, 1};
+
+std::map<std::string, lattice> latticeSet{
+    {"d2q9", d2q9}, {"d3q19", d3q19}, {"d3q15", d3q15}, {"d2q36", d2q36}};
 
 // find the particles with opposite directions, for the bounce-back boundary
 // Brute-force method, could be slow for large lattice
@@ -44,8 +59,39 @@ void FindReverseXi() {
     }
 }
 
-void SetupD2Q9Latt() {
-    MODELNAME = "D2Q9";
+void FindReverseXi(const int startPos, const int latticeSize) {
+    for (int i = 0; i < latticeSize; i++) {
+        for (int j = 0; j < latticeSize; j++) {
+            bool isReverse{true};
+            for (int k = 0; k < LATTDIM; k++) {
+                Real sum{XI[startPos + i * LATTDIM + k] +
+                         XI[startPos + j * LATTDIM + k]};
+                isReverse = isReverse && EssentiallyEqual(&sum, &ZERO, EPS);
+            }
+            if (isReverse) {
+                OPP[startPos + i] = startPos + j;
+                break;
+            }
+        }
+    }
+}
+
+void SetupD2Q9Latt(const int startPos) {
+    const int nc9{9};
+    Real t00 = 4.0 / 9.0, t01 = 1.0 / 9.0, t11 = 1.0 / 36.0;
+    Real t[nc9] = {t00, t01, t01, t01, t01, t11, t11, t11, t11};
+    int cxi[nc9] = {0, 1, 0, -1, 0, 1, -1, -1, 1};
+    int cyi[nc9] = {0, 0, 1, 0, -1, 1, 1, -1, -1};
+    int op9[nc9] = {0, 3, 4, 1, 2, 7, 8, 5, 6};
+    for (int l = 0; l < nc9; l++) {
+        XI[startPos + l * LATTDIM] = cxi[l];
+        XI[startPos + l * LATTDIM + 1] = cyi[l];
+        WEIGHTS[startPos + l] = t[l];
+        OPP[startPos + l] = op9[l];
+    }
+}
+
+void SetupD2Q9Latt() {   
     const int nc9 = 9;
     NUMXI = nc9;
     LATTDIM = 2;
@@ -67,8 +113,30 @@ void SetupD2Q9Latt() {
     }
 }
 
-void SetupD3Q19Latt() {
-    MODELNAME = "D3Q19";
+void SetupD3Q19Latt(const int startPos) {    
+    const int nc19 = 19; 
+    Real t000{1 / ((Real)3)};
+    Real t001{1 / ((Real)18)};
+    Real t011{1 / ((Real)36)};
+    Real t[nc19] = {t000, t001, t001, t001, t001, t001, t001, t011, t011, t011,
+                    t011, t011, t011, t011, t011, t011, t011, t011, t011};
+    int cxi[nc19] = {0,  1, -1, 0, 0,  0, 0,  1, -1, 1,
+                     -1, 0, 0,  1, -1, 1, -1, 0, 0};
+    int cyi[nc19] = {0, 0, 0,  1,  -1, 0, 0, 1, -1, 0,
+                     0, 1, -1, -1, 1,  0, 0, 1, -1};
+    int czi[nc19] = {0,  0, 0,  0, 0, 1,  -1, 0,  0, 1,
+                     -1, 1, -1, 0, 0, -1, 1,  -1, 1};
+    for (int l = 0; l < nc19; l++) {
+        XI[startPos + l * LATTDIM] = cxi[l];
+        XI[startPos + l * LATTDIM + 1] = cyi[l];
+        XI[startPos + l * LATTDIM + 2] = czi[l];
+        WEIGHTS[startPos + l] = t[l];       
+    }
+    FindReverseXi(startPos,nc19);
+}
+
+
+void SetupD3Q19Latt() {   
     const int nc19 = 19;
     NUMXI = nc19;
     LATTDIM = 3;
@@ -97,8 +165,26 @@ void SetupD3Q19Latt() {
     FindReverseXi();
 }
 
+void SetupD3Q15Latt(const int startPos) { 
+	const int nc15 = 15;
+    Real t000{2 / ((Real)9)};
+    Real t001{1 / ((Real)9)};
+    Real t111{1 / ((Real)72)};
+    Real t[nc15] = {t000, t001, t001, t001, t001, t001, t001, t111,
+                    t111, t111, t111, t111, t111, t111, t111};
+    int cxi[nc15] = {0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 1, -1, -1, 1};
+    int cyi[nc15] = {0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, -1, 1, 1, -1};
+    int czi[nc15] = {0, 0, 0, 0, 0, 1, -1, 1, -1, -1, 1, 1, -1, 1, -1};
+    for (int l = 0; l < nc15; l++) {
+        XI[startPos + l * LATTDIM] = cxi[l];
+        XI[startPos + l * LATTDIM + 1] = cyi[l];
+        XI[startPos + l * LATTDIM + 2] = czi[l];
+        WEIGHTS[startPos + l] = t[l];
+    }
+    FindReverseXi(startPos, nc15);
+}
+
 void SetupD3Q15Latt() {
-    MODELNAME = "D3Q15";
     const int nc15 = 15;
     NUMXI = nc15;
     LATTDIM = 3;
@@ -124,42 +210,7 @@ void SetupD3Q15Latt() {
     FindReverseXi();
 }
 
-/*!
- * Example for 2D isothermal flows
- * Note:
- * This can become automatic by using an input file
- */
-void SetupMacroVars() {
-    // rho,u,v,w,T m, macroscopic  variables must be stored in a specific order
-    NUMMACROVAR = 3;
-    VARIABLETYPE = new int[NUMMACROVAR];
-    VARIABLETYPE[0] = (int)Variable_Rho;
-    VARIABLETYPE[1] = (int)Variable_U;
-    VARIABLETYPE[2] = (int)Variable_V;
-    //VARIABLETYPE[3] = (int)Variable_W;
-    // VARIABLETYPE[3] = (int)Variable_T;
-    // VARIABLETYPE[4] = (int)Variable_Qx;
-    // VARIABLETYPE[5] = (int)Variable_Qy;
-    VARIABLECOMPINDEX = new int[NUMMACROVAR];
-    VARIABLECOMPINDEX[0] = 0;
-    VARIABLECOMPINDEX[1] = 0;
-    VARIABLECOMPINDEX[2] = 0;
-    //VARIABLECOMPINDEX[3] = 0;
-    // VARIABLECOMPINDEX[3] = 0;
-    // VARIABLECOMPINDEX[4] = 0;
-    // VARIABLECOMPINDEX[5] = 0;
-    MACROVARNAME.reserve(NUMMACROVAR);
-    MACROVARNAME.push_back("h");
-    MACROVARNAME.push_back("u");
-    MACROVARNAME.push_back("v");
-    //MACROVARNAME.push_back("w");
-    // MACROVARNAME.push_back("T");
-    // MACROVARNAME.push_back("qx");
-    // MACROVARNAME.push_back("qy");
-}
-
-void SetupD2Q16Latt() {
-    MODELNAME = "D2Q16";
+void SetupD2Q16Latt() {    
     const int nc16{16};
     NUMXI = nc16;
     LATTDIM = 2;
@@ -188,7 +239,6 @@ void SetupD2Q16Latt() {
 }
 
 void SetupD2Q36Latt() {
-    MODELNAME = "D2Q36";
     const int nc36{36};
     NUMXI = nc36;
     LATTDIM = 2;
@@ -227,6 +277,40 @@ void SetupD2Q36Latt() {
     }
 }
 
+/*!
+ * Example for 2D isothermal flows
+ * Note:
+ * This can become automatic by using an input file
+ */
+void SetupMacroVars() {
+    // rho,u,v,w,T m, macroscopic  variables must be stored in a specific order
+    NUMMACROVAR = 3;
+    VARIABLETYPE = new int[NUMMACROVAR];
+    VARIABLETYPE[0] = (int)Variable_Rho;
+    VARIABLETYPE[1] = (int)Variable_U;
+    VARIABLETYPE[2] = (int)Variable_V;
+    //VARIABLETYPE[3] = (int)Variable_W;
+    // VARIABLETYPE[3] = (int)Variable_T;
+    // VARIABLETYPE[4] = (int)Variable_Qx;
+    // VARIABLETYPE[5] = (int)Variable_Qy;
+    VARIABLECOMPINDEX = new int[NUMMACROVAR];
+    VARIABLECOMPINDEX[0] = 0;
+    VARIABLECOMPINDEX[1] = 0;
+    VARIABLECOMPINDEX[2] = 0;
+    //VARIABLECOMPINDEX[3] = 0;
+    // VARIABLECOMPINDEX[3] = 0;
+    // VARIABLECOMPINDEX[4] = 0;
+    // VARIABLECOMPINDEX[5] = 0;
+    MACROVARNAME.reserve(NUMMACROVAR);
+    MACROVARNAME.push_back("h");
+    MACROVARNAME.push_back("u");
+    MACROVARNAME.push_back("v");
+    //MACROVARNAME.push_back("w");
+    // MACROVARNAME.push_back("T");
+    // MACROVARNAME.push_back("qx");
+    // MACROVARNAME.push_back("qy");
+}
+
 void DefineModelConstants() {
     // The variable here may cause some confusions for the Python translator
     // while the issues should be solvable.
@@ -246,6 +330,120 @@ void DefineModelConstants() {
     ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);
     ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int", VARIABLECOMPINDEX);
 }
+void AllocateComponentIndex(const int compoNum) {
+    if (compoNum == NUMCOMPONENTS) {
+        if (nullptr == COMPOINDEX) {
+            COMPOINDEX = new int[2 * compoNum];
+		}
+    }
+}
+
+void AllocateXi(const int length) {
+    if (length == NUMXI) {
+        if (nullptr == XI) {
+            XI = new Real[length * LATTDIM];
+        }
+        if (nullptr == WEIGHTS) {
+            WEIGHTS = new Real[length];
+        }
+        if (nullptr == OPP) {
+            OPP = new int[length];
+        }
+    }
+}
+
+void DefineComponents(std::vector<std::string> compoNames,
+                      std::vector<int> compoId,
+                      std::vector<std::string> lattNames) {
+    NUMCOMPONENTS = compoNames.size();
+    if (NUMCOMPONENTS > 0) {
+        AllocateComponentIndex(NUMCOMPONENTS);
+    } else {
+        ops_printf("There muse be at least one component but we get:%i\n",
+                   NUMCOMPONENTS);
+    }
+    bool isLattDimSame{true};
+    bool isCsSame{true};
+    int posCompo{0};
+    int totalSize{0};
+    int latticeDimension{latticeSet[lattNames[0]].lattDim};
+    Real currentCs{latticeSet[lattNames[0]].cs};
+    for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
+        if (latticeSet.find(lattNames[idx]) != latticeSet.end()) {
+            lattice currentLattice{latticeSet[lattNames[idx]]};
+            totalSize += currentLattice.length;
+            COMPOINDEX[posCompo] = 0;
+            COMPOINDEX[posCompo + 1] = currentLattice.length - 1;
+            posCompo += 2;
+            isLattDimSame =
+                isLattDimSame && (latticeDimension == currentLattice.lattDim);
+            isCsSame = isCsSame && (currentCs == currentLattice.cs);
+        } else {
+            ops_printf("There is no predefined lattice:%s\n", lattNames[idx]);
+        }
+    }
+    if (!isLattDimSame) {
+        ops_printf("%s\n", "The lattice dimension is inconsistent!");
+    }
+    if (!isCsSame) {
+        ops_printf("%s\n", "The lattice sound speed is inconsistent!");
+    }
+    if (isLattDimSame && isCsSame) {
+        AllocateXi(totalSize);
+        SetLatticeName(lattNames);
+        CS = currentCs;
+        LATTDIM = latticeDimension;
+        int startPos{0};
+        for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
+            if ("d3q15" == lattNames[idx]) {
+                SetupD3Q15Latt(startPos);
+            }
+            if ("d3q19" == lattNames[idx]) {
+                SetupD3Q19Latt(startPos);
+            }
+            if ("d2q9" == lattNames[idx]) {
+                SetupD2Q9Latt(startPos);
+            }
+            startPos += latticeSet[lattNames[idx]].length;
+        }
+        Real maxValue{0};
+        for (int l = 0; l < totalSize * LATTDIM; l++) {
+            maxValue = maxValue > XI[l] ? maxValue : XI[l];
+        }
+        XIMAXVALUE = CS * maxValue;
+    }
+}
+
+void AllocateMacroVarProperty(const int macroVarNum) {
+    if (macroVarNum == NUMMACROVAR) {
+        if (nullptr == VARIABLETYPE) {
+            VARIABLETYPE = new int[NUMMACROVAR];
+        } else {
+            ops_printf("%s\n", "VARIABLETYPE has been allocated!");
+        }
+        if (nullptr == VARIABLETYPE) {
+            VARIABLECOMPINDEX = new int[NUMMACROVAR];
+        } else {
+            ops_printf("%s\n", "VARIABLECOMPINDEX has been allocated!");
+        }
+    } else {
+        ops_printf("%s\n", "The macroVarNum must be equal to NUMMACROVAR");
+    }
+}
+
+
+void DefineMacroVars(std::vector<VariableTypes> types,
+                     std::vector<std::string> names, std::vector<int> varId,
+                     std::vector<int> compoId) {
+    // It seems varId is not necessary at this moment
+    NUMMACROVAR = names.size();
+    MACROVARNAME = names;
+    AllocateMacroVarProperty(NUMMACROVAR);    
+    for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
+        VARIABLETYPE[idx] = (int)types[idx];
+        VARIABLECOMPINDEX[idx] = compoId[idx];
+    }
+}
 
 void SetupModel() {
     NUMCOMPONENTS = 1;
@@ -263,13 +461,11 @@ void DestroyModel() {
     delete[] VARIABLETYPE;
     delete[] VARIABLECOMPINDEX;
     delete[] COMPOINDEX;
-    DestroyLatt();
-}
-void DestroyLatt() {
     delete[] XI;
     delete[] WEIGHTS;
     if (OPP != nullptr) delete[] OPP;
 }
+
 /*
  * Two-dimensional version
  */
@@ -348,5 +544,8 @@ Real CalcSWEFeq(const int l, const Real h, const Real u, const Real v,
     }
     return WEIGHTS[l] * h * res;
 }
-
+void SetLatticeName(const std::vector<std::string> latticeName) {
+    LATTICENAME = latticeName;
+}
+const std::vector<std::string> LatticeName(){ return LATTICENAME; }
 #include "model_kernel.h"
