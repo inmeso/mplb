@@ -1,0 +1,15 @@
+numawrap*
+opsversion
+*.h5
+*.dat
+*.eps
+*.pdf
+*.png
+lbm2d_dev_seq
+lbm2d_dev_mpi
+setup_comput_domain
+*.cfg
+__pycache__/PostProcess\.cpython-36\.pyc
+lbm3d_dev_seq
+lbm3d_dev_mpi
+*.ipynb
