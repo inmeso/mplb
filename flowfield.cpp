@@ -3,78 +3,105 @@
 // license that can be found in the LICENSE file.
 
 /*! @brief   Implementing functions related to the flow field
-  * @author  Jianping Meng
-  * @details Implementing functions related to create the flow
-  * field (allocate memory), set up the geometry and the boundary
-  * property, and deallocate the memory.
-  */
+ * @author  Jianping Meng
+ * @details Implementing functions related to create the flow
+ * field (allocate memory), set up the geometry and the boundary
+ * property, and deallocate the memory.
+ */
 
 #include "flowfield.h"
 std::string CASENAME;
-int g_BlockNum = 1;
-int SPACEDIM = 2;
-int g_HaloDepth = 0;
-ops_block* g_Block;
-ops_dat* g_f;
-ops_dat* g_fStage;
-ops_dat* g_feq;
-ops_dat* g_MacroVars;
-ops_dat* g_MacroVarsCopy;
-Real* g_ResidualError;
-ops_reduction* g_ResidualErrorHandle;
-ops_dat* g_Bodyforce;
-Real g_dt = 1;
-Real* KN;
-ops_dat* g_Tau;
-ops_dat* g_DiscreteConvectionTerm;
-ops_dat* g_CoordinateXYZ;
+int BLOCKNUM{1};
+/*!
+ * SPACEDIM=2 for 2D 3 for three 3D
+ */
+int SPACEDIM{2};
+/*!
+ * Layers of halos
+ */
+int HALODEPTH{0};
+ops_block* g_Block{nullptr};
+ops_dat* g_f{nullptr};
+ops_dat* g_fStage{nullptr};
+ops_dat* g_feq{nullptr};
+ops_dat* g_MacroVars{nullptr};
+ops_dat* g_MacroVarsCopy{nullptr};
+Real* g_ResidualError{nullptr};
+ops_reduction* g_ResidualErrorHandle{nullptr};
+ops_dat* g_Bodyforce{nullptr};
+/*!
+ * DT: time step
+ */
+Real DT{1};
+/*!
+ * TAUREF: the reference relaxation time
+ * In appropriate non-dimensional system, it is the Knudsen number
+ * It must be a constant during the run time
+ */
+Real* TAUREF{nullptr};
+ops_dat* g_Tau{nullptr};
+ops_dat* g_DiscreteConvectionTerm{nullptr};
+ops_dat* g_CoordinateXYZ{nullptr};
 /*!
  *metrics for 2D: 0 xi_x 1 xi_y  2 eta_x  3 eta_y
  *metrics for 3D:
  */
-ops_dat* g_Metrics;
-ops_dat* g_NodeType;
-ops_dat* g_GeometryProperty;
-int g_HaloNum = 0;
-ops_halo* g_Halos;
-ops_halo_group g_HaloGroups;
-int* g_BlockIterRngWhole;
-int* g_BlockIterRngJmin;
-int* g_BlockIterRngJmax;
-int* g_BlockIterRngImin;
-int* g_BlockIterRngImax;
-int* g_BlockIterRngKmax;
-int* g_BlockIterRngKmin;
-int* g_BlockIterRngBulk;
-int* g_BlockSize;
+ops_dat* g_Metrics{nullptr};
+ops_dat* g_NodeType{nullptr};
+ops_dat* g_GeometryProperty{nullptr};
+/*!
+ * Total number of halo relation.
+ */
+int HaloRelationNum{0};
+/*!
+ * Array of halo relations
+ */
+ops_halo* HaloRelations{nullptr};
+/*!
+ * Formal collection of halo relations
+ */
+ops_halo_group HaloGroups;
+
+int* BlockIterRngWhole{nullptr};
+int* BlockIterRngJmin{nullptr};
+int* BlockIterRngJmax{nullptr};
+int* BlockIterRngImin{nullptr};
+int* BlockIterRngImax{nullptr};
+int* BlockIterRngKmax{nullptr};
+int* BlockIterRngKmin{nullptr};
+int* BlockIterRngBulk{nullptr};
+/*!
+ * The size of each block, i.e., each domain
+ */
+int* BLOCKSIZE{nullptr};
 
 const int HaloPtNum() { return std::max(SchemeHaloNum(), BoundaryHaloNum()); }
 /*!
  * Manually setting up all the variables necessary for the simulation
- * This function has not been updated for 3D problems. 
-*/
+ * This function has not been updated for 3D problems.
+ */
 void DefineVariables() {
     void* temp = NULL;
-    g_Block = new ops_block[g_BlockNum];
-    g_f = new ops_dat[g_BlockNum];
-    g_Bodyforce = new ops_dat[g_BlockNum];
-    g_fStage = new ops_dat[g_BlockNum];
-    g_feq = new ops_dat[g_BlockNum];
-    g_MacroVars = new ops_dat[g_BlockNum];
-    g_Tau = new ops_dat[g_BlockNum];
-    g_CoordinateXYZ = new ops_dat[g_BlockNum];
-    g_BlockIterRngWhole = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngJmin = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngJmax = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngImax = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngImin = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngBulk = new int[g_BlockNum * 2 * SPACEDIM];
+    g_Block = new ops_block[BLOCKNUM];
+    g_f = new ops_dat[BLOCKNUM];
+    g_Bodyforce = new ops_dat[BLOCKNUM];
+    g_fStage = new ops_dat[BLOCKNUM];
+    g_feq = new ops_dat[BLOCKNUM];
+    g_MacroVars = new ops_dat[BLOCKNUM];
+    g_Tau = new ops_dat[BLOCKNUM];
+    g_CoordinateXYZ = new ops_dat[BLOCKNUM];
+    BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImin = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngBulk = new int[BLOCKNUM * 2 * SPACEDIM];
     // if steady flow
-    g_MacroVarsCopy = new ops_dat[g_BlockNum];
+    g_MacroVarsCopy = new ops_dat[BLOCKNUM];
     g_ResidualErrorHandle = new ops_reduction[MacroVarsNum()];
     g_ResidualError = new Real[2 * MacroVarsNum()];
     // end if steady flow
-    int haloDepth = HaloDepth();  // zero for the current case
+    int haloDepth = HaloDepth();
 #ifdef debug
     ops_printf("%s%i\n", "DefineVariable: haloDepth=", haloDepth);
 #endif
@@ -85,12 +112,12 @@ void DefineVariables() {
     int base[2] = {0, 0};
     // problem specific
     // if boundary fitting scheme
-    //g_Metrics= new ops_dat[g_BlockNum];
+    // g_Metrics= new ops_dat[BLOCKNUM];
     // calculate the g_Metrics;
     // if cutting cell method
-    g_NodeType = new ops_dat[g_BlockNum];
-    g_GeometryProperty = new ops_dat[g_BlockNum];
-    for (int blockIndex = 0; blockIndex < g_BlockNum; blockIndex++) {
+    g_NodeType = new ops_dat[BLOCKNUM];
+    g_GeometryProperty = new ops_dat[BLOCKNUM];
+    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
         std::string label(std::to_string(blockIndex));
         std::string blockName("Block_" + label);
         // The name parameter is not properly typed in the definition of
@@ -100,35 +127,35 @@ void DefineVariables() {
         int size[2] = {BlockSize(blockIndex)[0],
                        BlockSize(blockIndex)[1]};  // size of the dat
 
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
 
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
 
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
 
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
 
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
 
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
 
         std::string dataName("f_");
         dataName += label;
@@ -185,29 +212,29 @@ void DefineVariables() {
 /*!
  * setting up all the variables necessary for the simulation from a HDF5 file
  * This function can be used for both 2D and 3D cases
-*/
+ */
 void DefineVariablesFromHDF5() {
     void* temp = NULL;
-    g_Block = new ops_block[g_BlockNum];
-    g_f = new ops_dat[g_BlockNum];
-    g_Bodyforce = new ops_dat[g_BlockNum];
-    g_fStage = new ops_dat[g_BlockNum];
-    g_feq = new ops_dat[g_BlockNum];
-    g_MacroVars = new ops_dat[g_BlockNum];
-    g_Tau = new ops_dat[g_BlockNum];
-    g_CoordinateXYZ = new ops_dat[g_BlockNum];
-    g_BlockIterRngWhole = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngJmin = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngJmax = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngImax = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngImin = new int[g_BlockNum * 2 * SPACEDIM];
+    g_Block = new ops_block[BLOCKNUM];
+    g_f = new ops_dat[BLOCKNUM];
+    g_Bodyforce = new ops_dat[BLOCKNUM];
+    g_fStage = new ops_dat[BLOCKNUM];
+    g_feq = new ops_dat[BLOCKNUM];
+    g_MacroVars = new ops_dat[BLOCKNUM];
+    g_Tau = new ops_dat[BLOCKNUM];
+    g_CoordinateXYZ = new ops_dat[BLOCKNUM];
+    BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImin = new int[BLOCKNUM * 2 * SPACEDIM];
     if (3 == SPACEDIM) {
-        g_BlockIterRngKmax = new int[g_BlockNum * 2 * SPACEDIM];
-        g_BlockIterRngKmin = new int[g_BlockNum * 2 * SPACEDIM];
+        BlockIterRngKmax = new int[BLOCKNUM * 2 * SPACEDIM];
+        BlockIterRngKmin = new int[BLOCKNUM * 2 * SPACEDIM];
     }
-    g_BlockIterRngBulk = new int[g_BlockNum * 2 * SPACEDIM];
+    BlockIterRngBulk = new int[BLOCKNUM * 2 * SPACEDIM];
     // if steady flow
-    g_MacroVarsCopy = new ops_dat[g_BlockNum];
+    g_MacroVarsCopy = new ops_dat[BLOCKNUM];
     g_ResidualErrorHandle = new ops_reduction[MacroVarsNum()];
     g_ResidualError = new Real[2 * MacroVarsNum()];
     // end if steady flow
@@ -227,11 +254,11 @@ void DefineVariablesFromHDF5() {
     }
     // problem specific
     // if boundary fitting scheme
-    // g_Metrics= new ops_dat[g_BlockNum];
+    // g_Metrics= new ops_dat[BLOCKNUM];
     // calculate the g_Metrics;
     // if cutting cell method
-    g_NodeType = new ops_dat[g_BlockNum];
-    g_GeometryProperty = new ops_dat[g_BlockNum];
+    g_NodeType = new ops_dat[BLOCKNUM];
+    g_GeometryProperty = new ops_dat[BLOCKNUM];
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         std::string label(std::to_string(blockIndex));
         std::string blockName("Block_" + label);
@@ -245,55 +272,55 @@ void DefineVariablesFromHDF5() {
             size[cordIdx] = BlockSize(blockIndex)[cordIdx];
         }
         // we assume a problem is at least 2D
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
         if (3 == SPACEDIM) {
-            g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 4] = 1;
-            g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 5] = size[2] - 1;
-            g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM] = 0;
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 2] = 0;
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 4] = size[2] - 1;
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM] = 0;
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 3] = size[1];
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 5] = 1;
+            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 4] = 1;
+            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 5] = size[2] - 1;
+            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM] = 0;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 2] = 0;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 4] = size[2] - 1;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 2] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 3] = size[1];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 5] = 1;
         }
         std::string dataName("f_");
         dataName += label;
@@ -353,13 +380,13 @@ void DefineVariablesFromHDF5() {
  * Manually define the halo relation between blocks.
  * When using
  */
-void DefineHaloTransfer(){
+void DefineHaloTransfer() {
     /*! @brief Defining the halo relationship
      *  @details Currently we need to manually define them,
      *  will be modified to read CGNF format in the future
      **/
-    //     g_HaloNum = 8;
-    //     g_Halos = new ops_halo[g_HaloNum];
+    //     HaloRelationNum = 8;
+    //     HaloRelations = new ops_halo[HaloRelationNum];
     //     int haloDepth = HaloDepth();
     //     int d_p[2] =
     //     { haloDepth, haloDepth }; //max halo depths for the dat in the
@@ -379,12 +406,12 @@ void DefineHaloTransfer(){
     //         { 0, d_m[1] };
     //         int base_to[] =
     //         { nx, d_m[1] };
-    //         g_Halos[0] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
+    //         HaloRelations[0] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
     //         base_from,
     //                                      base_to, dir, dir );
     //         base_from[0] = nx - 1; // need to be changed
     //         base_to[0] = d_m[0];
-    //         g_Halos[1] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
+    //         HaloRelations[1] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
     //         base_from,
     //                                      base_to, dir, dir );
     //     }
@@ -395,12 +422,12 @@ void DefineHaloTransfer(){
     //         { d_m[0], 0 };
     //         int base_to[] =
     //         { d_m[0], ny };
-    //         g_Halos[2] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
+    //         HaloRelations[2] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
     //         base_from,
     //                                      base_to, dir, dir );
     //         base_from[1] = ny - 1; //need to be changed
     //         base_to[1] = d_m[1];
-    //         g_Halos[3] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
+    //         HaloRelations[3] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
     //         base_from,
     //                                      base_to, dir, dir );
     //     }
@@ -413,14 +440,14 @@ void DefineHaloTransfer(){
     //         { 0, 0 };
     //         int base_to[] =
     //         { nx, ny };
-    //         g_Halos[4] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
+    //         HaloRelations[4] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
     //         base_from,
     //                                      base_to, dir, dir );
     //         base_from[0] = nx - 1; // need to be changed
     //         base_from[1] = ny - 1;
     //         base_to[0] = d_m[0];
     //         base_to[1] = d_m[1];
-    //         g_Halos[5] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
+    //         HaloRelations[5] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
     //         base_from,
     //                                      base_to, dir, dir );
     //     }
@@ -432,21 +459,22 @@ void DefineHaloTransfer(){
     //         { 0, ny - 1 };
     //         int base_to[] =
     //         { nx, d_m[1] };
-    //         g_Halos[6] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
+    //         HaloRelations[6] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
     //         base_from,
     //                                      base_to, dir, dir );
     //         base_from[0] = nx - 1; // need to be changed
     //         base_from[1] = 0;
     //         base_to[0] = d_m[0];
     //         base_to[1] = ny;
-    //         g_Halos[7] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
+    //         HaloRelations[7] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
     //         base_from,
     //                                      base_to, dir, dir );
     //     }
-    //     g_HaloGroups = ops_decl_halo_group ( g_HaloNum, g_Halos );
+    //     HaloGroups = ops_decl_halo_group ( HaloRelationNum,
+    //     HaloRelations );
 
-    g_HaloNum = 2;
-    g_Halos = new ops_halo[g_HaloNum];
+    HaloRelationNum = 2;
+    HaloRelations = new ops_halo[HaloRelationNum];
     int haloDepth = HaloDepth();
     // max halo depths for the dat in the positive direction
     int d_p[2] = {haloDepth, haloDepth};
@@ -457,18 +485,18 @@ void DefineHaloTransfer(){
     int ny = BlockSize(0)[1];
     int dir[] = {1, 2};
     {
-        int halo_iter[] = {nx+d_p[0]-d_m[0], 1};
+        int halo_iter[] = {nx + d_p[0] - d_m[0], 1};
         int base_from[] = {d_m[0], 0};
         int base_to[] = {d_m[0], ny};
-        g_Halos[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                   base_to, dir, dir);
+        HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+                                         base_to, dir, dir);
         base_from[1] = ny - 1;  // need to be changed
         base_to[1] = d_m[1];
-        g_Halos[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                   base_to, dir, dir);
+        HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+                                         base_to, dir, dir);
     }
 
-    g_HaloGroups = ops_decl_halo_group(g_HaloNum, g_Halos);
+    HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
 }
 /*
  * We need a name to specify which file to input
@@ -476,26 +504,26 @@ void DefineHaloTransfer(){
  */
 
 void WriteFlowfieldToHdf5(const long timeStep) {
-    for (int blockIndex = 0; blockIndex < g_BlockNum; blockIndex++) {
+    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
         std::string blockName("Block_");
         std::string label(std::to_string(blockIndex));
         std::string time(std::to_string(timeStep));
         blockName += (label + "_" + time);
-        std::string fileName =CASENAME+"_"+blockName + ".h5";
+        std::string fileName = CASENAME + "_" + blockName + ".h5";
         ops_fetch_block_hdf5_file(g_Block[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_MacroVars[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_Tau[blockIndex], fileName.c_str());
-        ops_fetch_dat_hdf5_file(g_CoordinateXYZ[blockIndex],fileName.c_str());
+        ops_fetch_dat_hdf5_file(g_CoordinateXYZ[blockIndex], fileName.c_str());
     }
 }
 
 void WriteDistributionsToHdf5(const long timeStep) {
-    for (int blockIndex = 0; blockIndex < g_BlockNum; blockIndex++) {
+    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
         std::string blockName("Block_");
         std::string label(std::to_string(blockIndex));
         std::string time(std::to_string(timeStep));
         blockName += (label + "_" + time);
-        std::string fileName =CASENAME+"_"+blockName + ".h5";
+        std::string fileName = CASENAME + "_" + blockName + ".h5";
         ops_fetch_block_hdf5_file(g_Block[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_f[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_feq[blockIndex], fileName.c_str());
@@ -504,14 +532,13 @@ void WriteDistributionsToHdf5(const long timeStep) {
     }
 }
 
-
 void WriteNodePropertyToHdf5(const long timeStep) {
-    for (int blockIndex = 0; blockIndex < g_BlockNum; blockIndex++) {
+    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
         std::string blockName("Block_");
         std::string label(std::to_string(blockIndex));
         std::string time(std::to_string(timeStep));
         blockName += (label + "_" + time);
-        std::string fileName =CASENAME+"_"+blockName + ".h5";
+        std::string fileName = CASENAME + "_" + blockName + ".h5";
         ops_fetch_block_hdf5_file(g_Block[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_GeometryProperty[blockIndex],
                                 fileName.c_str());
@@ -522,33 +549,44 @@ void WriteNodePropertyToHdf5(const long timeStep) {
 void DefineHaloTransferFromHdf5() {}
 /*
  * Importing geometry from an external HDF5 file
-*/
+ */
 void SetupFlowfieldfromHdf5() {
     CASENAME = "SWECircularDamBreak";  // Input parameter
     SPACEDIM = 2;
-    g_BlockNum = 1;  // Input parameter
-    g_BlockSize = new int[g_BlockNum * SPACEDIM];
-    g_BlockSize[0] = 401;  // Input parameters
-    g_BlockSize[1] = 401;  // Input parameters
-    // g_BlockSize[2] = 11;  // Input parameters
+    BLOCKNUM = 1;  // Input parameter
+    BLOCKSIZE = new int[BLOCKNUM * SPACEDIM];
+    BLOCKSIZE[0] = 401;  // Input parameters
+    BLOCKSIZE[1] = 401;  // Input parameters
+    // BLOCKSIZE[2] = 11;  // Input parameters
 
-    KN = new Real[ComponentNum()];
-    KN[0] = 0.001;  // Input parameters
+    TAUREF = new Real[ComponentNum()];
+    TAUREF[0] = 0.001;  // Input parameters
     // All above parameters should be written down by the python script
     Real minDx{2. / 400};  // Input parameters at this moment
     Real minDy{2. / 400};  // Input parameters at this moment
-    // g_dt = 0.01 * fmin(minDx, minDy) / MaximumSpeed();  // finite difference
+    // DT = 0.01 * fmin(minDx, minDy) / MaximumSpeed();  // finite difference
     // scheme
-    g_dt = 0.0001414;
-    //g_dt = fmin(fmin(minDx, minDy) / MaximumSpeed(),
-    //              0.5 * KN[0]);  // finite difference scheme
-    // g_dt = minDx / SoundSpeed();  // stream-collision
-    g_HaloDepth = HaloPtNum();
+    DT = 0.0001414;
+    // DT = fmin(fmin(minDx, minDy) / MaximumSpeed(),
+    //              0.5 * TAUREF[0]);  // finite difference scheme
+    // DT = minDx / SoundSpeed();  // stream-collision
+    HALODEPTH = HaloPtNum();
     DefineVariablesFromHDF5();
     // DefineHaloTransfer();
     // above calls must be before the ops_partition call
     ops_partition((char*)"LBM");
 }
+
+const std::string CaseName() { return CASENAME; }
+void SetCaseName(const std::string caseName) { CASENAME = caseName; }
+void setCaseName(const char* caseName) {
+    std::string tmp(caseName);
+    CASENAME = tmp;
+}
+
+const int BlockNum() { return BLOCKNUM; }
+const int SpaceDim() { return SPACEDIM; }
+const int HaloDepth() { return HALODEPTH; }
 
 void DestroyFlowfield() {
     delete[] g_f;
@@ -558,37 +596,93 @@ void DestroyFlowfield() {
     delete[] g_Block;
     delete[] g_MacroVars;
     delete[] g_Tau;
-    delete[] KN;
+    delete[] TAUREF;
     delete[] g_CoordinateXYZ;
-    if (g_HaloNum > 0) delete[] g_Halos;
+    if (HaloRelationNum > 0) delete[] HaloRelations;
     delete[] g_NodeType;
     delete[] g_GeometryProperty;
-    delete[] g_BlockIterRngWhole;
-    delete[] g_BlockIterRngBulk;
-    delete[] g_BlockIterRngImax;
-    delete[] g_BlockIterRngImin;
-    delete[] g_BlockIterRngJmax;
-    delete[] g_BlockIterRngJmin;
-    delete[] g_BlockSize;
+    delete[] BlockIterRngWhole;
+    delete[] BlockIterRngBulk;
+    delete[] BlockIterRngImax;
+    delete[] BlockIterRngImin;
+    delete[] BlockIterRngJmax;
+    delete[] BlockIterRngJmin;
+    delete[] BLOCKSIZE;
     // if steady flow
     delete[] g_MacroVarsCopy;
     delete[] g_ResidualErrorHandle;
     delete[] g_ResidualError;
-	if (3 == SPACEDIM) {
-		delete[] g_BlockIterRngKmax;
-		delete[] g_BlockIterRngKmin;
-	}
+    if (3 == SPACEDIM) {
+        delete[] BlockIterRngKmax;
+        delete[] BlockIterRngKmin;
+    }
     // end if steady flow
     // delete[] halos;
 }
 
-Real TotalMeshSize(){
-    Real size=1;
-    for (int blockIdx=0;blockIdx<BlockNum();blockIdx++)
-    {
-        for (int cordIdx=0;cordIdx<SPACEDIM;cordIdx++ ){
-            size*=BlockSize(blockIdx)[cordIdx];
+const ops_halo_group HaloGroup() { return HaloGroups; }
+
+int* IterRngWhole() { return BlockIterRngWhole; }
+int* IterRngJmin() { return BlockIterRngJmin; }
+int* IterRngJmax() { return BlockIterRngJmax; }
+int* IterRngImin() { return BlockIterRngImin; }
+int* IterRngImax() { return BlockIterRngImax; }
+int* IterRngBulk() { return BlockIterRngBulk; }
+int* IterRngKmax() { return BlockIterRngKmax; }
+int* IterRngKmin() { return BlockIterRngKmin; }
+
+const int* BlockSize(const int blockId) {
+    return &BLOCKSIZE[blockId * SPACEDIM];
+}
+
+Real TotalMeshSize() {
+    Real size = 1;
+    for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+        for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
+            size *= BlockSize(blockIdx)[cordIdx];
         }
     }
     return size;
 }
+
+const Real TimeStep() { return DT; }
+const Real* pTimeStep() { return &DT; }
+void SetTimeStep(Real dt) { DT = dt; }
+const Real* TauRef() { return TAUREF; }
+
+void SetRauRef(const std::vector<Real> tauRef) {
+    const int tauNum = SizeofTau();
+    if (tauRef.size() == tauNum) {
+        if (nullptr == TAUREF) {
+            TAUREF = new Real[tauNum];
+        }
+        for (int idx = 0; idx < tauNum; idx++) {
+            TAUREF[idx] = tauRef[idx];
+        }
+    } else {
+        ops_printf("%i taus are requried but there are %i!\n", tauNum,
+                   tauRef.size());
+    }
+}
+
+void SetBlockSize(const std::vector<int> blockSize) {
+    const int dim {2 * SPACEDIM * BLOCKNUM};
+    if (blockSize.size() == dim) {
+
+    } else {
+        ops_printf(
+            "%i numbers are required for specifying the size of %i blocks!\n",
+            dim, BLOCKNUM);
+	}
+
+}
+
+void SetBlockNum(const int blockNum) {
+    if (blockNum > 0) {
+        BLOCKNUM = blockNum;
+    } else {
+        ops_printf("%s\n", "There must be at least one block");
+    }
+}
+
+const Real* TauRef() { return TAUREF; }

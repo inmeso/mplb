@@ -7,8 +7,6 @@
   * field (allocate memory), set up the geometry and the boundary
   * property, and deallocate the memory.
   */
-
-
 #ifndef FLOWFIELD_H
 #define FLOWFIELD_H
 #include <cmath>
@@ -28,17 +26,7 @@
  *    distribution functions.
  * 3. Provide some tools for accessing variables.
  */
-
-
-extern std::string CASENAME;
-/*!
- * SPACEDIM=2 for 2D 3 for three 3D
- */
 extern int SPACEDIM;
-/*!
- * Total number of blocks
- */
-extern int g_BlockNum;
 extern ops_block* g_Block;
 /*!
  * The size of g_f in each node will be determined by the employed quadrature
@@ -66,21 +54,10 @@ extern ops_dat* g_MacroVars;
 */
 extern ops_dat* g_MacroVarsCopy;
 /*!
- * g_dt: time step
- */
-extern int g_HaloDepth;
-extern Real g_dt;
-/*!
- * KN: Knudsen number defined by the reference quantities
- * It must be a constant during the run time
- */
-extern Real* KN;
-/*!
  * Relaxation time
  * Depend on some macroscopic variables like rho,T
  */
 extern ops_dat* g_Tau;
-
 /*!
 * the residual error for steady flows
 * for each macroscopic variable, there are two values: the absolute
@@ -89,7 +66,6 @@ extern ops_dat* g_Tau;
 */
 extern Real* g_ResidualError;
 extern ops_reduction* g_ResidualErrorHandle;
-
 // Boundary fitting mesh
 // The following variables are introduced for
 // implementing finite difference schemes
@@ -103,9 +79,7 @@ extern ops_dat* g_DiscreteConvectionTerm;
  *
  */
 extern ops_dat* g_Metrics;
-
 // Boundary fitting mesh
-
 // Cutting cell
 /*!
  * g_NodeType: boundary or fluid
@@ -115,34 +89,19 @@ extern ops_dat* g_NodeType;
  * immersed solid? or the end point of the body.
  */
 extern ops_dat* g_GeometryProperty;
-
 /*!
  * Coordinate
  */
 extern ops_dat* g_CoordinateXYZ;
 // Cutting cell
-/*
- * total number of halo series
- * Note: such as a boundary surface count as one
- */
-extern int g_HaloNum;
-extern ops_halo* g_Halos;
-// Do we need to define many halo groups?
-// note: we only need halo point for f
-extern ops_halo_group g_HaloGroups;
-extern int* g_BlockIterRngWhole;
-extern int* g_BlockIterRngJmin;
-extern int* g_BlockIterRngJmax;
-extern int* g_BlockIterRngImin;
-extern int* g_BlockIterRngImax;
-extern int* g_BlockIterRngBulk;
-extern int* g_BlockIterRngKmax;
-extern int* g_BlockIterRngKmin;
-/*!
- * The size of each block, i.e., each domain
- */
-extern int* g_BlockSize;
-
+int* IterRngWhole();
+int* IterRngJmin();
+int* IterRngJmax();
+int* IterRngImin();
+int* IterRngImax();
+int* IterRngBulk();
+int* IterRngKmax();
+int* IterRngKmin();
 /*!
  *Get the pointer pointing to the starting position of IterRng of this block
  *No NULL check for efficiency
@@ -155,13 +114,24 @@ inline int* BlockIterRng(const int blockId, int* iterRng) {
  * Return the starting position of memory in which we store the size of each
  * block
  */
-inline const int* BlockSize(const int blockId) {
-    return &g_BlockSize[blockId * SPACEDIM];
-}
+const int* BlockSize(const int blockId);
+const int BlockNum();
+const int SpaceDim();
+const int HaloDepth();
+const Real TimeStep();
+const Real* pTimeStep();
+const Real* TauRef();
+const std::string CaseName();
+const int HaloPtNum();
+Real TotalMeshSize();
+const ops_halo_group HaloGroup();
+void SetTimeStep(Real dt);
+void SetCaseName(const std::string caseName);
+void setCaseName(const char* caseName);
+void SetRauRef(const std::vector<Real> tauRef);
+void SetBlockSize(const std::vector<int> blockSize);
+void SetBlockNum(const int blockNum);
 
-inline const int BlockNum() { return g_BlockNum; }
-inline const int SpaceDim() { return SPACEDIM; }
-inline const int HaloDepth() { return g_HaloDepth; }
 /*!
  * Manually setup the flow field.
  */
@@ -172,6 +142,5 @@ void WriteFlowfieldToHdf5(const long timeStep);
 void WriteDistributionsToHdf5(const long timeStep);
 void WriteNodePropertyToHdf5(const long timeStep);
 void DestroyFlowfield();
-Real TotalMeshSize();
-const int HaloPtNum();
+
 #endif

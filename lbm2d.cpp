@@ -31,7 +31,7 @@ void simulate() {
             //#ifdef debug
             UpdateMacroVars();
             CalcResidualError();
-            DispResidualError(iter,checkPeriod*g_dt);
+            DispResidualError(iter,checkPeriod*TimeStep());
             WriteFlowfieldToHdf5(iter);
             WriteDistributionsToHdf5(iter);
             WriteNodePropertyToHdf5(iter);

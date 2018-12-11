@@ -20,11 +20,11 @@
 #ifdef OPS_2D
 void UpdateTau() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCalcTau, "KerCalcTau", g_Block[blockIndex], SPACEDIM,
                      iterRng, ops_arg_dat(g_NodeType[blockIndex], 1,
                                           LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_gbl(KN, NUMCOMPONENTS, "double", OPS_READ),
+                     ops_arg_gbl(TauRef(), NUMCOMPONENTS, "double", OPS_READ),
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_Tau[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
@@ -34,11 +34,11 @@ void UpdateTau() {
 
 void UpdateSWETau() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCalcSWETau, "KerCalcSWETau", g_Block[blockIndex], SPACEDIM,
                      iterRng, ops_arg_dat(g_NodeType[blockIndex], 1,
                                           LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_gbl(KN, NUMCOMPONENTS, "double", OPS_READ),
+                     ops_arg_gbl(TauRef(), NUMCOMPONENTS, "double", OPS_READ),
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_Tau[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
@@ -48,9 +48,9 @@ void UpdateSWETau() {
 
 void Collision() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCollide, "KerCollide", g_Block[blockIndex], SPACEDIM,
-                     iterRng, ops_arg_gbl(&g_dt, 1, "double", OPS_READ),
+                     iterRng, ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
                                  OPS_READ),
                      ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
@@ -68,7 +68,7 @@ void Collision() {
 
 void Stream() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerStream, "KerStream", g_Block[blockIndex], SPACEDIM,
                      iterRng, ops_arg_dat(g_NodeType[blockIndex], 1,
                                           LOCALSTENCIL, "int", OPS_READ),
@@ -83,7 +83,7 @@ void Stream() {
 
 void UpdateMacroVars() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCalcMacroVars, "KerCalcMacroVars", g_Block[blockIndex],
                      SPACEDIM, iterRng,
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
@@ -98,7 +98,7 @@ void UpdateMacroVars() {
 void UpdateFeqandBodyforce() {
 
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCutCellCalcPolyFeq, "KerCutCellCalcPolyFeq",
                      g_Block[blockIndex], SPACEDIM, iterRng,
                       ops_arg_gbl(&FEQORDER, 1, "int", OPS_READ),
@@ -114,7 +114,7 @@ void UpdateFeqandBodyforce() {
 
 void UpdateSWEFeqandBodyforce(){
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCutCellCalcPolySWEFeq, "KerCutCellCalcPolySWEFeq",
                      g_Block[blockIndex], SPACEDIM, iterRng,
                       ops_arg_gbl(&FEQORDER, 1, "int", OPS_READ),
@@ -267,7 +267,7 @@ void TreatDomainBoundary(const Real* givenVars, int* range,
 
 void TreatEmbededBoundary() {
     for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
-        int* iterRng = BlockIterRng(blockIdx, g_BlockIterRngBulk);
+        int* iterRng = BlockIterRng(blockIdx, IterRngBulk());
         ops_par_loop(
             KerCutCellEmbededBoundary, "KerCutCellImmersedBoundary",
             g_Block[blockIdx], SPACEDIM, iterRng,
@@ -281,17 +281,17 @@ void TreatEmbededBoundary() {
 void ImplementBoundary() {
     // TreatEmbededBoundary();
     // Real givenInletVars[]{1.00005, 0, 0};
-    int* inletRng = BlockIterRng(0, g_BlockIterRngImin);
+    int* inletRng = BlockIterRng(0, IterRngImin());
     Real givenInletVars[]{1, 0.05, 0};  // Input Parameters
     TreatDomainBoundary(givenInletVars, inletRng, Vertex_FreeFlux);
-    int* outletRng = BlockIterRng(0, g_BlockIterRngImax);
+    int* outletRng = BlockIterRng(0, IterRngImax());
     Real givenOutletVars[] = {1, 0, 0};  // Input Parameters
     TreatDomainBoundary(givenOutletVars, outletRng, Vertex_FreeFlux);
-    int* topRng = BlockIterRng(0, g_BlockIterRngJmax);
+    int* topRng = BlockIterRng(0, IterRngJmax());
     // Real givenTopWallBoundaryVars[]{1, 0, 0};
     Real givenTopWallBoundaryVars[]{1, 0, 0};  // Input Parameters
     TreatDomainBoundary(givenTopWallBoundaryVars, topRng, Vertex_FreeFlux);
-    int* bottomRng = BlockIterRng(0, g_BlockIterRngJmin);
+    int* bottomRng = BlockIterRng(0, IterRngJmin());
     Real givenBotWallBoundaryVars[]{1, 0, 0};  // Input Parameters
     TreatDomainBoundary(givenBotWallBoundaryVars, bottomRng, Vertex_FreeFlux);
 }
@@ -299,7 +299,7 @@ void ImplementBoundary() {
 void InitialiseSolution() {
     UpdateFeqandBodyforce();
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         const Real zero = 0;
         ops_par_loop(
             KerSetfFixValue, "KerSetfFixValue", g_Block[blockIndex], SPACEDIM, iterRng,
@@ -311,7 +311,7 @@ void InitialiseSolution() {
 
 void CopyDistribution(const ops_dat* fSrc, ops_dat* fDest) {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
                      iterRng, ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
                                           "double", OPS_READ),
@@ -324,7 +324,7 @@ void CalcTotalMass(double* totalMass) {
     ops_reduction massHandle =
         ops_decl_reduction_handle(sizeof(double), "double", "massHandle");
     for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
-        int* iterRng = BlockIterRng(blockIdx, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
         ops_par_loop(KerCalcSumofDensity, "KerCalcSumofDensity",
                      g_Block[blockIdx], SPACEDIM, iterRng,
                      ops_arg_dat(g_MacroVars[blockIdx], NUMMACROVAR,
@@ -336,7 +336,7 @@ void CalcTotalMass(double* totalMass) {
 
 void NormaliseF(Real* ratio) {
     for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
-        int* iterRng = BlockIterRng(blockIdx, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
         ops_par_loop(
             KerNormaliseF, "KerNormaliseF", g_Block[blockIdx], SPACEDIM,
             iterRng, ops_arg_gbl(ratio, 1, "double", OPS_READ),
@@ -346,7 +346,7 @@ void NormaliseF(Real* ratio) {
 void CalcResidualError() {
     for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
         for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
-            int* iterRng = BlockIterRng(blockIdx, g_BlockIterRngWhole);
+            int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
             ops_par_loop(KerCalcMacroVarSquareofDifference,
                          "KerCalcMacroVarSquareofDifference", g_Block[blockIdx],
                          SPACEDIM, iterRng,
@@ -364,7 +364,7 @@ void CalcResidualError() {
                              (double*)&g_ResidualError[2 * macroVarIdx]);
     }
     for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
-        int* iterRng = BlockIterRng(blockIdx, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
         ops_par_loop(KerCopyMacroVars, "KerCopyMacroVars", g_Block[blockIdx],
                      SPACEDIM, iterRng,
                      ops_arg_dat(g_MacroVars[blockIdx], NUMMACROVAR,
@@ -374,7 +374,7 @@ void CalcResidualError() {
     }
     for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
         for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
-            int* iterRng = BlockIterRng(blockIdx, g_BlockIterRngWhole);
+            int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
             ops_par_loop(KerCalcMacroVarSquare, "KerCalcMacroVarSquare",
                          g_Block[blockIdx], SPACEDIM, iterRng,
                          ops_arg_dat(g_MacroVars[blockIdx], NUMMACROVAR,
@@ -393,7 +393,7 @@ void CalcResidualError() {
 
 void ForwardEuler() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCutCellCVTUpwind2nd, "KerCutCellCVTUpwind2nd",
                      g_Block[blockIndex], SPACEDIM, iterRng,
                      ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
@@ -409,7 +409,7 @@ void ForwardEuler() {
         Real schemeCoeff{1};
         ops_par_loop(KerCutCellExplicitTimeMach, "KerCutCellExplicitTimeMach",
                      g_Block[blockIndex], SPACEDIM, iterRng,
-                     ops_arg_gbl(&g_dt, 1, "double", OPS_READ),
+                     ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
                      ops_arg_gbl(&schemeCoeff, 1, "double", OPS_READ),
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
                                  OPS_READ),
@@ -433,7 +433,7 @@ void DispResidualError(const int iter, const Real checkPeriod) {
     for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
         Real residualError = g_ResidualError[2 * macroVarIdx] /
                              g_ResidualError[2 * macroVarIdx + 1] /
-                             (checkPeriod * g_dt);
+                             (checkPeriod * TimeStep());
         ops_printf("%s = %.17g\n", MACROVARNAME[macroVarIdx].c_str(), residualError);
     }
 }
@@ -474,7 +474,7 @@ void TimeMarching() {
    UpdateSWEFeqandBodyforce();
    UpdateSWETau();
    ForwardEuler();
-   //ops_halo_transfer(g_HaloGroups);
+   //ops_halo_transfer(HaloGroups);
    ImplementBoundary();
 }
 
@@ -484,7 +484,7 @@ void TimeMarching() {
 //     UpdateFeqandBodyforce();
 //     UpdateTau();
 //     ForwardEuler();
-//     //ops_halo_transfer(g_HaloGroups);
+//     //ops_halo_transfer(HaloGroups);
 //     ImplementBoundary();
 // }
 

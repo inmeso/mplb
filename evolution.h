@@ -34,12 +34,7 @@
 void Stream();
 void Collision();
 void ImplementBoundary();
-void PostCollisionBoundary(Real utop);
-void StreamCollision(Real utop);
-void InitialiseSolution(Real utop);
-void PostStreamBounundary();
 void CalcResidualError();
-void CalcTotalMass(Real* totalMass);
 /*!
  * Routine for completing one full time step
  */

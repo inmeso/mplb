@@ -9,8 +9,8 @@
 #include "setup_comput_domain.h"
 #include "setup_comput_domain_kernel.h"
 std::string CASENAME;
-int g_BlockNum = 1;
-int g_HaloDepth = 0;
+int BLOCKNUM = 1;
+int HALODEPTH = 0;
 int SPACEDIM = 2;
 ops_block* g_Block;
 ops_dat* g_MacroVars;
@@ -22,50 +22,50 @@ ops_dat* g_CoordinateXYZ;
  */
 ops_dat* g_NodeType;
 ops_dat* g_GeometryProperty;
-int g_HaloNum = 0;
-ops_halo* g_Halos;
-ops_halo_group g_HaloGroups;
-int* g_BlockIterRngWhole;
-int* g_BlockIterRngJmin;
-int* g_BlockIterRngJmax;
-int* g_BlockIterRngImin;
-int* g_BlockIterRngImax;
-int* g_BlockIterRngKmax;
-int* g_BlockIterRngKmin;
-int* g_BlockIterRngBulk;
-int* g_BlockSize;
+int HaloRelationNum = 0;
+ops_halo* HaloRelations;
+ops_halo_group HaloGroups;
+int* BlockIterRngWhole;
+int* BlockIterRngJmin;
+int* BlockIterRngJmax;
+int* BlockIterRngImin;
+int* BlockIterRngImax;
+int* BlockIterRngKmax;
+int* BlockIterRngKmin;
+int* BlockIterRngBulk;
+int* BLOCKSIZE;
 
 void DestroyVariables() {
     delete[] g_Block;
     delete[] g_MacroVars;
     delete[] g_CoordinateXYZ;
-    if (g_HaloNum > 0) delete[] g_Halos;
+    if (HaloRelationNum > 0) delete[] HaloRelations;
     delete[] g_NodeType;
     delete[] g_GeometryProperty;
-    delete[] g_BlockIterRngWhole;
-    delete[] g_BlockIterRngBulk;
-    delete[] g_BlockIterRngImax;
-    delete[] g_BlockIterRngImin;
-    delete[] g_BlockIterRngJmax;
-    delete[] g_BlockIterRngJmin;
-    delete[] g_BlockSize;
+    delete[] BlockIterRngWhole;
+    delete[] BlockIterRngBulk;
+    delete[] BlockIterRngImax;
+    delete[] BlockIterRngImin;
+    delete[] BlockIterRngJmax;
+    delete[] BlockIterRngJmin;
+    delete[] BLOCKSIZE;
 }
 
 void DefineVariables() {
     void* temp = nullptr;
-    g_Block = new ops_block[g_BlockNum];
-    g_MacroVars = new ops_dat[g_BlockNum];
-    g_CoordinateXYZ = new ops_dat[g_BlockNum];
-    g_BlockIterRngWhole = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngJmin = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngJmax = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngImax = new int[g_BlockNum * 2 * SPACEDIM];
-    g_BlockIterRngImin = new int[g_BlockNum * 2 * SPACEDIM];
+    g_Block = new ops_block[BLOCKNUM];
+    g_MacroVars = new ops_dat[BLOCKNUM];
+    g_CoordinateXYZ = new ops_dat[BLOCKNUM];
+    BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImin = new int[BLOCKNUM * 2 * SPACEDIM];
     if (3 == SPACEDIM) {
-        g_BlockIterRngKmax = new int[g_BlockNum * 2 * SPACEDIM];
-        g_BlockIterRngKmin = new int[g_BlockNum * 2 * SPACEDIM];
+        BlockIterRngKmax = new int[BLOCKNUM * 2 * SPACEDIM];
+        BlockIterRngKmin = new int[BLOCKNUM * 2 * SPACEDIM];
     }
-    g_BlockIterRngBulk = new int[g_BlockNum * 2 * SPACEDIM];
+    BlockIterRngBulk = new int[BLOCKNUM * 2 * SPACEDIM];
     int haloDepth = std::max(SchemeHaloNum(), BoundaryHaloNum());
 
 #ifdef debug
@@ -83,11 +83,11 @@ void DefineVariables() {
     }
     // problem specific
     // if boundary fitting scheme
-    // g_Metrics= new ops_dat[g_BlockNum];
+    // g_Metrics= new ops_dat[BLOCKNUM];
     // calculate the g_Metrics;
     // if cutting cell method
-    g_NodeType = new ops_dat[g_BlockNum];
-    g_GeometryProperty = new ops_dat[g_BlockNum];
+    g_NodeType = new ops_dat[BLOCKNUM];
+    g_GeometryProperty = new ops_dat[BLOCKNUM];
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         std::string label(std::to_string(blockIndex));
         std::string blockName("Block_" + label);
@@ -100,55 +100,55 @@ void DefineVariables() {
             size[cordIdx] = BlockSize(blockIndex)[cordIdx];
         }
         // we assume a problem is at least 2D
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
-        g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
-        g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
         if (3 == SPACEDIM) {
-            g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 4] = 1;
-            g_BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 5] = size[2] - 1;
-            g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngImax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngImin[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM] = 0;
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 2] = 0;
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 4] = size[2] - 1;
-            g_BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM] = 0;
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 3] = size[1];
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            g_BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 5] = 1;
+            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 4] = 1;
+            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 5] = size[2] - 1;
+            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM] = 0;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 2] = 0;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 4] = size[2] - 1;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 2] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 3] = size[1];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 5] = 1;
         }
 
         std::string dataName;
@@ -177,7 +177,7 @@ void DefineVariables() {
 }
 
 void WriteNodePropertyToHdf5() {
-    for (int blockIndex = 0; blockIndex < g_BlockNum; blockIndex++) {
+    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
         std::string blockName("Block");
         std::string label(std::to_string(blockIndex));
         blockName += label;
@@ -190,7 +190,7 @@ void WriteNodePropertyToHdf5() {
 }
 
 void WriteFlowfieldToHdf5() {
-    for (int blockIndex = 0; blockIndex < g_BlockNum; blockIndex++) {
+    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
         std::string blockName("Block");
         std::string label(std::to_string(blockIndex));
         blockName += label;
@@ -204,7 +204,7 @@ void WriteFlowfieldToHdf5() {
 void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
                          VertexTypes* edgeType, VertexTypes* cornerType) {
     int nodeType = (int)Vertex_Fluid;
-    int* iterRange = BlockIterRng(blockIndex, g_BlockIterRngBulk);
+    int* iterRange = BlockIterRng(blockIndex, BlockIterRngBulk);
     ops_par_loop(
         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
         iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
@@ -212,7 +212,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
 
     // specify halo points
     nodeType = (int)Vertex_ImmersedSolid;
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngJmin);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngJmin);
     int* haloIterRng = new int[2 * SPACEDIM];
     haloIterRng[0] = iterRange[0] - 1;
     haloIterRng[1] = iterRange[1] + 1;
@@ -226,7 +226,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
         haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngJmax);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngJmax);
     haloIterRng[0] = iterRange[0] - 1;
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] + 1;
@@ -239,7 +239,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
         haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngImin);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngImin);
     haloIterRng[0] = iterRange[0] - 1;
     haloIterRng[1] = iterRange[1] - 1;
     haloIterRng[2] = iterRange[2] - 1;
@@ -252,7 +252,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
         haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngImax);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngImax);
     haloIterRng[0] = iterRange[0] + 1;
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] - 1;
@@ -266,7 +266,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
         haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
     if (3 == SPACEDIM) {
-        iterRange = BlockIterRng(blockIndex, g_BlockIterRngKmin);
+        iterRange = BlockIterRng(blockIndex, BlockIterRngKmin);
         haloIterRng[0] = iterRange[0] - 1;
         haloIterRng[1] = iterRange[1] + 1;
         haloIterRng[2] = iterRange[2] - 1;
@@ -278,7 +278,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
                                  OPS_WRITE));
-        iterRange = BlockIterRng(blockIndex, g_BlockIterRngKmax);
+        iterRange = BlockIterRng(blockIndex, BlockIterRngKmax);
         haloIterRng[0] = iterRange[0] - 1;
         haloIterRng[1] = iterRange[1] + 1;
         haloIterRng[2] = iterRange[2] - 1;
@@ -296,25 +296,25 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
     // 2 VG_JP bottom, 3 VG_JM top
     // 4 VG_KP back, 5 VG_KM front
     nodeType = (int)faceType[0];
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngImin);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngImin);
     ops_par_loop(
         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
         iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
     nodeType = (int)faceType[1];
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngImax);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngImax);
     ops_par_loop(
         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
         iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
     nodeType = (int)faceType[2];
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngJmin);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngJmin);
     ops_par_loop(
         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
         iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
     nodeType = (int)faceType[3];
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngJmax);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngJmax);
     ops_par_loop(
         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
         iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
@@ -322,14 +322,14 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
 
     if (3 == SPACEDIM) {
         nodeType = (int)faceType[4];
-        iterRange = BlockIterRng(blockIndex, g_BlockIterRngKmin);
+        iterRange = BlockIterRng(blockIndex, BlockIterRngKmin);
         ops_par_loop(KerAssignProperty, "KerAssignProperty",
                      g_Block[blockIndex], SPACEDIM, iterRange,
                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
                                  OPS_WRITE));
         nodeType = (int)faceType[5];
-        iterRange = BlockIterRng(blockIndex, g_BlockIterRngKmax);
+        iterRange = BlockIterRng(blockIndex, BlockIterRngKmax);
         ops_par_loop(KerAssignProperty, "KerAssignProperty",
                      g_Block[blockIndex], SPACEDIM, iterRange,
                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
@@ -531,7 +531,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
 
 void SetupDomainGeometryProperty(int blockIndex) {
     int geometryProperty = VG_Fluid;
-    int* iterRange = BlockIterRng(blockIndex, g_BlockIterRngBulk);
+    int* iterRange = BlockIterRng(blockIndex, BlockIterRngBulk);
     ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
                  SPACEDIM, iterRange,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
@@ -540,7 +540,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
 
     // specify halo points
     geometryProperty = VG_ImmersedSolid;
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngJmin);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngJmin);
     int* haloIterRng = new int[2 * SPACEDIM];
     haloIterRng[0] = iterRange[0] - 1;
     haloIterRng[1] = iterRange[1] + 1;
@@ -555,7 +555,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngJmax);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngJmax);
     haloIterRng[0] = iterRange[0] - 1;
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] + 1;
@@ -569,7 +569,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngImin);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngImin);
     haloIterRng[0] = iterRange[0] - 1;
     haloIterRng[1] = iterRange[1] - 1;
     haloIterRng[2] = iterRange[2] - 1;
@@ -584,7 +584,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
 
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngImax);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngImax);
     haloIterRng[0] = iterRange[0] + 1;
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] - 1;
@@ -599,7 +599,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
     if (3 == SPACEDIM) {
-        iterRange = BlockIterRng(blockIndex, g_BlockIterRngKmin);
+        iterRange = BlockIterRng(blockIndex, BlockIterRngKmin);
         haloIterRng[0] = iterRange[0] - 1;
         haloIterRng[1] = iterRange[1] + 1;
         haloIterRng[2] = iterRange[2] - 1;
@@ -611,7 +611,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
-        iterRange = BlockIterRng(blockIndex, g_BlockIterRngKmax);
+        iterRange = BlockIterRng(blockIndex, BlockIterRngKmax);
         haloIterRng[0] = iterRange[0] - 1;
         haloIterRng[1] = iterRange[1] + 1;
         haloIterRng[2] = iterRange[2] - 1;
@@ -627,28 +627,28 @@ void SetupDomainGeometryProperty(int blockIndex) {
 
     // specify domain
     geometryProperty = VG_JP;
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngJmin);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngJmin);
     ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
                  SPACEDIM, iterRange,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
     geometryProperty = VG_JM;
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngJmax);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngJmax);
     ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
                  SPACEDIM, iterRange,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
     geometryProperty = VG_IP;
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngImin);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngImin);
     ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
                  SPACEDIM, iterRange,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
     geometryProperty = VG_IM;
-    iterRange = BlockIterRng(blockIndex, g_BlockIterRngImax);
+    iterRange = BlockIterRng(blockIndex, BlockIterRngImax);
     ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
                  SPACEDIM, iterRange,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
@@ -656,14 +656,14 @@ void SetupDomainGeometryProperty(int blockIndex) {
                              "int", OPS_WRITE));
     if (3 == SPACEDIM) {
         geometryProperty = VG_KP;
-        iterRange = BlockIterRng(blockIndex, g_BlockIterRngKmin);
+        iterRange = BlockIterRng(blockIndex, BlockIterRngKmin);
         ops_par_loop(KerAssignProperty, "KerAssignProperty",
                      g_Block[blockIndex], SPACEDIM, iterRange,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         geometryProperty = VG_KM;
-        iterRange = BlockIterRng(blockIndex, g_BlockIterRngKmax);
+        iterRange = BlockIterRng(blockIndex, BlockIterRngKmax);
         ops_par_loop(KerAssignProperty, "KerAssignProperty",
                      g_Block[blockIndex], SPACEDIM, iterRange,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
@@ -864,8 +864,8 @@ void SetupDomainGeometryProperty(int blockIndex) {
 void SetupEmbeddedBodyFlowAroundCircle(const int ratioLD, const int front,
                                        const VertexTypes surface) {
     // specify the square
-    const int nx = g_BlockSize[0];
-    const int ny = g_BlockSize[1];
+    const int nx = BLOCKSIZE[0];
+    const int ny = BLOCKSIZE[1];
     // ratioLD=15 is the channel length: Circle diameter
     const int circleDiameter =
         (nx - 1) / ratioLD;  // nx must be the times of ratioLD
@@ -874,7 +874,7 @@ void SetupEmbeddedBodyFlowAroundCircle(const int ratioLD, const int front,
     const Real diameter{1};
     Real circlePos[]{front + 0.5, 0.5 * (ny - 1) / circleDiameter};
     // mark all solid points inside the first circle to be ImmersedSolid
-    int* bulkRng = BlockIterRng(blockIndex, g_BlockIterRngBulk);
+    int* bulkRng = BlockIterRng(blockIndex, BlockIterRngBulk);
     ops_par_loop(
         KerSetEmbededCircle, "KerSetEmbededCircle", g_Block[blockIndex],
         SPACEDIM, bulkRng, ops_arg_gbl(&diameter, 1, "double", OPS_READ),
@@ -939,8 +939,8 @@ void SetupEmbeddedBodyFlowAroundCircle(const int ratioLD, const int front,
 void SetupEmbeddedBodyFlowAroundSquare(const int ratioLD, const int front,
                                        const VertexTypes surface) {
     // specify the square
-    const int nx = g_BlockSize[0];
-    const int ny = g_BlockSize[1];
+    const int nx = BLOCKSIZE[0];
+    const int ny = BLOCKSIZE[1];
     // ratioLD=15 is the channel length: square length
     const int squareLen =
         (nx - 1) / ratioLD;  // nx must be the times of ratioLD
@@ -1056,20 +1056,20 @@ void InputBlcokDimensions(std::ofstream& output) {
         std::cout << "Please input the space dimensional:";
         std::cin >> SPACEDIM;
         std::cout << "Please input total number of blocks:";
-        std::cin >> g_BlockNum;
-        output << "Totally " << g_BlockNum << " of blocks" << std::endl;
-        g_BlockSize = new int[g_BlockNum * SPACEDIM];
+        std::cin >> BLOCKNUM;
+        output << "Totally " << BLOCKNUM << " of blocks" << std::endl;
+        BLOCKSIZE = new int[BLOCKNUM * SPACEDIM];
         std::cout
             << "Please input the dimension of each block (grid point number):"
             << std::endl;
-        for (int blockIndex = 0; blockIndex < g_BlockNum; blockIndex++) {
+        for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
             std::cout << "Block " << blockIndex << ":" << std::endl;
             output << "Block " << blockIndex << ":" << std::endl;
             for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) {
                 std::cout << "At the coordinate " << coordIndex << ":";
-                std::cin >> g_BlockSize[SPACEDIM * blockIndex + coordIndex];
+                std::cin >> BLOCKSIZE[SPACEDIM * blockIndex + coordIndex];
                 output << "At the coordinate " << coordIndex << ":"
-                       << g_BlockSize[SPACEDIM * blockIndex + coordIndex]
+                       << BLOCKSIZE[SPACEDIM * blockIndex + coordIndex]
                        << std::endl;
             }
         }
@@ -1132,7 +1132,7 @@ void InputSegmentsAndConstructCoordinates(int blockIndex,
 }
 
 void SetInitialMacroVar(const int blockIdx) {
-    int* iterRng = BlockIterRng(blockIdx, g_BlockIterRngWhole);
+    int* iterRng = BlockIterRng(blockIdx, BlockIterRngWhole);
     ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
                  g_Block[blockIdx], SPACEDIM, iterRng,
                  ops_arg_dat(g_CoordinateXYZ[blockIdx], SPACEDIM, LOCALSTENCIL,
@@ -1160,7 +1160,7 @@ void PrintCoordinates(const int blockIndex, Real* coordinates[SPACEDIM]) {
 void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]) {
 #ifdef OPS_2D
     if (SPACEDIM == 2) {
-        int* range = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* range = BlockIterRng(blockIndex, BlockIterRngWhole);
         ops_par_loop(KerSetCoordinates, "KerSetCoordinates",
                      g_Block[blockIndex], SPACEDIM, range,
                      ops_arg_gbl(coordinates[0], BlockSize(blockIndex)[0],
@@ -1174,7 +1174,7 @@ void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]) {
 #endif
 #ifdef OPS_3D
     if (SPACEDIM == 3) {
-        int* range = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* range = BlockIterRng(blockIndex, BlockIterRngWhole);
         ops_par_loop(KerSetCoordinates3D, "KerSetCoordinates3D",
                      g_Block[blockIndex], SPACEDIM, range,
                      ops_arg_gbl(coordinates[0], BlockSize(blockIndex)[0],
@@ -1333,7 +1333,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Now constructing each block/domain..." << std::endl;
     geometryList << "Now constructing each block/domain..." << std::endl;
-    for (int blockIndex = 0; blockIndex < g_BlockNum; blockIndex++) {
+    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
         Real* coordinates[SPACEDIM];
         std::cout << "****Constructing coordinates for Block " << blockIndex
                   << "****" << std::endl;
@@ -1373,7 +1373,7 @@ int main(int argc, char* argv[]) {
     }
     geometryList.close();
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, g_BlockIterRngWhole);
+        int* iterRng = BlockIterRng(blockIndex, BlockIterRngWhole);
         ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
                      g_Block[blockIndex], SPACEDIM, iterRng,
                      ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,

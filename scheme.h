@@ -39,7 +39,7 @@ extern ops_stencil ONEPTLATTICESTENCIL;
 void SetupCommonStencils();
 // End Define common stencils
 /*!
- * g_HaloDepth the number of halo points
+ * HALODEPTH the number of halo points
  * Determined by the chosen scheme and boundary condition
  * Periodic boundary condition requires one halo point
  * but it is mainly used for transferring information
@@ -216,7 +216,7 @@ void KerGetPointMacroVarValue(const Real* macroVars, Real* pointValue);
 
 void SetupScheme();
 /*!
- * Periodic boundary condition may need to adjust the g_HaloDepth value
+ * Periodic boundary condition may need to adjust the HALODEPTH value
  */
 const int SchemeHaloNum();
 void SetSchemeHaloNum(const int schemeHaloNum);

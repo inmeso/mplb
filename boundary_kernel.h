@@ -2013,7 +2013,7 @@ void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
             (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0, 0)];
         Real rhoGiven = givenBoundaryVars[0];
         Real rho = 0;
-        for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
+        for (int xiIdx = 0;  xiIdx < NUMXI; xiIdx++) {
             Real cx{CS * XI[xiIdx * LATTDIM]};
             Real cy{CS * XI[xiIdx * LATTDIM + 1]};
             Real cz{CS * XI[xiIdx * LATTDIM + 2]};
