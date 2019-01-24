@@ -204,7 +204,7 @@ void DefineVariables() {
         for (int localIdx = 0; localIdx < MacroVarsNum(); localIdx++) {
             g_ResidualErrorHandle[localIdx] = ops_decl_reduction_handle(
                 // this is double
-                sizeof(double), "double", MACROVARNAME[localIdx].c_str());
+                sizeof(double), "double", MacroVarName()[localIdx].c_str());
         }
         // end if steady flow
     }
@@ -367,7 +367,7 @@ void DefineVariablesFromHDF5() {
         for (int localIdx = 0; localIdx < MacroVarsNum(); localIdx++) {
             g_ResidualErrorHandle[localIdx] = ops_decl_reduction_handle(
                 // this is double
-                sizeof(double), "double", MACROVARNAME[localIdx].c_str());
+                sizeof(double), "double", MacroVarName()[localIdx].c_str());
         }
         // end if steady flow
         delete[] size;
@@ -684,5 +684,3 @@ void SetBlockNum(const int blockNum) {
         ops_printf("%s\n", "There must be at least one block");
     }
 }
-
-const Real* TauRef() { return TAUREF; }

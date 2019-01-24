@@ -18,65 +18,51 @@
  * @todo how to deal with overflow in a kernel function? in particular, GPU
  */
 
-#ifdef OPS_2D //two dimensional code
+#ifdef OPS_2D
 
-void KerCutCellCalcPolyFeq(const int* polyOrder, const int* nodeType,
-                             const Real* macroVars, Real* feq) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
+//two dimensional code
+void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
+    VertexTypes vt{(VertexTypes)nodeType[OPS_ACC0(0, 0)]};
     if (vt != Vertex_ImmersedSolid) {
-        Real rho{macroVars[OPS_ACC_MD2(0, 0, 0)]};
-        Real u{macroVars[OPS_ACC_MD2(1, 0, 0)]};
-        Real v{macroVars[OPS_ACC_MD2(2, 0, 0)]};
-        Real T{1};
-        if (1==THERMALPROBLEM){
-             Real T = macroVars[OPS_ACC_MD2(3, 0, 0)];
-        }
-        for (int l = 0; l < NUMXI; l++) {
-            feq[OPS_ACC_MD3(l, 0, 0)] =
-                CalcBGKFeq(l, rho, u, v, T, (*polyOrder));
-        }
-    }
-}
-
-void KerCutCellCalcFeqIso(const int* nodeType, const Real* macroVars,
-                            Real* feq) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
-    if (vt != Vertex_ImmersedSolid) {
-        Real rho = macroVars[OPS_ACC_MD1(0, 0, 0)];
-        Real u = macroVars[OPS_ACC_MD1(1, 0, 0)];
-        Real v = macroVars[OPS_ACC_MD1(2, 0, 0)];
-        for (int l = 0; l < NUMXI; l++) {
-            feq[OPS_ACC_MD2(l, 0, 0)] = CalcBGKFeq(l, rho, u, v, 1, 2);
-        }
-    }
-}
-/*!
-The equilibrium function for modelling shallow water equations, low Fr number version
-*/
-void KerCutCellCalcSWEFeq(const int* nodeType, const Real* macroVars,
-                          Real* feq) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
-    if (vt != Vertex_ImmersedSolid) {
-        Real h = macroVars[OPS_ACC_MD1(0, 0, 0)];
-        Real u = macroVars[OPS_ACC_MD1(1, 0, 0)];
-        Real v = macroVars[OPS_ACC_MD1(2, 0, 0)];
-        for (int l = 0; l < NUMXI; l++) {
-            feq[OPS_ACC_MD2(l, 0, 0)] = CalcSWEFeq(l, h, u, v, 2);
-        }
-    }
-}
-/*!
-Polynomial equilibrium function: upto the fourth order
-*/
-void KerCutCellCalcPolySWEFeq(const int* polyOrder, const int* nodeType,
-                              const Real* macroVars, Real* feq) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
-    if (vt != Vertex_ImmersedSolid) {
-        Real h = macroVars[OPS_ACC_MD2(0, 0, 0)];
-        Real u = macroVars[OPS_ACC_MD2(1, 0, 0)];
-        Real v = macroVars[OPS_ACC_MD2(2, 0, 0)];
-        for (int l = 0; l < NUMXI; l++) {
-            feq[OPS_ACC_MD3(l, 0, 0)] = CalcSWEFeq(l, h, u, v, (*polyOrder));
+        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+            EquilibriumType equilibriumType{
+                (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
+            const int startPos{VARIABLECOMPSTART[compoIndex]};
+            if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
+                Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0)]};
+                Real u{macroVars[OPS_ACC_MD1(startPos+1, 0, 0)]};
+                Real v{macroVars[OPS_ACC_MD1(startPos+2, 0, 0)]};
+                const Real T{1};
+                const int polyOrder{2};
+                for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                    feq[OPS_ACC_MD2(xiInde, 0, 0)] =
+                        CalcBGKFeq(xiIndex, rho, u, v, T, polyOrder);
+                }
+            }
+            if (Equilibrium_BGKThermal4th == equilibriumType) {
+                Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0)]};
+                Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0)]};
+                Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0)]};
+                Real T{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0)]};
+                const int polyOrder{4};
+                for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                    feq[OPS_ACC_MD2(xiInde, 0, 0)] =
+                        CalcBGKFeq(xiIndex, rho, u, v, T, polyOrder);
+                }
+            }
+            if (Equilibrium_BGKSWE4th == equilibriumType) {
+                Real h{macroVars[OPS_ACC_MD1(startPos, 0, 0)]};
+                Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0)]};
+                Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0)]};               
+                const int polyOrder{4};
+                for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                    feq[OPS_ACC_MD2(xiInde, 0, 0)] =
+                        CalcBGKFeq(xiIndex, rho, u, v, T, polyOrder);
+                }
+            }
         }
     }
 }
@@ -89,42 +75,36 @@ void KerCalcBodyForce(const int* nodeType, const Real* f, const Real* macroVars,
  * Due to the property of LBM, even modelling a liquid,there will be a
  * 'Knudsen' number
  */
-
-void KerCalcSWETau(const int* nodeType, const Real* kn, const Real* macroVars,
-                   Real* tau) {
-    /*
-     *@note: here the macroVars is not multicomponent ready
-     */
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
+void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
+                Real* tau) {  
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];    
     if (vt != Vertex_ImmersedSolid) {
-        for (int numCompo = 0; numCompo < NUMCOMPONENTS; numCompo++) {
-            tau[OPS_ACC_MD3(numCompo, 0, 0)] =
-                kn[numCompo] / macroVars[OPS_ACC_MD2(0, 0, 0)];
-        }
-    }
-}
-
-void KerCalcTau(const int* nodeType, const Real* kn, const Real* macroVars,
-                Real* tau) {
-    /*
-     *@note: multicomponent ready for incompressible flows.
-     */
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
-    const Real rho{macroVars[OPS_ACC_MD2(0, 0, 0)]};
-    Real T{1};
-    if (1 == THERMALPROBLEM) {
-        T = macroVars[OPS_ACC_MD2(3, 0, 0)];
-    }
-    if (vt != Vertex_ImmersedSolid) {
-        for (int numCompo = 0; numCompo < NUMCOMPONENTS; numCompo++) {
-            tau[OPS_ACC_MD3(numCompo, 0, 0)] = kn[numCompo] / (rho * sqrt(T));
+        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+            EquilibriumType equilibriumType{
+                (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
+            const int startPos{VARIABLECOMPSTART[compoIndex]};
+            if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
+                Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};                
+                const Real T{1};               
+                tau[OPS_ACC_MD3(compoIndex, 0, 0)] =
+                    tauRef[compoIndex] / (rho * sqrt(T));
+            }
+            if (Equilibrium_BGKThermal4th == equilibriumType) {
+                Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};
+                Real T{macroVars[OPS_ACC_MD2(startPos+3, 0, 0)]};
+                tau[OPS_ACC_MD3(compoIndex, 0, 0)] =
+                    tauRef[compoIndex] / (rho * sqrt(T));
+            }
+            if (Equilibrium_BGKSWE4th == equilibriumType) {
+                Real h{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};
+                tau[OPS_ACC_MD3(compoIndex, 0, 0)] = tauRef[compoIndex] / h;
+            }           
         }
     }
 }
 /*!
  * If a Newton-Cotes quadrature is used, it can be converted to the way
- * similar to the Gauss-Hermite quadrature
- *
+ * similar to the Gauss-Hermite quadrature *
  */
 void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
@@ -377,40 +357,66 @@ void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars) {
 }
 #endif
 #ifdef OPS_3D
-void KerCutCellCalcPolyFeq3D(const int* polyOrder, const int* nodeType,
-                             const Real* macroVars, Real* feq) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
+void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
     if (vt != Vertex_ImmersedSolid) {
-        Real rho{macroVars[OPS_ACC_MD2(0, 0, 0, 0)]};
-        Real u{macroVars[OPS_ACC_MD2(1, 0, 0, 0)]};
-        Real v{macroVars[OPS_ACC_MD2(2, 0, 0, 0)]};
-        Real w{macroVars[OPS_ACC_MD2(3, 0, 0, 0)]};
-        Real T{1};
-        if (1 == THERMALPROBLEM) {
-            T = macroVars[OPS_ACC_MD2(4, 0, 0, 0)];
-        }
-        for (int l = 0; l < NUMXI; l++) {
-            feq[OPS_ACC_MD3(l, 0, 0, 0)] =
-                CalcBGKFeq(l, rho, u, v, w, T, (*polyOrder));
+        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+            EquilibriumType equilibriumType{
+                (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
+            const int startPos{VARIABLECOMPSTART[compoIndex]};
+            if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
+                Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
+                Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
+                Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
+                Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
+                const Real T{1};
+                const int polyOrder{2};
+                for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                    feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                        CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder);
+                }
+            }
+            if (Equilibrium_BGKThermal4th == equilibriumType) {
+                Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
+                Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
+                Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
+                Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
+                Real T{macroVars[OPS_ACC_MD1(startPos + 4, 0, 0, 0)]};
+                const int polyOrder{4};
+                for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                    feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                        CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder);
+                }
+            }
         }
     }
 }
 
-void KerCalcTau3D(const int* nodeType, const Real* kn, const Real* macroVars,
-                  Real* tau) {
+void KerCalcTau3D(const int* nodeType, const Real* tauRef,
+                  const Real* macroVars, Real* tau) {
     /*
      *@note: multicomponent ready for incompressible flows.
      */
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
-    const Real rho{macroVars[OPS_ACC_MD2(0, 0, 0, 0)]};
-    Real T{1};
-    if (1 == THERMALPROBLEM) {
-        T = macroVars[OPS_ACC_MD2(4, 0, 0, 0)];
-    }
     if (vt != Vertex_ImmersedSolid) {
-        for (int numCompo = 0; numCompo < NUMCOMPONENTS; numCompo++) {
-            tau[OPS_ACC_MD3(numCompo, 0, 0, 0)] =
-                kn[numCompo] / (rho * sqrt(T));
+        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+            EquilibriumType equilibriumType{
+                (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
+            const int startPos{VARIABLECOMPSTART[compoIndex]};
+            if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
+                Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
+                const Real T{1};
+                tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =
+                    tauRef[compoIndex] / (rho * sqrt(T));
+            }
+            if (Equilibrium_BGKThermal4th == equilibriumType) {
+                Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
+                Real T{macroVars[OPS_ACC_MD2(startPos + 3, 0, 0, 0)]};
+                tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =
+                    tauRef[compoIndex] / (rho * sqrt(T));
+            }
         }
     }
 }
@@ -423,7 +429,7 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
     if (vt != Vertex_ImmersedSolid) {
         bool rhoCalculated{false};
-		Real rho{ 0 };
+        Real rho{0};
         bool *veloCalculated = new bool[LATTDIM];
 		Real *velo = new Real[LATTDIM];		
         for (int lattIdx = 0; lattIdx < LATTDIM; lattIdx++) {

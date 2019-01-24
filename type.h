@@ -158,6 +158,12 @@ enum VariableTypes {
     Variable_Qz = 7,
 };
 
+enum EquilibriumType {
+    Equilibrium_BGKIsothermal2nd = 0,
+    Equilibrium_BGKThermal4th = 1,
+    Equilibrium_BGKSWE4th = 2,   
+};
+
 enum SpaceSchemeType {
     sstupwind2nd = 10,
     sstcentral2nd = 11,
@@ -225,4 +231,10 @@ inline bool DefinitelyLessThan(const Real* a, const Real* b,
 	return (*b - *a) > ((fabs(*a) < fabs(*b) ? fabs(*b) : fabs(*a)) * epsilon);
 }
 
+template <typename T>
+inline void FreeArrayMemory(T* pointerToArray) {
+    if (pointerToArray != nullptr) {
+        delete[] pointerToArray;
+    }   
+}
 #endif  // TYPE_H

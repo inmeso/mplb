@@ -87,9 +87,8 @@ void UpdateMacroVars3D() {
 void UpdateFeqandBodyforce3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        ops_par_loop(KerCutCellCalcPolyFeq3D, "KerCutCellCalcPolyFeq3D",
-                     g_Block[blockIndex], SPACEDIM, iterRng,
-                     ops_arg_gbl(&FEQORDER, 1, "int", OPS_READ),
+        ops_par_loop(KerCalcFeq3D, "KerCalcFeq3D",
+                     g_Block[blockIndex], SPACEDIM, iterRng,                     
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
                                  OPS_READ),
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
@@ -412,7 +411,7 @@ void DispResidualError3D(const int iter, const Real checkPeriod) {
         Real residualError = g_ResidualError[2 * macroVarIdx] /
                              g_ResidualError[2 * macroVarIdx + 1] /
                              (checkPeriod * TimeStep());
-        ops_printf("%s = %.17g\n", MACROVARNAME[macroVarIdx].c_str(),
+        ops_printf("%s = %.17g\n", MacroVarName()[macroVarIdx].c_str(),
                    residualError);
     }
 }

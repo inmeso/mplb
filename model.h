@@ -12,44 +12,33 @@
 #include <vector>
 #include "type.h"
 /*!
- * In this module, most of variables will not change the value when the code
- * is running.
+ * In this module, most of variables will not change 
+ * when the code is running.
  */
-std::vector<std::string> LATTICENAME;
+
 /*!
  *NUMXI:total number of discrete velocity/lattice
  */
 extern int NUMXI;
-/*!
- *Order of feq
- */
-extern int FEQORDER;
+
 /*!
  *dimension of lattice model
  */
 extern int LATTDIM;
 /*!
  * Speed of Sound
+ * Note: for multiple-lattice application, the lattice sound speed
+ * must be same. 
  */
 extern Real CS;
-
 /*!
- * Is the case a thermal problem?
- * 0 isothermal
- * 1 thermal
- */
-extern int THERMALPROBLEM;
-/*!
- * The start and end  of each component in the XI and WEIGHTS;
- *
+ * The start index and end index of each component in the XI and WEIGHTS;
  */
 extern int* COMPOINDEX;
-
 /*!
  * XI: if using stream-collision scheme XI should integers actually\n
  * XI: if using finite difference scheme, it may be real and CS=1 accordingly\n
  */
-
 extern Real* XI;
 /*!
  * XIMAXVALUE: maximum value of particle speed, for calculating the CFL.
@@ -58,12 +47,12 @@ extern Real XIMAXVALUE;
 /*!
  * Quadrature weights
  */
+extern Real* WEIGHTS;
 /*!
  * Total number of components.
  * This is introduced for multiple-component fluid flow.
  */
 extern int NUMCOMPONENTS;
-extern Real* WEIGHTS;
 /*!
  * OPP: the index of opposite directions of a discrete velocities\n
  * OPP: it is only useful for regular cartesian mesh\n
@@ -76,24 +65,30 @@ extern int* OPP;
  * Number of macroscopic variables
  */
 extern int NUMMACROVAR;
-/*
+/*!
  * The type of macroscopic variables
  */
-
 extern int* VARIABLETYPE;
-/*
+/*!
  * Which component does the variable belong to
  */
 extern int* VARIABLECOMPINDEX;
-
 /*!
- *Name of all macroscopic variables
- */
-extern std::vector<std::string> MACROVARNAME;
+* The start position of macroscopic variables of each 
+* component
+*/
+extern int* VARIABLECOMPSTART;
+/*!
+* Equilibrium function type
+*/
+extern int* EQUILIBRIUMTYPE;
+/*!
+* Force function type
+*/
+extern int* FORCETYPE;
 void SetLatticeName(const std::vector<std::string> latticeName);
 const std::vector<std::string> LatticeName();
-void AllocateMacroVarProperty(const int macroVarNum);
-void AllocateXi(const int length);
+const std::vector<std::string> MacroVarName();
 inline const int ComponentNum() { return NUMCOMPONENTS; }
 inline const int MacroVarsNum() { return NUMMACROVAR; }
 inline const int SizeF() { return NUMXI; }
@@ -111,74 +106,60 @@ void SetupMacroVars();
 void DefineComponents(std::vector<std::string> compoNames,
                       std::vector<int> compoId,
                       std::vector<std::string> lattNames);
-    /*!
- * Setup the D2Q9 model
- */
-void SetupD2Q9Latt();
-void SetupD2Q16Latt();
-/*!
- * Setup a general Gauss-Hermite lattice model
- */
-void SetupGenGsHermLatt(const int quadratureOrder);
-/*!
- * Setup a lattice from an input file
- */
-void SetupLattFromFile(const std::string filename);
-/*!
- * Calculate the equilibrium function
- */
-void KerCutCellCalcFeqIso(const int* nodeType, const Real* macroVars,
-                          Real* feq);
-void KerCutCellCalcPolyFeq(const int* polyOrder, const int* nodeType,
-                           const Real* macroVars, Real* feq);
-void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars);
-void KerCalcBodyForce(const int* nodeType, const Real* f, const Real* macroVars,
-                      Real* bodyForce);
-/*!
 
-*/
-void KerCutCellCalcSWEFeq(const int* nodeType, const Real* macroVars,
-                          Real* feq);
-void KerCutCellCalcPolySWEFeq(const int* polyOrder, const int* nodeType,
-                              const Real* macroVars, Real* feq);
+void DefineMacroVars(std::vector<VariableTypes> types,
+                     std::vector<std::string> names, std::vector<int> varId,
+                     std::vector<int> compoId);
 
-void KerCalcSWETau(const int* nodeType, const Real* kn, const Real* macroVars,
-                   Real* tau);
-
+void DefineEquilibrium(std::vector<EquilibriumType> types,
+                       std::vector<int> compoId);
 /*
- * Define the local function for calculating the equilibrium function based on
- * the BGK model
+ * Define the local function for calculating the equilibrium
+ * 2D BGK model
  */
 Real CalcBGKFeq(const int l, const Real rho = 1, const Real u = 0,
                 const Real v = 0, const Real T = 1, const int polyOrder = 2);
-
+/*
+ * Define the local function for calculating the equilibrium 
+ * 3D BGK model
+ */
 Real CalcBGKFeq(const int l, const Real rho = 1, const Real u = 0,
                 const Real v = 0, const Real w = 0, const Real T = 1,
                 const int polyOrder = 2);
 /*
- * Define the local function for calculating the SWE equilibrium function based
- * on the BGK model
+ * Define the local function for calculating the SWE equilibrium 
  */
 Real CalcSWEFeq(const int l, const Real h = 1, const Real u = 0,
                 const Real v = 0, const int polyOrder = 2);
-/*!
- * @fn defining how to calculate the relaxation time
- * @param kn the Knudsen number
- * @param macroVars the macroscopic variables
- * @param tau the calculated relaxation time
- */
-void KerCalcTau(const int* nodeType, const Real* kn, const Real* macroVars,
-                Real* tau);
 
 void SetupModel();
 /*!
  * Free the pointer memory
  */
 void DestroyModel();
-
-void KerCutCellCalcPolyFeq3D(const int* polyOrder, const int* nodeType,
-                             const Real* macroVars, Real* feq);
-void KerCalcTau3D(const int* nodeType, const Real* kn, const Real* macroVars,
+// Kernel functions that will be called by ops_par_loop
+/*!
+ * Calculate the equilibrium function for normal fluids
+ * Polynomial equilibrium function: upto the fourth order
+ */
+// Two-dimensional version
+void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq);
+void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars);
+void KerCalcBodyForce(const int* nodeType, const Real* f, const Real* macroVars,
+                      Real* bodyForce);
+/*!
+ * @fn defining how to calculate the relaxation time
+ * @param tauRef the reference relaxation time
+ * @param macroVars the macroscopic variables
+ * @param tau the calculated relaxation time
+ */
+void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
+                Real* tau);
+//Three-dimensional version
+//We have to create 2D and 3D version because of the difference
+//of 2D and 3D OPS_ACC_MD2 macro
+void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq);
+void KerCalcTau3D(const int* nodeType, const Real* tauRef, const Real* macroVars,
                   Real* tau);
 void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars);
 #endif
