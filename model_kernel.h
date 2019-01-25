@@ -27,7 +27,7 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
-            const int startPos{VARIABLECOMPSTART[compoIndex]};
+            const int startPos{VARIABLECOMPPOS[2*compoIndex]};
             if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
                 Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0)]};
                 Real u{macroVars[OPS_ACC_MD1(startPos+1, 0, 0)]};
@@ -82,7 +82,7 @@ void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
-            const int startPos{VARIABLECOMPSTART[compoIndex]};
+            const int startPos{VARIABLECOMPPOS[2*compoIndex]};
             if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
                 Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};                
                 const Real T{1};               
@@ -363,7 +363,7 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
-            const int startPos{VARIABLECOMPSTART[compoIndex]};
+            const int startPos{VARIABLECOMPPOS[2*compoIndex]};
             if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
                 Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
                 Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
@@ -404,7 +404,7 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
-            const int startPos{VARIABLECOMPSTART[compoIndex]};
+            const int startPos{VARIABLECOMPPOS[2*compoIndex]};
             if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
                 Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
                 const Real T{1};

@@ -74,10 +74,10 @@ extern int* VARIABLETYPE;
  */
 extern int* VARIABLECOMPINDEX;
 /*!
-* The start position of macroscopic variables of each 
+* The start and end position of macroscopic variables of each 
 * component
 */
-extern int* VARIABLECOMPSTART;
+extern int* VARIABLECOMPPOS;
 /*!
 * Equilibrium function type
 */

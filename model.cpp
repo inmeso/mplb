@@ -222,8 +222,8 @@ void AllocateComponentIndex(const int compoNum) {
         if (nullptr == COMPOINDEX) {
             COMPOINDEX = new int[2 * compoNum];
 		}
-        if (nullptr == VARIABLECOMPSTART){
-           VARIABLECOMPSTART = new int[compoNum];
+        if (nullptr == VARIABLECOMPPOS){
+           VARIABLECOMPPOS = new int[2*compoNum];
         }
     }
 }
@@ -342,19 +342,19 @@ void DefineMacroVars(std::vector<VariableTypes> types,
         VARIABLETYPE[idx] = (int)types[idx];
         VARIABLECOMPINDEX[idx] = compoId[idx];
     }
-    int startPos{0};
-    VARIABLECOMPSTART[0] = startPos;
-    for (int idx = 0; idx < NUMCOMPONENTS-1; idx++) {
+    int startPos{0};   
+    for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
+        VARIABLECOMPPOS[2 * idx] = startPos;
         while (idx == compoId[startPos]) { 
 			startPos++;
 		}
-        VARIABLECOMPSTART[idx+1] = startPos;
+        VARIABLECOMPPOS[2 * idx+1] = startPos - 1;        
 	}
     ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
     ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);
     ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int", VARIABLECOMPINDEX);
-    ops_decl_const("VARIABLECOMPSTART", NUMCOMPONENTS, "int",
-                   VARIABLECOMPSTART);    
+    ops_decl_const("VARIABLECOMPPOS", NUMCOMPONENTS, "int",
+                   VARIABLECOMPPOS);    
 }
 
 void DefineEquilibrium(std::vector<EquilibriumType> types,
@@ -363,7 +363,7 @@ void DefineEquilibrium(std::vector<EquilibriumType> types,
     if (typeNum == NUMCOMPONENTS) {
         if (nullptr == EQUILIBRIUMTYPE) {
             EQUILIBRIUMTYPE = new int[typeNum];
-            for (idx = 0; idx < typeNum; idx++) {
+            for (int idx = 0; idx < typeNum; idx++) {
                 EQUILIBRIUMTYPE[idx] = types[idx];
             }
         } else {
@@ -395,7 +395,7 @@ void DestroyModel() {
     FreeArrayMemory(VARIABLETYPE);
     FreeArrayMemory(VARIABLECOMPINDEX);
     FreeArrayMemory(COMPOINDEX);
-    FreeArrayMemory(VARIABLECOMPSTART);
+    FreeArrayMemory(VARIABLECOMPPOS);
     FreeArrayMemory(EQUILIBRIUMTYPE);
     FreeArrayMemory(XI);
     FreeArrayMemory(WEIGHTS);
