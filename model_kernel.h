@@ -428,246 +428,279 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
 void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
     if (vt != Vertex_ImmersedSolid) {
-        bool rhoCalculated{false};
-        Real rho{0};
-        bool *veloCalculated = new bool[LATTDIM];
-		Real *velo = new Real[LATTDIM];		
-        for (int lattIdx = 0; lattIdx < LATTDIM; lattIdx++) {
-            veloCalculated[lattIdx] = false;
-			velo[lattIdx] = 0;
-        }
-        for (int m = 0; m < NUMMACROVAR; m++) {
-            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] = 0;
-            VariableTypes varType = (VariableTypes)VARIABLETYPE[m];
-            switch (varType) {
-                case Variable_Rho: {
-                    rhoCalculated = true;
-                    for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
-                        macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
-                            f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
-                    }
-					rho = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
-#ifdef debug                   
-                    if (isnan(rho) || rho <= 0 || isinf(rho)) {
-                        ops_printf(
-                            "%sDensity=%f\n",
-                            "Density becomes invalid! Maybe something wrong...",
-                            rho);
-                    }
-#endif
-                } break;
-                case Variable_U: {
-                    if (rhoCalculated) {
-                        veloCalculated[0] = true;
-                        for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
+        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+            bool rhoCalculated{false};
+            Real rho{0};
+            bool* veloCalculated = new bool[LATTDIM];
+            Real* velo = new Real[LATTDIM];
+            for (int lattIdx = 0; lattIdx < LATTDIM; lattIdx++) {
+                veloCalculated[lattIdx] = false;
+                velo[lattIdx] = 0;
+            }
+            for (int m = VARIABLECOMPPOS[2 * compoIndex];
+                 m <= VARIABLECOMPPOS[2 * compoIndex + 1]; m++) {
+                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] = 0;
+                VariableTypes varType = (VariableTypes)VARIABLETYPE[m];
+                switch (varType) {
+                    case Variable_Rho: {
+                        rhoCalculated = true;
+                        for (int xiIdx = COMPOINDEX[2 * compoIndex];
+                             xiIdx <= COMPOINDEX[2 * compoIndex + 1]; xiIdx++) {
                             macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
-                                CS * XI[xiIdx * LATTDIM] *
                                 f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
                         }
-                        macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
-                            macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
-						velo[0] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
-#ifdef debug                        
-                        if (isnan(velo[0]) || isinf(velo[0])) {
-                            ops_printf("%sU=%f\n",
-                                       "Velocity becomes invalid! Maybe "
-                                       "something wrong...",
-                                       u);
-                        }
-#endif
-                    } else {
-                        ops_printf("%s\n",
-                                   "Density has not been calculated before "
-                                   "calculating U!");
-                    }
-                } break;
-                case Variable_V: {
-                    if (rhoCalculated) {
-                        veloCalculated[1] = true;
-                        for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
-                                CS * XI[xiIdx * LATTDIM + 1] *
-                                f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
-                        }
-                        macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
-                            macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
-						velo[1] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
+                        rho = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
 #ifdef debug
-                        if (isnan(velo[1]) || isinf(velo[1])) {
-                            ops_printf("%sV=%f\n",
-                                       "Velocity becomes invalid! Maybe "
+                        if (isnan(rho) || rho <= 0 || isinf(rho)) {
+                            ops_printf("%sDensity=%f\n",
+                                       "Density becomes invalid! Maybe "
                                        "something wrong...",
-                                       v);
+                                       rho);
                         }
 #endif
-                    } else {
-                        ops_printf("%s\n",
-                                   "Density has not been calculated before "
-                                   "calculating V!");
-                    }
-                } break;
-                case Variable_W: {
-                    if (rhoCalculated) {
-                        veloCalculated[2] = true;
-                        for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
-                                CS * XI[xiIdx * LATTDIM + 2] *
-                                f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
-                        }
-                        macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
-                            macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
-						velo[2] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
-#ifdef debug                      
-                        if (isnan(velo[2]) || isinf(velo[2])) {
-                            ops_printf("%sW=%f\n",
-                                       "Velocity becomes invalid! Maybe "
-                                       "something wrong...",
-                                       w);
-                        }
-#endif
-                    } else {
-                        ops_printf("%s\n",
-                                   "Density has not been calculated before "
-                                   "calculating W!");
-                    }
-                } break;
-                case Variable_Qx: {
-                    bool ifCalc = true;                  
-                    for (int d = 0; d < LATTDIM; d++) {
-                        ifCalc = ifCalc && veloCalculated[d];                        
-                    }
-                    if (ifCalc) {
-                        for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
-                            Real T = 0;
-                            for (int d = 0; d < LATTDIM; d++) {
-                                T += (CS * XI[xiIdx * LATTDIM + d] - velo[d]) *
-                                     (CS * XI[xiIdx * LATTDIM + d] - velo[d]) *
-                                     f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
-                            }
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
-                                (0.5 * (CS * XI[xiIdx * LATTDIM] - velo[0]) *
-                                 T);
-                        }
-#ifdef debug
-                        Real qx{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
-                        if (isnan(qx) || isinf(qx)) {
-                            ops_printf("%sQx=%f\n",
-                                       "Heatflux becomes invalid! Maybe "
-                                       "something wrong...",
-                                       qx);
-                        }
-#endif
-                    } else {
-                        ops_printf("%s\n",
-                                   "The macroscopic velocity have "
-                                   "not been calculated before calculating the "
-                                   "temperature!");
-                    }
-                } break;
-                case Variable_Qy: {
-                    bool ifCalc = true;                  
-                    for (int d = 0; d < LATTDIM; d++) {
-                        ifCalc = ifCalc && veloCalculated[d];                      
-                    }
-                    if (ifCalc) {
-                        for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
-                            Real T = 0;
-                            for (int d = 0; d < LATTDIM; d++) {
-                                T += (CS * XI[xiIdx * LATTDIM + d] - velo[d]) *
-                                     (CS * XI[xiIdx * LATTDIM + d] - velo[d]) *
-                                     f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
-                            }
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
-                                (0.5 *
-                                 (CS * XI[xiIdx * LATTDIM + 1] - velo[1]) * T);
-                        }
-#ifdef debug
-                        Real qy{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
-                        if (isnan(qy) || isinf(qy)) {
-                            ops_printf("%sQx=%f\n",
-                                       "Heatflux becomes invalid! Maybe "
-                                       "something wrong...",
-                                       qy);
-                        }
-#endif
-                    } else {
-                        ops_printf("%s\n",
-                                   "The density and macroscopic velocity have "
-                                   "not been calculated before calculating the "
-                                   "temperature!");
-                    }
-                } break;
-                case Variable_Qz: {
-                    bool ifCalc = true;               
-                    for (int d = 0; d < LATTDIM; d++) {
-                        ifCalc = ifCalc && veloCalculated[d];                     
-                    }
-                    if (ifCalc) {
-                        for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
-                            Real T = 0;
-                            for (int d = 0; d < LATTDIM; d++) {
-                                T += (CS * XI[xiIdx * LATTDIM + d] - velo[d]) *
-                                     (CS * XI[xiIdx * LATTDIM + d] - velo[d]) *
-                                     f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
-                            }
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
-                                (0.5 *
-                                 (CS * XI[xiIdx * LATTDIM + 2] - velo[2]) * T);
-                        }
-#ifdef debug
-                        Real qz{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
-                        if (isnan(qz) || isinf(qz)) {
-                            ops_printf("%sQx=%f\n",
-                                       "Heatflux becomes invalid! Maybe "
-                                       "something wrong...",
-                                       qz);
-                        }
-#endif
-                    } else {
-                        ops_printf("%s\n",
-                                   "The density and macroscopic velocity have "
-                                   "not been calculated before calculating the "
-                                   "temperature!");
-                    }
-                } break;
-                case Variable_T: {
-                    bool ifCalc = rhoCalculated;        
-                    for (int d = 0; d < LATTDIM; d++) {
-                        ifCalc = ifCalc && veloCalculated[d];                       
-                    }
-                    if (ifCalc) {
-                        for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
-                            for (int d = 0; d < LATTDIM; d++) {
+                    } break;
+                    case Variable_U: {
+                        if (rhoCalculated) {
+                            veloCalculated[0] = true;
+                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
+                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+                                 xiIdx++) {
                                 macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
-                                    (CS * XI[xiIdx * LATTDIM + d] - velo[d]) *
-                                    (CS * XI[xiIdx * LATTDIM + d] - velo[d]) *
+                                    CS * XI[xiIdx * LATTDIM] *
                                     f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
                             }
-                        }
-                        macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /= (rho * LATTDIM);
+                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
+                                macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
+                            velo[0] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
 #ifdef debug
-                        Real T{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
-                        if (isnan(T) || isinf(T)) {
-                            ops_printf("%sW=%f\n",
-                                       "Temperature becomes invalid! Maybe "
-                                       "something wrong...",
-                                       T);
-                        }
+                            if (isnan(velo[0]) || isinf(velo[0])) {
+                                ops_printf("%sU=%f\n",
+                                           "Velocity becomes invalid! Maybe "
+                                           "something wrong...",
+                                           u);
+                            }
 #endif
-                    } else {
-                        ops_printf("%s\n",
-                                   "The density and macroscopic velocity have "
-                                   "not been calculated before calculating the "
-                                   "temperature!");
-                    }
-                } break;
-                default:
-                    break;
-            }  // Switch
-        }      // m
-		delete[] veloCalculated;
-		delete[] velo;
-    }          // isVertex	
+                        } else {
+                            ops_printf("%s\n",
+                                       "Density has not been calculated before "
+                                       "calculating U!");
+                        }
+                    } break;
+                    case Variable_V: {
+                        if (rhoCalculated) {
+                            veloCalculated[1] = true;
+                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
+                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+                                 xiIdx++) {
+                                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                    CS * XI[xiIdx * LATTDIM + 1] *
+                                    f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                            }
+                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
+                                macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
+                            velo[1] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
+#ifdef debug
+                            if (isnan(velo[1]) || isinf(velo[1])) {
+                                ops_printf("%sV=%f\n",
+                                           "Velocity becomes invalid! Maybe "
+                                           "something wrong...",
+                                           v);
+                            }
+#endif
+                        } else {
+                            ops_printf("%s\n",
+                                       "Density has not been calculated before "
+                                       "calculating V!");
+                        }
+                    } break;
+                    case Variable_W: {
+                        if (rhoCalculated) {
+                            veloCalculated[2] = true;
+                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
+                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+                                 xiIdx++) {
+                                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                    CS * XI[xiIdx * LATTDIM + 2] *
+                                    f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                            }
+                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
+                                macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
+                            velo[2] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
+#ifdef debug
+                            if (isnan(velo[2]) || isinf(velo[2])) {
+                                ops_printf("%sW=%f\n",
+                                           "Velocity becomes invalid! Maybe "
+                                           "something wrong...",
+                                           w);
+                            }
+#endif
+                        } else {
+                            ops_printf("%s\n",
+                                       "Density has not been calculated before "
+                                       "calculating W!");
+                        }
+                    } break;
+                    case Variable_Qx: {
+                        bool ifCalc = true;
+                        for (int d = 0; d < LATTDIM; d++) {
+                            ifCalc = ifCalc && veloCalculated[d];
+                        }
+                        if (ifCalc) {
+                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
+                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+                                 xiIdx++) {
+                                Real T = 0;
+                                for (int d = 0; d < LATTDIM; d++) {
+                                    T += (CS * XI[xiIdx * LATTDIM + d] -
+                                          velo[d]) *
+                                         (CS * XI[xiIdx * LATTDIM + d] -
+                                          velo[d]) *
+                                         f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                                }
+                                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                    (0.5 *
+                                     (CS * XI[xiIdx * LATTDIM] - velo[0]) * T);
+                            }
+#ifdef debug
+                            Real qx{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
+                            if (isnan(qx) || isinf(qx)) {
+                                ops_printf("%sQx=%f\n",
+                                           "Heatflux becomes invalid! Maybe "
+                                           "something wrong...",
+                                           qx);
+                            }
+#endif
+                        } else {
+                            ops_printf(
+                                "%s\n",
+                                "The macroscopic velocity have "
+                                "not been calculated before calculating the "
+                                "temperature!");
+                        }
+                    } break;
+                    case Variable_Qy: {
+                        bool ifCalc = true;
+                        for (int d = 0; d < LATTDIM; d++) {
+                            ifCalc = ifCalc && veloCalculated[d];
+                        }
+                        if (ifCalc) {
+                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
+                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+                                 xiIdx++) {
+                                Real T = 0;
+                                for (int d = 0; d < LATTDIM; d++) {
+                                    T += (CS * XI[xiIdx * LATTDIM + d] -
+                                          velo[d]) *
+                                         (CS * XI[xiIdx * LATTDIM + d] -
+                                          velo[d]) *
+                                         f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                                }
+                                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                    (0.5 *
+                                     (CS * XI[xiIdx * LATTDIM + 1] - velo[1]) *
+                                     T);
+                            }
+#ifdef debug
+                            Real qy{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
+                            if (isnan(qy) || isinf(qy)) {
+                                ops_printf("%sQx=%f\n",
+                                           "Heatflux becomes invalid! Maybe "
+                                           "something wrong...",
+                                           qy);
+                            }
+#endif
+                        } else {
+                            ops_printf(
+                                "%s\n",
+                                "The density and macroscopic velocity have "
+                                "not been calculated before calculating the "
+                                "temperature!");
+                        }
+                    } break;
+                    case Variable_Qz: {
+                        bool ifCalc = true;
+                        for (int d = 0; d < LATTDIM; d++) {
+                            ifCalc = ifCalc && veloCalculated[d];
+                        }
+                        if (ifCalc) {
+                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
+                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+                                 xiIdx++) {
+                                Real T = 0;
+                                for (int d = 0; d < LATTDIM; d++) {
+                                    T += (CS * XI[xiIdx * LATTDIM + d] -
+                                          velo[d]) *
+                                         (CS * XI[xiIdx * LATTDIM + d] -
+                                          velo[d]) *
+                                         f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                                }
+                                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                    (0.5 *
+                                     (CS * XI[xiIdx * LATTDIM + 2] - velo[2]) *
+                                     T);
+                            }
+#ifdef debug
+                            Real qz{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
+                            if (isnan(qz) || isinf(qz)) {
+                                ops_printf("%sQx=%f\n",
+                                           "Heatflux becomes invalid! Maybe "
+                                           "something wrong...",
+                                           qz);
+                            }
+#endif
+                        } else {
+                            ops_printf(
+                                "%s\n",
+                                "The density and macroscopic velocity have "
+                                "not been calculated before calculating the "
+                                "temperature!");
+                        }
+                    } break;
+                    case Variable_T: {
+                        bool ifCalc = rhoCalculated;
+                        for (int d = 0; d < LATTDIM; d++) {
+                            ifCalc = ifCalc && veloCalculated[d];
+                        }
+                        if (ifCalc) {
+                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
+                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+                                 xiIdx++) {
+                                for (int d = 0; d < LATTDIM; d++) {
+                                    macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                        (CS * XI[xiIdx * LATTDIM + d] -
+                                         velo[d]) *
+                                        (CS * XI[xiIdx * LATTDIM + d] -
+                                         velo[d]) *
+                                        f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                                }
+                            }
+                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
+                                (rho * LATTDIM);
+#ifdef debug
+                            Real T{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
+                            if (isnan(T) || isinf(T)) {
+                                ops_printf("%sW=%f\n",
+                                           "Temperature becomes invalid! Maybe "
+                                           "something wrong...",
+                                           T);
+                            }
+#endif
+                        } else {
+                            ops_printf(
+                                "%s\n",
+                                "The density and macroscopic velocity have "
+                                "not been calculated before calculating the "
+                                "temperature!");
+                        }
+                    } break;
+                    default:
+                        break;
+                }  // Switch
+            }      // m
+            delete[] veloCalculated;
+            delete[] velo;
+        }  // compoIdx
+    }  // isVertex
 }
 #endif
 #endif  // MODEL_KERNEL_H

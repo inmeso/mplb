@@ -132,7 +132,6 @@ Real CalcBGKFeq(const int l, const Real rho = 1, const Real u = 0,
 Real CalcSWEFeq(const int l, const Real h = 1, const Real u = 0,
                 const Real v = 0, const int polyOrder = 2);
 
-void SetupModel();
 /*!
  * Free the pointer memory
  */

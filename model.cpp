@@ -378,19 +378,6 @@ void DefineEquilibrium(std::vector<EquilibriumType> types,
     ops_decl_const("EQUILIBRIUMTYPE", NUMCOMPONENTS, "int", EQUILIBRIUMTYPE);
 }
 
-void SetupModel() {
-    NUMCOMPONENTS = 1;
-    FEQORDER = 4;
-    THERMALPROBLEM = 0;
-    COMPOINDEX = new int[2 * NUMCOMPONENTS];
-    COMPOINDEX[0] = 0;
-    COMPOINDEX[1] = 15;
-    SetupD2Q16Latt();
-    //SetupD3Q15Latt();
-    SetupMacroVars();
-    DefineModelConstants();
-}
-
 void DestroyModel() {
     FreeArrayMemory(VARIABLETYPE);
     FreeArrayMemory(VARIABLECOMPINDEX);
