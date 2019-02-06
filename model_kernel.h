@@ -36,7 +36,7 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
                 const int polyOrder{2};
                 for (int xiIndex = COMPOINDEX[2 * compoIndex];
                      xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                    feq[OPS_ACC_MD2(xiInde, 0, 0)] =
+                    feq[OPS_ACC_MD2(xiIndex, 0, 0)] =
                         CalcBGKFeq(xiIndex, rho, u, v, T, polyOrder);
                 }
             }
@@ -48,7 +48,7 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
                 const int polyOrder{4};
                 for (int xiIndex = COMPOINDEX[2 * compoIndex];
                      xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                    feq[OPS_ACC_MD2(xiInde, 0, 0)] =
+                    feq[OPS_ACC_MD2(xiIndex, 0, 0)] =
                         CalcBGKFeq(xiIndex, rho, u, v, T, polyOrder);
                 }
             }
@@ -59,8 +59,8 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
                 const int polyOrder{4};
                 for (int xiIndex = COMPOINDEX[2 * compoIndex];
                      xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                    feq[OPS_ACC_MD2(xiInde, 0, 0)] =
-                        CalcBGKFeq(xiIndex, rho, u, v, T, polyOrder);
+                    feq[OPS_ACC_MD2(xiIndex, 0, 0)] =
+                        CalcSWEFeq(xiIndex, h, u, v, polyOrder);
                 }
             }
         }
