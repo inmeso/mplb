@@ -22,9 +22,9 @@ int* VARIABLECOMPINDEX{nullptr};
 int NUMCOMPONENTS{1};
 int* COMPOINDEX{nullptr};
 Real XIMAXVALUE{1};
-int THERMALPROBLEM{0};
 int* EQUILIBRIUMTYPE{nullptr};
 int* FORCETYPE{nullptr};
+int* VARIABLECOMPPOS{nullptr};
 /*!
  *Name of all macroscopic variables
  */
@@ -152,6 +152,7 @@ void SetupD2Q36Latt(const int startPos) {
     const Real coeff[nc1d] = {0.2555784402056229e-2, 0.8861574604191481e-1,
                               0.4088284695560294,    0.4088284695560294,
                               0.8861574604191481e-1, 0.2555784402056229e-2};
+    int l{0};
     for (int i = 0; i < nc1d; i++) {
         for (int j = 0; j < nc1d; j++) {
             XI[startPos + l * LATTDIM] = roots[i];
@@ -197,26 +198,6 @@ void SetupMacroVars() {
     // MACROVARNAME.push_back("qy");
 }
 
-void DefineModelConstants() {
-    // The variable here may cause some confusions for the Python translator
-    // while the issues should be solvable.
-    ops_decl_const("NUMCOMPONENTS", 1, "int", &NUMCOMPONENTS);//
-    ops_decl_const("COMPOINDEX", 2 * NUMCOMPONENTS, "int", COMPOINDEX);//
-    ops_decl_const("THERMALPROBLEM", 1, "int", &THERMALPROBLEM);
-    // lattice structure
-    ops_decl_const("NUMXI", 1, "int", &NUMXI);//
-    ops_decl_const("CS", 1, "double", &CS);//
-    ops_decl_const("LATTDIM", 1, "int", &LATTDIM);//
-    ops_decl_const("XI", NUMXI * LATTDIM, "double", XI);//
-    ops_decl_const("WEIGHTS", NUMXI, "double", WEIGHTS);//
-    ops_decl_const("OPP", NUMXI, "int", OPP);//
-    ops_decl_const("FEQORDER", 1, "int", &FEQORDER);
-    // Macroscopic variables
-    ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);//
-    ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);//
-    ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int", VARIABLECOMPINDEX);//
-}
-
 void AllocateComponentIndex(const int compoNum) {
     if (compoNum == NUMCOMPONENTS) {
         if (nullptr == COMPOINDEX) {
@@ -231,6 +212,7 @@ void AllocateComponentIndex(const int compoNum) {
 void AllocateXi(const int length) {
     if (length == NUMXI) {
         if (nullptr == XI) {
+            ops_printf("LATTDIM in All XI=%i\n", LATTDIM);
             XI = new Real[length * LATTDIM];
         }
         if (nullptr == WEIGHTS) {
@@ -298,10 +280,10 @@ void DefineComponents(std::vector<std::string> compoNames,
     }
     if (isLattDimSame && isCsSame) {
         NUMXI = totalSize;
-        AllocateXi(totalSize);
-        SetLatticeName(lattNames);
         CS = currentCs;
         LATTDIM = latticeDimension;
+        AllocateXi(totalSize);
+        SetLatticeName(lattNames);
         int startPos{0};
         for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
             if ("d3q15" == lattNames[idx]) {
@@ -322,13 +304,13 @@ void DefineComponents(std::vector<std::string> compoNames,
         XIMAXVALUE = CS * maxValue;
     }
     ops_decl_const("NUMCOMPONENTS", 1, "int", &NUMCOMPONENTS);
-    ops_decl_const("COMPOINDEX", 2 * NUMCOMPONENTS, "int", COMPOINDEX); 
+    ops_decl_const("COMPOINDEX", 2 * NUMCOMPONENTS, "int", COMPOINDEX);
     ops_decl_const("NUMXI", 1, "int", &NUMXI);
-    ops_decl_const("CS", 1, "double", &CS); 
-    ops_decl_const("LATTDIM", 1, "int", &LATTDIM); 
-    ops_decl_const("XI", NUMXI * LATTDIM, "double", XI); 
-    ops_decl_const("WEIGHTS", NUMXI, "double", WEIGHTS); 
-    ops_decl_const("OPP", NUMXI, "int", OPP); 
+    ops_decl_const("CS", 1, "double", &CS);
+    ops_decl_const("LATTDIM", 1, "int", &LATTDIM);
+    ops_decl_const("XI", NUMXI * LATTDIM, "double", XI);
+    ops_decl_const("WEIGHTS", NUMXI, "double", WEIGHTS);
+    ops_decl_const("OPP", NUMXI, "int", OPP);
 }
 
 void DefineMacroVars(std::vector<VariableTypes> types,
@@ -337,29 +319,35 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     // It seems varId is not necessary at this moment
     NUMMACROVAR = names.size();
     MACROVARNAME = names;
-    AllocateMacroVarProperty(NUMMACROVAR);    
+    AllocateMacroVarProperty(NUMMACROVAR);
     for (int idx = 0; idx < NUMMACROVAR; idx++) {
         VARIABLETYPE[idx] = (int)types[idx];
         VARIABLECOMPINDEX[idx] = compoId[idx];
     }
-    int startPos{0};   
-    for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
-        VARIABLECOMPPOS[2 * idx] = startPos;
-        while (idx == compoId[startPos]) { 
-			startPos++;
-		}
-        VARIABLECOMPPOS[2 * idx+1] = startPos - 1;        
-	}
+    if (nullptr != VARIABLECOMPPOS) {
+        int startPos{0};
+        for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
+            VARIABLECOMPPOS[2 * idx] = startPos;
+            while (idx == compoId[startPos]) {
+                startPos++;
+            }
+            VARIABLECOMPPOS[2 * idx + 1] = startPos - 1;
+        }
+    } else {
+        ops_printf("%s\n",
+                   "It appears that the DefineComponents routine has not been "
+                   "callsed!");
+    }
+
     ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
     ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);
     ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int", VARIABLECOMPINDEX);
-    ops_decl_const("VARIABLECOMPPOS", NUMCOMPONENTS, "int",
-                   VARIABLECOMPPOS);    
+    ops_decl_const("VARIABLECOMPPOS", NUMCOMPONENTS, "int", VARIABLECOMPPOS);
 }
 
 void DefineEquilibrium(std::vector<EquilibriumType> types,
                        std::vector<int> compoId) {
-    const int typeNum{types.size()};
+    int typeNum{(int)types.size()};
     if (typeNum == NUMCOMPONENTS) {
         if (nullptr == EQUILIBRIUMTYPE) {
             EQUILIBRIUMTYPE = new int[typeNum];
