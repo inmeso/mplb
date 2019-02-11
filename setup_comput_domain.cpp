@@ -15,11 +15,6 @@ int SPACEDIM = 2;
 ops_block* g_Block;
 ops_dat* g_MacroVars;
 ops_dat* g_CoordinateXYZ;
-
-/*!
- *metrics for 2D: 0 xi_x 1 xi_y  2 eta_x  3 eta_y
- *metrics for 3D:
- */
 ops_dat* g_NodeType;
 ops_dat* g_GeometryProperty;
 int HaloRelationNum = 0;
@@ -34,6 +29,12 @@ int* BlockIterRngKmax;
 int* BlockIterRngKmin;
 int* BlockIterRngBulk;
 int* BLOCKSIZE;
+
+const int* BlockSize(const int blockId) {
+    return &BLOCKSIZE[blockId * SPACEDIM];
+}
+
+const int BlockNum() { return BLOCKNUM; }
 
 void DestroyVariables() {
     delete[] g_Block;
@@ -530,14 +531,13 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
 }
 
 void SetupDomainGeometryProperty(int blockIndex) {
-    int geometryProperty = VG_Fluid;
+    int geometryProperty = (int)VG_Fluid;
     int* iterRange = BlockIterRng(blockIndex, BlockIterRngBulk);
     ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
                  SPACEDIM, iterRange,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
-
     // specify halo points
     geometryProperty = VG_ImmersedSolid;
     iterRange = BlockIterRng(blockIndex, BlockIterRngJmin);
@@ -1187,6 +1187,7 @@ void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]) {
                      ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
                                  LOCALSTENCIL, "double", OPS_WRITE));
     }
+    std::cout << "Coordinates are assigned!" << std::endl;
 #endif
 }
 
@@ -1320,7 +1321,20 @@ void InputBoundaryType3D(const int blockIndex) {
 
 int main(int argc, char* argv[]) {
     ops_init(argc, argv, 5);
-    SetupModel();
+    std::vector<std::string> compoNames{"Fluid"};
+    std::vector<int> compoid{0};
+    std::vector<std::string> lattNames{"D3Q19"};
+    DefineComponents(compoNames, compoid, lattNames);
+    std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
+                                             Variable_V, Variable_W};
+    std::vector<std::string> macroVarNames{"rho", "u", "v", "w"};
+    std::vector<int> macroVarId{0, 1, 2, 3};
+    std::vector<int> macroCompoId{0, 0, 0, 0};
+    DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
+    std::vector<EquilibriumType> equTypes{Equilibrium_BGKIsothermal2nd};
+    std::vector<int> equCompoId{0};
+    DefineEquilibrium(equTypes, equCompoId);
+
     SetupBoundary();
     SetupScheme();
     InputCaseName();

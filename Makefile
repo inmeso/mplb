@@ -172,7 +172,10 @@ lbm3d_dev_mpi: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp
 	$(MPICPP) $(MPIFLAGS) -DOPS_MPI -DOPS_3D $(OPS_INC) $(OPS_LIB) $(HDF5_INC) type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution3d.cpp lbm3d.cpp -lops_mpi  -lops_hdf5_mpi $(HDF5_LIB) -o lbm3d_dev_mpi
 
 setupdomain: Makefile setup_comput_domain.cpp scheme.cpp model.cpp boundary.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
-	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB)  type.cpp boundary.cpp setup_comput_domain.cpp scheme.cpp model.cpp -lops_seq -lops_hdf5_seq $(HDF5_LIB) -o setup_comput_domain
+	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_2D type.cpp boundary.cpp setup_comput_domain.cpp scheme.cpp model.cpp -lops_seq -lops_hdf5_seq $(HDF5_LIB) -o setup_comput_domain
+
+setupdomain3D: Makefile setup_comput_domain.cpp scheme.cpp model.cpp boundary.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
+	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_3D type.cpp boundary.cpp setup_comput_domain.cpp scheme.cpp model.cpp -lops_seq -lops_hdf5_seq $(HDF5_LIB) -o setup_comput_domain
 
 setupdomainmpi: Makefile setup_comput_domain.cpp scheme.cpp model.cpp boundary.cpp $(OPS_INSTALL_PATH)/lib/libops_mpi.a
 	$(MPICPP) $(MPIFLAGS) -DOPS_MPI $(OPS_INC) $(OPS_LIB) $(HDF5_INC)  type.cpp boundary.cpp setup_comput_domain.cpp scheme.cpp model.cpp -lops_mpi -lops_hdf5_mpi $(HDF5_LIB) -o setup_comput_domain_mpi
