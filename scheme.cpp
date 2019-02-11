@@ -41,25 +41,26 @@ void SetupCommonStencils() {
         ops_decl_stencil(2, 9, d2q9, "00:10:-10:01:0-1:11:-1-1:1-1:-11");
 #endif /* OPS_2D */
 #ifdef OPS_3D
-    int currentNode[] = {0, 0, 0};
+    int currentNode[]{0, 0, 0};
     LOCALSTENCIL = ops_decl_stencil(3, 1, currentNode, "000");
-    int rectangle[] = {0, 0, 0,  1, 0, 0, -1, 0, 0, 0, 1,
-                       0, 0, -1, 0, 0, 0, 1,  0, 0, -1};
-    ONEPTREGULARSTENCIL = ops_decl_stencil(3, 7, rectangle, "000:100:-100:010:0-10:001:00-1");
-    int twoPtRectangle[] = {0,  0, 0, 1, 0, 0,  -1, 0,  0, 0, 1, 0,  0,
-                            -1, 0, 0, 0, 1, 0,  0,  -1, 2, 0, 0, -2, 0,
-                            0,  0, 2, 0, 0, -2, 0,  0,  0, 2, 0, 0,  -2};
-    TWOPTREGULARSTENCIL = ops_decl_stencil(3, 13, twoPtRectangle,
-		"000:100:-100:010:0-10:001:00-1:200:-200:020:0-20:002:00-2");
-
-    int d3q27[] = {-1, -1, -1, -1, -1, 0,  -1, -1, 1, -1, 0,  -1, -1, 0,
-                   0,  -1, 0,  1,  -1, 1,  -1, -1, 1, 0,  -1, 1,  1,  0,
-                   -1, -1, 0,  -1, 0,  0,  -1, 1,  0, 0,  -1, 0,  0,  0,
-                   0,  0,  1,  0,  1,  -1, 0,  1,  0, 0,  1,  1,  1,  -1,
-                   -1, 1,  -1, 0,  1,  -1, 1,  1,  0, -1, 1,  0,  0,  1,
-                   0,  1,  1,  1,  -1, 1,  1,  0,  1, 1,  1};
-    ONEPTLATTICESTENCIL =
-        ops_decl_stencil(3, 27, d3q27, "D3Q27");
+    int rectangle[]{0, 0, 0,  1, 0, 0, -1, 0, 0, 0, 1,
+                    0, 0, -1, 0, 0, 0, 1,  0, 0, -1};
+    ONEPTREGULARSTENCIL =
+        ops_decl_stencil(3, 7, rectangle, "000:100:-100:010:0-10:001:00-1");
+    ops_printf("%s\n", "ONEPTREGULAR finished!");
+    int twoPtRectangle[]{0,  0, 0, 1, 0, 0,  -1, 0,  0, 0, 1, 0,  0,
+                         -1, 0, 0, 0, 1, 0,  0,  -1, 2, 0, 0, -2, 0,
+                         0,  0, 2, 0, 0, -2, 0,  0,  0, 2, 0, 0,  -2};
+    TWOPTREGULARSTENCIL = ops_decl_stencil(
+        3, 13, twoPtRectangle,
+        "000:100:-100:010:0-10:001:00-1:200:-200:020:0-20:002:00-2");
+    int d3q27[] = {0,  0,  0,  -1, -1, -1, -1, -1, 0,  -1, -1, 1, -1, 0,
+                   -1, -1, 0,  0,  -1, 0,  1,  -1, 1,  -1, -1, 1, 0,  -1,
+                   1,  1,  0,  -1, -1, 0,  -1, 0,  0,  -1, 1,  0, 0,  -1,
+                   0,  0,  0,  0,  0,  1,  0,  1,  -1, 0,  1,  0, 0,  1,
+                   1,  1,  -1, -1, 1,  -1, 0,  1,  -1, 1,  1,  0, -1, 1,
+                   0,  0,  1,  0,  1,  1,  1,  -1, 1,  1,  0,  1, 1,  1};
+    ONEPTLATTICESTENCIL = ops_decl_stencil(3, 28, d3q27, "D3Q27");
 #endif /* OPS_3D */
 }
 void SetupScheme() {
