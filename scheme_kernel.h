@@ -17,18 +17,18 @@ void KerCollide(const Real* dt, const int* nodeType, const Real* f,
                 const Real* feq, const Real* relaxationTime,
                 const Real* bodyForce, Real* fStage) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
-    //collisionRequired: means if collision is required at boundary
-    //e.g., the ZouHe boundary condition explicitly requires collision
-    bool collisionRequired=(
-                           vt == Vertex_Fluid ||
-                           vt == Vertex_NoneqExtrapol ||
-                           vt == Vertex_ZouHeVelocity ||
-                           //vt == Vertex_KineticDiffuseWall ||
-                           vt == Vertex_EQMDiffuseRefl ||
-                           vt == Vertex_ExtrapolPressure1ST ||
-                           vt == Vertex_ExtrapolPressure2ND ||
-                           vt == Vertex_NonEqExtrapolPressure
-                           );
+    // collisionRequired: means if collision is required at boundary
+    // e.g., the ZouHe boundary condition explicitly requires collision
+    bool collisionRequired =
+        (vt == Vertex_Fluid || 
+         vt == Vertex_NoneqExtrapol ||
+         vt == Vertex_ZouHeVelocity ||
+         // vt == Vertex_KineticDiffuseWall ||
+         vt == Vertex_EQMDiffuseRefl ||
+         vt == Vertex_ExtrapolPressure1ST ||
+         vt == Vertex_ExtrapolPressure2ND ||
+         vt == Vertex_NonEqExtrapolPressure || 
+         vt == Vertex_NoslipEQN);
     if (collisionRequired) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             Real tau = relaxationTime[OPS_ACC_MD4(compoIndex, 0, 0)];
@@ -68,7 +68,8 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                                          vt == Vertex_EQMDiffuseRefl ||
                                          vt == Vertex_ExtrapolPressure1ST ||
                                          vt == Vertex_ExtrapolPressure2ND ||
-                                         vt == Vertex_NonEqExtrapolPressure
+                                         vt == Vertex_NonEqExtrapolPressure ||
+                                         vt == Vertex_NoslipEQN
                                          );
                 if (streamRequired) {
                     if ((cx == 0) && (cy == 0)) {
@@ -1178,12 +1179,15 @@ void KerCollide3D(const Real* dt, const int* nodeType, const Real* f,
 	// collisionRequired: means if collision is required at boundary
 	// e.g., the ZouHe boundary condition explicitly requires collision
 	bool collisionRequired =
-		(vt == Vertex_Fluid || vt == Vertex_NoneqExtrapol ||
-			vt == Vertex_ZouHeVelocity ||
-			// vt == Vertex_KineticDiffuseWall ||
-			vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
-			vt == Vertex_ExtrapolPressure2ND ||
-			vt == Vertex_NonEqExtrapolPressure);
+		(vt == Vertex_Fluid ||
+         vt == Vertex_NoneqExtrapol ||
+		 vt == Vertex_ZouHeVelocity ||
+		 // vt == Vertex_KineticDiffuseWall ||
+		 vt == Vertex_EQMDiffuseRefl ||
+         vt == Vertex_ExtrapolPressure1ST ||
+		 vt == Vertex_ExtrapolPressure2ND ||
+         vt == Vertex_Periodic ||
+		 vt == Vertex_NonEqExtrapolPressure);
         if (collisionRequired) {
             for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
                 Real tau = relaxationTime[OPS_ACC_MD4(compoIndex, 0, 0, 0)];
@@ -1224,6 +1228,7 @@ void KerStream3D(const int* nodeType, const int* geometry, const Real* fStage,
                      vt == Vertex_EQMDiffuseRefl ||
                      vt == Vertex_ExtrapolPressure1ST ||
                      vt == Vertex_ExtrapolPressure2ND ||
+                     vt == Vertex_Periodic ||
                      vt == Vertex_NonEqExtrapolPressure);
                 if (streamRequired) {
                     if ((cx == 0) && (cy == 0) && (cz == 0)) {

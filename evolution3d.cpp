@@ -200,6 +200,16 @@ void TreatBlockBoundary3D(const Real* givenVars, int* range,
                     ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double",
                                 OPS_RW));
             } break;
+            case Vertex_NoslipEQN: {
+                ops_par_loop(
+                    KerCutCellNoslipEQN3D, "KerCutCellNoslipEQN3D",
+                    g_Block[blockIdx], SPACEDIM, range,
+                    ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
+                    ops_arg_dat(g_NodeType[blockIdx], 1, LOCALSTENCIL, "int",
+                                OPS_READ),
+                    ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double",
+                                OPS_RW));
+            } break;
             case Vertex_FreeFlux: {
 //                ops_par_loop(KerCutCellZeroFlux, "KerCutCellZeroFlux",
 //                             g_Block[blockIdx], SPACEDIM, range,
@@ -211,14 +221,14 @@ void TreatBlockBoundary3D(const Real* givenVars, int* range,
 //                                         "double", OPS_RW));
             } break;
             case Vertex_Periodic: {
-//                ops_par_loop(KerCutCellPeriodic, "KerCutCellPeriodic",
-//                             g_Block[blockIdx], SPACEDIM, range,
-//                             ops_arg_dat(g_NodeType[blockIdx], 1, LOCALSTENCIL,
-//                                         "int", OPS_READ),
-//                             ops_arg_dat(g_GeometryProperty[blockIdx], 1,
-//                                         LOCALSTENCIL, "int", OPS_READ),
-//                             ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL,
-//                                         "double", OPS_RW));
+               ops_par_loop(KerCutCellPeriodic3D, "KerCutCellPeriodic3D",
+                            g_Block[blockIdx], SPACEDIM, range,
+                            ops_arg_dat(g_NodeType[blockIdx], 1, LOCALSTENCIL,
+                                        "int", OPS_READ),
+                            ops_arg_dat(g_GeometryProperty[blockIdx], 1,
+                                        LOCALSTENCIL, "int", OPS_READ),
+                            ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL,
+                                        "double", OPS_RW));
             } break;
             default:
                 break;
@@ -240,32 +250,31 @@ void TreatBlockBoundary3D(const Real* givenVars, int* range,
 // }
 
 void ImplementBoundary3D() {
-    //TreatEmbededBoundary3D();
+    // TreatEmbededBoundary3D();
     // Real givenInletVars[]{1.00005, 0, 0};
     int* inletRng = BlockIterRng(0, IterRngImin());
-    Real givenInletVars[]{1, 0.005, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenInletVars, inletRng, Vertex_EQMDiffuseRefl);
+    Real givenInletVars[]{1, 0, 0, 0};  // Input Parameters
+    TreatBlockBoundary3D(givenInletVars, inletRng, Vertex_Periodic);
 
     int* outletRng = BlockIterRng(0, IterRngImax());
     Real givenOutletVars[] = {1, 0, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenOutletVars, outletRng,
-                         Vertex_ExtrapolPressure1ST);
+    TreatBlockBoundary3D(givenOutletVars, outletRng, Vertex_Periodic );
 
     int* topRng = BlockIterRng(0, IterRngJmax());
     // Real givenTopWallBoundaryVars[]{1, 0, 0};
-    Real givenTopWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
+    Real givenTopWallBoundaryVars[]{1, 0, 0, 0.01};  // Input Parameters
     TreatBlockBoundary3D(givenTopWallBoundaryVars, topRng,
                          Vertex_EQMDiffuseRefl);
 
     int* bottomRng = BlockIterRng(0, IterRngJmin());
     Real givenBotWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
     TreatBlockBoundary3D(givenBotWallBoundaryVars, bottomRng,
-                         Vertex_EQMDiffuseRefl);
-    
+                        Vertex_EQMDiffuseRefl);
+
     int* backRng = BlockIterRng(0, IterRngKmin());
     Real givenBackWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
     TreatBlockBoundary3D(givenBackWallBoundaryVars, backRng,
-                         Vertex_EQMDiffuseRefl);
+                          Vertex_EQMDiffuseRefl);
 
     int* frontRng = BlockIterRng(0, IterRngKmax());
     Real givenFrontWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
@@ -428,6 +437,7 @@ void StreamCollision3D() {
     UpdateTau3D();
     Collision3D();
     Stream3D();
+    ops_halo_transfer(HaloGroup());
     ImplementBoundary3D();
 }
 

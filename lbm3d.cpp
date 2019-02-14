@@ -17,12 +17,25 @@
 #include "scheme.h"
 #include "type.h"
 void simulate() {
-    SetupModel();
+    std::vector<std::string> compoNames{"Fluid"};
+	std::vector<int> compoid{0};
+    std::vector<std::string> lattNames{"d3q19"};
+    DefineComponents(compoNames, compoid, lattNames);
+    std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
+                                             Variable_V, Variable_W};
+    std::vector<std::string> macroVarNames{"rho", "u", "v", "w"};
+    std::vector<int> macroVarId{0, 1, 2, 3};
+    std::vector<int> macroCompoId{0, 0, 0, 0};
+    DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
+    std::vector<EquilibriumType> equTypes{Equilibrium_BGKIsothermal2nd};
+    std::vector<int> equCompoId{0};
+    DefineEquilibrium(equTypes, equCompoId);
     SetupScheme();
     SetupBoundary();
     SetupFlowfieldfromHdf5();
+    ops_printf("%s\n", "Flowfield is setupped now!");
     InitialiseSolution3D();
-    const int maxIter =10000;
+    const int maxIter =100000;
     const int checkPeriod = 1000;
     for (int iter = 0; iter < maxIter; iter++) {
         StreamCollision3D();//Stream-Collision scheme

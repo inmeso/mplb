@@ -223,7 +223,7 @@ void KerSetInitialMacroVars(const Real* coordinates, const int* idx,
 #endif
 #ifdef OPS_3D
     macroVars[OPS_ACC_MD2(0, 0, 0, 0)] = 1; 
-    macroVars[OPS_ACC_MD2(1, 0, 0, 0)] = 0.005;//sin(coordinates[OPS_ACC_MD0(0, 0, 0, 0)]); //u
+    macroVars[OPS_ACC_MD2(1, 0, 0, 0)] = 0;//sin(coordinates[OPS_ACC_MD0(0, 0, 0, 0)]); //u
     macroVars[OPS_ACC_MD2(2, 0, 0, 0)] = 0;         // v
     macroVars[OPS_ACC_MD2(3, 0, 0, 0)] = 0;         // w
 #endif

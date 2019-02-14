@@ -498,6 +498,53 @@ void DefineHaloTransfer() {
 
     HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
 }
+
+void DefineHaloTransfer3D() {
+//This is a hard coded version
+//could be used as an example for user-defined routines. 
+    HaloRelationNum = 2;
+    HaloRelations = new ops_halo[HaloRelationNum];
+    int haloDepth = HaloDepth();
+    // max halo depths for the dat in the positive direction
+    int d_p[3] = {haloDepth, haloDepth,haloDepth};
+    // max halo depths for the dat in the negative direction
+    int d_m[3] = {-haloDepth, -haloDepth,-haloDepth};
+    // The domain size in the Block 0
+    int nx = BlockSize(0)[0];
+    int ny = BlockSize(0)[1];
+    int nz = BlockSize(0)[2];
+    // {
+    //     // Template for the periodic pair (front-back)
+    //     int dir[] = {1, 2, 3};
+    //     int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
+    //     int base_from[] = {d_m[0], d_m[0], 0};
+    //     int base_to[] = {d_m[0], d_m[0], nz};
+    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    //     base_from[2] = nz - 1;
+    //     base_to[2] = d_m[1];
+    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    // }
+
+ 
+
+    {
+        // Template for the periodic pair (left-right)
+        int dir[] = {1, 2, 3};
+        int halo_iter[] = {1,ny+d_p[0]-d_m[0], nz+d_p[0]-d_m[0]};
+        int base_from[] = {0, d_m[0], d_m[0]};
+        int base_to[] = {nx, d_m[0], d_m[0]};
+        HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+                                         base_to, dir, dir);
+        base_from[0] = nx - 1;  // need to be changed
+        base_to[0] = d_m[1];
+        HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+                                         base_to, dir, dir);
+    }
+
+    HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
+}
 /*
  * We need a name to specify which file to input
  * To be decided: a single filename or an array of filenames
@@ -551,28 +598,29 @@ void DefineHaloTransferFromHdf5() {}
  * Importing geometry from an external HDF5 file
  */
 void SetupFlowfieldfromHdf5() {
-    CASENAME = "SWECircularDamBreak";  // Input parameter
-    SPACEDIM = 2;
+    CASENAME = "Cavity3D";  // Input parameter
+    SPACEDIM = 3;
     BLOCKNUM = 1;  // Input parameter
     BLOCKSIZE = new int[BLOCKNUM * SPACEDIM];
-    BLOCKSIZE[0] = 401;  // Input parameters
-    BLOCKSIZE[1] = 401;  // Input parameters
-    // BLOCKSIZE[2] = 11;  // Input parameters
+    BLOCKSIZE[0] = 3;  // Input parameters
+    BLOCKSIZE[1] = 101;  // Input parameters
+    BLOCKSIZE[2] = 101;  // Input parameters
 
     TAUREF = new Real[ComponentNum()];
     TAUREF[0] = 0.001;  // Input parameters
     // All above parameters should be written down by the python script
-    Real minDx{2. / 400};  // Input parameters at this moment
-    Real minDy{2. / 400};  // Input parameters at this moment
+    Real minDx{1. / 100};  // Input parameters at this moment
+    Real minDy{1. / 100};  // Input parameters at this moment
     // DT = 0.01 * fmin(minDx, minDy) / MaximumSpeed();  // finite difference
     // scheme
-    DT = 0.0001414;
+    //DT = 0.0001414;
     // DT = fmin(fmin(minDx, minDy) / MaximumSpeed(),
     //              0.5 * TAUREF[0]);  // finite difference scheme
-    // DT = minDx / SoundSpeed();  // stream-collision
+    DT = minDy / SoundSpeed();  // stream-collision
     HALODEPTH = HaloPtNum();
+    ops_printf("%s\n", "Starting to allocate...");
     DefineVariablesFromHDF5();
-    // DefineHaloTransfer();
+    DefineHaloTransfer3D();
     // above calls must be before the ops_partition call
     ops_partition((char*)"LBM");
 }

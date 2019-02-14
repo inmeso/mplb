@@ -9,6 +9,7 @@
 #ifndef BOUNDARY_KERNEL_H
 #define BOUNDARY_KERNEL_H
 #include "boundary.h"
+#include <iostream>
 // As we are using update-halo method for the discretisation,
 // we need to deal with halo points when treating boundary
 /*
@@ -2432,6 +2433,471 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
         ops_printf("%s\n",
                    "Warning: this node is not a equilibrium diffuse reflection "
                    "boundary condition point: KerCutCellEQMDiffuseRefl3D");
+#endif
+    }
+}
+
+void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
+                         Real *f) {
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
+    if (vt == Vertex_NoslipEQN) {
+        Real u = givenMacroVars[1];
+        Real v = givenMacroVars[2];
+        Real w = givenMacroVars[3];
+        Real rhoIntermidate{0};
+        Real uIntermidate{0};
+        Real vIntermidate{0};
+        Real wIntermidate{0};
+        // Only one-component at this moment.
+        for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
+            for (int xiIdx = COMPOINDEX[2 * compoIdx];
+                 xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
+                Real cx{CS * XI[xiIdx * LATTDIM]};
+                Real cy{CS * XI[xiIdx * LATTDIM + 1]};
+                Real cz{CS * XI[xiIdx * LATTDIM + 2]};
+                rhoIntermidate += f[OPS_ACC_MD2(xiIdx, 0, 0, 0)];
+                uIntermidate += (cx * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
+                vIntermidate += (cy * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
+                wIntermidate += (cz * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
+            }
+        }
+
+        for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
+            for (int xiIdx = COMPOINDEX[2 * compoIdx];
+                 xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
+                f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] =
+                    
+                     
+                                
+                    CalcBGKFeq(xiIdx, rhoIntermidate, u, v, w, 1, 2);
+                if (f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] > 1 ||
+                    f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] < 0) {
+                    ops_printf("f=%f rhoInter=%f xiIdx=%i, u=%f\n", f[OPS_ACC_MD2(xiIdx, 0, 0, 0)],rhoIntermidate,xiIdx,u);
+                    Real tmp;
+                    std::cin >> tmp;
+                }
+            }
+        }
+    } else {
+#ifdef debug
+        ops_printf("%s\n",
+                   "Warning: this node is not a equilibrium diffuse reflection "
+                   "boundary condition point: KerCutCellEQMDiffuseRefl3D");
+#endif
+    }
+}
+
+void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
+                          Real *f) {
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
+    if (vt == Vertex_Periodic) {
+        VertexGeometryTypes vg =
+            (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0, 0)];
+        switch (vg) {
+            case VG_IP:
+                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                }
+                break;
+            case VG_IM:
+                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                }
+                break;
+            case VG_JP:
+                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                }
+                break;
+            case VG_JM:
+                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                }
+                break;
+            case VG_KP:
+                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                }
+                break;
+            case VG_KM:
+                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                }
+                break;
+            // as we are dealing with domain boundary, there can be only inner
+            // corner
+            case VG_IPJP_I: {                             // corner point
+                if (vt == nodeType[OPS_ACC0(0, 1, 0)]) {  // VG_IP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC0(1, 0, 0)]) {  // VG_JP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                    }
+                }
+            } break;
+            case VG_IPJM_I: {                              // inner corner point
+                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_IP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(1, 0, 0)]) {  // VG_JM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                    }
+                }
+            } break;
+            case VG_IMJP_I: {                             // inner corner point
+                if (vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_IM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_JP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                    }
+                }
+            } break;
+            case VG_IMJM_I: {
+                // inner corner point
+                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_IM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_JM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                    }
+                }
+            } break;
+
+            case VG_IPKP_I: {                             // corner point
+                if (vt == nodeType[OPS_ACC0(0, 0, 1)]) {  // VG_IP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC0(1, 0, 0)]) {  // VG_KP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                    }
+                }
+            } break;
+            case VG_IPKM_I: {                              // inner corner point
+                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(1, 0, 0)]) {  // VG_KM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                    }
+                }
+            } break;
+            case VG_IMKP_I: {                             // inner corner point
+                if (vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_KP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                    }
+                }
+            } break;
+            case VG_IMKM_I: {
+                // inner corner point
+                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_KM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                    }
+                }
+            } break;
+            case VG_JPKP_I: {                             // corner point
+                if (vt == nodeType[OPS_ACC0(0, 0, 1)]) {  // VG_JP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC0(0, 1, 0)]) {  // VG_KP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                    }
+                }
+            } break;
+            case VG_JPKM_I: {                              // inner corner point
+                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                    }
+                }
+
+                if (vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                    }
+                }
+            } break;
+            case VG_JMKP_I: {                             // inner corner point
+                if (vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                    }
+                }
+            } break;
+            case VG_JMKM_I: {
+                // inner corner point
+                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                    }
+                }
+            } break;
+            case VG_IPJPKP_I: {
+                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                    }
+                }
+            } break;
+            case VG_IPJPKM_I: {
+                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                    }
+                }
+            } break;
+            case VG_IPJMKP_I: {
+                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                    }
+                }
+            } break;
+            case VG_IPJMKM_I: {
+                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                    }
+                }
+            } break;
+            case VG_IMJPKP_I: {
+                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                    }
+                }
+            } break;
+            case VG_IMJPKM_I: {
+                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                    }
+                }
+            } break;
+            case VG_IMJMKP_I: {
+                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                    }
+                }
+
+            } break;
+            case VG_IMJMKM_I: {
+                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
+                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                    }
+                }
+            } break;
+            default:
+                break;
+        }
+    } else {
+#ifdef debug
+        ops_printf("%s\n",
+                   "Warning: this node is not a periodic boundary "
+                   "point: KerCutCellPeriodic");
 #endif
     }
 }

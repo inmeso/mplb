@@ -103,7 +103,6 @@ void KerCutCellNonEqExtrapol(const Real* givenMacroVars, const int* nodeType,
 // CutCell block boundary condition
 /*!
  * @brief First order extrapolation pressure flow boundary:3D
- * 
  * @param givenBoundaryVars specified pressure
  * @param nodeType if the current node is set to be pressure flow boundary node
  * @param geometryProperty e.g., corner types 
@@ -114,14 +113,25 @@ void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
                                      const int *geometryProperty, Real *f);
 /*!
  * @brief  Equilibrium diffuse reflection boundary condition: 3D
- *
  * @param givenMacroVars  specified velocity
  * @param nodeType if the current node is set to be EDR node
- * @param geometryProperty e.g., corner types 
+ * @param geometryProperty e.g., corner types
  * @param f distribution function
  */
 void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
                                 const int *geometryProperty, Real *f);
+
+/*!
+ * @brief  The 3D no-slip boundary condition using EQN scheme
+ * @param givenMacroVars  Values of macroscopic variables
+ * @param nodeType if the current node is a Dirichlet node
+ * @param f distribution function
+ */
+void KerCutCellNoslipEQN3D(const Real* givenMacroVars, const int* nodeType,
+                         Real* f);
+
+void KerCutCellPeriodic3D(const int* nodeType, const int* geometryProperty,
+                          Real* f);
 #endif /* OPS_3D*/
 /*!
  * For updating halo points, f must have wind direction

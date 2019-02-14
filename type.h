@@ -65,6 +65,7 @@ enum VertexTypes {
     Vertex_NoneqExtrapol = 1013,
     Vertex_EQMDiffuseRefl = 1014,
     Vertex_NonEqExtrapolPressure = 1015,
+    Vertex_NoslipEQN = 1016,
     // Vertex_BoundaryCorner is the general corner type of node
     // All specific corner types should be started as vtbtco
     // for example, a corner of bounceback wall and inlet may be named as
