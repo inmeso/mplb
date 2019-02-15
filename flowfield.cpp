@@ -513,35 +513,35 @@ void DefineHaloTransfer3D() {
     int nx = BlockSize(0)[0];
     int ny = BlockSize(0)[1];
     int nz = BlockSize(0)[2];
-    // {
-    //     // Template for the periodic pair (front-back)
-    //     int dir[] = {1, 2, 3};
-    //     int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
-    //     int base_from[] = {d_m[0], d_m[0], 0};
-    //     int base_to[] = {d_m[0], d_m[0], nz};
-    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    //     base_from[2] = nz - 1;
-    //     base_to[2] = d_m[1];
-    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    // }
-
- 
-
     {
-        // Template for the periodic pair (left-right)
+        // Template for the periodic pair (front-back)
         int dir[] = {1, 2, 3};
-        int halo_iter[] = {1,ny+d_p[0]-d_m[0], nz+d_p[0]-d_m[0]};
-        int base_from[] = {0, d_m[0], d_m[0]};
-        int base_to[] = {nx, d_m[0], d_m[0]};
+        int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
+        int base_from[] = {d_m[0], d_m[0], 0};
+        int base_to[] = {d_m[0], d_m[0], nz};
         HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
                                          base_to, dir, dir);
-        base_from[0] = nx - 1;  // need to be changed
-        base_to[0] = d_m[1];
+        base_from[2] = nz - 1;
+        base_to[2] = d_m[1];
         HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
                                          base_to, dir, dir);
     }
+
+ 
+
+    // {
+    //     // Template for the periodic pair (left-right)
+    //     int dir[] = {1, 2, 3};
+    //     int halo_iter[] = {1,ny+d_p[0]-d_m[0], nz+d_p[0]-d_m[0]};
+    //     int base_from[] = {0, d_m[0], d_m[0]};
+    //     int base_to[] = {nx, d_m[0], d_m[0]};
+    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    //     base_from[0] = nx - 1;  // need to be changed
+    //     base_to[0] = d_m[1];
+    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    // }
 
     HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
 }
@@ -602,9 +602,9 @@ void SetupFlowfieldfromHdf5() {
     SPACEDIM = 3;
     BLOCKNUM = 1;  // Input parameter
     BLOCKSIZE = new int[BLOCKNUM * SPACEDIM];
-    BLOCKSIZE[0] = 3;  // Input parameters
+    BLOCKSIZE[0] = 101;  // Input parameters
     BLOCKSIZE[1] = 101;  // Input parameters
-    BLOCKSIZE[2] = 101;  // Input parameters
+    BLOCKSIZE[2] = 3;  // Input parameters
 
     TAUREF = new Real[ComponentNum()];
     TAUREF[0] = 0.001;  // Input parameters
@@ -616,7 +616,7 @@ void SetupFlowfieldfromHdf5() {
     //DT = 0.0001414;
     // DT = fmin(fmin(minDx, minDy) / MaximumSpeed(),
     //              0.5 * TAUREF[0]);  // finite difference scheme
-    DT = minDy / SoundSpeed();  // stream-collision
+    DT = minDx / SoundSpeed();  // stream-collision
     HALODEPTH = HaloPtNum();
     ops_printf("%s\n", "Starting to allocate...");
     DefineVariablesFromHDF5();

@@ -1187,6 +1187,7 @@ void KerCollide3D(const Real* dt, const int* nodeType, const Real* f,
          vt == Vertex_ExtrapolPressure1ST ||
 		 vt == Vertex_ExtrapolPressure2ND ||
          vt == Vertex_Periodic ||
+         vt == Vertex_NoslipEQN ||
 		 vt == Vertex_NonEqExtrapolPressure);
         if (collisionRequired) {
             for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
@@ -1229,7 +1230,9 @@ void KerStream3D(const int* nodeType, const int* geometry, const Real* fStage,
                      vt == Vertex_ExtrapolPressure1ST ||
                      vt == Vertex_ExtrapolPressure2ND ||
                      vt == Vertex_Periodic ||
-                     vt == Vertex_NonEqExtrapolPressure);
+                     vt == Vertex_NonEqExtrapolPressure ||
+                     vt == Vertex_NoslipEQN
+                     );
                 if (streamRequired) {
                     if ((cx == 0) && (cy == 0) && (cz == 0)) {
                         f[OPS_ACC_MD3(xiIndex, 0, 0, 0)] =

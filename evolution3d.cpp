@@ -254,32 +254,32 @@ void ImplementBoundary3D() {
     // Real givenInletVars[]{1.00005, 0, 0};
     int* inletRng = BlockIterRng(0, IterRngImin());
     Real givenInletVars[]{1, 0, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenInletVars, inletRng, Vertex_Periodic);
+    TreatBlockBoundary3D(givenInletVars, inletRng, Vertex_NoslipEQN);
 
     int* outletRng = BlockIterRng(0, IterRngImax());
     Real givenOutletVars[] = {1, 0, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenOutletVars, outletRng, Vertex_Periodic );
+    TreatBlockBoundary3D(givenOutletVars, outletRng, Vertex_NoslipEQN );
 
     int* topRng = BlockIterRng(0, IterRngJmax());
     // Real givenTopWallBoundaryVars[]{1, 0, 0};
-    Real givenTopWallBoundaryVars[]{1, 0, 0, 0.01};  // Input Parameters
+    Real givenTopWallBoundaryVars[]{1, 0.01, 0, 0};  // Input Parameters
     TreatBlockBoundary3D(givenTopWallBoundaryVars, topRng,
-                         Vertex_EQMDiffuseRefl);
+                         Vertex_NoslipEQN);
 
     int* bottomRng = BlockIterRng(0, IterRngJmin());
     Real givenBotWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
     TreatBlockBoundary3D(givenBotWallBoundaryVars, bottomRng,
-                        Vertex_EQMDiffuseRefl);
+                        Vertex_NoslipEQN);
 
     int* backRng = BlockIterRng(0, IterRngKmin());
     Real givenBackWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
     TreatBlockBoundary3D(givenBackWallBoundaryVars, backRng,
-                          Vertex_EQMDiffuseRefl);
+                          Vertex_Periodic);
 
     int* frontRng = BlockIterRng(0, IterRngKmax());
     Real givenFrontWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
     TreatBlockBoundary3D(givenFrontWallBoundaryVars, frontRng,
-                         Vertex_EQMDiffuseRefl);
+                         Vertex_Periodic);
 }
 
 void InitialiseSolution3D() {
