@@ -96,9 +96,12 @@ void UpdateFeqandBodyforce() {
     }
 }
 
-void TreatDomainBoundary(const Real* givenVars, int* range,
-                         const VertexTypes boundaryType) {
-    for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+void TreatDomainBoundary(const int blockIndex, const int componentID, const Real *givenVars, int *range,
+                         const VertexTypes boundaryType)
+
+//void TreatDomainBoundary(const Real* givenVars, int* range,const VertexTypes boundaryType) 
+{
+    //for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
         switch (boundaryType) {
             case Vertex_NoneqExtrapol: {
                 ops_par_loop(
@@ -114,7 +117,8 @@ void TreatDomainBoundary(const Real* givenVars, int* range,
                     ops_arg_dat(g_feq[blockIdx], NUMXI, ONEPTLATTICESTENCIL,
                                 "double", OPS_RW),
                     ops_arg_dat(g_f[blockIdx], NUMXI, ONEPTLATTICESTENCIL,
-                                "double", OPS_RW));
+                                "double", OPS_RW),
+                    ops_arg_gbl(componentID, 1, "int", OPS_READ));
             } break;
             case Vertex_ExtrapolPressure1ST: {
                 ops_par_loop(
@@ -230,7 +234,7 @@ void TreatDomainBoundary(const Real* givenVars, int* range,
             default:
                 break;
         }
-    }
+    //}
 }
 
 void TreatEmbededBoundary() {
@@ -246,6 +250,7 @@ void TreatEmbededBoundary() {
     }
 }
 
+/*
 void ImplementBoundary() {
     // TreatEmbededBoundary();
     // Real givenInletVars[]{1.00005, 0, 0};
@@ -263,6 +268,7 @@ void ImplementBoundary() {
     Real givenBotWallBoundaryVars[]{1, 0, 0};  // Input Parameters
     TreatDomainBoundary(givenBotWallBoundaryVars, bottomRng, Vertex_FreeFlux);
 }
+*/
 
 void InitialiseSolution() {
     UpdateFeqandBodyforce();

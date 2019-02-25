@@ -28,6 +28,7 @@ const int zaxis = 3;
 //ZERO is the zero constant with the desired precision, i.e., float or double
 const Real ZERO{(Real)((int)0)};
 //#define debug
+#define OPS_3D
 #include "ops_seq.h"
 // It looks that OPS always fills the uninitialised storage with 0 so
 // we try to avoid 0 value for these types
@@ -65,7 +66,8 @@ enum VertexTypes {
     Vertex_NoneqExtrapol = 1013,
     Vertex_EQMDiffuseRefl = 1014,
     Vertex_NonEqExtrapolPressure = 1015,
-    Vertex_NoslipEQN = 1016,
+
+    Vertex_NoslipEQN = 1020,
     // Vertex_BoundaryCorner is the general corner type of node
     // All specific corner types should be started as vtbtco
     // for example, a corner of bounceback wall and inlet may be named as
@@ -165,6 +167,12 @@ enum EquilibriumType {
     Equilibrium_BGKSWE4th = 2,   
 };
 
+enum ForceType { 
+    Force_Gravity = 0,
+    Force_Pressure = 1,
+    Force_Byoyancy = 2,
+};
+
 enum SpaceSchemeType {
     sstupwind2nd = 10,
     sstcentral2nd = 11,
@@ -195,7 +203,34 @@ typedef enum {
     ftmaxwellgas = 1,
 } FluidType;
 
-typedef enum {} BoundaryType;
+enum BoundarySurface{
+    BoundSurf_Inlet = 0,
+    BoundSurf_Outlet = 1,
+    BoundSurf_Top = 2,
+    BoundSurf_Bottom = 3,
+    BoundSurf_Front = 4,
+    BoundSurf_Back = 5,
+};
+
+enum BoundaryType{
+    BoundType_KineticDiffuseWall = 11,
+    BoundType_KineticSpelluarWall = 12,
+    BoundType_SlipWall = 13,
+    BoundType_VelocityInlet = 14,
+    BoundType_VelocityOutlet = 15,
+    BoundType_ExtrapolPressure1ST = 16,
+    BoundType_ExtrapolPressure2ND = 17,
+    BoundType_Periodic = 18,
+    BoundType_Uniform = 19,
+    BoundType_BounceBackWall = 20,
+    BoundType_FreeFlux = 21,
+    BoundType_ZouHeVelocity = 22,
+    BoundType_NoneqExtrapol = 23,
+    BoundType_EQMDiffuseRefl = 24,
+    BoundType_NonEqExtrapolPressure = 25,
+};
+
+
 
 typedef enum {
     bpanormal = 0,
@@ -214,6 +249,7 @@ typedef enum {
 typedef enum {
     stE1st2nd = 1,
     stI1st2nd = -1,
+    stStreamCollision = 10,
 } SchemeType;
 
 

@@ -1572,7 +1572,7 @@ void KerCutCellZouHeVelocity(const Real *givenMacroVars, const int *nodeType,
 
 void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
                              const int *geometryProperty, const Real *macroVars,
-                             const Real *feq, Real *f) {
+                             const Real *feq, Real *f, const int componentID) {
     /*!
      Note: Here we are implementing the version defined in the book "Lattice
      Boltzmann Method and Its Applications in Engineering" by Guo and Shu.
@@ -1586,7 +1586,8 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
             (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
         const Real u{givenMacroVars[1]};
         const Real v{givenMacroVars[2]};
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        //for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        compoIndex = componentID; //to mininmise the changes in the MPLB code.
             for (int xiIndex = COMPOINDEX[2 * compoIndex];
                  xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
                 int cx = (int)XI[xiIndex * LATTDIM];
@@ -1741,7 +1742,7 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
                         break;
                 }
             }
-        }
+        //}
     } else {
 #ifdef debug
         ops_printf("%s\n",
@@ -2355,7 +2356,7 @@ void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
 }
 
 void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
-                                const int *geometryProperty, Real *f) {
+                                const int *geometryProperty, Real *f, const int *componentId) {
     // This kernel is suitable for any single-speed lattice
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
@@ -2369,7 +2370,10 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
         Real w = givenMacroVars[3];
         // loop to classify types of discrete velocity i.e., incoming, outgoing
         // and parallel
-        for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
+        //for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
+            const int compoIdx{*componentId};
+            //compoIdx = *componentId; 
+
             int numOutgoing{0};
             int numIncoming{0};
             int numParallel{0};
@@ -2427,7 +2431,7 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
             delete[] outgoing;
             delete[] incoming;
             delete[] parallel;
-        }
+        //}
     } else {
 #ifdef debug
         ops_printf("%s\n",

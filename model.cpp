@@ -30,7 +30,7 @@ int* VARIABLECOMPPOS{nullptr};
  */
 std::vector<std::string> MACROVARNAME;
 /*!
- *Name of all macroscopic variables
+ *Name of all Lattices.
  */
 std::vector<std::string> LATTICENAME;
 
@@ -322,8 +322,10 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     AllocateMacroVarProperty(NUMMACROVAR);
     for (int idx = 0; idx < NUMMACROVAR; idx++) {
         VARIABLETYPE[idx] = (int)types[idx];
-        VARIABLECOMPINDEX[idx] = compoId[idx];
+        VARIABLECOMPINDEX[idx] = (int)compoId[idx];
     }
+    
+    /*
     if (nullptr != VARIABLECOMPPOS) {
         int startPos{0};
         for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
@@ -333,6 +335,17 @@ void DefineMacroVars(std::vector<VariableTypes> types,
             }
             VARIABLECOMPPOS[2 * idx + 1] = startPos - 1;
         }
+    */
+    if (nullptr != VARIABLECOMPPOS) {
+        int startPos{0};
+        for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
+            VARIABLECOMPPOS[2 * idx] = startPos;
+            while (idx == compoId[startPos] && startPos < compoId.size()) {
+                startPos++;
+            }
+            VARIABLECOMPPOS[2 * idx + 1] = startPos - 1;
+        }
+
     } else {
         ops_printf("%s\n",
                    "It appears that the DefineComponents routine has not been "

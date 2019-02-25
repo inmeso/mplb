@@ -119,7 +119,7 @@ void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
  * @param f distribution function
  */
 void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
-                                const int *geometryProperty, Real *f);
+                                const int *geometryProperty, Real *f, const int* componentId);
 
 /*!
  * @brief  The 3D no-slip boundary condition using EQN scheme

@@ -80,6 +80,7 @@ const int HaloPtNum() { return std::max(SchemeHaloNum(), BoundaryHaloNum()); }
  * Manually setting up all the variables necessary for the simulation
  * This function has not been updated for 3D problems.
  */
+/*
 void DefineVariables() {
     void* temp = NULL;
     g_Block = new ops_block[BLOCKNUM];
@@ -209,6 +210,203 @@ void DefineVariables() {
         // end if steady flow
     }
 }
+*/
+
+void DefineVariables() {
+    void* temp = NULL;
+    g_Block = new ops_block[BLOCKNUM];
+    g_f = new ops_dat[BLOCKNUM];
+    g_Bodyforce = new ops_dat[BLOCKNUM];
+    g_fStage = new ops_dat[BLOCKNUM];
+    g_feq = new ops_dat[BLOCKNUM];
+    g_MacroVars = new ops_dat[BLOCKNUM];
+    g_Tau = new ops_dat[BLOCKNUM];
+    g_CoordinateXYZ = new ops_dat[BLOCKNUM];
+    BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImin = new int[BLOCKNUM * 2 * SPACEDIM];
+    if (3 == SPACEDIM) {
+        BlockIterRngKmax = new int[BLOCKNUM * 2 * SPACEDIM];
+        BlockIterRngKmin = new int[BLOCKNUM * 2 * SPACEDIM];
+    }
+    BlockIterRngBulk = new int[BLOCKNUM * 2 * SPACEDIM];
+    // if steady flow
+    g_MacroVarsCopy = new ops_dat[BLOCKNUM];
+    g_ResidualErrorHandle = new ops_reduction[MacroVarsNum()];
+    g_ResidualError = new Real[2 * MacroVarsNum()];
+    // end if steady flow
+    
+    //int haloDepth = HaloDepth();  // zero for the current case
+    int haloDepth{std::max(SchemeHaloNum(), BoundaryHaloNum())};
+
+#ifdef debug
+    ops_printf("%s%i\n", "DefineVariable: haloDepth=", haloDepth);
+#endif
+
+    
+    // max halo depths for the dat in the positive direction
+    // int d_p[2] = {haloDepth, haloDepth};
+    // max halo depths for the dat in the negative direction
+    // int d_m[2] = {-haloDepth, -haloDepth};
+    // int base[2] = {0, 0};
+    
+
+    // max halo depths for the dat in the positive direction
+    int* d_p = new int[SPACEDIM];
+    // max halo depths for the dat in the negative direction
+    int* d_m = new int[SPACEDIM];
+    int* base = new int[SPACEDIM];
+    for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
+        d_p[cordIdx] = haloDepth;
+        d_m[cordIdx] = -haloDepth;
+        base[cordIdx] = 0;
+    }    
+
+    // problem specific
+    // if boundary fitting scheme
+    //g_Metrics= new ops_dat[BLOCKNUM];
+    // calculate the g_Metrics;
+    // if cutting cell method
+    g_NodeType = new ops_dat[BLOCKNUM];
+    g_GeometryProperty = new ops_dat[BLOCKNUM];
+    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
+        std::string label(std::to_string(blockIndex));
+        std::string blockName("Block_" + label);
+        // The name parameter is not properly typed in the definition of
+        // ops_decl_block, so there is a minor warning here.
+        g_Block[blockIndex] =
+            ops_decl_block(SPACEDIM, (char*)blockName.c_str());
+
+        int* size = new int[SPACEDIM];  // size of the dat
+        for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
+            size[cordIdx] = BlockSize(blockIndex)[cordIdx];
+        }
+        //int size[2] = {BlockSize(blockIndex)[0],BlockSize(blockIndex)[1]};  // size of the dat
+
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
+
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
+
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        if (3 == SPACEDIM) {
+            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 4] = 1;
+            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 5] = size[2] - 1;
+
+            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM] = 0;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 2] = 0;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 4] = size[2] - 1;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 2] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 3] = size[1];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 5] = 1;
+        }
+
+        std::string dataName("f_");
+        dataName += label;
+        g_f[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
+                         (Real*)temp, RealC, dataName.c_str());
+        dataName = "feq_" + label;
+        g_feq[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
+                         (Real*)temp, RealC, dataName.c_str());
+        dataName = "fStage_" + label;
+        g_fStage[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
+                         (Real*)temp, RealC, dataName.c_str());
+        dataName = "Bodyforce_" + label;
+        g_Bodyforce[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
+                         (Real*)temp, RealC, dataName.c_str());
+        dataName = "MacroVars_" + label;
+        g_MacroVars[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
+                         (Real*)temp, RealC, dataName.c_str());
+        dataName = "Tau_" + label;
+        g_Tau[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], NUMCOMPONENTS, size, base, d_m,
+                         d_p, (Real*)temp, RealC, dataName.c_str());
+        dataName = "Nodetype_" + label;
+        // problem specific -- cut cell method
+        g_NodeType[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], 1, size, base, d_m, d_p,
+                         (int*)temp, "int", dataName.c_str());
+        dataName = "GeometryProperty_" + label;
+        g_GeometryProperty[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], 1, size, base, d_m, d_p,
+                         (int*)temp, "int", dataName.c_str());
+        dataName = "CoordinateXYZ_" + label;
+        g_CoordinateXYZ[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], SPACEDIM, size, base, d_m, d_p,
+                         (Real*)temp, RealC, dataName.c_str());
+        // if steady flow
+        // in the future, we may consider to add an option for the "if"
+        dataName = "MacroVars_Copy" + label;
+        g_MacroVarsCopy[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
+                         (Real*)temp, RealC, dataName.c_str());
+        for (int localIdx = 0; localIdx < MacroVarsNum(); localIdx++) {
+            g_ResidualErrorHandle[localIdx] = ops_decl_reduction_handle(
+                // this is double
+                sizeof(double), "double", MacroVarName()[localIdx].c_str());
+        }
+        // end if steady flow
+        delete[] size;
+    }
+    delete[] d_p;
+    delete[] d_m;
+    delete[] base;
+}
+
+
 /*!
  * setting up all the variables necessary for the simulation from a HDF5 file
  * This function can be used for both 2D and 3D cases
@@ -636,6 +834,9 @@ const int BlockNum() { return BLOCKNUM; }
 const int SpaceDim() { return SPACEDIM; }
 const int HaloDepth() { return HALODEPTH; }
 
+void SetHaloDepth(const int haloDepth) {HALODEPTH = haloDepth;}
+void SetHaloRelationNum(const int haloRelationNum) {HaloRelationNum = haloRelationNum;}
+
 void DestroyFlowfield() {
     delete[] g_f;
     delete[] g_fStage;
@@ -698,7 +899,7 @@ const Real* pTimeStep() { return &DT; }
 void SetTimeStep(Real dt) { DT = dt; }
 const Real* TauRef() { return TAUREF; }
 
-void SetRauRef(const std::vector<Real> tauRef) {
+void SetTauRef(const std::vector<Real> tauRef) {
     const int tauNum = SizeofTau();
     if (tauRef.size() == tauNum) {
         if (nullptr == TAUREF) {
@@ -706,6 +907,7 @@ void SetRauRef(const std::vector<Real> tauRef) {
         }
         for (int idx = 0; idx < tauNum; idx++) {
             TAUREF[idx] = tauRef[idx];
+            ops_printf("\n tau is %f \n",TAUREF[idx]);
         }
     } else {
         ops_printf("%i taus are requried but there are %i!\n", tauNum,
@@ -714,8 +916,18 @@ void SetRauRef(const std::vector<Real> tauRef) {
 }
 
 void SetBlockSize(const std::vector<int> blockSize) {
-    const int dim {2 * SPACEDIM * BLOCKNUM};
+    const int dim {SPACEDIM * BLOCKNUM};
     if (blockSize.size() == dim) {
+
+        BLOCKSIZE = new int[BLOCKNUM * SPACEDIM];
+
+        for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) 
+        {
+            for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) 
+            {   
+                BLOCKSIZE[SPACEDIM * blockIndex + coordIndex] = blockSize[SPACEDIM * blockIndex + coordIndex];      
+            }
+        }
 
     } else {
         ops_printf(
@@ -732,3 +944,6 @@ void SetBlockNum(const int blockNum) {
         ops_printf("%s\n", "There must be at least one block");
     }
 }
+
+
+//const int* GetBlockNum() { return &BLOCKNUM; }

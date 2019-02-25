@@ -448,8 +448,11 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                              xiIdx <= COMPOINDEX[2 * compoIndex + 1]; xiIdx++) {
                             macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
                                 f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+
+                        //ops_printf("\n Value of f is  = %f",f[OPS_ACC_MD1(xiIdx, 0, 0, 0)]);
                         }
                         rho = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
+                        //ops_printf("\n Value of rho inside kercalmacrovars 3d is = %f",rho);
 #ifdef debug
                         if (isnan(rho) || rho <= 0 || isinf(rho)) {
                             ops_printf("%sDensity=%f\n",

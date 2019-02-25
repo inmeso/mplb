@@ -121,6 +121,7 @@ const int HaloDepth();
 const Real TimeStep();
 const Real* pTimeStep();
 const Real* TauRef();
+//const int* GetBlockNum();
 const std::string CaseName();
 const int HaloPtNum();
 Real TotalMeshSize();
@@ -128,7 +129,7 @@ const ops_halo_group HaloGroup();
 void SetTimeStep(Real dt);
 void SetCaseName(const std::string caseName);
 void setCaseName(const char* caseName);
-void SetRauRef(const std::vector<Real> tauRef);
+void SetTauRef(const std::vector<Real> tauRef);
 void SetBlockSize(const std::vector<int> blockSize);
 void SetBlockNum(const int blockNum);
 
@@ -142,5 +143,7 @@ void WriteFlowfieldToHdf5(const long timeStep);
 void WriteDistributionsToHdf5(const long timeStep);
 void WriteNodePropertyToHdf5(const long timeStep);
 void DestroyFlowfield();
-
+void DefineHaloTransfer3D();
+void SetHaloDepth(const int haloDepth);
+void SetHaloRelationNum(const int haloRelationNum);
 #endif

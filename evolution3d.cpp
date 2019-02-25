@@ -10,6 +10,7 @@
  */
 #include "evolution3d.h"
 #include "model.h"
+
 /*
  * In the following routines, there are some variables are defined
  * for the convenience of the translator which may not be able to
@@ -99,9 +100,14 @@ void UpdateFeqandBodyforce3D() {
     }
 }
 
-void TreatBlockBoundary3D(const Real* givenVars, int* range,
-                           const VertexTypes boundaryType) {
-    for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+
+void TreatBlockBoundary3D(const int blockIndex, const int componentID, const Real* givenVars, int* range,
+                           const VertexTypes boundaryType){
+//void TreatBlockBoundary3D(const Real* givenVars, int* range, const VertexTypes boundaryType)
+    //for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+        int blockIdx;
+        blockIdx = blockIndex; //This way will require minimum changes in the MPLB code.
+
         switch (boundaryType) {
             case Vertex_NoneqExtrapol: {
 //                ops_par_loop(
@@ -189,6 +195,7 @@ void TreatBlockBoundary3D(const Real* givenVars, int* range,
 //                                OPS_RW));
             } break;
             case Vertex_EQMDiffuseRefl: {
+                //ops_printf("\n I am applying BC eqm diff ");
                 ops_par_loop(
                     KerCutCellEQMDiffuseRefl3D, "KerCutCellEQMDiffuseRefl3D",
                     g_Block[blockIdx], SPACEDIM, range,
@@ -198,8 +205,10 @@ void TreatBlockBoundary3D(const Real* givenVars, int* range,
                     ops_arg_dat(g_GeometryProperty[blockIdx], 1, LOCALSTENCIL,
                                 "int", OPS_READ),
                     ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double",
-                                OPS_RW));
+                                OPS_RW),
+                    ops_arg_gbl(&componentID, 1, "int", OPS_READ));
             } break;
+            /*
             case Vertex_NoslipEQN: {
                 ops_par_loop(
                     KerCutCellNoslipEQN3D, "KerCutCellNoslipEQN3D",
@@ -210,6 +219,7 @@ void TreatBlockBoundary3D(const Real* givenVars, int* range,
                     ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double",
                                 OPS_RW));
             } break;
+            */
             case Vertex_FreeFlux: {
 //                ops_par_loop(KerCutCellZeroFlux, "KerCutCellZeroFlux",
 //                             g_Block[blockIdx], SPACEDIM, range,
@@ -233,7 +243,7 @@ void TreatBlockBoundary3D(const Real* givenVars, int* range,
             default:
                 break;
         }
-    }
+    //}
 }
 
 // void TreatEmbededBoundary3D() {
@@ -249,6 +259,7 @@ void TreatBlockBoundary3D(const Real* givenVars, int* range,
 //     }
 // }
 
+/*
 void ImplementBoundary3D() {
     // TreatEmbededBoundary3D();
     // Real givenInletVars[]{1.00005, 0, 0};
@@ -281,6 +292,7 @@ void ImplementBoundary3D() {
     TreatBlockBoundary3D(givenFrontWallBoundaryVars, frontRng,
                          Vertex_Periodic);
 }
+*/
 
 void InitialiseSolution3D() {
     UpdateFeqandBodyforce3D();
@@ -426,7 +438,13 @@ void DispResidualError3D(const int iter, const Real checkPeriod) {
 }
 
 void StreamCollision3D() {
+
+    //ops_printf("\n<<Entered stream collision");
+
     UpdateMacroVars3D();
+
+    //ops_printf("\n<<Update macro vars done");
+
     // Real TotalMass{0};
     // CalcTotalMass(&TotalMass);
     // Real Ratio{TotalMass/TotalMeshSize()};
@@ -438,7 +456,8 @@ void StreamCollision3D() {
     Collision3D();
     Stream3D();
     ops_halo_transfer(HaloGroup());
-    ImplementBoundary3D();
+    ImplementBoundary();
+    //ImplementBoundary3D();
 }
 
 // void TimeMarching() {
