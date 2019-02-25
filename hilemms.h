@@ -83,8 +83,8 @@ void DefineIntialCond(int blockIndex, int componentId, std::vector<Real> initial
 
 
 //Functions to check for inclusion.
-void ReadNodeType3D(int blockIndex, int* Face_Type, int* Edge_Type, int* Corner_Type);
+void SetupGeomPropAndNodeType(int blockIndex, BoundaryType *boundType);
 void SetupDomainGeometryProperty(int blockIndex);
-void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,VertexTypes* edgeType, VertexTypes* cornerType);
+void SetupDomainNodeType(int blockIndex, VertexTypes* faceType);
 void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points, int Num_Bound_Halo_Points);
 #endif  //Hilemms_H

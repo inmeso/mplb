@@ -26,53 +26,19 @@
 
 extern int HALODEPTH;
 
-// Face Type
-int Bottom_bc_type = 1014;
-int Top_bc_type = 1014;
-int Left_bc_type = 1014;
-int Right_bc_type = 1014;
-int Front_bc_type = 1014;
-int Back_bc_type = 1014;
+BoundarySurface surface[6] = {BoundSurf_Inlet,
+                              BoundSurf_Outlet,
+                              BoundSurf_Top,
+                              BoundSurf_Bottom,
+                              BoundSurf_Front,
+                              BoundSurf_Back};
 
-int Face_type_bc_array[] = {Left_bc_type,   Right_bc_type,
-                            Bottom_bc_type, Top_bc_type,
-                            Front_bc_type,  Back_bc_type};
-
-// Edge type
-int Left_bottom_bc_type = 1014;
-int Left_top_bc_type = 1014;
-int Right_bottom_bc_type = 1014;
-int Right_top_bc_type = 1014;
-int Left_back_bc_type = 1014;
-int Left_front_bc_type = 1014;
-int Right_back_bc_type = 1014;
-int Right_front_bc_type = 1014;
-int Bottom_back_bc_type = 1014;
-int Bottom_front_bc_type = 1014;
-int Top_back_bc_type = 1014;
-int Top_front_bc_type = 1014;
-
-int Edge_type_bc_array[] = {Left_bottom_bc_type,  Left_top_bc_type,
-                            Right_bottom_bc_type, Right_top_bc_type,
-                            Left_back_bc_type,    Left_front_bc_type,
-                            Right_back_bc_type,   Right_front_bc_type,
-                            Bottom_back_bc_type,  Bottom_front_bc_type,
-                            Top_back_bc_type,     Top_front_bc_type};
-
-// Corner type
-int Left_bottom_back_bc_type = 1014;
-int Left_bottom_front_bc_type = 1014;
-int Left_top_back_bc_type = 1014;
-int Left_top_front_bc_type = 1014;
-int Right_bottom_back_bc_type = 1014;
-int Right_bottom_front_bc_type = 1014;
-int Right_top_back_bc_type = 1014;
-int Right_top_front_bc_type = 1014;
-
-int Corner_type_bc_array[] = {Left_bottom_back_bc_type,  Left_bottom_front_bc_type,
-                              Left_top_back_bc_type,     Left_top_front_bc_type,
-                              Right_bottom_back_bc_type, Right_bottom_front_bc_type,
-                              Right_top_back_bc_type,    Right_top_front_bc_type};
+BoundaryType boundType[6] = {BoundType_EQMDiffuseRefl,
+                            BoundType_EQMDiffuseRefl,
+                            BoundType_EQMDiffuseRefl,
+                            BoundType_EQMDiffuseRefl,
+                            BoundType_EQMDiffuseRefl,
+                            BoundType_EQMDiffuseRefl};
 
 void simulate()
 {
@@ -96,31 +62,18 @@ void simulate()
     std::vector<int> equCompoId{0};
     DefineEquilibrium(equTypes, equCompoId);
 
-    /*
-    int Num_bound_halo_pts = 1;
-    int Halo_Num = 0;
-    int Halo_depth = 0; 
-    int Scheme_halo_points = 1;
-    DefineHaloNumber(Halo_Num, Halo_depth, Scheme_halo_points,Num_bound_halo_pts);
-    */
-
     SetupScheme();
-    //cout<<"\n Scheme set up done "<<endl;
-
     SetupBoundary();
-    //cout<<"\n Boundary set up done "<<endl;
-
     
     int blockNum{1};
-    std::vector<int> blockSize{21,21,21};
-    Real meshSize{0.05};
+    std::vector<int> blockSize{11,11,11};
+    Real meshSize{0.1};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
     DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
     
-    int Block_index = 0;
-    ReadNodeType3D(Block_index, Face_type_bc_array, Edge_type_bc_array, Corner_type_bc_array);
-
     int blockIndex{0};
+    SetupGeomPropAndNodeType(blockIndex, boundType);
+
     int compoIdInitialCond{0};
     std::vector<Real> initialMacroValues{1,0,0,0};
     DefineIntialCond(blockIndex, compoIdInitialCond, initialMacroValues);
@@ -140,49 +93,42 @@ void simulate()
     ops_printf("%s\n", "Flowfield is setup now!");
     InitialiseSolution3D();
     
+    #if 0
     SchemeType scheme{stStreamCollision}; //currently this information is not playin major role in this implementation.
     const int steps{10000};
     const int checkPeriod{100};
     Iterate(scheme, steps, checkPeriod);
+    #endif
+
+    SchemeType scheme{stStreamCollision}; //currently this information is not playin major role in this implementation.
+    const Real convergenceCriteria{1E-14};
+    const int checkPeriod{100};
+    Iterate(scheme, convergenceCriteria, checkPeriod);
 }
 
 
 void ImplementBoundary()
 {
-    //cout<<"\n inside immplement boundary";
     int blockIndex{0};
     int componentId{0};
-    BoundarySurface surface{BoundSurf_Inlet};
-    BoundaryType type{BoundType_EQMDiffuseRefl};
     std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,Variable_V, Variable_W};
     std::vector<Real> inletValMacroVarsComp{1,0,0,0};
-    DefineBlockBoundary(blockIndex, componentId, surface, type, MacroVarsComp, inletValMacroVarsComp);
+    DefineBlockBoundary(blockIndex, componentId, surface[0], boundType[0], MacroVarsComp, inletValMacroVarsComp);
 
-
-    surface = BoundSurf_Outlet;
     std::vector<Real> outletValMacroVarsComp{1,0,0,0};
-    DefineBlockBoundary(blockIndex, componentId, surface, type, MacroVarsComp, outletValMacroVarsComp);
+    DefineBlockBoundary(blockIndex, componentId, surface[1], boundType[1], MacroVarsComp, outletValMacroVarsComp);
 
-
-    surface = BoundSurf_Top;
     std::vector<Real> topValMacroVarsComp{1,0.01,0,0};
-    DefineBlockBoundary(blockIndex, componentId, surface, type, MacroVarsComp, topValMacroVarsComp);
+    DefineBlockBoundary(blockIndex, componentId, surface[2], boundType[2], MacroVarsComp, topValMacroVarsComp);
 
-
-    surface = BoundSurf_Bottom;
     std::vector<Real> bottomValMacroVarsComp{1,0,0,0};
-    DefineBlockBoundary(blockIndex, componentId, surface, type, MacroVarsComp, bottomValMacroVarsComp);
+    DefineBlockBoundary(blockIndex, componentId, surface[3], boundType[3], MacroVarsComp, bottomValMacroVarsComp);
 
-
-    surface = BoundSurf_Front;
     std::vector<Real> frontValMacroVarsComp{1,0,0,0};
-    DefineBlockBoundary(blockIndex, componentId, surface, type, MacroVarsComp, frontValMacroVarsComp);
+    DefineBlockBoundary(blockIndex, componentId, surface[4], boundType[4], MacroVarsComp, frontValMacroVarsComp);
 
-
-    surface = BoundSurf_Back;
     std::vector<Real> backValMacroVarsComp{1,0,0,0};
-    //valuesMacroVarsComp = (Real []) {1,0,0,0};
-    DefineBlockBoundary(blockIndex, componentId, surface, type, MacroVarsComp, backValMacroVarsComp);
+    DefineBlockBoundary(blockIndex, componentId, surface[5], boundType[5], MacroVarsComp, backValMacroVarsComp);
 }
 
 int main(int argc, char** argv) {

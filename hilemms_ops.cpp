@@ -99,38 +99,115 @@ void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]) {
 }
 
 
-#ifdef OPS_3D
-void ReadNodeType3D(int blockIndex, int* Face_Type, int* Edge_Type, int* Corner_Type)
+//This subroutine is for internal use only. 
+VertexTypes BoundTypeToVertexType(BoundaryType type)
 {
-    VertexTypes faceType[6];
-    VertexTypes edgeType[12];
-    VertexTypes cornerType[8];
+    VertexTypes vtType;
+
+    switch(type)
+    {
+        case BoundType_KineticDiffuseWall :
+            vtType = Vertex_KineticDiffuseWall;
+            break;
+
+        case BoundType_KineticSpelluarWall:
+            vtType = Vertex_KineticSpelluarWall;
+            break;
+
+        case BoundType_SlipWall:
+            vtType = Vertex_SlipWall;
+            break;
+
+        case BoundType_VelocityInlet:
+            vtType = Vertex_VelocityInlet;
+            break;
+
+        case BoundType_VelocityOutlet:
+            vtType = Vertex_VelocityOutlet;
+            break;
+
+        case BoundType_ExtrapolPressure1ST :
+            vtType = Vertex_ExtrapolPressure1ST;
+            break;
+
+        case BoundType_ExtrapolPressure2ND :
+            vtType = Vertex_ExtrapolPressure2ND;
+            break;
+
+        case BoundType_Periodic :
+            vtType = Vertex_Periodic;
+            break;
+
+        case BoundType_Uniform :
+            vtType = Vertex_Uniform;
+            break;
+
+        case BoundType_BounceBackWall :
+            vtType = Vertex_BounceBackWall;
+            break;
+
+        case BoundType_FreeFlux :
+            vtType = Vertex_FreeFlux;
+            break;
+
+        case BoundType_ZouHeVelocity :
+            vtType = Vertex_ZouHeVelocity;
+            break;
+
+        case BoundType_NoneqExtrapol :
+            vtType = Vertex_NoneqExtrapol;
+            break;
+
+        case BoundType_EQMDiffuseRefl :
+            vtType = Vertex_EQMDiffuseRefl;
+            break;
+
+        case BoundType_NonEqExtrapolPressure :
+            vtType = Vertex_NonEqExtrapolPressure;
+            break;
+
+        default:
+            ops_printf("\n Current Boundary type is not yet implemented");
+    }
+
+    return vtType;
+}
+
+//This routine should work for both 3D and 2D. Need to check for 2D.
+void SetupGeomPropAndNodeType(int blockIndex, BoundaryType *boundType)
+{
+
+    #ifdef OPS_3D
+
+        VertexTypes faceType[6];
+
+        //Get Vertx type information from boundary Type. This is because MPLB code uses vertex type information.
+        for(int i=1; i<6; i++)
+        {
+            faceType[i] = BoundTypeToVertexType(boundType[i]);
+        }
+
+    #endif // end of OPS_3D
+
+
+    #ifdef OPS_2D
+
+        VertexTypes faceType[4];
+
+        //Get Vertx type information from boundary Type. This is because MPLB code uses vertex type information.
+        for(int i=1; i<4; i++)
+        {
+            faceType[i] = BoundTypeToVertexType(boundType[i]);
+        }
+        
+    #endif // end of OPS_2D
 
     // This function assocaites various ranges such as imin, imax etc for a block.
     SetupDomainGeometryProperty(blockIndex);
 
-    //Face Type
-    for(int i=1; i<6; i++)
-    {
-        faceType[i] = (VertexTypes)Face_Type[i];
-    }
-
-    // Edge Type
-    for(int i=1; i<12; i++)
-    {
-        edgeType[i] = (VertexTypes)Edge_Type[i];
-    }
-
-    // Corner Type
-    for(int i=1; i<8; i++)
-    {
-        cornerType[i] = (VertexTypes)Corner_Type[i];
-    }
-
-    SetupDomainNodeType(blockIndex, faceType, edgeType, cornerType);
+    SetupDomainNodeType(blockIndex, faceType);
 } 
 //Function ReadNodeType3D ends.
-#endif//OPS_3D
 
 
 void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize, 
@@ -227,23 +304,60 @@ void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod)
     DestroyFlowfield();
 }
 
+// Check whether this needs to be defines using OPS Kernel.
+Real GetMaximumResidualError(const Real checkPeriod)
+{
+    Real maxResError = 1E-15;
+    Real relResErrorMacroVar;
+
+    for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) 
+    {
+        relResErrorMacroVar = g_ResidualError[2*macroVarIdx]/g_ResidualError[2*macroVarIdx+1]/(checkPeriod * TimeStep());
+
+        if(maxResError <= relResErrorMacroVar)
+        {
+            maxResError = relResErrorMacroVar;
+        }
+    }
+    return maxResError;
+}
+
 
 void Iterate(SchemeType scheme, const Real convergenceCriteria, const int checkPointPeriod)
 {
-    //MAXITER = steps;
     CHECKPERIOD = checkPointPeriod;
     int iter=0;
     Real residualError = 10000; // initially defining to be a very high value.
+
     while(residualError >= convergenceCriteria )
     {
-        
-        // Remaining code to be inserted shortly.
-        // Since it is a wrapper which run all other routines. 
-        // After defining all, will assemle code here.
+        StreamCollision3D();//Stream-Collision scheme
+        //TimeMarching();//Finite difference scheme + cutting cell
+        if ((iter % CHECKPERIOD) == 0) {
+            //#ifdef debug
+            UpdateMacroVars3D();
+            CalcResidualError3D();
+            residualError = GetMaximumResidualError(CHECKPERIOD*TimeStep());
+
+            //cout<<"\n Convergence Criteria = "<< convergenceCriteria;
+            //cout<<"\n Max Res Error = "<<residualError<<endl;
+
+            DispResidualError3D(iter,CHECKPERIOD*TimeStep());
+            WriteFlowfieldToHdf5(iter);
+            WriteDistributionsToHdf5(iter);
+            WriteNodePropertyToHdf5(iter);
+            //if ((densityResidualError + uResidualError+vResidualError) <= 1e-12) break;
+            // WriteDistributionsToHdf5(iter);
+            // WriteNodePropertyToHdf5(iter);
+            //#endif
+        }
 
         //residualError =
         iter = iter +1; //Required for checkpoint.
     }
+            
+    DestroyModel();
+    DestroyFlowfield();
 }
 
 
@@ -296,80 +410,6 @@ void AddEmbededBody(int vertexNum, Real* vertexCoords)
     ops_decl_const("VERTEXCOORDINATES", SPACEDIM*vertexNum, "int", VERTEXCOORDINATES);
 }
 
-
-//This subroutine is for internal use only. 
-VertexTypes BoundTypeToVertexType(BoundaryType type)
-{
-    VertexTypes vtType;
-
-    switch(type)
-    {
-        case BoundType_KineticDiffuseWall :
-            vtType = Vertex_KineticDiffuseWall;
-            break;
-
-        case BoundType_KineticSpelluarWall:
-            vtType = Vertex_KineticSpelluarWall;
-            break;
-
-        case BoundType_SlipWall:
-            vtType = Vertex_SlipWall;
-            break;
-
-        case BoundType_VelocityInlet:
-            vtType = Vertex_VelocityInlet;
-            break;
-
-        case BoundType_VelocityOutlet:
-            vtType = Vertex_VelocityOutlet;
-            break;
-
-        case BoundType_ExtrapolPressure1ST :
-            vtType = Vertex_ExtrapolPressure1ST;
-            break;
-
-        case BoundType_ExtrapolPressure2ND :
-            vtType = Vertex_ExtrapolPressure2ND;
-            break;
-
-        case BoundType_Periodic :
-            vtType = Vertex_Periodic;
-            break;
-
-        case BoundType_Uniform :
-            vtType = Vertex_Uniform;
-            break;
-
-        case BoundType_BounceBackWall :
-            vtType = Vertex_BounceBackWall;
-            break;
-
-        case BoundType_FreeFlux :
-            vtType = Vertex_FreeFlux;
-            break;
-
-        case BoundType_ZouHeVelocity :
-            vtType = Vertex_ZouHeVelocity;
-            break;
-
-        case BoundType_NoneqExtrapol :
-            vtType = Vertex_NoneqExtrapol;
-            break;
-
-        case BoundType_EQMDiffuseRefl :
-            vtType = Vertex_EQMDiffuseRefl;
-            break;
-
-        case BoundType_NonEqExtrapolPressure :
-            vtType = Vertex_NonEqExtrapolPressure;
-            break;
-
-        default:
-            ops_printf("\n Current Boundary type is not yet implemented");
-    }
-
-    return vtType;
-}
 
 //This routine is for internal use and gives the cells on which a 
 //particular BC is to be applied. 
@@ -507,8 +547,7 @@ void DefineIntialCond(const int blockIndex, const int componentId, std::vector<R
 
 
 //****************************************
-void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
-                         VertexTypes* edgeType, VertexTypes* cornerType) {
+void SetupDomainNodeType(int blockIndex, VertexTypes* faceType) {
     int nodeType = (int)Vertex_Fluid;
     int* iterRange = BlockIterRng(blockIndex, IterRngBulk());
     ops_par_loop(
@@ -642,6 +681,8 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
                                  OPS_WRITE));
     }
+
+    #if 0
 
     const int nx = BlockSize(blockIndex)[0];
     const int ny = BlockSize(blockIndex)[1];
@@ -833,6 +874,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
                                  OPS_WRITE));
     }
+    #endif //end of #ifdef 0. Currently disabling this piece of code. 
 }
 
 void SetupDomainGeometryProperty(int blockIndex) {
@@ -976,6 +1018,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
                                  LOCALSTENCIL, "int", OPS_WRITE));
     }
 
+    #if 0
     const int nx = BlockSize(blockIndex)[0];
     const int ny = BlockSize(blockIndex)[1];
     // 2D Domain corner points four types
@@ -1158,6 +1201,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
     }
+    #endif // end of if 0.
 }
 
 
