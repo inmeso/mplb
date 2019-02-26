@@ -83,7 +83,7 @@ void simulate()
     SetTauRef(tauRef);
 
     SetTimeStep(meshSize/SoundSpeed());
-    cout<<"DT = "<<TimeStep()<<endl;
+    //cout<<"DT = "<<TimeStep()<<endl;
 
     HALODEPTH = HaloPtNum();
     ops_printf("%s\n", "Starting to allocate...");
@@ -95,15 +95,17 @@ void simulate()
     
     #if 0
     SchemeType scheme{stStreamCollision}; //currently this information is not playin major role in this implementation.
-    const int steps{10000};
+    const int steps{1000};
     const int checkPeriod{100};
     Iterate(scheme, steps, checkPeriod);
     #endif
 
+    //if 0
     SchemeType scheme{stStreamCollision}; //currently this information is not playin major role in this implementation.
-    const Real convergenceCriteria{1E-14};
-    const int checkPeriod{100};
+    const Real convergenceCriteria{1E-4};
+    const int checkPeriod{1000};
     Iterate(scheme, convergenceCriteria, checkPeriod);
+    //#endif
 }
 
 

@@ -336,6 +336,8 @@ void DefineMacroVars(std::vector<VariableTypes> types,
             VARIABLECOMPPOS[2 * idx + 1] = startPos - 1;
         }
     */
+
+   
     if (nullptr != VARIABLECOMPPOS) {
         int startPos{0};
         for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
@@ -345,6 +347,7 @@ void DefineMacroVars(std::vector<VariableTypes> types,
             }
             VARIABLECOMPPOS[2 * idx + 1] = startPos - 1;
         }
+    
 
     } else {
         ops_printf("%s\n",

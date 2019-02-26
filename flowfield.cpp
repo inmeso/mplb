@@ -907,7 +907,7 @@ void SetTauRef(const std::vector<Real> tauRef) {
         }
         for (int idx = 0; idx < tauNum; idx++) {
             TAUREF[idx] = tauRef[idx];
-            ops_printf("\n tau is %f \n",TAUREF[idx]);
+            //ops_printf("\n tau is %f \n",TAUREF[idx]);
         }
     } else {
         ops_printf("%i taus are requried but there are %i!\n", tauNum,

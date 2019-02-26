@@ -386,7 +386,10 @@ void CalcResidualError3D() {
     for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
         ops_reduction_result(g_ResidualErrorHandle[macroVarIdx],
                              (double*)&g_ResidualError[2 * macroVarIdx + 1]);
+    //ops_printf("\n macro id = %i, abs res error = %.28f, rel abs error = %.28f", macroVarIdx, g_ResidualError[2 * macroVarIdx]*10E21, g_ResidualError[2 * macroVarIdx+1]*10E21);
+    //ops_printf("\n macro id = %i, displayed error = %.28f \n",macroVarIdx, g_ResidualError[2 * macroVarIdx]/g_ResidualError[2 * macroVarIdx+1]);
     }
+
 }
 
 //void ForwardEuler() {

@@ -475,6 +475,7 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                             macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
                                 macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
                             velo[0] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
+                            //ops_printf("\n Value of U is %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
 #ifdef debug
                             if (isnan(velo[0]) || isinf(velo[0])) {
                                 ops_printf("%sU=%f\n",
@@ -502,6 +503,7 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                             macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
                                 macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
                             velo[1] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
+                            //ops_printf("\n Value of V is %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
 #ifdef debug
                             if (isnan(velo[1]) || isinf(velo[1])) {
                                 ops_printf("%sV=%f\n",
@@ -529,6 +531,7 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                             macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
                                 macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
                             velo[2] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
+                            //ops_printf("\n Value of W is %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
 #ifdef debug
                             if (isnan(velo[2]) || isinf(velo[2])) {
                                 ops_printf("%sW=%f\n",

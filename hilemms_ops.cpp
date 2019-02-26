@@ -182,7 +182,7 @@ void SetupGeomPropAndNodeType(int blockIndex, BoundaryType *boundType)
         VertexTypes faceType[6];
 
         //Get Vertx type information from boundary Type. This is because MPLB code uses vertex type information.
-        for(int i=1; i<6; i++)
+        for(int i=0; i<6; i++)
         {
             faceType[i] = BoundTypeToVertexType(boundType[i]);
         }
@@ -195,7 +195,7 @@ void SetupGeomPropAndNodeType(int blockIndex, BoundaryType *boundType)
         VertexTypes faceType[4];
 
         //Get Vertx type information from boundary Type. This is because MPLB code uses vertex type information.
-        for(int i=1; i<4; i++)
+        for(int i=0; i<4; i++)
         {
             faceType[i] = BoundTypeToVertexType(boundType[i]);
         }
@@ -285,7 +285,9 @@ void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod)
     {
         StreamCollision3D();//Stream-Collision scheme
         //TimeMarching();//Finite difference scheme + cutting cell
-        if ((iter % CHECKPERIOD) == 0) {
+        if ((iter % CHECKPERIOD) == 0  && iter != 0) {
+
+            //cout<<" \n Reached inside if of iterate loop";
             //#ifdef debug
             UpdateMacroVars3D();
             CalcResidualError3D();
@@ -333,7 +335,7 @@ void Iterate(SchemeType scheme, const Real convergenceCriteria, const int checkP
     {
         StreamCollision3D();//Stream-Collision scheme
         //TimeMarching();//Finite difference scheme + cutting cell
-        if ((iter % CHECKPERIOD) == 0) {
+        if ((iter % CHECKPERIOD) == 0 && iter != 0) {
             //#ifdef debug
             UpdateMacroVars3D();
             CalcResidualError3D();
