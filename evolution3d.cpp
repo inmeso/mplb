@@ -75,8 +75,11 @@ void UpdateMacroVars3D() {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCalcMacroVars3D, "KerCalcMacroVars3D",
                      g_Block[blockIndex], SPACEDIM, iterRng,
+                     ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
                                  OPS_READ),
+                     ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
+                                 LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
                                  OPS_READ),
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
@@ -87,15 +90,27 @@ void UpdateMacroVars3D() {
 void UpdateFeqandBodyforce3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        ops_par_loop(KerCalcFeq3D, "KerCalcFeq3D",
-                     g_Block[blockIndex], SPACEDIM, iterRng,                     
+        ops_par_loop(KerCalcFeq3D, "KerCalcFeq3D", g_Block[blockIndex],
+                     SPACEDIM, iterRng,
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
                                  OPS_READ),
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_RW));
-        // force term to be added
+        // time is not used in the current force
+        Real* time{0};
+        ops_par_loop(KerCalcBodyForce3D, "KerCalcBodyForce3D",
+                     g_Block[blockIndex], SPACEDIM, iterRng,
+                     ops_arg_gbl(time, 1, "double", OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+                                 OPS_READ),
+                     ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
+                                 LOCALSTENCIL, "double", OPS_READ),
+                     ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
+                                 LOCALSTENCIL, "double", OPS_READ),
+                     ops_arg_dat(g_Bodyforce[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_RW));
     }
 }
 
@@ -254,44 +269,36 @@ void ImplementBoundary3D() {
     // Real givenInletVars[]{1.00005, 0, 0};
     int* inletRng = BlockIterRng(0, IterRngImin());
     Real givenInletVars[]{1, 0, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenInletVars, inletRng, Vertex_NoslipEQN);
+    TreatBlockBoundary3D(givenInletVars, inletRng, Vertex_Periodic);
 
     int* outletRng = BlockIterRng(0, IterRngImax());
     Real givenOutletVars[] = {1, 0, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenOutletVars, outletRng, Vertex_NoslipEQN );
+    TreatBlockBoundary3D(givenOutletVars, outletRng, Vertex_Periodic );
 
     int* topRng = BlockIterRng(0, IterRngJmax());
     // Real givenTopWallBoundaryVars[]{1, 0, 0};
-    Real givenTopWallBoundaryVars[]{1, 0.01, 0, 0};  // Input Parameters
+    Real givenTopWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
     TreatBlockBoundary3D(givenTopWallBoundaryVars, topRng,
-                         Vertex_NoslipEQN);
+                          Vertex_NoslipEQN);
 
     int* bottomRng = BlockIterRng(0, IterRngJmin());
     Real givenBotWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
     TreatBlockBoundary3D(givenBotWallBoundaryVars, bottomRng,
-                        Vertex_NoslipEQN);
+                         Vertex_NoslipEQN);
 
     int* backRng = BlockIterRng(0, IterRngKmin());
     Real givenBackWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
     TreatBlockBoundary3D(givenBackWallBoundaryVars, backRng,
-                          Vertex_Periodic);
+                          Vertex_NoslipEQN);
 
     int* frontRng = BlockIterRng(0, IterRngKmax());
     Real givenFrontWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
     TreatBlockBoundary3D(givenFrontWallBoundaryVars, frontRng,
-                         Vertex_Periodic);
+                         Vertex_NoslipEQN);
 }
 
 void InitialiseSolution3D() {
     UpdateFeqandBodyforce3D();
-    for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        const Real zero = 0;
-        ops_par_loop(
-            KerSetfFixValue, "KerSetfFixValue3D", g_Block[blockIndex],
-            SPACEDIM, iterRng, ops_arg_gbl(&zero, 1, "double", OPS_READ),
-            ops_arg_dat(g_Bodyforce[0], NUMXI, LOCALSTENCIL, "double", OPS_RW));
-    }
     CopyDistribution3D(g_feq, g_f);
 }
 

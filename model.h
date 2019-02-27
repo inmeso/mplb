@@ -113,6 +113,9 @@ void DefineMacroVars(std::vector<VariableTypes> types,
 
 void DefineEquilibrium(std::vector<EquilibriumType> types,
                        std::vector<int> compoId);
+
+void DefineBodyForce(std::vector<BodyForceType> types,
+                     std::vector<int> compoId);
 /*
  * Define the local function for calculating the equilibrium
  * 2D BGK model
@@ -144,8 +147,9 @@ void DestroyModel();
 // Two-dimensional version
 void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq);
 void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars);
-void KerCalcBodyForce(const int* nodeType, const Real* f, const Real* macroVars,
-                      Real* bodyForce);
+void KerCalcBodyForce3D(const Real* time, const int* nodeType,
+                        const Real* coordinates, const Real* macroVars,
+                        Real* bodyForce);
 /*!
  * @fn defining how to calculate the relaxation time
  * @param tauRef the reference relaxation time
@@ -160,5 +164,5 @@ void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
 void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq);
 void KerCalcTau3D(const int* nodeType, const Real* tauRef, const Real* macroVars,
                   Real* tau);
-void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars);
+void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordinates, const Real* f, Real* macroVars);
 #endif

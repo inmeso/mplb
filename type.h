@@ -157,13 +157,19 @@ enum VariableTypes {
     Variable_Qx = 5,
     Variable_Qy = 6,
     Variable_Qz = 7,
+    //This is for the force correction needed by using He1998 scheme.
+    Variable_U_Force  = 8,
+    Variable_V_Force  = 9,
+    Variable_W_Force  = 10,
 };
 
 enum EquilibriumType {
     Equilibrium_BGKIsothermal2nd = 0,
     Equilibrium_BGKThermal4th = 1,
-    Equilibrium_BGKSWE4th = 2,   
+    Equilibrium_BGKSWE4th = 2,
 };
+
+enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };
 
 enum SpaceSchemeType {
     sstupwind2nd = 10,

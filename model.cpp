@@ -366,15 +366,49 @@ void DefineEquilibrium(std::vector<EquilibriumType> types,
     ops_decl_const("EQUILIBRIUMTYPE", NUMCOMPONENTS, "int", EQUILIBRIUMTYPE);
 }
 
+void DefineBodyForce(std::vector<BodyForceType> types,
+                     std::vector<int> compoId) {
+    int typeNum{(int)types.size()};
+    if (typeNum == NUMCOMPONENTS) {
+        if (nullptr == FORCETYPE) {
+            FORCETYPE = new int[typeNum];
+            for (int idx = 0; idx < typeNum; idx++) {
+                FORCETYPE[idx] = types[idx];
+            }
+        } else {
+            ops_printf("%s\n", "BODYFORCE has been allocated!");
+        }
+    } else {
+        ops_printf(
+            "There are %i force types defined but we have %i "
+            "components\n",
+            typeNum, NUMCOMPONENTS);
+    }
+    ops_decl_const("FORCETYPE", NUMCOMPONENTS, "int", FORCETYPE);
+}
+
 void DestroyModel() {
     FreeArrayMemory(VARIABLETYPE);
     FreeArrayMemory(VARIABLECOMPINDEX);
     FreeArrayMemory(COMPOINDEX);
     FreeArrayMemory(VARIABLECOMPPOS);
     FreeArrayMemory(EQUILIBRIUMTYPE);
+    FreeArrayMemory(FORCETYPE);
     FreeArrayMemory(XI);
     FreeArrayMemory(WEIGHTS);
     FreeArrayMemory(OPP);
+}
+/*
+* Calculate the first-order force term
+* Author: Jianping Meng  22-Feb-2019
+*/
+Real CalcBodyForce(const int xiIndex, const Real rho,
+                   const Real* acceleration) {
+    Real cf{0};
+    for (int i = 0; i < LATTDIM; i++) {
+        cf += CS * XI[xiIndex * LATTDIM + i] * acceleration[i];
+    }
+    return WEIGHTS[xiIndex] * rho * cf;
 }
 
 Real CalcBGKFeq(const int l, const Real rho, const Real u, const Real v,

@@ -55,7 +55,7 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
             if (Equilibrium_BGKSWE4th == equilibriumType) {
                 Real h{macroVars[OPS_ACC_MD1(startPos, 0, 0)]};
                 Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0)]};
-                Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0)]};               
+                Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0)]};
                 const int polyOrder{4};
                 for (int xiIndex = COMPOINDEX[2 * compoIndex];
                      xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
@@ -67,8 +67,7 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
     }
 }
 
-void KerCalcBodyForce(const int* nodeType, const Real* f, const Real* macroVars,
-                      Real* bodyForce) {}
+
 /*!
  * For most of cases, in particular, tau may not change actually
  * But for compressible flows, it will change
@@ -394,6 +393,36 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
     }
 }
 
+void KerCalcBodyForce3D(const Real* time, const int* nodeType,
+                        const Real* coordinates, const Real* macroVars,
+                        Real* bodyForce) {
+    // here we assume the force is constant
+    // user may introduce a function of g(r,t) for the body force
+    const Real g[]{0.0001, 0, 0};
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
+    if (vt != Vertex_ImmersedSolid) {
+        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+            BodyForceType forceType{(BodyForceType)FORCETYPE[compoIndex]};
+            const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
+            if (BodyForce_1st == forceType) {
+                Real rho{macroVars[OPS_ACC_MD3(startPos, 0, 0, 0)]};
+                //ops_printf("rho=%f g=%f\n",rho,g[0]);
+                for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                    bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)] =
+                        CalcBodyForce(xiIndex, rho, g);
+                }
+            }
+            if (BodyForce_None == forceType) {
+                for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                    bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)] = 0;
+                }
+            }
+        }
+    }
+}
+
 void KerCalcTau3D(const int* nodeType, const Real* tauRef,
                   const Real* macroVars, Real* tau) {
     /*
@@ -425,8 +454,15 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
  * similar to the Gauss-Hermite quadrature
  *
  */
-void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
+void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordinates, const Real* f, Real* macroVars) {
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
+    Real* acceleration = new Real[LATTDIM * NUMCOMPONENTS];
+    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        for (int i = 0; i < LATTDIM; i++) {
+            acceleration[compoIndex+i] = 0;
+        }
+    }
+    acceleration[0] = 0.0001;
     if (vt != Vertex_ImmersedSolid) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             bool rhoCalculated{false};
@@ -439,17 +475,17 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
             }
             for (int m = VARIABLECOMPPOS[2 * compoIndex];
                  m <= VARIABLECOMPPOS[2 * compoIndex + 1]; m++) {
-                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] = 0;
+                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] = 0;
                 VariableTypes varType = (VariableTypes)VARIABLETYPE[m];
                 switch (varType) {
                     case Variable_Rho: {
                         rhoCalculated = true;
                         for (int xiIdx = COMPOINDEX[2 * compoIndex];
                              xiIdx <= COMPOINDEX[2 * compoIndex + 1]; xiIdx++) {
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
-                                f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
+                                f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                         }
-                        rho = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
+                        rho = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
 #ifdef debug
                         if (isnan(rho) || rho <= 0 || isinf(rho)) {
                             ops_printf("%sDensity=%f\n",
@@ -465,13 +501,13 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
                                  xiIdx++) {
-                                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     CS * XI[xiIdx * LATTDIM] *
-                                    f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                                    f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
-                            velo[0] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
+                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            velo[0] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
 #ifdef debug
                             if (isnan(velo[0]) || isinf(velo[0])) {
                                 ops_printf("%sU=%f\n",
@@ -492,13 +528,13 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
                                  xiIdx++) {
-                                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     CS * XI[xiIdx * LATTDIM + 1] *
-                                    f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                                    f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
-                            velo[1] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
+                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            velo[1] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
 #ifdef debug
                             if (isnan(velo[1]) || isinf(velo[1])) {
                                 ops_printf("%sV=%f\n",
@@ -519,13 +555,13 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
                                  xiIdx++) {
-                                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     CS * XI[xiIdx * LATTDIM + 2] *
-                                    f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                                    f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
-                            velo[2] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
+                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            velo[2] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
 #ifdef debug
                             if (isnan(velo[2]) || isinf(velo[2])) {
                                 ops_printf("%sW=%f\n",
@@ -555,14 +591,14 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                                           velo[d]) *
                                          (CS * XI[xiIdx * LATTDIM + d] -
                                           velo[d]) *
-                                         f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                                         f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                                 }
-                                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     (0.5 *
                                      (CS * XI[xiIdx * LATTDIM] - velo[0]) * T);
                             }
 #ifdef debug
-                            Real qx{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
+                            Real qx{macroVars[OPS_ACC_MD4(m, 0, 0, 0)]};
                             if (isnan(qx) || isinf(qx)) {
                                 ops_printf("%sQx=%f\n",
                                            "Heatflux becomes invalid! Maybe "
@@ -593,15 +629,15 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                                           velo[d]) *
                                          (CS * XI[xiIdx * LATTDIM + d] -
                                           velo[d]) *
-                                         f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                                         f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                                 }
-                                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     (0.5 *
                                      (CS * XI[xiIdx * LATTDIM + 1] - velo[1]) *
                                      T);
                             }
 #ifdef debug
-                            Real qy{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
+                            Real qy{macroVars[OPS_ACC_MD4(m, 0, 0, 0)]};
                             if (isnan(qy) || isinf(qy)) {
                                 ops_printf("%sQx=%f\n",
                                            "Heatflux becomes invalid! Maybe "
@@ -632,15 +668,15 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                                           velo[d]) *
                                          (CS * XI[xiIdx * LATTDIM + d] -
                                           velo[d]) *
-                                         f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                                         f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                                 }
-                                macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     (0.5 *
                                      (CS * XI[xiIdx * LATTDIM + 2] - velo[2]) *
                                      T);
                             }
 #ifdef debug
-                            Real qz{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
+                            Real qz{macroVars[OPS_ACC_MD4(m, 0, 0, 0)]};
                             if (isnan(qz) || isinf(qz)) {
                                 ops_printf("%sQx=%f\n",
                                            "Heatflux becomes invalid! Maybe "
@@ -666,18 +702,18 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
                                  xiIdx++) {
                                 for (int d = 0; d < LATTDIM; d++) {
-                                    macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
+                                    macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                         (CS * XI[xiIdx * LATTDIM + d] -
                                          velo[d]) *
                                         (CS * XI[xiIdx * LATTDIM + d] -
                                          velo[d]) *
-                                        f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
+                                        f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                                 }
                             }
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
                                 (rho * LATTDIM);
 #ifdef debug
-                            Real T{macroVars[OPS_ACC_MD2(m, 0, 0, 0)]};
+                            Real T{macroVars[OPS_ACC_MD4(m, 0, 0, 0)]};
                             if (isnan(T) || isinf(T)) {
                                 ops_printf("%sW=%f\n",
                                            "Temperature becomes invalid! Maybe "
@@ -693,6 +729,104 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                                 "temperature!");
                         }
                     } break;
+                    case Variable_U_Force: {
+                        if (rhoCalculated) {
+                            veloCalculated[0] = true;
+                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
+                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+                                 xiIdx++) {
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
+                                    CS * XI[xiIdx * LATTDIM] *
+                                    f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
+                            }
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
+                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            if (Vertex_Fluid == vt) {
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
+                                    ((*dt) *
+                                     acceleration[compoIndex * LATTDIM] / 2);
+                            }
+                            velo[0] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
+#ifdef debug
+                            if (isnan(velo[0]) || isinf(velo[0])) {
+                                ops_printf("%sU=%f\n",
+                                           "Velocity becomes invalid! Maybe "
+                                           "something wrong...",
+                                           u);
+                            }
+#endif
+                        } else {
+                            ops_printf("%s\n",
+                                       "Density has not been calculated before "
+                                       "calculating U!");
+                        }
+                    } break;
+                    case Variable_V_Force: {
+                        if (rhoCalculated) {
+                            veloCalculated[1] = true;
+                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
+                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+                                 xiIdx++) {
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
+                                    CS * XI[xiIdx * LATTDIM + 1] *
+                                    f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
+                            }
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
+                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            if (Vertex_Fluid == vt) {
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
+                                    ((*dt) *
+                                     acceleration[compoIndex * LATTDIM + 1] /
+                                     2);
+                            }
+                            velo[1] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
+#ifdef debug
+                            if (isnan(velo[1]) || isinf(velo[1])) {
+                                ops_printf("%sV=%f\n",
+                                           "Velocity becomes invalid! Maybe "
+                                           "something wrong...",
+                                           v);
+                            }
+#endif
+                        } else {
+                            ops_printf("%s\n",
+                                       "Density has not been calculated before "
+                                       "calculating V!");
+                        }
+                    } break;
+                    case Variable_W_Force: {
+                        if (rhoCalculated) {
+                            veloCalculated[2] = true;
+                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
+                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+                                 xiIdx++) {
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
+                                    CS * XI[xiIdx * LATTDIM + 2] *
+                                    f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
+                            }
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
+                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            if (Vertex_Fluid == vt) {
+                                macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
+                                    ((*dt) *
+                                     acceleration[compoIndex * LATTDIM + 2] /
+                                     2);
+                            }
+                            velo[2] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
+#ifdef debug
+                            if (isnan(velo[2]) || isinf(velo[2])) {
+                                ops_printf("%sW=%f\n",
+                                           "Velocity becomes invalid! Maybe "
+                                           "something wrong...",
+                                           w);
+                            }
+#endif
+                        } else {
+                            ops_printf("%s\n",
+                                       "Density has not been calculated before "
+                                       "calculating W!");
+                        }
+                    } break;
                     default:
                         break;
                 }  // Switch
@@ -701,6 +835,7 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
             delete[] velo;
         }  // compoIdx
     }  // isVertex
+    delete[] acceleration;
 }
 #endif
 #endif  // MODEL_KERNEL_H
