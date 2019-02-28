@@ -162,7 +162,7 @@ void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
 // We have to create 2D and 3D version because of the difference
 // of 2D and 3D OPS_ACC_MD2 macro
 void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq);
-void KerCalcTau3D(const int* nodeType, const Real* tauRef, const Real* macroVars,
-                  Real* tau);
+void KerCalcTau3D(const int* nodeType, const Real* tauRef,
+                  const Real* macroVars, Real* tau);
 void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordinates, const Real* f, Real* macroVars);
 #endif
