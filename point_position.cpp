@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-
 /*! @brief utilities for judging the position of a point
  *  @author Jianping Meng
  *  @details judging the position of a point relative to a polygon or polyhedron
@@ -38,7 +37,7 @@ PointPosition IfPointInPoly(const Real* point, const Real* polygon,
         if (rStrad || lStrad) {
             /* e straddles ray, so compute intersection with ray. */
             x = (xDiffCurrent * yDiffPrevious - xDiffPrevious * yDiffCurrent) /
-            (yDiffPrevious - yDiffCurrent);
+                (yDiffPrevious - yDiffCurrent);
             if (rStrad && DefinitelyGreaterThan(&x, &ZERO, EPS)) {
                 rightRayCross++;
             }

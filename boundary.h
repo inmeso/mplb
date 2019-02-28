@@ -45,11 +45,12 @@ BndryDvType FindBdyDvType(const VertexGeometryTypes vg,
  *
  * @param givenMacroVars  specified velocity
  * @param nodeType if the current node is set to be EDR node
- * @param geometryProperty e.g., corner types 
+ * @param geometryProperty e.g., corner types
  * @param f distribution function
  */
 void KerCutCellEQMDiffuseRefl(const Real* givenMacroVars, const int* nodeType,
-                              const int* geometryProperty, Real* f);
+                              const int* geometryProperty, Real* f,
+                              const int* componentId);
 void KerCutCellPeriodic(const int* nodeType, const int* geometryProperty,
                         Real* f);
 void KerCutCellBounceBack(const int* nodeType, const int* geometryProperty,
@@ -88,8 +89,8 @@ void KerCutCellZeroFlux(const int* nodeType, const int* geometryProperty,
  */
 void KerEquibriumVelocity(const Real* givenMacroVars, Real* f);
 // CutCell immersed solid boundary condition
-void KerCutCellEmbededBoundary(const int* nodeType,
-                                const int* geometryProperty, Real* f);
+void KerCutCellEmbededBoundary(const int* nodeType, const int* geometryProperty,
+                               Real* f);
 /*!
  * Non-equilibrium Extraploation boundary condition by Guo et al.
  */
@@ -105,12 +106,12 @@ void KerCutCellNonEqExtrapol(const Real* givenMacroVars, const int* nodeType,
  * @brief First order extrapolation pressure flow boundary:3D
  * @param givenBoundaryVars specified pressure
  * @param nodeType if the current node is set to be pressure flow boundary node
- * @param geometryProperty e.g., corner types 
+ * @param geometryProperty e.g., corner types
  * @param f distribution
  */
-void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
-                                     const int *nodeType,
-                                     const int *geometryProperty, Real *f);
+void KerCutCellExtrapolPressure1ST3D(const Real* givenBoundaryVars,
+                                     const int* nodeType,
+                                     const int* geometryProperty, Real* f);
 /*!
  * @brief  Equilibrium diffuse reflection boundary condition: 3D
  * @param givenMacroVars  specified velocity
@@ -118,8 +119,9 @@ void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
  * @param geometryProperty e.g., corner types
  * @param f distribution function
  */
-void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
-                                const int *geometryProperty, Real *f, const int* componentId);
+void KerCutCellEQMDiffuseRefl3D(const Real* givenMacroVars, const int* nodeType,
+                                const int* geometryProperty, Real* f,
+                                const int* componentId);
 
 /*!
  * @brief  The 3D no-slip boundary condition using EQN scheme
@@ -128,7 +130,7 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
  * @param f distribution function
  */
 void KerCutCellNoslipEQN3D(const Real* givenMacroVars, const int* nodeType,
-                         Real* f);
+                           Real* f);
 
 void KerCutCellPeriodic3D(const int* nodeType, const int* geometryProperty,
                           Real* f);

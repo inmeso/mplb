@@ -3,10 +3,10 @@
 // license that can be found in the LICENSE file.
 
 /*! @brief   Define kernel functions related to discrete velocity model
-  * @author  Jianping Meng
-  * @details Define kernel functions for calculating the equilibrium functions,
-  * the relaxation time, body force term, and macroscopic variables.
-  */
+ * @author  Jianping Meng
+ * @details Define kernel functions for calculating the equilibrium functions,
+ * the relaxation time, body force term, and macroscopic variables.
+ */
 
 #ifndef MODEL_KERNEL_H
 #define MODEL_KERNEL_H
@@ -20,18 +20,18 @@
 
 #ifdef OPS_2D
 
-//two dimensional code
+// two dimensional code
 void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
     VertexTypes vt{(VertexTypes)nodeType[OPS_ACC0(0, 0)]};
     if (vt != Vertex_ImmersedSolid) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
-            const int startPos{VARIABLECOMPPOS[2*compoIndex]};
+            const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
             if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
                 Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0)]};
-                Real u{macroVars[OPS_ACC_MD1(startPos+1, 0, 0)]};
-                Real v{macroVars[OPS_ACC_MD1(startPos+2, 0, 0)]};
+                Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0)]};
+                Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0)]};
                 const Real T{1};
                 const int polyOrder{2};
                 for (int xiIndex = COMPOINDEX[2 * compoIndex];
@@ -55,7 +55,7 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
             if (Equilibrium_BGKSWE4th == equilibriumType) {
                 Real h{macroVars[OPS_ACC_MD1(startPos, 0, 0)]};
                 Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0)]};
-                Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0)]};               
+                Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0)]};
                 const int polyOrder{4};
                 for (int xiIndex = COMPOINDEX[2 * compoIndex];
                      xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
@@ -76,29 +76,29 @@ void KerCalcBodyForce(const int* nodeType, const Real* f, const Real* macroVars,
  * 'Knudsen' number
  */
 void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
-                Real* tau) {  
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];    
+                Real* tau) {
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
     if (vt != Vertex_ImmersedSolid) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
-            const int startPos{VARIABLECOMPPOS[2*compoIndex]};
+            const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
             if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
-                Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};                
-                const Real T{1};               
+                Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};
+                const Real T{1};
                 tau[OPS_ACC_MD3(compoIndex, 0, 0)] =
                     tauRef[compoIndex] / (rho * sqrt(T));
             }
             if (Equilibrium_BGKThermal4th == equilibriumType) {
                 Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};
-                Real T{macroVars[OPS_ACC_MD2(startPos+3, 0, 0)]};
+                Real T{macroVars[OPS_ACC_MD2(startPos + 3, 0, 0)]};
                 tau[OPS_ACC_MD3(compoIndex, 0, 0)] =
                     tauRef[compoIndex] / (rho * sqrt(T));
             }
             if (Equilibrium_BGKSWE4th == equilibriumType) {
                 Real h{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};
                 tau[OPS_ACC_MD3(compoIndex, 0, 0)] = tauRef[compoIndex] / h;
-            }           
+            }
         }
     }
 }
@@ -332,7 +332,7 @@ void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars) {
                                     f[OPS_ACC_MD1(xiIdx, 0, 0)];
                             }
                         }
-                        macroVars[OPS_ACC_MD2(m, 0, 0)]/=(rho*LATTDIM);
+                        macroVars[OPS_ACC_MD2(m, 0, 0)] /= (rho * LATTDIM);
 #ifdef debug
                         Real T{macroVars[OPS_ACC_MD2(m, 0, 0)]};
                         if (isnan(T) || isinf(T)) {
@@ -351,9 +351,9 @@ void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars) {
                 } break;
                 default:
                     break;
-            }//Switch
-        }  // m
-    } // isVertex
+            }  // Switch
+        }      // m
+    }          // isVertex
 }
 #endif
 #ifdef OPS_3D
@@ -363,7 +363,7 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
-            const int startPos{VARIABLECOMPPOS[2*compoIndex]};
+            const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
             if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
                 Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
                 Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
@@ -404,7 +404,7 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
-            const int startPos{VARIABLECOMPPOS[2*compoIndex]};
+            const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
             if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
                 Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
                 const Real T{1};
@@ -449,10 +449,12 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                             macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
                                 f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
 
-                        //ops_printf("\n Value of f is  = %f",f[OPS_ACC_MD1(xiIdx, 0, 0, 0)]);
+                            // ops_printf("\n Value of f is  =
+                            // %f",f[OPS_ACC_MD1(xiIdx, 0, 0, 0)]);
                         }
                         rho = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
-                        //ops_printf("\n Value of rho inside kercalmacrovars 3d is = %f",rho);
+                        // ops_printf("\n Value of rho inside kercalmacrovars 3d
+                        // is = %f",rho);
 #ifdef debug
                         if (isnan(rho) || rho <= 0 || isinf(rho)) {
                             ops_printf("%sDensity=%f\n",
@@ -475,7 +477,8 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                             macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
                                 macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
                             velo[0] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
-                            //ops_printf("\n Value of U is %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
+                            // ops_printf("\n Value of U is
+                            // %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
 #ifdef debug
                             if (isnan(velo[0]) || isinf(velo[0])) {
                                 ops_printf("%sU=%f\n",
@@ -503,7 +506,8 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                             macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
                                 macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
                             velo[1] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
-                            //ops_printf("\n Value of V is %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
+                            // ops_printf("\n Value of V is
+                            // %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
 #ifdef debug
                             if (isnan(velo[1]) || isinf(velo[1])) {
                                 ops_printf("%sV=%f\n",
@@ -531,7 +535,8 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
                             macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
                                 macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
                             velo[2] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
-                            //ops_printf("\n Value of W is %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
+                            // ops_printf("\n Value of W is
+                            // %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
 #ifdef debug
                             if (isnan(velo[2]) || isinf(velo[2])) {
                                 ops_printf("%sW=%f\n",
@@ -706,7 +711,7 @@ void KerCalcMacroVars3D(const int* nodeType, const Real* f, Real* macroVars) {
             delete[] veloCalculated;
             delete[] velo;
         }  // compoIdx
-    }  // isVertex
+    }      // isVertex
 }
 #endif
 #endif  // MODEL_KERNEL_H

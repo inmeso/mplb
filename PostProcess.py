@@ -38,6 +38,7 @@ def ReadOPSDataHDF5(nx, ny, blockIndex, haloNum, spaceDim, macroVarNum, macroVar
     blockKey = 'Block_' + strBlockIdx
     macroVars = {}
     distributions = {}
+
     for dataKey in dataFile[blockKey].keys():
         if 'Bodyforce_' + strBlockIdx == dataKey:
             tmpvars = ChangeShape(

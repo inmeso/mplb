@@ -237,21 +237,19 @@ void DefineVariables() {
     g_ResidualErrorHandle = new ops_reduction[MacroVarsNum()];
     g_ResidualError = new Real[2 * MacroVarsNum()];
     // end if steady flow
-    
-    //int haloDepth = HaloDepth();  // zero for the current case
+
+    // int haloDepth = HaloDepth();  // zero for the current case
     int haloDepth{std::max(SchemeHaloNum(), BoundaryHaloNum())};
 
 #ifdef debug
     ops_printf("%s%i\n", "DefineVariable: haloDepth=", haloDepth);
 #endif
 
-    
     // max halo depths for the dat in the positive direction
     // int d_p[2] = {haloDepth, haloDepth};
     // max halo depths for the dat in the negative direction
     // int d_m[2] = {-haloDepth, -haloDepth};
     // int base[2] = {0, 0};
-    
 
     // max halo depths for the dat in the positive direction
     int* d_p = new int[SPACEDIM];
@@ -262,11 +260,11 @@ void DefineVariables() {
         d_p[cordIdx] = haloDepth;
         d_m[cordIdx] = -haloDepth;
         base[cordIdx] = 0;
-    }    
+    }
 
     // problem specific
     // if boundary fitting scheme
-    //g_Metrics= new ops_dat[BLOCKNUM];
+    // g_Metrics= new ops_dat[BLOCKNUM];
     // calculate the g_Metrics;
     // if cutting cell method
     g_NodeType = new ops_dat[BLOCKNUM];
@@ -283,7 +281,8 @@ void DefineVariables() {
         for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
             size[cordIdx] = BlockSize(blockIndex)[cordIdx];
         }
-        //int size[2] = {BlockSize(blockIndex)[0],BlockSize(blockIndex)[1]};  // size of the dat
+        // int size[2] = {BlockSize(blockIndex)[0],BlockSize(blockIndex)[1]}; //
+        // size of the dat
 
         BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
         BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
@@ -405,7 +404,6 @@ void DefineVariables() {
     delete[] d_m;
     delete[] base;
 }
-
 
 /*!
  * setting up all the variables necessary for the simulation from a HDF5 file
@@ -698,15 +696,15 @@ void DefineHaloTransfer() {
 }
 
 void DefineHaloTransfer3D() {
-//This is a hard coded version
-//could be used as an example for user-defined routines. 
+    // This is a hard coded version
+    // could be used as an example for user-defined routines.
     HaloRelationNum = 2;
     HaloRelations = new ops_halo[HaloRelationNum];
     int haloDepth = HaloDepth();
     // max halo depths for the dat in the positive direction
-    int d_p[3] = {haloDepth, haloDepth,haloDepth};
+    int d_p[3] = {haloDepth, haloDepth, haloDepth};
     // max halo depths for the dat in the negative direction
-    int d_m[3] = {-haloDepth, -haloDepth,-haloDepth};
+    int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
     // The domain size in the Block 0
     int nx = BlockSize(0)[0];
     int ny = BlockSize(0)[1];
@@ -725,19 +723,19 @@ void DefineHaloTransfer3D() {
                                          base_to, dir, dir);
     }
 
- 
-
     // {
     //     // Template for the periodic pair (left-right)
     //     int dir[] = {1, 2, 3};
     //     int halo_iter[] = {1,ny+d_p[0]-d_m[0], nz+d_p[0]-d_m[0]};
     //     int base_from[] = {0, d_m[0], d_m[0]};
     //     int base_to[] = {nx, d_m[0], d_m[0]};
-    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+    //     base_from,
     //                                      base_to, dir, dir);
     //     base_from[0] = nx - 1;  // need to be changed
     //     base_to[0] = d_m[1];
-    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+    //     base_from,
     //                                      base_to, dir, dir);
     // }
 
@@ -802,7 +800,7 @@ void SetupFlowfieldfromHdf5() {
     BLOCKSIZE = new int[BLOCKNUM * SPACEDIM];
     BLOCKSIZE[0] = 101;  // Input parameters
     BLOCKSIZE[1] = 101;  // Input parameters
-    BLOCKSIZE[2] = 3;  // Input parameters
+    BLOCKSIZE[2] = 3;    // Input parameters
 
     TAUREF = new Real[ComponentNum()];
     TAUREF[0] = 0.001;  // Input parameters
@@ -811,7 +809,7 @@ void SetupFlowfieldfromHdf5() {
     Real minDy{1. / 100};  // Input parameters at this moment
     // DT = 0.01 * fmin(minDx, minDy) / MaximumSpeed();  // finite difference
     // scheme
-    //DT = 0.0001414;
+    // DT = 0.0001414;
     // DT = fmin(fmin(minDx, minDy) / MaximumSpeed(),
     //              0.5 * TAUREF[0]);  // finite difference scheme
     DT = minDx / SoundSpeed();  // stream-collision
@@ -834,8 +832,10 @@ const int BlockNum() { return BLOCKNUM; }
 const int SpaceDim() { return SPACEDIM; }
 const int HaloDepth() { return HALODEPTH; }
 
-void SetHaloDepth(const int haloDepth) {HALODEPTH = haloDepth;}
-void SetHaloRelationNum(const int haloRelationNum) {HaloRelationNum = haloRelationNum;}
+void SetHaloDepth(const int haloDepth) { HALODEPTH = haloDepth; }
+void SetHaloRelationNum(const int haloRelationNum) {
+    HaloRelationNum = haloRelationNum;
+}
 
 void DestroyFlowfield() {
     delete[] g_f;
@@ -907,7 +907,7 @@ void SetTauRef(const std::vector<Real> tauRef) {
         }
         for (int idx = 0; idx < tauNum; idx++) {
             TAUREF[idx] = tauRef[idx];
-            //ops_printf("\n tau is %f \n",TAUREF[idx]);
+            // ops_printf("\n tau is %f \n",TAUREF[idx]);
         }
     } else {
         ops_printf("%i taus are requried but there are %i!\n", tauNum,
@@ -916,16 +916,14 @@ void SetTauRef(const std::vector<Real> tauRef) {
 }
 
 void SetBlockSize(const std::vector<int> blockSize) {
-    const int dim {SPACEDIM * BLOCKNUM};
+    const int dim{SPACEDIM * BLOCKNUM};
     if (blockSize.size() == dim) {
-
         BLOCKSIZE = new int[BLOCKNUM * SPACEDIM];
 
-        for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) 
-        {
-            for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) 
-            {   
-                BLOCKSIZE[SPACEDIM * blockIndex + coordIndex] = blockSize[SPACEDIM * blockIndex + coordIndex];      
+        for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
+            for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) {
+                BLOCKSIZE[SPACEDIM * blockIndex + coordIndex] =
+                    blockSize[SPACEDIM * blockIndex + coordIndex];
             }
         }
 
@@ -933,8 +931,7 @@ void SetBlockSize(const std::vector<int> blockSize) {
         ops_printf(
             "%i numbers are required for specifying the size of %i blocks!\n",
             dim, BLOCKNUM);
-	}
-
+    }
 }
 
 void SetBlockNum(const int blockNum) {
@@ -945,5 +942,4 @@ void SetBlockNum(const int blockNum) {
     }
 }
 
-
-//const int* GetBlockNum() { return &BLOCKNUM; }
+// const int* GetBlockNum() { return &BLOCKNUM; }

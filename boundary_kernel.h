@@ -3,13 +3,13 @@
 // license that can be found in the LICENSE file.
 
 /*! @brief   Kernel functions for boundary conditions
-  * @author  Jianping Meng
-  * @details Defining kernel functions for various boundary conditions.
-  */
+ * @author  Jianping Meng
+ * @details Defining kernel functions for various boundary conditions.
+ */
 #ifndef BOUNDARY_KERNEL_H
 #define BOUNDARY_KERNEL_H
-#include "boundary.h"
 #include <iostream>
+#include "boundary.h"
 // As we are using update-halo method for the discretisation,
 // we need to deal with halo points when treating boundary
 /*
@@ -129,8 +129,8 @@ void KerCutCellZeroFlux(const int *nodeType, const int *geometryProperty,
     }
 }
 
-void KerCutCellEmbededBoundary(const int *nodeType,
-                                const int *geometryProperty, Real *f) {
+void KerCutCellEmbededBoundary(const int *nodeType, const int *geometryProperty,
+                               Real *f) {
     /*!
      For the bounce back scheme,We consider zero velocity boundary first.
      To make sure the velocity at boundary is zero, the implementation
@@ -542,8 +542,8 @@ void KerCutCellEmbededBoundary(const int *nodeType,
 }
 
 void KerCutCellExtrapolPressure1ST(const Real *givenBoundaryVars,
-                                const int *nodeType,
-                                const int *geometryProperty, Real *f) {
+                                   const int *nodeType,
+                                   const int *geometryProperty, Real *f) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
     if (vt == Vertex_ExtrapolPressure1ST) {
         VertexGeometryTypes vg =
@@ -569,27 +569,27 @@ void KerCutCellExtrapolPressure1ST(const Real *givenBoundaryVars,
                 case VG_JP: {
                     if (cy > 0) {
                         f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                            f[OPS_ACC_MD3(xiIndex, 0,1)];
+                            f[OPS_ACC_MD3(xiIndex, 0, 1)];
                     }
                 } break;
                 case VG_JM: {
                     if (cy < 0) {
                         f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                            f[OPS_ACC_MD3(xiIndex, 0,-1)];
+                            f[OPS_ACC_MD3(xiIndex, 0, -1)];
                     }
 
                 } break;
                 case VG_IPJP_I: {                        // inner corner point
                     if (vt == nodeType[OPS_ACC1(0, 1)])  // VG_IP
                     {
-                        if ((cx>0 && cy>=0) || (cx>=0 && cy>0)){
+                        if ((cx > 0 && cy >= 0) || (cx >= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 1, 0)];
                         }
                     }
                     if (vt == nodeType[OPS_ACC1(1, 0)])  // VG_JP
                     {
-                        if ((cx>0 && cy>=0) || (cx>=0 && cy>0)){
+                        if ((cx > 0 && cy >= 0) || (cx >= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 0, 1)];
                         }
@@ -598,14 +598,14 @@ void KerCutCellExtrapolPressure1ST(const Real *givenBoundaryVars,
                 case VG_IPJM_I: {                         // inner corner point
                     if (vt == nodeType[OPS_ACC1(0, -1)])  // VG_IP
                     {
-                        if ((cx>0 && cy<=0) || (cx>=0 && cy<0)){
+                        if ((cx > 0 && cy <= 0) || (cx >= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 1, 0)];
                         }
                     }
                     if (vt == nodeType[OPS_ACC1(1, 0)])  // VG_JM
                     {
-                        if ((cx>0 && cy<=0) || (cx>=0 && cy<0)){
+                        if ((cx > 0 && cy <= 0) || (cx >= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 0, -1)];
                         }
@@ -615,30 +615,30 @@ void KerCutCellExtrapolPressure1ST(const Real *givenBoundaryVars,
                 case VG_IMJP_I: {                        // inner corner point
                     if (vt == nodeType[OPS_ACC1(0, 1)])  // VG_IM
                     {
-                        if ((cx<0 && cy>=0) || (cx<=0 && cy>0)){
+                        if ((cx < 0 && cy >= 0) || (cx <= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, -1, 0)];
                         }
                     }
                     if (vt == nodeType[OPS_ACC1(-1, 0)])  // VG_JP
                     {
-                        if ((cx<0 && cy>=0) || (cx<=0 && cy>0)){
+                        if ((cx < 0 && cy >= 0) || (cx <= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 0, 1)];
                         }
                     }
                 } break;
-                case VG_IMJM_I: {                     // inner corner point
+                case VG_IMJM_I: {                         // inner corner point
                     if (vt == nodeType[OPS_ACC1(0, -1)])  // VG_IM
                     {
-                        if ((cx<0 && cy<=0) || (cx<=0 && cy<0)){
+                        if ((cx < 0 && cy <= 0) || (cx <= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, -1, 0)];
                         }
                     }
                     if (vt == nodeType[OPS_ACC1(-1, 0)])  // VG_JM
                     {
-                        if ((cx<0 && cy<=0) || (cx<=0 && cy<0)){
+                        if ((cx < 0 && cy <= 0) || (cx <= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 0, -1)];
                         }
@@ -663,14 +663,13 @@ void KerCutCellExtrapolPressure1ST(const Real *givenBoundaryVars,
     }
 }
 
-
 void KerCutCellExtrapolPressure2ND(const Real *givenBoundaryVars,
                                    const int *nodeType,
                                    const int *geometryProperty, Real *f) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
     if (vt == Vertex_ExtrapolPressure2ND) {
         VertexGeometryTypes vg =
-        (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
+            (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
         Real rhoGiven = givenBoundaryVars[0];
         Real rho = 0;
         for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
@@ -680,88 +679,100 @@ void KerCutCellExtrapolPressure2ND(const Real *givenBoundaryVars,
                 case VG_IP: {
                     if (cx > 0) {
                         f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                        2*f[OPS_ACC_MD3(xiIndex, 1, 0)]-f[OPS_ACC_MD3(xiIndex, 2, 0)];
+                            2 * f[OPS_ACC_MD3(xiIndex, 1, 0)] -
+                            f[OPS_ACC_MD3(xiIndex, 2, 0)];
                     }
                 } break;
                 case VG_IM: {
                     if (cx < 0) {
                         f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                        2*f[OPS_ACC_MD3(xiIndex, -1, 0)]-f[OPS_ACC_MD3(xiIndex, -2, 0)];
+                            2 * f[OPS_ACC_MD3(xiIndex, -1, 0)] -
+                            f[OPS_ACC_MD3(xiIndex, -2, 0)];
                     }
                 } break;
                 case VG_JP: {
                     if (cy > 0) {
                         f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                        2*f[OPS_ACC_MD3(xiIndex, 0,1)]-f[OPS_ACC_MD3(xiIndex, 0,2)];
+                            2 * f[OPS_ACC_MD3(xiIndex, 0, 1)] -
+                            f[OPS_ACC_MD3(xiIndex, 0, 2)];
                     }
                 } break;
                 case VG_JM: {
                     if (cy < 0) {
                         f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                        2*f[OPS_ACC_MD3(xiIndex, 0,-1)]-f[OPS_ACC_MD3(xiIndex, 0,-2)];
+                            2 * f[OPS_ACC_MD3(xiIndex, 0, -1)] -
+                            f[OPS_ACC_MD3(xiIndex, 0, -2)];
                     }
                 } break;
                 case VG_IPJP_I: {                        // inner corner point
                     if (vt == nodeType[OPS_ACC1(0, 1)])  // VG_IP
                     {
-                        if ((cx>0 && cy>=0) || (cx>=0 && cy>0)){
+                        if ((cx > 0 && cy >= 0) || (cx >= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                            2*f[OPS_ACC_MD3(xiIndex, 1, 0)]-f[OPS_ACC_MD3(xiIndex, 2, 0)];
+                                2 * f[OPS_ACC_MD3(xiIndex, 1, 0)] -
+                                f[OPS_ACC_MD3(xiIndex, 2, 0)];
                         }
                     }
                     if (vt == nodeType[OPS_ACC1(1, 0)])  // VG_JP
                     {
-                        if ((cx>0 && cy>=0) || (cx>=0 && cy>0)){
+                        if ((cx > 0 && cy >= 0) || (cx >= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                            2*f[OPS_ACC_MD3(xiIndex, 0, 1)]-f[OPS_ACC_MD3(xiIndex, 0, 2)];
+                                2 * f[OPS_ACC_MD3(xiIndex, 0, 1)] -
+                                f[OPS_ACC_MD3(xiIndex, 0, 2)];
                         }
                     }
                 } break;
                 case VG_IPJM_I: {                         // inner corner point
                     if (vt == nodeType[OPS_ACC1(0, -1)])  // VG_IP
                     {
-                        if ((cx>0 && cy<=0) || (cx>=0 && cy<0)){
+                        if ((cx > 0 && cy <= 0) || (cx >= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                            2*f[OPS_ACC_MD3(xiIndex, 1, 0)]-f[OPS_ACC_MD3(xiIndex, 2, 0)];
+                                2 * f[OPS_ACC_MD3(xiIndex, 1, 0)] -
+                                f[OPS_ACC_MD3(xiIndex, 2, 0)];
                         }
                     }
                     if (vt == nodeType[OPS_ACC1(1, 0)])  // VG_JM
                     {
-                        if ((cx>0 && cy<=0) || (cx>=0 && cy<0)){
+                        if ((cx > 0 && cy <= 0) || (cx >= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                            2*f[OPS_ACC_MD3(xiIndex, 0, -1)]-f[OPS_ACC_MD3(xiIndex, 0, -2)];
+                                2 * f[OPS_ACC_MD3(xiIndex, 0, -1)] -
+                                f[OPS_ACC_MD3(xiIndex, 0, -2)];
                         }
                     }
                 } break;
                 case VG_IMJP_I: {                        // inner corner point
                     if (vt == nodeType[OPS_ACC1(0, 1)])  // VG_IM
                     {
-                        if ((cx<0 && cy>=0) || (cx<=0 && cy>0)){
+                        if ((cx < 0 && cy >= 0) || (cx <= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                            2*f[OPS_ACC_MD3(xiIndex, -1, 0)]-f[OPS_ACC_MD3(xiIndex, -2, 0)];
+                                2 * f[OPS_ACC_MD3(xiIndex, -1, 0)] -
+                                f[OPS_ACC_MD3(xiIndex, -2, 0)];
                         }
                     }
                     if (vt == nodeType[OPS_ACC1(-1, 0)])  // VG_JP
                     {
-                        if ((cx<0 && cy>=0) || (cx<=0 && cy>0)){
+                        if ((cx < 0 && cy >= 0) || (cx <= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                            2*f[OPS_ACC_MD3(xiIndex, 0, 1)]-f[OPS_ACC_MD3(xiIndex, 0, 2)];
+                                2 * f[OPS_ACC_MD3(xiIndex, 0, 1)] -
+                                f[OPS_ACC_MD3(xiIndex, 0, 2)];
                         }
                     }
                 } break;
                 case VG_IMJM_I: {                         // inner corner point
                     if (vt == nodeType[OPS_ACC1(0, -1)])  // VG_IM
                     {
-                        if ((cx<0 && cy<=0) || (cx<=0 && cy<0)){
+                        if ((cx < 0 && cy <= 0) || (cx <= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                            2*f[OPS_ACC_MD3(xiIndex, -1, 0)]-f[OPS_ACC_MD3(xiIndex, -2, 0)];
+                                2 * f[OPS_ACC_MD3(xiIndex, -1, 0)] -
+                                f[OPS_ACC_MD3(xiIndex, -2, 0)];
                         }
                     }
                     if (vt == nodeType[OPS_ACC1(-1, 0)])  // VG_JM
                     {
-                        if ((cx<0 && cy<=0) || (cx<=0 && cy<0)){
+                        if ((cx < 0 && cy <= 0) || (cx <= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                            2*f[OPS_ACC_MD3(xiIndex, 0, -1)]-f[OPS_ACC_MD3(xiIndex, 0, -2)];
+                                2 * f[OPS_ACC_MD3(xiIndex, 0, -1)] -
+                                f[OPS_ACC_MD3(xiIndex, 0, -2)];
                         }
                     }
                 } break;
@@ -783,6 +794,7 @@ void KerCutCellExtrapolPressure2ND(const Real *givenBoundaryVars,
     }
 }
 
+/*
 void KerCutCellKinetic(const Real *givenMacroVars, const int *nodeType,
                        const int *geometryProperty, Real *f) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
@@ -862,9 +874,8 @@ void KerCutCellKinetic(const Real *givenMacroVars, const int *nodeType,
                 relVeloX * primaryVector[0] + relVeloY * primaryVector[1];
             bool isInflux = cDotPrimary > 0;
             bool isOutFlux = cDotPrimary < 0;
-            //ops_printf("1 isIn=%i isOut= %i speed= %f\n",isInflux,isOutFlux,speed);
-            if (1 == boundaryType) {
-                Real cDotSecond =
+            //ops_printf("1 isIn=%i isOut= %i speed=
+%f\n",isInflux,isOutFlux,speed); if (1 == boundaryType) { Real cDotSecond =
                     relVeloX * secondVector[0] + relVeloY * secondVector[1];
                 isInflux = isInflux && (cDotSecond > 0);
                 isOutFlux = isOutFlux && (cDotSecond < 0);
@@ -885,17 +896,13 @@ void KerCutCellKinetic(const Real *givenMacroVars, const int *nodeType,
             }
         }
         Real rho = outFlux / inFlux;
-        //ops_printf("vg=%i rho=%f outflux=%f influx=%f\n",vg,rho,outFlux,inFlux);
-        for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-            const Real relVeloX = CS * XI[xiIndex * LATTDIM] - u;
-            const Real relVeloY = CS * XI[xiIndex * LATTDIM + 1] - v;
-            Real cDotPrimary =
-                relVeloX * primaryVector[0] + relVeloY * primaryVector[1];
-            bool isInflux = cDotPrimary >= 0;
-            if (0 == boundaryType) {
-                Real cDotSecond =
-                    relVeloX * secondVector[0] + relVeloY * secondVector[1];
-                isInflux = isInflux && (cDotSecond >= 0);
+        //ops_printf("vg=%i rho=%f outflux=%f
+influx=%f\n",vg,rho,outFlux,inFlux); for (int xiIndex = 0; xiIndex < NUMXI;
+xiIndex++) { const Real relVeloX = CS * XI[xiIndex * LATTDIM] - u; const Real
+relVeloY = CS * XI[xiIndex * LATTDIM + 1] - v; Real cDotPrimary = relVeloX *
+primaryVector[0] + relVeloY * primaryVector[1]; bool isInflux = cDotPrimary >=
+0; if (0 == boundaryType) { Real cDotSecond = relVeloX * secondVector[0] +
+relVeloY * secondVector[1]; isInflux = isInflux && (cDotSecond >= 0);
             }
             if (1 == boundaryType) {
                 Real cDotSecond =
@@ -917,6 +924,7 @@ void KerCutCellKinetic(const Real *givenMacroVars, const int *nodeType,
 #endif
     }
 }
+*/
 
 void KerCutCellCorrectedKinetic(const Real *givenMacroVars, const Real *dt,
                                 const int *nodeType,
@@ -1029,22 +1037,22 @@ void KerCutCellBounceBack(const int *nodeType, const int *geometryProperty,
         VertexGeometryTypes vg =
             (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0)];
         switch (vg) {
-            case VG_IP:{
+            case VG_IP: {
                 f[OPS_ACC_MD2(5, 0, 0)] = f[OPS_ACC_MD2(7, 0, 0)];
                 f[OPS_ACC_MD2(1, 0, 0)] = f[OPS_ACC_MD2(3, 0, 0)];
                 f[OPS_ACC_MD2(8, 0, 0)] = f[OPS_ACC_MD2(6, 0, 0)];
             } break;
-            case VG_IM:{
+            case VG_IM: {
                 f[OPS_ACC_MD2(7, 0, 0)] = f[OPS_ACC_MD2(5, 0, 0)];
                 f[OPS_ACC_MD2(3, 0, 0)] = f[OPS_ACC_MD2(1, 0, 0)];
                 f[OPS_ACC_MD2(6, 0, 0)] = f[OPS_ACC_MD2(8, 0, 0)];
             } break;
-            case VG_JP:{
+            case VG_JP: {
                 f[OPS_ACC_MD2(2, 0, 0)] = f[OPS_ACC_MD2(4, 0, 0)];
                 f[OPS_ACC_MD2(6, 0, 0)] = f[OPS_ACC_MD2(8, 0, 0)];
                 f[OPS_ACC_MD2(5, 0, 0)] = f[OPS_ACC_MD2(7, 0, 0)];
             } break;
-            case VG_JM:{
+            case VG_JM: {
                 f[OPS_ACC_MD2(4, 0, 0)] = f[OPS_ACC_MD2(2, 0, 0)];
                 f[OPS_ACC_MD2(8, 0, 0)] = f[OPS_ACC_MD2(6, 0, 0)];
                 f[OPS_ACC_MD2(7, 0, 0)] = f[OPS_ACC_MD2(5, 0, 0)];
@@ -1074,7 +1082,8 @@ void KerCutCellBounceBack(const int *nodeType, const int *geometryProperty,
 }
 
 void KerCutCellEQMDiffuseRefl(const Real *givenMacroVars, const int *nodeType,
-                              const int *geometryProperty, Real *f) {
+                              const int *geometryProperty, Real *f,
+                              const int *componentId) {
     // This kernel is suitable for a single-speed lattice
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
@@ -1085,62 +1094,63 @@ void KerCutCellEQMDiffuseRefl(const Real *givenMacroVars, const int *nodeType,
             (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
         Real u = givenMacroVars[1];
         Real v = givenMacroVars[2];
-        for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
-            int numOutgoing{0};
-            int numIncoming{0};
-            int numParallel{0};
-            int *outgoing = new int[COMPOINDEX[2 * compoIdx + 1] -
-                                    COMPOINDEX[2 * compoIdx] + 1];
-            int *incoming = new int[COMPOINDEX[2 * compoIdx + 1] -
-                                    COMPOINDEX[2 * compoIdx] + 1];
-            int *parallel = new int[COMPOINDEX[2 * compoIdx + 1] -
-                                    COMPOINDEX[2 * compoIdx] + 1];
-            Real rhoIncoming{0};
-            Real rhoParallel{0};
-            Real deltaRho{0};
-            for (int xiIdx = COMPOINDEX[2 * compoIdx];
-                 xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
-                BndryDvType bdt = FindBdyDvType(vg, &XI[xiIdx * LATTDIM]);
-                switch (bdt) {
-                    case BndryDv_Incoming: {
-                        incoming[numIncoming] = xiIdx;
-                        rhoIncoming += f[OPS_ACC_MD3(xiIdx, 0, 0)];
-                        numIncoming++;
-                    } break;
-                    case BndryDv_Outgoing: {
-                        outgoing[numOutgoing] = xiIdx;
-                        Real cx{CS * XI[xiIdx * LATTDIM]};
-                        Real cy{CS * XI[xiIdx * LATTDIM + 1]};
-                        deltaRho += (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v);
-                        numOutgoing++;
-                    } break;
-                    case BndryDv_Parallel: {
-                        parallel[numParallel] = xiIdx;
-                        rhoParallel +=
-                            CalcBGKFeq(xiIdx, 1, u, v, 1, equilibriumOrder);
-                        numParallel++;
-                    } break;
-                    default:
-                        break;
-                }
+        // for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
+        const int compoIdx{*componentId};
+        int numOutgoing{0};
+        int numIncoming{0};
+        int numParallel{0};
+        int *outgoing = new int[COMPOINDEX[2 * compoIdx + 1] -
+                                COMPOINDEX[2 * compoIdx] + 1];
+        int *incoming = new int[COMPOINDEX[2 * compoIdx + 1] -
+                                COMPOINDEX[2 * compoIdx] + 1];
+        int *parallel = new int[COMPOINDEX[2 * compoIdx + 1] -
+                                COMPOINDEX[2 * compoIdx] + 1];
+        Real rhoIncoming{0};
+        Real rhoParallel{0};
+        Real deltaRho{0};
+        for (int xiIdx = COMPOINDEX[2 * compoIdx];
+             xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
+            BndryDvType bdt = FindBdyDvType(vg, &XI[xiIdx * LATTDIM]);
+            switch (bdt) {
+                case BndryDv_Incoming: {
+                    incoming[numIncoming] = xiIdx;
+                    rhoIncoming += f[OPS_ACC_MD3(xiIdx, 0, 0)];
+                    numIncoming++;
+                } break;
+                case BndryDv_Outgoing: {
+                    outgoing[numOutgoing] = xiIdx;
+                    Real cx{CS * XI[xiIdx * LATTDIM]};
+                    Real cy{CS * XI[xiIdx * LATTDIM + 1]};
+                    deltaRho += (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v);
+                    numOutgoing++;
+                } break;
+                case BndryDv_Parallel: {
+                    parallel[numParallel] = xiIdx;
+                    rhoParallel +=
+                        CalcBGKFeq(xiIdx, 1, u, v, 1, equilibriumOrder);
+                    numParallel++;
+                } break;
+                default:
+                    break;
             }
-            Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
-            for (int idx = 0; idx < numParallel; idx++) {
-                f[OPS_ACC_MD3(parallel[idx], 0, 0)] = CalcBGKFeq(
-                    parallel[idx], rhoWall, u, v, 1, equilibriumOrder);
-            }
-            for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                Real cx{CS * XI[xiIdx * LATTDIM]};
-                Real cy{CS * XI[xiIdx * LATTDIM + 1]};
-                f[OPS_ACC_MD3(xiIdx, 0, 0)] =
-                    f[OPS_ACC_MD3(OPP[xiIdx], 0, 0)] +
-                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
-            }
-            delete[] outgoing;
-            delete[] incoming;
-            delete[] parallel;
         }
+        Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
+        for (int idx = 0; idx < numParallel; idx++) {
+            f[OPS_ACC_MD3(parallel[idx], 0, 0)] =
+                CalcBGKFeq(parallel[idx], rhoWall, u, v, 1, equilibriumOrder);
+        }
+        for (int idx = 0; idx < numOutgoing; idx++) {
+            int xiIdx = outgoing[idx];
+            Real cx{CS * XI[xiIdx * LATTDIM]};
+            Real cy{CS * XI[xiIdx * LATTDIM + 1]};
+            f[OPS_ACC_MD3(xiIdx, 0, 0)] =
+                f[OPS_ACC_MD3(OPP[xiIdx], 0, 0)] +
+                2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+        }
+        delete[] outgoing;
+        delete[] incoming;
+        delete[] parallel;
+        //}
     } else {
 #ifdef debug
         ops_printf("%s\n",
@@ -1576,9 +1586,9 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
     /*!
      Note: Here we are implementing the version defined in the book "Lattice
      Boltzmann Method and Its Applications in Engineering" by Guo and Shu.
-     This version is different from the original verion presented in their paper.
-     Note: The implementation can only be used for singe-speed lattice, e.g.,
-     D2Q9
+     This version is different from the original verion presented in their
+     paper. Note: The implementation can only be used for singe-speed lattice,
+     e.g., D2Q9
      */
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
     if (vt == Vertex_NoneqExtrapol) {
@@ -1586,8 +1596,7 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
             (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
         const Real u{givenMacroVars[1]};
         const Real v{givenMacroVars[2]};
-        //for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        compoIndex = componentID; //to mininmise the changes in the MPLB code.
+        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             for (int xiIndex = COMPOINDEX[2 * compoIndex];
                  xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
                 int cx = (int)XI[xiIndex * LATTDIM];
@@ -1620,8 +1629,8 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
                         }
                     } break;
                     case VG_JP: {
-                        if (cy >0) {
-                            const Real rho{macroVars[OPS_ACC_MD3(0,cx, cy)]};
+                        if (cy > 0) {
+                            const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
                                 WEIGHTS[xiIndex] * rho *
@@ -1631,10 +1640,16 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
                                  feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
-//                        if (cy==0) {
-//                            const Real rho{macroVars[OPS_ACC_MD3(0, 0, 1)]/*-macroVars[OPS_ACC_MD3(0, 0, 2)]*/};
-//                            f[OPS_ACC_MD5(xiIndex, 0, 0)]=WEIGHTS[xiIndex] * rho;
-//                        }
+                        //                        if (cy==0) {
+                        //                            const Real
+                        //                            rho{macroVars[OPS_ACC_MD3(0,
+                        //                            0,
+                        //                            1)]/*-macroVars[OPS_ACC_MD3(0,
+                        //                            0, 2)]*/};
+                        //                            f[OPS_ACC_MD5(xiIndex, 0,
+                        //                            0)]=WEIGHTS[xiIndex] *
+                        //                            rho;
+                        //                        }
                     } break;
                     case VG_JM: {
                         if (cy < 0) {
@@ -1648,16 +1663,22 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
                                  feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
-//                        if (cy==0) {
-//                            const Real rho{macroVars[OPS_ACC_MD3(0, 0, -1)]/*-macroVars[OPS_ACC_MD3(0, 0, -2)]*/};
-//                            f[OPS_ACC_MD5(xiIndex, 0, 0)]=WEIGHTS[xiIndex] * rho;
-//                        }
+                        //                        if (cy==0) {
+                        //                            const Real
+                        //                            rho{macroVars[OPS_ACC_MD3(0,
+                        //                            0,
+                        //                            -1)]/*-macroVars[OPS_ACC_MD3(0,
+                        //                            0, -2)]*/};
+                        //                            f[OPS_ACC_MD5(xiIndex, 0,
+                        //                            0)]=WEIGHTS[xiIndex] *
+                        //                            rho;
+                        //                        }
 
                     } break;
                     case VG_IPJP_I: {  // inner corner point
                         if (cy >= 0 && cx >= 0 && (cx != 0 || cy != 0)) {
                             const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            //const Real rho = 1.1;
+                            // const Real rho = 1.1;
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
                                 WEIGHTS[xiIndex] * rho *
@@ -1667,18 +1688,22 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
                                  feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
-//                       Real rhotmp = (f[OPS_ACC_MD2(0, 0, 0)] +
-//                                      f[OPS_ACC_MD2(6, 0, 0)] +
-//                                      f[OPS_ACC_MD2(8, 0, 0)]);
-//                        const Real rho = 1.1;
-//                        f[OPS_ACC_MD2(0, 0, 0)] = 4*rho/9;
-//                        f[OPS_ACC_MD2(6, 0, 0)] = rho/36;
-//                        f[OPS_ACC_MD2(8, 0, 0)] = rho/36;
+                        //                       Real rhotmp = (f[OPS_ACC_MD2(0,
+                        //                       0, 0)] +
+                        //                                      f[OPS_ACC_MD2(6,
+                        //                                      0, 0)] +
+                        //                                      f[OPS_ACC_MD2(8,
+                        //                                      0, 0)]);
+                        //                        const Real rho = 1.1;
+                        //                        f[OPS_ACC_MD2(0, 0, 0)] =
+                        //                        4*rho/9; f[OPS_ACC_MD2(6, 0,
+                        //                        0)] = rho/36; f[OPS_ACC_MD2(8,
+                        //                        0, 0)] = rho/36;
                     } break;
                     case VG_IPJM_I: {  // inner corner point·
                         if (cy <= 0 && cx >= 0 && (cx != 0 || cy != 0)) {
                             const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            //const Real rho = 1.1;
+                            // const Real rho = 1.1;
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
                                 WEIGHTS[xiIndex] * rho *
@@ -1688,18 +1713,22 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
                                  feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
-//                       Real rhotmp = (f[OPS_ACC_MD2(0, 0, 0)] +
-//                                      f[OPS_ACC_MD2(5, 0, 0)] +
-//                                      f[OPS_ACC_MD2(7, 0, 0)]);
-//                        const Real rho = 1.1;
-//                        f[OPS_ACC_MD2(0, 0, 0)] = 4*rho/9;
-//                        f[OPS_ACC_MD2(5, 0, 0)] = rho/36;
-//                        f[OPS_ACC_MD2(7, 0, 0)] = rho/36;
+                        //                       Real rhotmp = (f[OPS_ACC_MD2(0,
+                        //                       0, 0)] +
+                        //                                      f[OPS_ACC_MD2(5,
+                        //                                      0, 0)] +
+                        //                                      f[OPS_ACC_MD2(7,
+                        //                                      0, 0)]);
+                        //                        const Real rho = 1.1;
+                        //                        f[OPS_ACC_MD2(0, 0, 0)] =
+                        //                        4*rho/9; f[OPS_ACC_MD2(5, 0,
+                        //                        0)] = rho/36; f[OPS_ACC_MD2(7,
+                        //                        0, 0)] = rho/36;
                     } break;
                     case VG_IMJP_I: {  // inner corner point
                         if (cy >= 0 && cx <= 0 && (cx != 0 || cy != 0)) {
                             const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            //const Real rho = 1;
+                            // const Real rho = 1;
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
                                 WEIGHTS[xiIndex] * rho *
@@ -1709,18 +1738,22 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
                                  feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
-//                       Real rhotmp = (f[OPS_ACC_MD2(0, 0, 0)] +
-//                                      f[OPS_ACC_MD2(5, 0, 0)] +
-//                                      f[OPS_ACC_MD2(7, 0, 0)]);
-//                        const Real rho = 1;
-//                        f[OPS_ACC_MD2(0, 0, 0)] = 4*rho/9;
-//                        f[OPS_ACC_MD2(5, 0, 0)] = rho/36;
-//                        f[OPS_ACC_MD2(7, 0, 0)] = rho/36;
+                        //                       Real rhotmp = (f[OPS_ACC_MD2(0,
+                        //                       0, 0)] +
+                        //                                      f[OPS_ACC_MD2(5,
+                        //                                      0, 0)] +
+                        //                                      f[OPS_ACC_MD2(7,
+                        //                                      0, 0)]);
+                        //                        const Real rho = 1;
+                        //                        f[OPS_ACC_MD2(0, 0, 0)] =
+                        //                        4*rho/9; f[OPS_ACC_MD2(5, 0,
+                        //                        0)] = rho/36; f[OPS_ACC_MD2(7,
+                        //                        0, 0)] = rho/36;
                     } break;
                     case VG_IMJM_I: {  // inner corner point
                         if (cy <= 0 && cx <= 0 && (cx != 0 || cy != 0)) {
                             const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            //const Real rho = 1;
+                            // const Real rho = 1;
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
                                 WEIGHTS[xiIndex] * rho *
@@ -1730,19 +1763,23 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
                                  feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
-//                       Real rhotmp = (f[OPS_ACC_MD2(0, 0, 0)] +
-//                                      f[OPS_ACC_MD2(6, 0, 0)] +
-//                                      f[OPS_ACC_MD2(8, 0, 0)]);
-//                        const Real rho=1;
-//                        f[OPS_ACC_MD2(0, 0, 0)] = 4*rho/9;
-//                        f[OPS_ACC_MD2(6, 0, 0)] = rho/36;
-//                        f[OPS_ACC_MD2(8, 0, 0)] = rho/36;
+                        //                       Real rhotmp = (f[OPS_ACC_MD2(0,
+                        //                       0, 0)] +
+                        //                                      f[OPS_ACC_MD2(6,
+                        //                                      0, 0)] +
+                        //                                      f[OPS_ACC_MD2(8,
+                        //                                      0, 0)]);
+                        //                        const Real rho=1;
+                        //                        f[OPS_ACC_MD2(0, 0, 0)] =
+                        //                        4*rho/9; f[OPS_ACC_MD2(6, 0,
+                        //                        0)] = rho/36; f[OPS_ACC_MD2(8,
+                        //                        0, 0)] = rho/36;
                     } break;
                     default:
                         break;
                 }
             }
-        //}
+        }
     } else {
 #ifdef debug
         ops_printf("%s\n",
@@ -1753,9 +1790,11 @@ void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
     }
 }
 
-void KerCutCellNonEqExtrapolPressure(const Real *givenMacroVars, const int *nodeType,
-                             const int *geometryProperty, const Real *macroVars,
-                             const Real *feq, Real *f) {
+void KerCutCellNonEqExtrapolPressure(const Real *givenMacroVars,
+                                     const int *nodeType,
+                                     const int *geometryProperty,
+                                     const Real *macroVars, const Real *feq,
+                                     Real *f) {
     /*!
      Note: Here we are implementing the version defined in the book "Lattice
      Boltzmann Method and Its Applications in Engineering" by Guo and Shu.
@@ -1766,7 +1805,7 @@ void KerCutCellNonEqExtrapolPressure(const Real *givenMacroVars, const int *node
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
     if (vt == Vertex_NonEqExtrapolPressure) {
         VertexGeometryTypes vg =
-        (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
+            (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
         const Real rhoGiven{givenMacroVars[0]};
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             Real rhoLocal = 0;
@@ -1777,223 +1816,311 @@ void KerCutCellNonEqExtrapolPressure(const Real *givenMacroVars, const int *node
                 switch (vg) {
                     case VG_IP: {
                         if (cx > 0) {
-                            const Real rhoNext{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)]/rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)]/rhoNext};
-                            //const Real v =0;
+                            const Real rhoNext{
+                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
+                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
+                                         rhoNext};
+                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
+                                         rhoNext};
+                            // const Real v =0;
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
-                            WEIGHTS[xiIndex] * rhoGiven *
-                            (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
+                                WEIGHTS[xiIndex] * rhoGiven *
+                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
                             const Real noneqPart =
-                            (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                             feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
+                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
+                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                            //printf("%s%f%s%f\n","u=",u," v=",v);
+                            // printf("%s%f%s%f\n","u=",u," v=",v);
                         }
-//                        if (cx == 0) {
-//                            const Real rhoNext{2*macroVars[OPS_ACC_MD3(0, 1, 0)]-macroVars[OPS_ACC_MD3(0, 2, 0)]};
-//                            const Real u=2*(macroVars[OPS_ACC_MD3(1, 1, 0)]/macroVars[OPS_ACC_MD3(0, 1, 0)])
-//                            -macroVars[OPS_ACC_MD3(1, 2, 0)]/macroVars[OPS_ACC_MD3(0, 2, 0)];
-//                            const Real v{0};
-//                            const Real cu = (CS * cx * u + CS * cy * v);
-//                            const Real eqPart =
-//                            WEIGHTS[xiIndex] * rhoNext *
-//                            (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-//                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart;
-//                            //printf("%s%f%s%f\n","u=",u," v=",v);
-//                        }
+                        //                        if (cx == 0) {
+                        //                            const Real
+                        //                            rhoNext{2*macroVars[OPS_ACC_MD3(0,
+                        //                            1,
+                        //                            0)]-macroVars[OPS_ACC_MD3(0,
+                        //                            2, 0)]}; const Real
+                        //                            u=2*(macroVars[OPS_ACC_MD3(1,
+                        //                            1,
+                        //                            0)]/macroVars[OPS_ACC_MD3(0,
+                        //                            1, 0)])
+                        //                            -macroVars[OPS_ACC_MD3(1,
+                        //                            2,
+                        //                            0)]/macroVars[OPS_ACC_MD3(0,
+                        //                            2, 0)]; const Real v{0};
+                        //                            const Real cu = (CS * cx *
+                        //                            u + CS * cy * v); const
+                        //                            Real eqPart =
+                        //                            WEIGHTS[xiIndex] * rhoNext
+                        //                            * (1 + cu + 0.5 * (cu * cu
+                        //                            - (u * u + v * v)));
+                        //                            f[OPS_ACC_MD5(xiIndex, 0,
+                        //                            0)] = eqPart;
+                        //                            //printf("%s%f%s%f\n","u=",u,"
+                        //                            v=",v);
+                        //                        }
                     } break;
                     case VG_IM: {
                         if (cx < 0) {
-                            const Real rhoNext{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)]/rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)]/rhoNext};
-                            //const Real v =0;
+                            const Real rhoNext{
+                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
+                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
+                                         rhoNext};
+                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
+                                         rhoNext};
+                            // const Real v =0;
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
-                            WEIGHTS[xiIndex] * rhoGiven*
-                            (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
+                                WEIGHTS[xiIndex] * rhoGiven *
+                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
                             const Real noneqPart =
-                            (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                             feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
+                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
+                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
-//                        if (cx == 0) {
-//                            const Real rhoNext{2*macroVars[OPS_ACC_MD3(0, -1, 0)]-macroVars[OPS_ACC_MD3(0, -2, 0)]};
-//                            const Real u=2*(macroVars[OPS_ACC_MD3(1, -1, 0)]/macroVars[OPS_ACC_MD3(0, -1, 0)])
-//                            -macroVars[OPS_ACC_MD3(1, -2, 0)]/macroVars[OPS_ACC_MD3(0, -2, 0)];
-//                            const Real v{0};
-//                            const Real cu = (CS * cx * u + CS * cy * v);
-//                            const Real eqPart =
-//                            WEIGHTS[xiIndex] * 0.5*(rhoNext+rhoGiven) *
-//                            (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-//                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart;
-//                            //printf("%s%f%s%f\n","u=",u," v=",v);
-//                        }
+                        //                        if (cx == 0) {
+                        //                            const Real
+                        //                            rhoNext{2*macroVars[OPS_ACC_MD3(0,
+                        //                            -1,
+                        //                            0)]-macroVars[OPS_ACC_MD3(0,
+                        //                            -2, 0)]}; const Real
+                        //                            u=2*(macroVars[OPS_ACC_MD3(1,
+                        //                            -1,
+                        //                            0)]/macroVars[OPS_ACC_MD3(0,
+                        //                            -1, 0)])
+                        //                            -macroVars[OPS_ACC_MD3(1,
+                        //                            -2,
+                        //                            0)]/macroVars[OPS_ACC_MD3(0,
+                        //                            -2, 0)]; const Real v{0};
+                        //                            const Real cu = (CS * cx *
+                        //                            u + CS * cy * v); const
+                        //                            Real eqPart =
+                        //                            WEIGHTS[xiIndex] *
+                        //                            0.5*(rhoNext+rhoGiven) *
+                        //                            (1 + cu + 0.5 * (cu * cu -
+                        //                            (u * u + v * v)));
+                        //                            f[OPS_ACC_MD5(xiIndex, 0,
+                        //                            0)] = eqPart;
+                        //                            //printf("%s%f%s%f\n","u=",u,"
+                        //                            v=",v);
+                        //                        }
                     } break;
                     case VG_JP: {
                         if (cy > 0) {
-                            const Real rhoNext{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)]/rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)]/rhoNext};
+                            const Real rhoNext{
+                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
+                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
+                                         rhoNext};
+                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
+                                         rhoNext};
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
-                            WEIGHTS[xiIndex] * rhoGiven *
-                            (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
+                                WEIGHTS[xiIndex] * rhoGiven *
+                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
                             const Real noneqPart =
-                            (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                             feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
+                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
+                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
                     } break;
                     case VG_JM: {
                         if (cy < 0) {
-                            const Real rhoNext{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)]/rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)]/rhoNext};
+                            const Real rhoNext{
+                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
+                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
+                                         rhoNext};
+                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
+                                         rhoNext};
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
-                            WEIGHTS[xiIndex] * rhoGiven *
-                            (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
+                                WEIGHTS[xiIndex] * rhoGiven *
+                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
                             const Real noneqPart =
-                            (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                             feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
+                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
+                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
                     } break;
                     case VG_IPJP_I: {  // inner corner point
                         if (cy >= 0 && cx >= 0 && (cx != 0 || cy != 0)) {
-                            const Real rhoNext{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)]/rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)]/rhoNext};
+                            const Real rhoNext{
+                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
+                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
+                                         rhoNext};
+                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
+                                         rhoNext};
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
-                            WEIGHTS[xiIndex] * rhoGiven *
-                            (1+ cu + 0.5 * (cu * cu - (u * u + v * v)));
+                                WEIGHTS[xiIndex] * rhoGiven *
+                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
                             const Real noneqPart =
-                            (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                             feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
+                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
+                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
-//                        if (
-//                            (cx == 0 && cy == 0) ||
-//                            (cx == 1 && cy == -1) ||
-//                            (cx == -1 && cy == 1)
-//                            ) {
-//                            const Real rhoNext{2*macroVars[OPS_ACC_MD3(0, 1, 0)]-macroVars[OPS_ACC_MD3(0, 2, 0)]};
-//                            const Real u{macroVars[OPS_ACC_MD3(1, 1, 0)] /
-//                                         rhoNext};
-//                            const Real v{0};
-//                            const Real cu = (CS * cx * u + CS * cy * v);
-//                            const Real eqPart =
-//                                WEIGHTS[xiIndex] * rhoGiven *
-//                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-//                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart;
-//                        }
-                        //printf("%s%f\n","f0=",f[OPS_ACC_MD5(0,0,0)]);
+                        //                        if (
+                        //                            (cx == 0 && cy == 0) ||
+                        //                            (cx == 1 && cy == -1) ||
+                        //                            (cx == -1 && cy == 1)
+                        //                            ) {
+                        //                            const Real
+                        //                            rhoNext{2*macroVars[OPS_ACC_MD3(0,
+                        //                            1,
+                        //                            0)]-macroVars[OPS_ACC_MD3(0,
+                        //                            2, 0)]}; const Real
+                        //                            u{macroVars[OPS_ACC_MD3(1,
+                        //                            1, 0)] /
+                        //                                         rhoNext};
+                        //                            const Real v{0};
+                        //                            const Real cu = (CS * cx *
+                        //                            u + CS * cy * v); const
+                        //                            Real eqPart =
+                        //                                WEIGHTS[xiIndex] *
+                        //                                rhoGiven * (1 + cu +
+                        //                                0.5 * (cu * cu - (u *
+                        //                                u + v * v)));
+                        //                            f[OPS_ACC_MD5(xiIndex, 0,
+                        //                            0)] = eqPart;
+                        //                        }
+                        // printf("%s%f\n","f0=",f[OPS_ACC_MD5(0,0,0)]);
                     } break;
                     case VG_IPJM_I: {  // inner corner point·
                         if (cy <= 0 && cx >= 0 && (cx != 0 || cy != 0)) {
-                            const Real rhoNext{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)]/rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)]/rhoNext};
+                            const Real rhoNext{
+                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
+                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
+                                         rhoNext};
+                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
+                                         rhoNext};
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
-                            WEIGHTS[xiIndex] * rhoGiven *
-                            (1+ cu + 0.5 * (cu * cu - (u * u + v * v)));
+                                WEIGHTS[xiIndex] * rhoGiven *
+                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
                             const Real noneqPart =
-                            (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                             feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
+                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
+                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
-//                        if (
-//                            (cx == 0 && cy == 0) ||
-//                            (cx == 1 && cy == 1) ||
-//                            (cx == -1 && cy == -1)
-//                            ) {
-//                            const Real rhoNext{2*macroVars[OPS_ACC_MD3(0, 1, 0)]-macroVars[OPS_ACC_MD3(0, 2, 0)]};
-//                            const Real u{macroVars[OPS_ACC_MD3(1, 1, 0)] /
-//                                         rhoNext};
-//                            const Real v{0};
-//                            const Real cu = (CS * cx * u + CS * cy * v);
-//                            const Real eqPart =
-//                                WEIGHTS[xiIndex] * rhoGiven *
-//                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-//                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart;
-//                        }
+                        //                        if (
+                        //                            (cx == 0 && cy == 0) ||
+                        //                            (cx == 1 && cy == 1) ||
+                        //                            (cx == -1 && cy == -1)
+                        //                            ) {
+                        //                            const Real
+                        //                            rhoNext{2*macroVars[OPS_ACC_MD3(0,
+                        //                            1,
+                        //                            0)]-macroVars[OPS_ACC_MD3(0,
+                        //                            2, 0)]}; const Real
+                        //                            u{macroVars[OPS_ACC_MD3(1,
+                        //                            1, 0)] /
+                        //                                         rhoNext};
+                        //                            const Real v{0};
+                        //                            const Real cu = (CS * cx *
+                        //                            u + CS * cy * v); const
+                        //                            Real eqPart =
+                        //                                WEIGHTS[xiIndex] *
+                        //                                rhoGiven * (1 + cu +
+                        //                                0.5 * (cu * cu - (u *
+                        //                                u + v * v)));
+                        //                            f[OPS_ACC_MD5(xiIndex, 0,
+                        //                            0)] = eqPart;
+                        //                        }
 
                     } break;
                     case VG_IMJP_I: {  // inner corner point
                         if (cy >= 0 && cx <= 0 && (cx != 0 || cy != 0)) {
-                            const Real rhoNext{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)]/rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)]/rhoNext};
+                            const Real rhoNext{
+                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
+                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
+                                         rhoNext};
+                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
+                                         rhoNext};
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
-                            WEIGHTS[xiIndex] * rhoGiven *
-                            (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
+                                WEIGHTS[xiIndex] * rhoGiven *
+                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
                             const Real noneqPart =
-                            (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                             feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
+                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
+                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
-//                        if (
-//                            (cx == 0 && cy == 0) ||
-//                            (cx == 1 && cy == 1) ||
-//                            (cx == -1 && cy == -1)
-//                            ) {
-//                            const Real rhoNext{2*macroVars[OPS_ACC_MD3(0, -1, 0)]-macroVars[OPS_ACC_MD3(0, -2, 0)]};
-//                            const Real u{macroVars[OPS_ACC_MD3(1, -1, 0)] /
-//                                         rhoNext};
-//                            const Real v{0};
-//                            const Real cu = (CS * cx * u + CS * cy * v);
-//                            const Real eqPart =
-//                                WEIGHTS[xiIndex] * rhoGiven *
-//                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-//                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart;
-//                        }
+                        //                        if (
+                        //                            (cx == 0 && cy == 0) ||
+                        //                            (cx == 1 && cy == 1) ||
+                        //                            (cx == -1 && cy == -1)
+                        //                            ) {
+                        //                            const Real
+                        //                            rhoNext{2*macroVars[OPS_ACC_MD3(0,
+                        //                            -1,
+                        //                            0)]-macroVars[OPS_ACC_MD3(0,
+                        //                            -2, 0)]}; const Real
+                        //                            u{macroVars[OPS_ACC_MD3(1,
+                        //                            -1, 0)] /
+                        //                                         rhoNext};
+                        //                            const Real v{0};
+                        //                            const Real cu = (CS * cx *
+                        //                            u + CS * cy * v); const
+                        //                            Real eqPart =
+                        //                                WEIGHTS[xiIndex] *
+                        //                                rhoGiven * (1 + cu +
+                        //                                0.5 * (cu * cu - (u *
+                        //                                u + v * v)));
+                        //                            f[OPS_ACC_MD5(xiIndex, 0,
+                        //                            0)] = eqPart;
+                        //                        }
                     } break;
                     case VG_IMJM_I: {  // inner corner point
                         if (cy <= 0 && cx <= 0 && (cx != 0 || cy != 0)) {
-                            const Real rhoNext{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)]/rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)]/rhoNext};
+                            const Real rhoNext{
+                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
+                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
+                                         rhoNext};
+                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
+                                         rhoNext};
                             const Real cu = (CS * cx * u + CS * cy * v);
                             const Real eqPart =
-                            WEIGHTS[xiIndex] * rhoGiven *
-                            ( 1+ cu + 0.5 * (cu * cu - (u * u + v * v)));
+                                WEIGHTS[xiIndex] * rhoGiven *
+                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
                             const Real noneqPart =
-                            (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                             feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
+                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
+                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
                             f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
                         }
-//                        if (
-//                            (cx == 0 && cy == 0) ||
-//                            (cx == 1 && cy == -1) ||
-//                            (cx == -1 && cy == 1)
-//                            ) {
-//                           const Real rhoNext{2*macroVars[OPS_ACC_MD3(0, -1, 0)]-macroVars[OPS_ACC_MD3(0, -2, 0)]};
-//                            const Real u{macroVars[OPS_ACC_MD3(1, -1, 0)] /
-//                                         rhoNext};
-//                            const Real v{0};
-//                            const Real cu = (CS * cx * u + CS * cy * v);
-//                            const Real eqPart =
-//                                WEIGHTS[xiIndex] * rhoGiven *
-//                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-//                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart;
-//                        }
+                        //                        if (
+                        //                            (cx == 0 && cy == 0) ||
+                        //                            (cx == 1 && cy == -1) ||
+                        //                            (cx == -1 && cy == 1)
+                        //                            ) {
+                        //                           const Real
+                        //                           rhoNext{2*macroVars[OPS_ACC_MD3(0,
+                        //                           -1,
+                        //                           0)]-macroVars[OPS_ACC_MD3(0,
+                        //                           -2, 0)]};
+                        //                            const Real
+                        //                            u{macroVars[OPS_ACC_MD3(1,
+                        //                            -1, 0)] /
+                        //                                         rhoNext};
+                        //                            const Real v{0};
+                        //                            const Real cu = (CS * cx *
+                        //                            u + CS * cy * v); const
+                        //                            Real eqPart =
+                        //                                WEIGHTS[xiIndex] *
+                        //                                rhoGiven * (1 + cu +
+                        //                                0.5 * (cu * cu - (u *
+                        //                                u + v * v)));
+                        //                            f[OPS_ACC_MD5(xiIndex, 0,
+                        //                            0)] = eqPart;
+                        //                        }
                     } break;
                     default:
                         break;
                 }
                 rhoLocal += f[OPS_ACC_MD5(xiIndex, 0, 0)];
             }
-//            Real ratio = rhoGiven / rhoLocal;
-            //printf("%s%f\n","rhoLocal=",rhoLocal);
-        //    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-        //        f[OPS_ACC_MD5(xiIndex, 0, 0)] *= ratio;
-        //     }
+            //            Real ratio = rhoGiven / rhoLocal;
+            // printf("%s%f\n","rhoLocal=",rhoLocal);
+            //    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+            //        f[OPS_ACC_MD5(xiIndex, 0, 0)] *= ratio;
+            //     }
         }
     } else {
 #ifdef debug
@@ -2015,7 +2142,7 @@ void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
             (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0, 0)];
         Real rhoGiven = givenBoundaryVars[0];
         Real rho = 0;
-        for (int xiIdx = 0;  xiIdx < NUMXI; xiIdx++) {
+        for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
             Real cx{CS * XI[xiIdx * LATTDIM]};
             Real cy{CS * XI[xiIdx * LATTDIM + 1]};
             Real cz{CS * XI[xiIdx * LATTDIM + 2]};
@@ -2341,7 +2468,7 @@ void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
             }
             rho += f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
         }
-        Real ratio = rhoGiven / rho;        
+        Real ratio = rhoGiven / rho;
         for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
             f[OPS_ACC_MD3(xiIdx, 0, 0, 0)] *= ratio;
         }
@@ -2356,7 +2483,8 @@ void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
 }
 
 void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
-                                const int *geometryProperty, Real *f, const int *componentId) {
+                                const int *geometryProperty, Real *f,
+                                const int *componentId) {
     // This kernel is suitable for any single-speed lattice
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
@@ -2370,67 +2498,67 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
         Real w = givenMacroVars[3];
         // loop to classify types of discrete velocity i.e., incoming, outgoing
         // and parallel
-        //for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
-            const int compoIdx{*componentId};
-            //compoIdx = *componentId; 
+        // for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
+        const int compoIdx{*componentId};
+        // compoIdx = *componentId;
 
-            int numOutgoing{0};
-            int numIncoming{0};
-            int numParallel{0};
-            int *outgoing = new int[COMPOINDEX[2 * compoIdx + 1] -
-                                    COMPOINDEX[2 * compoIdx] + 1];
-            int *incoming = new int[COMPOINDEX[2 * compoIdx + 1] -
-                                    COMPOINDEX[2 * compoIdx] + 1];
-            int *parallel = new int[COMPOINDEX[2 * compoIdx + 1] -
-                                    COMPOINDEX[2 * compoIdx] + 1];
-            Real rhoIncoming{0};
-            Real rhoParallel{0};
-            Real deltaRho{0};
-            for (int xiIdx = COMPOINDEX[2 * compoIdx];
-                 xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
-                Real cx{CS * XI[xiIdx * LATTDIM]};
-                Real cy{CS * XI[xiIdx * LATTDIM + 1]};
-                Real cz{CS * XI[xiIdx * LATTDIM + 2]};
-                BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
-                switch (bdt) {
-                    case BndryDv_Incoming: {
-                        incoming[numIncoming] = xiIdx;
-                        rhoIncoming += f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
-                        numIncoming++;
-                    } break;
-                    case BndryDv_Outgoing: {
-                        outgoing[numOutgoing] = xiIdx;
-                        deltaRho +=
-                            (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v + cz * w);
-                        numOutgoing++;
-                    } break;
-                    case BndryDv_Parallel: {
-                        parallel[numParallel] = xiIdx;
-                        rhoParallel +=
-                            CalcBGKFeq(xiIdx, 1, u, v, w, 1, equilibriumOrder);
-                        numParallel++;
-                    } break;
-                    default:
-                        break;
-                }
+        int numOutgoing{0};
+        int numIncoming{0};
+        int numParallel{0};
+        int *outgoing = new int[COMPOINDEX[2 * compoIdx + 1] -
+                                COMPOINDEX[2 * compoIdx] + 1];
+        int *incoming = new int[COMPOINDEX[2 * compoIdx + 1] -
+                                COMPOINDEX[2 * compoIdx] + 1];
+        int *parallel = new int[COMPOINDEX[2 * compoIdx + 1] -
+                                COMPOINDEX[2 * compoIdx] + 1];
+        Real rhoIncoming{0};
+        Real rhoParallel{0};
+        Real deltaRho{0};
+        for (int xiIdx = COMPOINDEX[2 * compoIdx];
+             xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
+            Real cx{CS * XI[xiIdx * LATTDIM]};
+            Real cy{CS * XI[xiIdx * LATTDIM + 1]};
+            Real cz{CS * XI[xiIdx * LATTDIM + 2]};
+            BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+            switch (bdt) {
+                case BndryDv_Incoming: {
+                    incoming[numIncoming] = xiIdx;
+                    rhoIncoming += f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
+                    numIncoming++;
+                } break;
+                case BndryDv_Outgoing: {
+                    outgoing[numOutgoing] = xiIdx;
+                    deltaRho +=
+                        (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v + cz * w);
+                    numOutgoing++;
+                } break;
+                case BndryDv_Parallel: {
+                    parallel[numParallel] = xiIdx;
+                    rhoParallel +=
+                        CalcBGKFeq(xiIdx, 1, u, v, w, 1, equilibriumOrder);
+                    numParallel++;
+                } break;
+                default:
+                    break;
             }
-            Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
-            for (int idx = 0; idx < numParallel; idx++) {
-                f[OPS_ACC_MD3(parallel[idx], 0, 0, 0)] = CalcBGKFeq(
-                    parallel[idx], rhoWall, u, v, w, 1, equilibriumOrder);
-            }
-            for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                Real cx{CS * XI[xiIdx * LATTDIM]};
-                Real cy{CS * XI[xiIdx * LATTDIM + 1]};
-                Real cz{CS * XI[xiIdx * LATTDIM + 2]};
-                f[OPS_ACC_MD3(xiIdx, 0, 0, 0)] =
-                    f[OPS_ACC_MD3(OPP[xiIdx], 0, 0, 0)] +
-                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
-            }
-            delete[] outgoing;
-            delete[] incoming;
-            delete[] parallel;
+        }
+        Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
+        for (int idx = 0; idx < numParallel; idx++) {
+            f[OPS_ACC_MD3(parallel[idx], 0, 0, 0)] = CalcBGKFeq(
+                parallel[idx], rhoWall, u, v, w, 1, equilibriumOrder);
+        }
+        for (int idx = 0; idx < numOutgoing; idx++) {
+            int xiIdx = outgoing[idx];
+            Real cx{CS * XI[xiIdx * LATTDIM]};
+            Real cy{CS * XI[xiIdx * LATTDIM + 1]};
+            Real cz{CS * XI[xiIdx * LATTDIM + 2]};
+            f[OPS_ACC_MD3(xiIdx, 0, 0, 0)] =
+                f[OPS_ACC_MD3(OPP[xiIdx], 0, 0, 0)] +
+                2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+        }
+        delete[] outgoing;
+        delete[] incoming;
+        delete[] parallel;
         //}
     } else {
 #ifdef debug
@@ -2442,7 +2570,7 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
 }
 
 void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
-                         Real *f) {
+                           Real *f) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
     if (vt == Vertex_NoslipEQN) {
         Real u = givenMacroVars[1];
@@ -2471,12 +2599,14 @@ void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
                  xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
                 f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] =
                     
-                     
-                                
+                           
+                                      
                     CalcBGKFeq(xiIdx, rhoIntermidate, u, v, w, 1, 2);
                 if (f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] > 1 ||
                     f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] < 0) {
-                    ops_printf("f=%f rhoInter=%f xiIdx=%i, u=%f\n", f[OPS_ACC_MD2(xiIdx, 0, 0, 0)],rhoIntermidate,xiIdx,u);
+                    ops_printf("f=%f rhoInter=%f xiIdx=%i, u=%f\n",
+                               f[OPS_ACC_MD2(xiIdx, 0, 0, 0)], rhoIntermidate,
+                               xiIdx, u);
                     Real tmp;
                     std::cin >> tmp;
                 }
@@ -2905,6 +3035,5 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
 #endif
     }
 }
-#endif// OPS_3D
-#endif /* BOUNDARY_KERNEL_H */
-
+#endif  // OPS_3D
+#endif  /* BOUNDARY_KERNEL_H */

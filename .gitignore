@@ -23,50 +23,7 @@ lbm3d_dev_mpi
 #Object files.
 lbm2d_hilemms_dev_seq
 lbm3d_hilemms_dev_seq
-
-Lid_Driven_Cavity_GeometryList.dat
-*.dat
-*.py
 __pycache__/
 
 
-#Results files.
-*.h5
-AUTHORS
-scheme.cpp
-boundary.cpp
-scheme.h
-boundary.h         
-LICENSE.docx       
-scheme_kernel.h
-boundary_kernel.h  
-setup_comput_domain.cpp
-evolution.cpp      
-Manual.docx        
-setup_comput_domain.h
-evolution.h        
-model.cpp          
-setup_comput_domain_kernel.h
-flowfield.cpp      
-model.h            
-type.cpp
-flowfield.h        
-model_kernel.h     
-type.h
-plot.py
-PostProcess.py
 
-
-PreProcess.cpp
-Translate.sh
-evolution3d.cpp
-evolution3d.h
-point_position.cpp
-point_position.h
-pseudocodeforparticlefluid.cpp
-
-FixConstantDefinition.py
-FixKernelDeclaration.py
-Manual.md
-lbm2d.cpp
-lbm3d.cpp

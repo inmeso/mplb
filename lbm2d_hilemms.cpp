@@ -11,113 +11,130 @@
 #include <string>
 #include "boundary.h"
 #include "evolution.h"
+#include "evolution3d.h"
 #include "flowfield.h"
+#include "hilemms.h"
 #include "model.h"
 #include "ops_seq.h"
 #include "scheme.h"
-#include "type.h"
-#include "hilemms.h"
 #include "setup_comput_domain.h"
+#include "type.h"
 
+// Code_modifcication needed
+// Currently defining OPS 3d here. We need some mechanism to generate this
+// automatically.
 #define OPS_2D
 
-int Max_no_Iterations  = 100000;
-int check_point_Period = 1000;
+extern int HALODEPTH;
 
-int num_blocks = 1;
-int blocks_size_x_y[] = {101, 101};
+BoundarySurface surface[4] = {BoundSurf_Inlet, BoundSurf_Outlet, BoundSurf_Top,
+                              BoundSurf_Bottom};
 
-int Num_Xi = 9;
-int order_eq_dis_func = 2;
-int lattice_dim = 2;
-int Num_macroscopic_vars = 3;
-int Num_components = 1;
-int Thermal_problem = 0;
-Real sound_speed = sqrt(3);
+BoundaryType boundType[4] = {BoundType_EQMDiffuseRefl, BoundType_EQMDiffuseRefl,
+                             BoundType_EQMDiffuseRefl,
+                             BoundType_EQMDiffuseRefl};
 
-int Num_space_dim      = 2;
-string CASE_NAME = "Lid_Driven_Cavity";
+void simulate() {
+    std::string caseName{"2D_lid_Driven_cavity"};
+    int spaceDim{2};
+    DefineCase(caseName, spaceDim);
 
-int Block_index = 0;
-int total_seg_each_dir[] = {1,1};
-int Number_cells[] = {100, 100};    // If more segments, provide num_cell for al segments in x direction, then y and then z.
-Real end_position[] = {1.0, 1.0}; //Length of lid in each direction.
+    std::vector<std::string> compoNames{"Fluid"};
+    std::vector<int> compoid{0};
+    std::vector<std::string> lattNames{"d2q9"};
+    DefineComponents(compoNames, compoid, lattNames);
 
-Real Knudsen_number[] = {0.001};
+    std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
+                                             Variable_V};
+    std::vector<std::string> macroVarNames{"rho", "u", "v"};
+    std::vector<int> macroVarId{0, 1, 2};
+    std::vector<int> macroCompoId{0, 0, 0};
+    DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
-int Bottom_bc_type = 1014;
-int Top_bc_type = 1014;
-int Left_bc_type = 1014;
-int Right_bc_type = 1014;
-int Left_bottom_bc_type = 1014;
-int Left_top_bc_type = 1014;
-int Right_bottom_bc_type = 1014;
-int Right_top_bc_type = 1014;
+    std::vector<EquilibriumType> equTypes{Equilibrium_BGKIsothermal2nd};
+    std::vector<int> equCompoId{0};
+    DefineEquilibrium(equTypes, equCompoId);
 
-Real InletMacrovars[]  = {1,0,0};
-Real OutletMacrovars[] = {1,0.0,0};
-Real TopMacrovars[]    = {1,0.05,0};
-Real BottomMacrovars[] = {1,0,0};
+    SetupScheme();
+    SetupBoundary();
 
-Real Initial_value_macro_vars[] = {1,0,0};
+    int blockNum{1};
+    std::vector<int> blockSize{51, 51};
+    Real meshSize{0.02};
+    std::vector<Real> startPos{0.0, 0.0};
+    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
 
-int Num_bound_halo_pts = 1;
-int Halo_Num = 0;
-int Halo_depth = 0; 
-int Scheme_halo_points = 1;
+    int blockIndex{0};
+    SetupGeomPropAndNodeType(blockIndex, boundType);
 
-void Preprocessor_lbm2d_hilemms()
-{
-    DefineCase(CASE_NAME, Num_space_dim);
-    ReadBlockDimensions(num_blocks, blocks_size_x_y);
-    DefineLattice(Num_Xi, order_eq_dis_func, lattice_dim, Num_macroscopic_vars, Num_components, Thermal_problem, sound_speed);
+    int compoIdInitialCond{0};
+    std::vector<Real> initialMacroValues{1, 0, 0};
+    DefineIntialCond(blockIndex, compoIdInitialCond, initialMacroValues);
+    ops_printf("%s\n", "Flowfield is Initialised now!");
 
-    DefineHaloNumber(Halo_Num, Halo_depth, Scheme_halo_points,Num_bound_halo_pts);
+    std::vector<Real> tauRef{0.001};
+    SetTauRef(tauRef);
 
-    Setup_Stencil_Model(Num_Xi,lattice_dim);
+    SetTimeStep(meshSize / SoundSpeed());
 
-    BlockSegmentInfo(Block_index, total_seg_each_dir, Number_cells, end_position, Num_space_dim);
+    HALODEPTH = HaloPtNum();
+    ops_printf("%s\n", "Starting to allocate...");
+    DefineHaloTransfer();
+    // above calls must be before the ops_partition call.
+    ops_partition((char*)"LBM");
+    ops_printf("%s\n", "Flowfield is setup now!");
+    InitialiseSolution();
 
-    //cout<<"Check! Hi I am in main and I finished BlockSegmentInfo \n";
+//if 0
+    // currently this information is not playin major role in this
+    // implementation.
+    SchemeType scheme{stStreamCollision};                                
+    const int steps{1000};
+    const int checkPeriod{100};
+    Iterate(scheme, steps, checkPeriod);
+    //#endif
 
-    ReadNodeType(Block_index, Bottom_bc_type, Top_bc_type, Left_bc_type, Right_bc_type,
-                 Left_bottom_bc_type, Left_top_bc_type, Right_bottom_bc_type, Right_top_bc_type);
-    
-    Initialise_Macrovars_Domain(Initial_value_macro_vars);
-
-    //cout<<"Check! Hi I am in Simulate_lbm2d_hilemms and I initialised variables. \n";
-
-
-    DefineIterationParamaeters(Max_no_Iterations, check_point_Period);
-    DefineKnudsenNo(Knudsen_number);
-
-    //simulate(InletMacrovars, Left_bc_type,  OutletMacrovars, Right_bc_type, 
-    //          TopMacrovars, Top_bc_type, BottomMacrovars, Bottom_bc_type);
-
-    //DefineBC2d(InletMacrovars, Left_bc_type,  OutletMacrovars, Right_bc_type, 
-    //           TopMacrovars, Top_bc_type, BottomMacrovars, Bottom_bc_type);
+#if 0
+    // currently this information is not playin major role in this
+    // implementation.
+    SchemeType scheme{stStreamCollision};                        
+    const Real convergenceCriteria{1E-5};
+    const int checkPeriod{1000};
+    Iterate(scheme, convergenceCriteria, checkPeriod);
+#endif
 }
 
+void ImplementBoundary() {
+    int blockIndex{0};
+    int componentId{0};
+    std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,
+                                             Variable_V};
+    std::vector<Real> inletValMacroVarsComp{1, 0, 0};
+    DefineBlockBoundary(blockIndex, componentId, surface[0], boundType[0],
+                        MacroVarsComp, inletValMacroVarsComp);
+
+    std::vector<Real> outletValMacroVarsComp{1, 0, 0};
+    DefineBlockBoundary(blockIndex, componentId, surface[1], boundType[1],
+                        MacroVarsComp, outletValMacroVarsComp);
+
+    std::vector<Real> topValMacroVarsComp{1, 0.01, 0};
+    DefineBlockBoundary(blockIndex, componentId, surface[2], boundType[2],
+                        MacroVarsComp, topValMacroVarsComp);
+
+    std::vector<Real> bottomValMacroVarsComp{1, 0, 0};
+    DefineBlockBoundary(blockIndex, componentId, surface[3], boundType[3],
+                        MacroVarsComp, bottomValMacroVarsComp);
+}
 
 int main(int argc, char** argv) {
-    // initialize sizes using global values
-
-    /**-------------------------- Initialisation --------------------------**/
-
     // OPS initialisation
-    ops_init(argc, argv, 5);
+    ops_init(argc, argv, 1);
     double ct0, ct1, et0, et1;
     ops_timers(&ct0, &et0);
-    Preprocessor_lbm2d_hilemms();
-
-    //cout<<"Check! Hi I am in main and I finished Preprocess step\n";
-    
-    simulate(InletMacrovars, Left_bc_type,  OutletMacrovars, Right_bc_type, 
-             TopMacrovars, Top_bc_type, BottomMacrovars, Bottom_bc_type, Num_bound_halo_pts);
-
-
+    simulate();
     ops_timers(&ct1, &et1);
-    //ops_timing_output(stdout);
+    ops_printf("\nTotal Wall time %lf\n", et1 - et0);
+    // Print OPS performance details to output stream
+    ops_timing_output(stdout);
     ops_exit();
 }
-

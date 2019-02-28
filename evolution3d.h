@@ -3,10 +3,10 @@
 // license that can be found in the LICENSE file.
 
 /*! @brief   Head file for wrap functions.
-  * @author  Jianping Meng
-  * @details Declare wrap functions for implementing the main evolution
-  * cycle
-  */
+ * @author  Jianping Meng
+ * @details Declare wrap functions for implementing the main evolution
+ * cycle
+ */
 
 #ifndef EVOLUTION3D_H_
 #define EVOLUTION3D_H_
@@ -32,7 +32,7 @@
  */
 
 #ifdef OPS_3D
-//Stream-collision scheme related
+// Stream-collision scheme related
 /*!
  * Overall wrap for stream-collision scheme
  */
@@ -45,7 +45,7 @@ void Stream3D();
  * Ops_par_loop for the collision step
  */
 void Collision3D();
-//finite-difference scheme with cutting-cell technique related
+// finite-difference scheme with cutting-cell technique related
 /*!
  * Overall wrap for a finite difference scheme
  */
@@ -73,8 +73,9 @@ void UpdateHalos3D();
 void ImplementBoundary3D();
 void CopyDistribution3D(const ops_dat* fSrc, ops_dat* fDest);
 
-void TreatBlockBoundary3D(const int blockIndex, const int componentID, const Real* givenVars, int* range,
-                           const VertexTypes boundaryType);
+void TreatBlockBoundary3D(const int blockIndex, const int componentID,
+                          const Real* givenVars, int* range,
+                          const VertexTypes boundaryType);
 
 extern void ImplementBoundary();
 #endif /* OPS_3D */
