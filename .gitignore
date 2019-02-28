@@ -13,3 +13,17 @@ __pycache__/PostProcess\.cpython-36\.pyc
 lbm3d_dev_seq
 lbm3d_dev_mpi
 *.ipynb
+
+
+# Exlude eclipse files.
+/.cproject
+/.project
+/.vscode
+
+#Object files.
+lbm2d_hilemms_dev_seq
+lbm3d_hilemms_dev_seq
+__pycache__/
+
+
+

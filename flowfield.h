@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 /*! @brief   Implementing functions related to the flow field
-  * @author  Jianping Meng
-  * @details Implementing functions related to create the flow
-  * field (allocate memory), set up the geometry and the boundary
-  * property, and deallocate the memory.
-  */
+ * @author  Jianping Meng
+ * @details Implementing functions related to create the flow
+ * field (allocate memory), set up the geometry and the boundary
+ * property, and deallocate the memory.
+ */
 #ifndef FLOWFIELD_H
 #define FLOWFIELD_H
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include "boundary.h"
 #include "model.h"
@@ -49,9 +49,9 @@ extern ops_dat* g_Bodyforce;
  */
 extern ops_dat* g_MacroVars;
 /*!
-* Save the macroscopic variables at the previous step
-* Typically used for steady flow.
-*/
+ * Save the macroscopic variables at the previous step
+ * Typically used for steady flow.
+ */
 extern ops_dat* g_MacroVarsCopy;
 /*!
  * Relaxation time
@@ -59,11 +59,11 @@ extern ops_dat* g_MacroVarsCopy;
  */
 extern ops_dat* g_Tau;
 /*!
-* the residual error for steady flows
-* for each macroscopic variable, there are two values: the absolute
-* and relative
-* for each component of a vector, two values are allocated
-*/
+ * the residual error for steady flows
+ * for each macroscopic variable, there are two values: the absolute
+ * and relative
+ * for each component of a vector, two values are allocated
+ */
 extern Real* g_ResidualError;
 extern ops_reduction* g_ResidualErrorHandle;
 // Boundary fitting mesh
@@ -121,6 +121,7 @@ const int HaloDepth();
 const Real TimeStep();
 const Real* pTimeStep();
 const Real* TauRef();
+// const int* GetBlockNum();
 const std::string CaseName();
 const int HaloPtNum();
 Real TotalMeshSize();
@@ -128,7 +129,7 @@ const ops_halo_group HaloGroup();
 void SetTimeStep(Real dt);
 void SetCaseName(const std::string caseName);
 void setCaseName(const char* caseName);
-void SetRauRef(const std::vector<Real> tauRef);
+void SetTauRef(const std::vector<Real> tauRef);
 void SetBlockSize(const std::vector<int> blockSize);
 void SetBlockNum(const int blockNum);
 
@@ -142,5 +143,8 @@ void WriteFlowfieldToHdf5(const long timeStep);
 void WriteDistributionsToHdf5(const long timeStep);
 void WriteNodePropertyToHdf5(const long timeStep);
 void DestroyFlowfield();
-
+void DefineHaloTransfer();
+void DefineHaloTransfer3D();
+void SetHaloDepth(const int haloDepth);
+void SetHaloRelationNum(const int haloRelationNum);
 #endif

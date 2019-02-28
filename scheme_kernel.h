@@ -12,7 +12,7 @@
 #ifndef SCHEME_KERNEL_H
 #define SCHEME_KERNEL_H
 #include "scheme.h"
-#ifdef OPS_2D //two dimensional code
+#ifdef OPS_2D  // two dimensional code
 void KerCollide(const Real* dt, const int* nodeType, const Real* f,
                 const Real* feq, const Real* relaxationTime,
                 const Real* bodyForce, Real* fStage) {
@@ -20,15 +20,12 @@ void KerCollide(const Real* dt, const int* nodeType, const Real* f,
     // collisionRequired: means if collision is required at boundary
     // e.g., the ZouHe boundary condition explicitly requires collision
     bool collisionRequired =
-        (vt == Vertex_Fluid || 
-         vt == Vertex_NoneqExtrapol ||
+        (vt == Vertex_Fluid || vt == Vertex_NoneqExtrapol ||
          vt == Vertex_ZouHeVelocity ||
          // vt == Vertex_KineticDiffuseWall ||
-         vt == Vertex_EQMDiffuseRefl ||
-         vt == Vertex_ExtrapolPressure1ST ||
+         vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
          vt == Vertex_ExtrapolPressure2ND ||
-         vt == Vertex_NonEqExtrapolPressure || 
-         vt == Vertex_NoslipEQN);
+         vt == Vertex_NonEqExtrapolPressure || vt == Vertex_NoslipEQN);
     if (collisionRequired) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             Real tau = relaxationTime[OPS_ACC_MD4(compoIndex, 0, 0)];
@@ -59,18 +56,16 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                     fStage[OPS_ACC_MD2(xiIndex, -cx, -cy)];
             }
             if (vt >= Vertex_Boundary) {
-                //streamRequired: means if the particles with velocity parallel
-                //needs to be streamed at the boundary
-                bool streamRequired = (
-                                         vt == Vertex_ZouHeVelocity  ||
-                                         vt == Vertex_NoneqExtrapol  ||
-                                         //vt == Vertex_KineticDiffuseWall ||
-                                         vt == Vertex_EQMDiffuseRefl ||
-                                         vt == Vertex_ExtrapolPressure1ST ||
-                                         vt == Vertex_ExtrapolPressure2ND ||
-                                         vt == Vertex_NonEqExtrapolPressure ||
-                                         vt == Vertex_NoslipEQN
-                                         );
+                // streamRequired: means if the particles with velocity parallel
+                // needs to be streamed at the boundary
+                bool streamRequired =
+                    (vt == Vertex_ZouHeVelocity || vt == Vertex_NoneqExtrapol ||
+                     // vt == Vertex_KineticDiffuseWall ||
+                     vt == Vertex_EQMDiffuseRefl ||
+                     vt == Vertex_ExtrapolPressure1ST ||
+                     vt == Vertex_ExtrapolPressure2ND ||
+                     vt == Vertex_NonEqExtrapolPressure ||
+                     vt == Vertex_NoslipEQN);
                 if (streamRequired) {
                     if ((cx == 0) && (cy == 0)) {
                         f[OPS_ACC_MD3(xiIndex, 0, 0)] =
@@ -82,7 +77,7 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                     case VG_IP:
                         // (cx=0 means stream is implemented at i=0,so here we
                         //  disable the step at boundary)
-                        if  (streamRequired) {
+                        if (streamRequired) {
                             if (cx <= 0) {
                                 f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                     fStage[OPS_ACC_MD2(xiIndex, -cx, -cy)];
@@ -95,7 +90,7 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                         }
                         break;
                     case VG_IM:
-                        if  (streamRequired) {
+                        if (streamRequired) {
                             if (cx >= 0) {
                                 f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                     fStage[OPS_ACC_MD2(xiIndex, -cx, -cy)];
@@ -108,7 +103,7 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                         }
                         break;
                     case VG_JP:
-                        if  (streamRequired)  {
+                        if (streamRequired) {
                             if (cy <= 0) {
                                 f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                     fStage[OPS_ACC_MD2(xiIndex, -cx, -cy)];
@@ -121,7 +116,7 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                         }
                         break;
                     case VG_JM:
-                        if  (streamRequired) {
+                        if (streamRequired) {
                             if (cy >= 0) {
                                 f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                     fStage[OPS_ACC_MD2(xiIndex, -cx, -cy)];
@@ -134,7 +129,7 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                         }
                         break;
                     case VG_IPJP_I:
-                        if  (streamRequired)  {
+                        if (streamRequired) {
                             if (cy <= 0 && cx <= 0) {
                                 f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                     fStage[OPS_ACC_MD2(xiIndex, -cx, -cy)];
@@ -147,7 +142,7 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                         }
                         break;
                     case VG_IPJM_I:
-                        if  (streamRequired)  {
+                        if (streamRequired) {
                             if (cy >= 0 && cx <= 0) {
                                 f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                     fStage[OPS_ACC_MD2(xiIndex, -cx, -cy)];
@@ -160,7 +155,7 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                         }
                         break;
                     case VG_IMJP_I:
-                        if  (streamRequired) {
+                        if (streamRequired) {
                             if (cy <= 0 && cx >= 0) {
                                 f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                     fStage[OPS_ACC_MD2(xiIndex, -cx, -cy)];
@@ -173,7 +168,7 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                         }
                         break;
                     case VG_IMJM_I:
-                        if  (streamRequired)  {
+                        if (streamRequired) {
                             if (cy >= 0 && cx >= 0) {
                                 f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                     fStage[OPS_ACC_MD2(xiIndex, -cx, -cy)];
@@ -283,7 +278,7 @@ void KerGradCentral6th(const Real* var, Real* grad, const int len) {
  * The metrics matrix is 0 xi_x 1 xi_y 2 eta_x 3 eta_y
  */
 void KerCVTUpwind2nd(const Real* metrics, const Real* f, Real* xidotgrad,
-                    const Real* XI) {
+                     const Real* XI) {
     const Real coeffm0 = ((Real)3) / ((Real)2);
     const Real coeffm1 = -2;
     const Real coeffm2 = ((Real)1) / ((Real)2);
@@ -323,7 +318,7 @@ void KerCVTUpwind2nd(const Real* metrics, const Real* f, Real* xidotgrad,
     }
 }
 void KerCVTUpwind4th(const Real* metrics, const Real* f, Real* xidotgrad,
-                    const Real* XI) {
+                     const Real* XI) {
     const Real coeffm0 = ((Real)25) / ((Real)12);
     const Real coeffm1 = -4;
     const Real coeffm2 = 3;
@@ -375,7 +370,7 @@ void KerCVTUpwind4th(const Real* metrics, const Real* f, Real* xidotgrad,
     }
 }
 void KerCVTUpwind6th(const Real* metrics, const Real* f, Real* xidotgrad,
-                    const Real* XI) {
+                     const Real* XI) {
     const Real coeffm0 = ((Real)49) / ((Real)20);
     const Real coeffm1 = -6;
     const Real coeffm2 = ((Real)15) / ((Real)2);
@@ -435,8 +430,8 @@ void KerCVTUpwind6th(const Real* metrics, const Real* f, Real* xidotgrad,
     }
 }
 void KerCutCellCVTUpwind1st(const Real* coordinateXYZ, const int* nodeType,
-                           const int* geometry, const Real* f,
-                           Real* fGradient) {
+                            const int* geometry, const Real* f,
+                            Real* fGradient) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
     VertexGeometryTypes vg = (VertexGeometryTypes)geometry[OPS_ACC2(0, 0)];
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
@@ -450,7 +445,7 @@ void KerCutCellCVTUpwind1st(const Real* coordinateXYZ, const int* nodeType,
             // this can avoid access undefined memory if the halo point is set
             // incorrectly
             bool needCalc{true};
-            if (vt==Vertex_ImmersedSolid) needCalc = false;
+            if (vt == Vertex_ImmersedSolid) needCalc = false;
             if (vt >= Vertex_Boundary) {
                 switch (vg) {
                     case VG_IP:
@@ -523,31 +518,35 @@ void KerCutCellCVTUpwind1st(const Real* coordinateXYZ, const int* nodeType,
             if (needCalc) {
                 if (cx > 0) {
                     fGradient[OPS_ACC_MD4(xiIndex, 0, 0)] +=
-                       CS* cx * ((f[OPS_ACC_MD3(xiIndex, 0, 0)] -
-                               f[OPS_ACC_MD3(xiIndex, -1, 0)]) /
-                              (coordinateXYZ[OPS_ACC_MD0(0, 0, 0)] -
-                               coordinateXYZ[OPS_ACC_MD0(0, -1, 0)]));
+                        CS * cx *
+                        ((f[OPS_ACC_MD3(xiIndex, 0, 0)] -
+                          f[OPS_ACC_MD3(xiIndex, -1, 0)]) /
+                         (coordinateXYZ[OPS_ACC_MD0(0, 0, 0)] -
+                          coordinateXYZ[OPS_ACC_MD0(0, -1, 0)]));
                 }
                 if (cx < 0) {
                     fGradient[OPS_ACC_MD4(xiIndex, 0, 0)] +=
-                        CS * cx * ((f[OPS_ACC_MD3(xiIndex, 1, 0)] -
-                               f[OPS_ACC_MD3(xiIndex, 0, 0)]) /
-                              (coordinateXYZ[OPS_ACC_MD0(0, 1, 0)] -
-                               coordinateXYZ[OPS_ACC_MD0(0, 0, 0)]));
+                        CS * cx *
+                        ((f[OPS_ACC_MD3(xiIndex, 1, 0)] -
+                          f[OPS_ACC_MD3(xiIndex, 0, 0)]) /
+                         (coordinateXYZ[OPS_ACC_MD0(0, 1, 0)] -
+                          coordinateXYZ[OPS_ACC_MD0(0, 0, 0)]));
                 }
                 if (cy > 0) {
                     fGradient[OPS_ACC_MD4(xiIndex, 0, 0)] +=
-                        CS * cy * ((f[OPS_ACC_MD3(xiIndex, 0, 0)] -
-                               f[OPS_ACC_MD3(xiIndex, 0, -1)]) /
-                              (coordinateXYZ[OPS_ACC_MD0(1, 0, 0)] -
-                               coordinateXYZ[OPS_ACC_MD0(1, 0, -1)]));
+                        CS * cy *
+                        ((f[OPS_ACC_MD3(xiIndex, 0, 0)] -
+                          f[OPS_ACC_MD3(xiIndex, 0, -1)]) /
+                         (coordinateXYZ[OPS_ACC_MD0(1, 0, 0)] -
+                          coordinateXYZ[OPS_ACC_MD0(1, 0, -1)]));
                 }
                 if (cy < 0) {
                     fGradient[OPS_ACC_MD4(xiIndex, 0, 0)] +=
-                        CS * cy * ((f[OPS_ACC_MD3(xiIndex, 0, 1)] -
-                               f[OPS_ACC_MD3(xiIndex, 0, 0)]) /
-                              (coordinateXYZ[OPS_ACC_MD0(1, 0, 1)] -
-                               coordinateXYZ[OPS_ACC_MD0(1, 0, 0)]));
+                        CS * cy *
+                        ((f[OPS_ACC_MD3(xiIndex, 0, 1)] -
+                          f[OPS_ACC_MD3(xiIndex, 0, 0)]) /
+                         (coordinateXYZ[OPS_ACC_MD0(1, 0, 1)] -
+                          coordinateXYZ[OPS_ACC_MD0(1, 0, 0)]));
                 }
             }
         }
@@ -974,10 +973,10 @@ void KerCutCellCVTUpwind2nd(const Real* coordinateXYZ, const int* nodeType,
     }
 }
 void KerCutCellSemiImplicitTimeMach(const Real* dt, const Real* schemeCoeff,
-                                const int* nodeType, const int* geometry,
-                                const Real* fGradient, const Real* feq,
-                                const Real* relaxationTime,
-                                const Real* bodyForce, Real* f) {
+                                    const int* nodeType, const int* geometry,
+                                    const Real* fGradient, const Real* feq,
+                                    const Real* relaxationTime,
+                                    const Real* bodyForce, Real* f) {
     /*
     dt(0), schemeCoeff(1),nodeType(2),geometry(3), fGradient (4),
     feq(5),
@@ -992,7 +991,7 @@ void KerCutCellSemiImplicitTimeMach(const Real* dt, const Real* schemeCoeff,
             Real cx{XI[xiIndex * LATTDIM]};
             Real cy{XI[xiIndex * LATTDIM + 1]};
             bool needMarch{true};
-            if (vt==Vertex_ImmersedSolid) needMarch = false;
+            if (vt == Vertex_ImmersedSolid) needMarch = false;
             if (vt >= Vertex_Boundary) {
                 switch (vg) {
                     case VG_IP:
@@ -1062,8 +1061,8 @@ void KerCutCellSemiImplicitTimeMach(const Real* dt, const Real* schemeCoeff,
             if (needMarch) {
                 f[OPS_ACC_MD8(xiIndex, 0, 0)] =
                     (feq[OPS_ACC_MD5(xiIndex, 0, 0)] * (*dt) +
-                     bodyForce[OPS_ACC_MD7(xiIndex, 0, 0)]*(*dt) * tau -
-                     fGradient[OPS_ACC_MD4(xiIndex, 0, 0)]*(*dt) * tau +
+                     bodyForce[OPS_ACC_MD7(xiIndex, 0, 0)] * (*dt) * tau -
+                     fGradient[OPS_ACC_MD4(xiIndex, 0, 0)] * (*dt) * tau +
                      f[OPS_ACC_MD8(xiIndex, 0, 0)] * tau) /
                     ((*dt) + tau);
             }
@@ -1089,7 +1088,7 @@ void KerCutCellExplicitTimeMach(const Real* dt, const Real* schemeCoeff,
             Real cx{XI[xiIndex * LATTDIM]};
             Real cy{XI[xiIndex * LATTDIM + 1]};
             bool needMarch{true};
-            if (vt==Vertex_ImmersedSolid) needMarch = false;
+            if (vt == Vertex_ImmersedSolid) needMarch = false;
             if (vt >= Vertex_Boundary) {
                 switch (vg) {
                     case VG_IP:
@@ -1170,40 +1169,36 @@ void KerCutCellExplicitTimeMach(const Real* dt, const Real* schemeCoeff,
     }
 }
 #endif
-#ifdef OPS_3D //three dimensional code
+#ifdef OPS_3D  // three dimensional code
 
 void KerCollide3D(const Real* dt, const int* nodeType, const Real* f,
-	const Real* feq, const Real* relaxationTime,
-	const Real* bodyForce, Real* fStage) {
-	VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
-	// collisionRequired: means if collision is required at boundary
-	// e.g., the ZouHe boundary condition explicitly requires collision
-	bool collisionRequired =
-		(vt == Vertex_Fluid ||
-         vt == Vertex_NoneqExtrapol ||
-		 vt == Vertex_ZouHeVelocity ||
-		 // vt == Vertex_KineticDiffuseWall ||
-		 vt == Vertex_EQMDiffuseRefl ||
-         vt == Vertex_ExtrapolPressure1ST ||
-		 vt == Vertex_ExtrapolPressure2ND ||
-         vt == Vertex_Periodic ||
-         vt == Vertex_NoslipEQN ||
-		 vt == Vertex_NonEqExtrapolPressure);
-        if (collisionRequired) {
-            for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-                Real tau = relaxationTime[OPS_ACC_MD4(compoIndex, 0, 0, 0)];
-                Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
-                for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                    fStage[OPS_ACC_MD6(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] -
-                        dtOvertauPlusdt * (f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] -
-                                           feq[OPS_ACC_MD3(xiIndex, 0, 0, 0)]) +
-                        tau * dtOvertauPlusdt *
-                            bodyForce[OPS_ACC_MD5(xiIndex, 0, 0, 0)];
-                }
+                  const Real* feq, const Real* relaxationTime,
+                  const Real* bodyForce, Real* fStage) {
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
+    // collisionRequired: means if collision is required at boundary
+    // e.g., the ZouHe boundary condition explicitly requires collision
+    bool collisionRequired =
+        (vt == Vertex_Fluid || vt == Vertex_NoneqExtrapol ||
+         vt == Vertex_ZouHeVelocity ||
+         // vt == Vertex_KineticDiffuseWall ||
+         vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
+         vt == Vertex_ExtrapolPressure2ND || vt == Vertex_Periodic ||
+         vt == Vertex_NoslipEQN || vt == Vertex_NonEqExtrapolPressure);
+    if (collisionRequired) {
+        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+            Real tau = relaxationTime[OPS_ACC_MD4(compoIndex, 0, 0, 0)];
+            Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+            for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                 xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                fStage[OPS_ACC_MD6(xiIndex, 0, 0, 0)] =
+                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] -
+                    dtOvertauPlusdt * (f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] -
+                                       feq[OPS_ACC_MD3(xiIndex, 0, 0, 0)]) +
+                    tau * dtOvertauPlusdt *
+                        bodyForce[OPS_ACC_MD5(xiIndex, 0, 0, 0)];
             }
         }
+    }
 }
 
 void KerStream3D(const int* nodeType, const int* geometry, const Real* fStage,
@@ -1231,8 +1226,7 @@ void KerStream3D(const int* nodeType, const int* geometry, const Real* fStage,
                      vt == Vertex_ExtrapolPressure2ND ||
                      vt == Vertex_Periodic ||
                      vt == Vertex_NonEqExtrapolPressure ||
-                     vt == Vertex_NoslipEQN
-                     );
+                     vt == Vertex_NoslipEQN);
                 if (streamRequired) {
                     if ((cx == 0) && (cy == 0) && (cz == 0)) {
                         f[OPS_ACC_MD3(xiIndex, 0, 0, 0)] =
@@ -1315,7 +1309,7 @@ void KerStream3D(const int* nodeType, const int* geometry, const Real* fStage,
                         if (streamRequired) {
                             if (cz >= 0) {
                                 f[OPS_ACC_MD3(xiIndex, 0, 0, 0)] =
-                                    fStage[OPS_ACC_MD2(xiIndex, -cx, -cy, -cz)];                               
+                                    fStage[OPS_ACC_MD2(xiIndex, -cx, -cy, -cz)];
                             }
 
                         } else {
@@ -1864,7 +1858,7 @@ void KerStream3D(const int* nodeType, const int* geometry, const Real* fStage,
         }
     }
 }
-#endif // OPS_3D
+#endif  // OPS_3D
 void KerAssignProperty(const int* value, int* var) {
 #ifdef OPS_2D
     var[OPS_ACC1(0, 0)] = (*value);
@@ -1878,17 +1872,17 @@ void KerSetMacroVarToConst(const Real* value, Real* macroVar) {
     for (int macroVarIndex = 0; macroVarIndex < NUMMACROVAR; macroVarIndex++) {
 #ifdef OPS_2D
         macroVar[OPS_ACC_MD1(macroVarIndex, 0, 0)] = value[macroVarIndex];
-#endif 
+#endif
 #ifdef OPS_3D
         macroVar[OPS_ACC_MD1(macroVarIndex, 0, 0, 0)] = value[macroVarIndex];
-#endif         
+#endif
     }
 }
 void KerCopyf(const Real* src, Real* dest) {
     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
 #ifdef OPS_2D
         dest[OPS_ACC_MD1(xiIndex, 0, 0)] = src[OPS_ACC_MD0(xiIndex, 0, 0)];
-#endif 
+#endif
 #ifdef OPS_3D
         dest[OPS_ACC_MD1(xiIndex, 0, 0, 0)] =
             src[OPS_ACC_MD0(xiIndex, 0, 0, 0)];
@@ -1935,7 +1929,7 @@ void KerCopyDispf(const Real* src, Real* dest, const int* disp) {
 #endif
     }
 }
-void KerNormaliseF(const Real* ratio, Real* f) { 
+void KerNormaliseF(const Real* ratio, Real* f) {
     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
 #ifdef OPS_2D
         f[OPS_ACC_MD1(xiIndex, 0, 0)] /= (*ratio);
@@ -1950,31 +1944,29 @@ void KerCalcMacroVarSquareofDifference(const Real* macroVars,
                                        const int* varId,
                                        double* sumSquareDiff) {
 #ifdef OPS_2D
-    *sumSquareDiff = *sumSquareDiff +
-                     (macroVars[OPS_ACC_MD0(*varId, 0, 0)] -
-                      macroVarsCopy[OPS_ACC_MD1(*varId, 0, 0)]) *
-                         (macroVars[OPS_ACC_MD0(*varId, 0, 0)] -
-                          macroVarsCopy[OPS_ACC_MD1(*varId, 0, 0)]);
+    *sumSquareDiff =
+        *sumSquareDiff + (macroVars[OPS_ACC_MD0(*varId, 0, 0)] -
+                          macroVarsCopy[OPS_ACC_MD1(*varId, 0, 0)]) *
+                             (macroVars[OPS_ACC_MD0(*varId, 0, 0)] -
+                              macroVarsCopy[OPS_ACC_MD1(*varId, 0, 0)]);
 #endif
 #ifdef OPS_3D
-    *sumSquareDiff = *sumSquareDiff +
-                     (macroVars[OPS_ACC_MD0(*varId, 0, 0, 0)] -
-                      macroVarsCopy[OPS_ACC_MD1(*varId, 0, 0, 0)]) *
-                         (macroVars[OPS_ACC_MD0(*varId, 0, 0, 0)] -
-                          macroVarsCopy[OPS_ACC_MD1(*varId, 0, 0, 0)]);
+    *sumSquareDiff =
+        *sumSquareDiff + (macroVars[OPS_ACC_MD0(*varId, 0, 0, 0)] -
+                          macroVarsCopy[OPS_ACC_MD1(*varId, 0, 0, 0)]) *
+                             (macroVars[OPS_ACC_MD0(*varId, 0, 0, 0)] -
+                              macroVarsCopy[OPS_ACC_MD1(*varId, 0, 0, 0)]);
 #endif
 }
 void KerCalcMacroVarSquare(const Real* macroVars, const int* varId,
                            double* sumSquare) {
 #ifdef OPS_2D
-    *sumSquare = *sumSquare +
-                 (macroVars[OPS_ACC_MD0(*varId, 0, 0)]) *
-                     (macroVars[OPS_ACC_MD0(*varId, 0, 0)]);
+    *sumSquare = *sumSquare + (macroVars[OPS_ACC_MD0(*varId, 0, 0)]) *
+                                  (macroVars[OPS_ACC_MD0(*varId, 0, 0)]);
 #endif
 #ifdef OPS_3D
-    *sumSquare = *sumSquare +
-                 (macroVars[OPS_ACC_MD0(*varId, 0, 0, 0)]) *
-                     (macroVars[OPS_ACC_MD0(*varId, 0, 0, 0)]);
+    *sumSquare = *sumSquare + (macroVars[OPS_ACC_MD0(*varId, 0, 0, 0)]) *
+                                  (macroVars[OPS_ACC_MD0(*varId, 0, 0, 0)]);
 #endif
 }
 void KerCalcSumofDensity(const Real* macroVars, double* densitySum) {
@@ -1997,14 +1989,12 @@ void KerSetfFixValue(const Real* value, Real* f) {
 }
 void KerGetPointMacroVarValue(const Real* macroVars, Real* pointValue) {
 #ifdef OPS_2D
-    *pointValue =
-        *pointValue +
-        macroVars[OPS_ACC_MD0(1, 0, 0)] / macroVars[OPS_ACC_MD0(0, 0, 0)];
+    *pointValue = *pointValue + macroVars[OPS_ACC_MD0(1, 0, 0)] /
+                                    macroVars[OPS_ACC_MD0(0, 0, 0)];
 #endif
 #ifdef OPS_3D
-    *pointValue =
-        *pointValue +
-        macroVars[OPS_ACC_MD0(1, 0, 0, 0)] / macroVars[OPS_ACC_MD0(0, 0, 0, 0)];
+    *pointValue = *pointValue + macroVars[OPS_ACC_MD0(1, 0, 0, 0)] /
+                                    macroVars[OPS_ACC_MD0(0, 0, 0, 0)];
 #endif
 }
 #endif  // SCHEME_KERNEL_H

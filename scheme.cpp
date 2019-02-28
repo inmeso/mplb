@@ -47,7 +47,7 @@ void SetupCommonStencils() {
                     0, 0, -1, 0, 0, 0, 1,  0, 0, -1};
     ONEPTREGULARSTENCIL =
         ops_decl_stencil(3, 7, rectangle, "000:100:-100:010:0-10:001:00-1");
-    ops_printf("%s\n", "ONEPTREGULAR finished!");
+    // ops_printf("%s\n", "ONEPTREGULAR finished!");
     int twoPtRectangle[]{0,  0, 0, 1, 0, 0,  -1, 0,  0, 0, 1, 0,  0,
                          -1, 0, 0, 0, 1, 0,  0,  -1, 2, 0, 0, -2, 0,
                          0,  0, 2, 0, 0, -2, 0,  0,  0, 2, 0, 0,  -2};

@@ -30,7 +30,7 @@ int* VARIABLECOMPPOS{nullptr};
  */
 std::vector<std::string> MACROVARNAME;
 /*!
- *Name of all macroscopic variables
+ *Name of all Lattices.
  */
 std::vector<std::string> LATTICENAME;
 
@@ -68,7 +68,7 @@ void FindReverseXi(const int startPos, const int latticeSize) {
     }
 }
 
-void SetupD2Q9Latt(const int startPos) {
+void SetupD2Q9Latt(const int startPos) { 
     const int nc9{9};
     Real t00 = 4.0 / 9.0, t01 = 1.0 / 9.0, t11 = 1.0 / 36.0;
     Real t[nc9] = {t00, t01, t01, t01, t01, t11, t11, t11, t11};
@@ -83,8 +83,8 @@ void SetupD2Q9Latt(const int startPos) {
     }
 }
 
-void SetupD3Q19Latt(const int startPos) {    
-    const int nc19 = 19; 
+void SetupD3Q19Latt(const int startPos) {
+    const int nc19 = 19;
     Real t000{1 / ((Real)3)};
     Real t001{1 / ((Real)18)};
     Real t011{1 / ((Real)36)};
@@ -100,13 +100,13 @@ void SetupD3Q19Latt(const int startPos) {
         XI[startPos + l * LATTDIM] = cxi[l];
         XI[startPos + l * LATTDIM + 1] = cyi[l];
         XI[startPos + l * LATTDIM + 2] = czi[l];
-        WEIGHTS[startPos + l] = t[l];       
+        WEIGHTS[startPos + l] = t[l];
     }
-    FindReverseXi(startPos,nc19);
+    FindReverseXi(startPos, nc19);
 }
 
-void SetupD3Q15Latt(const int startPos) { 
-	const int nc15 = 15;
+void SetupD3Q15Latt(const int startPos) {
+    const int nc15 = 15;
     Real t000{2 / ((Real)9)};
     Real t001{1 / ((Real)9)};
     Real t111{1 / ((Real)72)};
@@ -124,8 +124,8 @@ void SetupD3Q15Latt(const int startPos) {
     FindReverseXi(startPos, nc15);
 }
 
-void SetupD2Q16Latt(const int startPos) {    
-    const int nc16{16};    
+void SetupD2Q16Latt(const int startPos) {
+    const int nc16{16};
     const int nc1d{4};
     const Real roots[nc1d] = {-2.3344142183389773, -0.7419637843027259,
                               0.7419637843027258, 2.3344142183389773};
@@ -136,7 +136,7 @@ void SetupD2Q16Latt(const int startPos) {
         for (int j = 0; j < nc1d; j++) {
             XI[startPos + l * LATTDIM] = roots[i];
             XI[startPos + l * LATTDIM + 1] = roots[j];
-            WEIGHTS[startPos + l] = coeff[i] * coeff[j];          
+            WEIGHTS[startPos + l] = coeff[i] * coeff[j];
             l++;
         }
     }
@@ -176,7 +176,7 @@ void SetupMacroVars() {
     VARIABLETYPE[0] = (int)Variable_Rho;
     VARIABLETYPE[1] = (int)Variable_U;
     VARIABLETYPE[2] = (int)Variable_V;
-    //VARIABLETYPE[3] = (int)Variable_W;
+    // VARIABLETYPE[3] = (int)Variable_W;
     // VARIABLETYPE[3] = (int)Variable_T;
     // VARIABLETYPE[4] = (int)Variable_Qx;
     // VARIABLETYPE[5] = (int)Variable_Qy;
@@ -184,7 +184,7 @@ void SetupMacroVars() {
     VARIABLECOMPINDEX[0] = 0;
     VARIABLECOMPINDEX[1] = 0;
     VARIABLECOMPINDEX[2] = 0;
-    //VARIABLECOMPINDEX[3] = 0;
+    // VARIABLECOMPINDEX[3] = 0;
     // VARIABLECOMPINDEX[3] = 0;
     // VARIABLECOMPINDEX[4] = 0;
     // VARIABLECOMPINDEX[5] = 0;
@@ -192,7 +192,7 @@ void SetupMacroVars() {
     MACROVARNAME.push_back("h");
     MACROVARNAME.push_back("u");
     MACROVARNAME.push_back("v");
-    //MACROVARNAME.push_back("w");
+    // MACROVARNAME.push_back("w");
     // MACROVARNAME.push_back("T");
     // MACROVARNAME.push_back("qx");
     // MACROVARNAME.push_back("qy");
@@ -202,9 +202,9 @@ void AllocateComponentIndex(const int compoNum) {
     if (compoNum == NUMCOMPONENTS) {
         if (nullptr == COMPOINDEX) {
             COMPOINDEX = new int[2 * compoNum];
-		}
-        if (nullptr == VARIABLECOMPPOS){
-           VARIABLECOMPPOS = new int[2*compoNum];
+        }
+        if (nullptr == VARIABLECOMPPOS) {
+            VARIABLECOMPPOS = new int[2 * compoNum];
         }
     }
 }
@@ -322,8 +322,10 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     AllocateMacroVarProperty(NUMMACROVAR);
     for (int idx = 0; idx < NUMMACROVAR; idx++) {
         VARIABLETYPE[idx] = (int)types[idx];
-        VARIABLECOMPINDEX[idx] = compoId[idx];
+        VARIABLECOMPINDEX[idx] = (int)compoId[idx];
     }
+
+    /*
     if (nullptr != VARIABLECOMPPOS) {
         int startPos{0};
         for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
@@ -333,6 +335,18 @@ void DefineMacroVars(std::vector<VariableTypes> types,
             }
             VARIABLECOMPPOS[2 * idx + 1] = startPos - 1;
         }
+    */
+
+    if (nullptr != VARIABLECOMPPOS) {
+        int startPos{0};
+        for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
+            VARIABLECOMPPOS[2 * idx] = startPos;
+            while (idx == compoId[startPos] && startPos < compoId.size()) {
+                startPos++;
+            }
+            VARIABLECOMPPOS[2 * idx + 1] = startPos - 1;
+        }
+
     } else {
         ops_printf("%s\n",
                    "It appears that the DefineComponents routine has not been "
@@ -488,6 +502,6 @@ Real CalcSWEFeq(const int l, const Real h, const Real u, const Real v,
 void SetLatticeName(const std::vector<std::string> latticeName) {
     LATTICENAME = latticeName;
 }
-const std::vector<std::string> LatticeName(){ return LATTICENAME; }
+const std::vector<std::string> LatticeName() { return LATTICENAME; }
 const std::vector<std::string> MacroVarName() { return MACROVARNAME; }
 #include "model_kernel.h"

@@ -12,7 +12,7 @@
 #include <vector>
 #include "type.h"
 /*!
- * In this module, most of variables will not change 
+ * In this module, most of variables will not change
  * when the code is running.
  */
 
@@ -28,7 +28,7 @@ extern int LATTDIM;
 /*!
  * Speed of Sound
  * Note: for multiple-lattice application, the lattice sound speed
- * must be same. 
+ * must be same.
  */
 extern Real CS;
 /*!
@@ -74,17 +74,17 @@ extern int* VARIABLETYPE;
  */
 extern int* VARIABLECOMPINDEX;
 /*!
-* The start and end position of macroscopic variables of each 
-* component
-*/
+ * The start and end position of macroscopic variables of each
+ * component
+ */
 extern int* VARIABLECOMPPOS;
 /*!
-* Equilibrium function type
-*/
+ * Equilibrium function type
+ */
 extern int* EQUILIBRIUMTYPE;
 /*!
-* Force function type
-*/
+ * Force function type
+ */
 extern int* FORCETYPE;
 void SetLatticeName(const std::vector<std::string> latticeName);
 const std::vector<std::string> LatticeName();
@@ -123,14 +123,14 @@ void DefineBodyForce(std::vector<BodyForceType> types,
 Real CalcBGKFeq(const int l, const Real rho = 1, const Real u = 0,
                 const Real v = 0, const Real T = 1, const int polyOrder = 2);
 /*
- * Define the local function for calculating the equilibrium 
+ * Define the local function for calculating the equilibrium
  * 3D BGK model
  */
 Real CalcBGKFeq(const int l, const Real rho = 1, const Real u = 0,
                 const Real v = 0, const Real w = 0, const Real T = 1,
                 const int polyOrder = 2);
 /*
- * Define the local function for calculating the SWE equilibrium 
+ * Define the local function for calculating the SWE equilibrium
  */
 Real CalcSWEFeq(const int l, const Real h = 1, const Real u = 0,
                 const Real v = 0, const int polyOrder = 2);
@@ -158,9 +158,9 @@ void KerCalcBodyForce3D(const Real* time, const int* nodeType,
  */
 void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
                 Real* tau);
-//Three-dimensional version
-//We have to create 2D and 3D version because of the difference
-//of 2D and 3D OPS_ACC_MD2 macro
+// Three-dimensional version
+// We have to create 2D and 3D version because of the difference
+// of 2D and 3D OPS_ACC_MD2 macro
 void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq);
 void KerCalcTau3D(const int* nodeType, const Real* tauRef, const Real* macroVars,
                   Real* tau);
