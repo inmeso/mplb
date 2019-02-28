@@ -221,7 +221,6 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
             //                                OPS_RW));
         } break;
         case Vertex_EQMDiffuseRefl: {
-            // ops_printf("\n I am applying BC eqm diff ");
             ops_par_loop(
                 KerCutCellEQMDiffuseRefl3D, "KerCutCellEQMDiffuseRefl3D",
                 g_Block[blockIdx], SPACEDIM, range,

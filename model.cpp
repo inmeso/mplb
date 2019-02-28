@@ -68,8 +68,7 @@ void FindReverseXi(const int startPos, const int latticeSize) {
     }
 }
 
-void SetupD2Q9Latt(const int startPos) {
-    // ops_printf("\n Current 2D problem has setup D2Q9 model \n");
+void SetupD2Q9Latt(const int startPos) { 
     const int nc9{9};
     Real t00 = 4.0 / 9.0, t01 = 1.0 / 9.0, t11 = 1.0 / 36.0;
     Real t[nc9] = {t00, t01, t01, t01, t01, t11, t11, t11, t11};
