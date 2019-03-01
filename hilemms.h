@@ -16,10 +16,7 @@
 #include "scheme.h"
 #include "type.h"
 
-using namespace std;
 extern int SPACEDIM;
-
-//#define OPS_3D
 
 void DefineCase(std::string caseName, const int spaceDim);
 // caseName: case name

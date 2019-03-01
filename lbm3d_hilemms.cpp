@@ -23,7 +23,6 @@
 // Code_modifcication needed
 // Currently defining OPS 3d here. We need some mechanism to generate this
 // automatically.
-#define OPS_3D
 
 extern int HALODEPTH;
 
