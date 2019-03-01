@@ -482,22 +482,10 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordin
                         rhoCalculated = true;
                         for (int xiIdx = COMPOINDEX[2 * compoIndex];
                              xiIdx <= COMPOINDEX[2 * compoIndex + 1]; xiIdx++) {
-<<<<<<< HEAD
                             macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                 f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                         }
                         rho = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-=======
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] +=
-                                f[OPS_ACC_MD1(xiIdx, 0, 0, 0)];
-
-                            // ops_printf("\n Value of f is  =
-                            // %f",f[OPS_ACC_MD1(xiIdx, 0, 0, 0)]);
-                        }
-                        rho = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
-                        // ops_printf("\n Value of rho inside kercalmacrovars 3d
-                        // is = %f",rho);
->>>>>>> Hilemms_2.0_Dev
 #ifdef debug
                         if (isnan(rho) || rho <= 0 || isinf(rho)) {
                             ops_printf("%sDensity=%f\n",
@@ -517,17 +505,9 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordin
                                     CS * XI[xiIdx * LATTDIM] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-<<<<<<< HEAD
                             macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
                                 macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
                             velo[0] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-=======
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
-                            velo[0] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
-                            // ops_printf("\n Value of U is
-                            // %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
->>>>>>> Hilemms_2.0_Dev
 #ifdef debug
                             if (isnan(velo[0]) || isinf(velo[0])) {
                                 ops_printf("%sU=%f\n",
@@ -552,17 +532,9 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordin
                                     CS * XI[xiIdx * LATTDIM + 1] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-<<<<<<< HEAD
                             macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
                                 macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
                             velo[1] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-=======
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
-                            velo[1] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
-                            // ops_printf("\n Value of V is
-                            // %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
->>>>>>> Hilemms_2.0_Dev
 #ifdef debug
                             if (isnan(velo[1]) || isinf(velo[1])) {
                                 ops_printf("%sV=%f\n",
@@ -587,17 +559,9 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordin
                                     CS * XI[xiIdx * LATTDIM + 2] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-<<<<<<< HEAD
                             macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
                                 macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
                             velo[2] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-=======
-                            macroVars[OPS_ACC_MD2(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD2(0, 0, 0, 0)];
-                            velo[2] = macroVars[OPS_ACC_MD2(m, 0, 0, 0)];
-                            // ops_printf("\n Value of W is
-                            // %f",macroVars[OPS_ACC_MD2(m, 0, 0, 0)]);
->>>>>>> Hilemms_2.0_Dev
 #ifdef debug
                             if (isnan(velo[2]) || isinf(velo[2])) {
                                 ops_printf("%sW=%f\n",
@@ -870,12 +834,8 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordin
             delete[] veloCalculated;
             delete[] velo;
         }  // compoIdx
-<<<<<<< HEAD
     }  // isVertex
     delete[] acceleration;
-=======
-    }      // isVertex
->>>>>>> Hilemms_2.0_Dev
 }
 #endif
 #endif  // MODEL_KERNEL_H
