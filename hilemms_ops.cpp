@@ -9,6 +9,8 @@
 
 //#include "setup_comput_domain.h"
 
+#define OPS_3D
+
 using namespace std;
 
 int MAXITER;

@@ -24,6 +24,8 @@
 // Currently defining OPS 3d here. We need some mechanism to generate this
 // automatically.
 
+using namespace std;
+
 extern int HALODEPTH;
 
 BoundarySurface surface[6] = {BoundSurf_Inlet, BoundSurf_Outlet,
@@ -55,6 +57,10 @@ void simulate() {
     std::vector<EquilibriumType> equTypes{Equilibrium_BGKIsothermal2nd};
     std::vector<int> equCompoId{0};
     DefineEquilibrium(equTypes, equCompoId);
+
+    std::vector<BodyForceType> bodyForceTypes{BodyForce_None};
+    std::vector<int> bodyForceCompoId{0};
+    DefineBodyForce(bodyForceTypes, bodyForceCompoId);
 
     SetupScheme();
     SetupBoundary();
@@ -114,23 +120,23 @@ void simulate() {
     DefineBlockBoundary(blockIndex, componentId, surface[5], boundType[5],
                         MacroVarsComp, backValMacroVarsComp);
 
-//if 0
+#if 0
     // currently this information is not playin major role in this
     // implementation.
     SchemeType scheme{stStreamCollision}; 
-    const int steps{1};
-    const int checkPeriod{100};
+    const int steps{10000};
+    const int checkPeriod{1000};
     Iterate(scheme, steps, checkPeriod);
-    //#endif
+#endif
 
-#if 0   
+//if 0   
     // currently this information is not playin major role in this
     // implementation.
-    SchemeType scheme{stStreamCollision};      
-    const Real convergenceCriteria{1E-4};
+    SchemeType scheme{stStreamCollision};
+    const Real convergenceCriteria{1E-3};
     const int checkPeriod{1000};
     Iterate(scheme, convergenceCriteria, checkPeriod);
-#endif
+//#endif
 }
 
 

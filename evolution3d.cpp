@@ -91,6 +91,9 @@ void UpdateMacroVars3D() {
 
 void UpdateFeqandBodyforce3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
+
+        //ops_printf("\n Entering KerCalcFeq3D ");
+
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCalcFeq3D, "KerCalcFeq3D", g_Block[blockIndex],
                      SPACEDIM, iterRng,
@@ -100,11 +103,15 @@ void UpdateFeqandBodyforce3D() {
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_RW));
+
+        //ops_printf(" KerCalcFeq3D has been executed \n");
+        //fflush(stdout);
+
         // time is not used in the current force
-        Real* time{0};
+        Real* timeF{0};
         ops_par_loop(KerCalcBodyForce3D, "KerCalcBodyForce3D",
                      g_Block[blockIndex], SPACEDIM, iterRng,
-                     ops_arg_gbl(time, 1, "double", OPS_READ),
+                     ops_arg_gbl(&timeF, 1, "double", OPS_READ),
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
                                  OPS_READ),
                      ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
@@ -113,6 +120,9 @@ void UpdateFeqandBodyforce3D() {
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_Bodyforce[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_RW));
+
+        //ops_printf("KerCalcBodyForce3D has been executed \n");
+        //fflush(stdout);
     }
 }
 
@@ -487,12 +497,8 @@ void DispResidualError3D(const int iter, const Real checkPeriod) {
 }
 
 void StreamCollision3D() {
-    ops_printf("\n<<Entered stream collision");
-
+    
     UpdateMacroVars3D();
-
-    // ops_printf("\n<<Update macro vars done");
-
     // Real TotalMass{0};
     // CalcTotalMass(&TotalMass);
     // Real Ratio{TotalMass/TotalMeshSize()};
