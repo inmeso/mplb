@@ -10,6 +10,7 @@
  */
 #include "evolution3d.h"
 #include "model.h"
+#include "hilemms.h"
 
 /*
  * In the following routines, there are some variables are defined
@@ -486,7 +487,7 @@ void DispResidualError3D(const int iter, const Real checkPeriod) {
 }
 
 void StreamCollision3D() {
-    // ops_printf("\n<<Entered stream collision");
+    ops_printf("\n<<Entered stream collision");
 
     UpdateMacroVars3D();
 
@@ -503,7 +504,7 @@ void StreamCollision3D() {
     Collision3D();
     Stream3D();
     ops_halo_transfer(HaloGroup());
-    ImplementBoundary();
+    ImplementBoundaryConditions();
     // ImplementBoundary3D();
 }
 

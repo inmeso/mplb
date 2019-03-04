@@ -9,6 +9,7 @@
  */
 #include "evolution.h"
 #include "model.h"
+#include "hilemms.h"
 /*
  * In the following routines, there are some variables are defined
  * for the convenience of the translator which may not be able to
@@ -451,7 +452,7 @@ void StreamCollision() {
     UpdateTau();
     Collision();
     Stream();
-    ImplementBoundary();
+    ImplementBoundaryConditions();
 }
 
 // void TimeMarching() {

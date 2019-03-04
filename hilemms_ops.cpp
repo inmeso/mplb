@@ -17,6 +17,24 @@ int CHECKPERIOD;
 Real* VERTEXCOORDINATES{nullptr};
 int NUMVERTICES{0};
 
+// void TreatDomainBoundary(const int blockIndex, const int componentID,
+//                          const Real* givenVars, int* range,
+//                          const VertexTypes boundaryType)
+
+//Strcuture to hold the values whenever user specifies a boundary condition.
+struct DomainBoundary 
+{
+    int blockIndex;
+    int componentID;
+    Real* givenVars;
+    int* range;
+    VertexTypes boundaryType;
+};
+
+//Vector to assemble all boundary conditions so as to use 
+//in TreatDomainBoundary().
+vector<DomainBoundary> g_domainBoundCond;
+
 void DefineCase(std::string caseName, const int spaceDim) {
     SetCaseName(caseName);
     SPACEDIM = spaceDim;
@@ -225,25 +243,6 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
     }
 }
 
-void DefineForceTerm(std::vector<ForceType> types, std::vector<int> compoId) {
-    const size_t typeNum{types.size()};
-    if (typeNum == NUMCOMPONENTS) {
-        if (nullptr == FORCETYPE) {
-            FORCETYPE = new int[typeNum];
-            for (int idx = 0; idx < typeNum; idx++) {
-                FORCETYPE[idx] = (int)types[idx];
-            }
-        } else {
-            ops_printf("%s\n", "FORCETYPE has been allocated!");
-        }
-    } else {
-        ops_printf(
-            "There are %i Force types defined but we have %i "
-            "components\n",
-            typeNum, NUMCOMPONENTS);
-    }
-    ops_decl_const("FORCETYPE", NUMCOMPONENTS, "int", FORCETYPE);
-}
 
 void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod) {
     MAXITER = steps;
@@ -478,18 +477,68 @@ void DefineBlockBoundary(int blockIndex, int componentID,
             macroVarsBoundCond[(int)macroVarsComp[i]] = valuesMacroVarsComp[i];
         }
 
-#ifdef OPS_2D
-        TreatDomainBoundary(blockIndex, componentID, macroVarsBoundCond,
-                            rangeBoundaryCond, vtType);
-#endif  // OPS_2D
+    /*
+    Real* givenVars;
+    int* range;
+    VertexTypes boundaryType;
+    */
 
-#ifdef OPS_3D
-        TreatBlockBoundary3D(blockIndex, componentID, macroVarsBoundCond,
-                             rangeBoundaryCond, vtType);
-#endif  // OPS_3D
+        DomainBoundary domainBoundCondition;
+        domainBoundCondition.blockIndex = blockIndex;
+        domainBoundCondition.componentID = componentID;
+        domainBoundCondition.givenVars = macroVarsBoundCond;
+        domainBoundCondition.range = rangeBoundaryCond;
+        domainBoundCondition.boundaryType = vtType;
+
+        g_domainBoundCond.push_back(domainBoundCondition);
+
+        /*
+        #ifdef OPS_2D
+                TreatDomainBoundary(blockIndex, componentID, macroVarsBoundCond,
+                                    rangeBoundaryCond, vtType);
+        #endif  // OPS_2D
+
+        #ifdef OPS_3D
+                TreatBlockBoundary3D(blockIndex, componentID,
+        macroVarsBoundCond, rangeBoundaryCond, vtType); #endif  // OPS_3D
+        */
     } else {
         ops_printf("\n Expected %i values for BC but received only %i ",
                    numMacroVarsComp, numValuesMacroVarsComp);
+    }
+}
+
+
+void ImplementBoundaryConditions()
+{
+    int totalNumBoundCond;
+    totalNumBoundCond = g_domainBoundCond.size();
+    //ops_printf("\n Total no of bound cod = %i ", totalNumBoundCond);
+    if (totalNumBoundCond != 0) {
+        for(int i = 0; i < totalNumBoundCond; i++)
+        {
+#ifdef OPS_2D
+                
+                TreatDomainBoundary(g_domainBoundCond[i].blockIndex,
+                                    g_domainBoundCond[i].componentID,
+                                    g_domainBoundCond[i].givenVars,
+                                    g_domainBoundCond[i].range,
+                                    g_domainBoundCond[i].boundaryType);
+#endif  // End of OPS_2D
+
+#ifdef OPS_3D
+                TreatBlockBoundary3D(g_domainBoundCond[i].blockIndex,
+                                    g_domainBoundCond[i].componentID,
+                                    g_domainBoundCond[i].givenVars,
+                                    g_domainBoundCond[i].range,
+                                    g_domainBoundCond[i].boundaryType);
+#endif  // End of OPS_3D
+        }
+        
+    }
+
+    else {
+        ops_printf("\n No Boundary condition has been defined.");
     }
 }
 

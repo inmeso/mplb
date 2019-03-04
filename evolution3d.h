@@ -77,6 +77,5 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                           const Real* givenVars, int* range,
                           const VertexTypes boundaryType);
 
-extern void ImplementBoundary();
 #endif /* OPS_3D */
 #endif /* EVOLUTION3D_H_ */

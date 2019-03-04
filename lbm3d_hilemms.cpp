@@ -87,26 +87,7 @@ void simulate() {
     ops_printf("%s\n", "Flowfield is setup now!");
     InitialiseSolution3D();
 
-#if 0
-    // currently this information is not playin major role in this
-    // implementation.
-    SchemeType scheme{stStreamCollision}; 
-    const int steps{1000};
-    const int checkPeriod{100};
-    Iterate(scheme, steps, checkPeriod);
-#endif
-
-    
-    // currently this information is not playin major role in this
-    // implementation.
-    SchemeType scheme{stStreamCollision};      
-    const Real convergenceCriteria{1E-4};
-    const int checkPeriod{1000};
-    Iterate(scheme, convergenceCriteria, checkPeriod);
-}
-
-void ImplementBoundary() {
-    int blockIndex{0};
+    blockIndex = 0;
     int componentId{0};
     std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,
                                              Variable_V, Variable_W};
@@ -133,7 +114,26 @@ void ImplementBoundary() {
     std::vector<Real> backValMacroVarsComp{1, 0, 0, 0};
     DefineBlockBoundary(blockIndex, componentId, surface[5], boundType[5],
                         MacroVarsComp, backValMacroVarsComp);
+
+//if 0
+    // currently this information is not playin major role in this
+    // implementation.
+    SchemeType scheme{stStreamCollision}; 
+    const int steps{1};
+    const int checkPeriod{100};
+    Iterate(scheme, steps, checkPeriod);
+    //#endif
+
+#if 0   
+    // currently this information is not playin major role in this
+    // implementation.
+    SchemeType scheme{stStreamCollision};      
+    const Real convergenceCriteria{1E-4};
+    const int checkPeriod{1000};
+    Iterate(scheme, convergenceCriteria, checkPeriod);
+#endif
 }
+
 
 int main(int argc, char** argv) {
     // OPS initialisation

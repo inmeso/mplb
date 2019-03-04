@@ -19,7 +19,7 @@
 using namespace std;
 extern int SPACEDIM;
 
-//#define OPS_3D
+//#define OPS_2D
 
 void DefineCase(std::string caseName, const int spaceDim);
 // caseName: case name
@@ -32,9 +32,11 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
 // meshSize: The size of mesh i.e. dx (At present dx = dy = dz).
 // startPos: Starting position of each block.
 
+/*
 void DefineForceTerm(std::vector<ForceType> types, std::vector<int> compoId);
 // types: which kind of force function to use.
 // compoID: which component to act on.
+*/
 
 void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod);
 // scheme: which schemes to use for implementing such as finite difference
@@ -100,4 +102,6 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType);
 // Functions to check for inclusion.
 void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
                       int Num_Bound_Halo_Points);
+
+void ImplementBoundaryConditions();
 #endif  // Hilemms_H
