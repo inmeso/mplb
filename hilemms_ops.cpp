@@ -23,9 +23,8 @@ int NUMVERTICES{0};
 //                          const Real* givenVars, int* range,
 //                          const VertexTypes boundaryType)
 
-//Strcuture to hold the values whenever user specifies a boundary condition.
-struct DomainBoundary 
-{
+// Strcuture to hold the values whenever user specifies a boundary condition.
+struct DomainBoundary {
     int blockIndex;
     int componentID;
     Real* givenVars;
@@ -33,8 +32,8 @@ struct DomainBoundary
     VertexTypes boundaryType;
 };
 
-//Vector to assemble all boundary conditions so as to use 
-//in TreatDomainBoundary().
+// Vector to assemble all boundary conditions so as to use
+// in TreatDomainBoundary().
 vector<DomainBoundary> g_domainBoundCond;
 
 void DefineCase(std::string caseName, const int spaceDim) {
@@ -244,7 +243,6 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
             SPACEDIM * blockNum, numBlockStartPos);
     }
 }
-
 
 void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod) {
     MAXITER = steps;
@@ -479,12 +477,6 @@ void DefineBlockBoundary(int blockIndex, int componentID,
             macroVarsBoundCond[(int)macroVarsComp[i]] = valuesMacroVarsComp[i];
         }
 
-    /*
-    Real* givenVars;
-    int* range;
-    VertexTypes boundaryType;
-    */
-
         DomainBoundary domainBoundCondition;
         domainBoundCondition.blockIndex = blockIndex;
         domainBoundCondition.componentID = componentID;
@@ -494,49 +486,35 @@ void DefineBlockBoundary(int blockIndex, int componentID,
 
         g_domainBoundCond.push_back(domainBoundCondition);
 
-        /*
-        #ifdef OPS_2D
-                TreatDomainBoundary(blockIndex, componentID, macroVarsBoundCond,
-                                    rangeBoundaryCond, vtType);
-        #endif  // OPS_2D
-
-        #ifdef OPS_3D
-                TreatBlockBoundary3D(blockIndex, componentID,
-        macroVarsBoundCond, rangeBoundaryCond, vtType); #endif  // OPS_3D
-        */
     } else {
         ops_printf("\n Expected %i values for BC but received only %i ",
                    numMacroVarsComp, numValuesMacroVarsComp);
     }
 }
 
-
-void ImplementBoundaryConditions()
-{
+void ImplementBoundaryConditions() {
     int totalNumBoundCond;
     totalNumBoundCond = g_domainBoundCond.size();
-    //ops_printf("\n Total no of bound cod = %i ", totalNumBoundCond);
     if (totalNumBoundCond != 0) {
-        for(int i = 0; i < totalNumBoundCond; i++)
-        {
+        for (int i = 0; i < totalNumBoundCond; i++) {
 #ifdef OPS_2D
-                
-                TreatDomainBoundary(g_domainBoundCond[i].blockIndex,
-                                    g_domainBoundCond[i].componentID,
-                                    g_domainBoundCond[i].givenVars,
-                                    g_domainBoundCond[i].range,
-                                    g_domainBoundCond[i].boundaryType);
+
+            TreatDomainBoundary(g_domainBoundCond[i].blockIndex,
+                                g_domainBoundCond[i].componentID,
+                                g_domainBoundCond[i].givenVars,
+                                g_domainBoundCond[i].range,
+                                g_domainBoundCond[i].boundaryType);
 #endif  // End of OPS_2D
 
 #ifdef OPS_3D
-                TreatBlockBoundary3D(g_domainBoundCond[i].blockIndex,
-                                    g_domainBoundCond[i].componentID,
-                                    g_domainBoundCond[i].givenVars,
-                                    g_domainBoundCond[i].range,
-                                    g_domainBoundCond[i].boundaryType);
+            TreatBlockBoundary3D(g_domainBoundCond[i].blockIndex,
+                                 g_domainBoundCond[i].componentID,
+                                 g_domainBoundCond[i].givenVars,
+                                 g_domainBoundCond[i].range,
+                                 g_domainBoundCond[i].boundaryType);
 #endif  // End of OPS_3D
         }
-        
+
     }
 
     else {

@@ -129,16 +129,15 @@ void simulate() {
     Iterate(scheme, steps, checkPeriod);
 #endif
 
-//if 0   
+    // if 0
     // currently this information is not playin major role in this
     // implementation.
     SchemeType scheme{stStreamCollision};
     const Real convergenceCriteria{1E-3};
     const int checkPeriod{1000};
     Iterate(scheme, convergenceCriteria, checkPeriod);
-//#endif
+    //#endif
 }
-
 
 int main(int argc, char** argv) {
     // OPS initialisation

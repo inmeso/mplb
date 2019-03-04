@@ -112,14 +112,14 @@ void simulate() {
     Iterate(scheme, steps, checkPeriod);
 #endif
 
-//if 0
+    // if 0
     // currently this information is not playin major role in this
     // implementation.
-    SchemeType scheme{stStreamCollision};                        
+    SchemeType scheme{stStreamCollision};
     const Real convergenceCriteria{1E-2};
     const int checkPeriod{200};
     Iterate(scheme, convergenceCriteria, checkPeriod);
-//#endif
+    //#endif
 }
 
 int main(int argc, char** argv) {

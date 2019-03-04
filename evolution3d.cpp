@@ -9,8 +9,8 @@
  * cycle
  */
 #include "evolution3d.h"
-#include "model.h"
 #include "hilemms.h"
+#include "model.h"
 
 /*
  * In the following routines, there are some variables are defined
@@ -91,9 +91,6 @@ void UpdateMacroVars3D() {
 
 void UpdateFeqandBodyforce3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-
-        //ops_printf("\n Entering KerCalcFeq3D ");
-
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCalcFeq3D, "KerCalcFeq3D", g_Block[blockIndex],
                      SPACEDIM, iterRng,
@@ -103,9 +100,6 @@ void UpdateFeqandBodyforce3D() {
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_RW));
-
-        //ops_printf(" KerCalcFeq3D has been executed \n");
-        //fflush(stdout);
 
         // time is not used in the current force
         Real* timeF{0};
@@ -120,9 +114,6 @@ void UpdateFeqandBodyforce3D() {
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_Bodyforce[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_RW));
-
-        //ops_printf("KerCalcBodyForce3D has been executed \n");
-        //fflush(stdout);
     }
 }
 
@@ -497,7 +488,6 @@ void DispResidualError3D(const int iter, const Real checkPeriod) {
 }
 
 void StreamCollision3D() {
-    
     UpdateMacroVars3D();
     // Real TotalMass{0};
     // CalcTotalMass(&TotalMass);

@@ -100,5 +100,6 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType);
 void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
                       int Num_Bound_Halo_Points);
 
+// A wrapper Function which implements all the boundary conditions.
 void ImplementBoundaryConditions();
 #endif  // Hilemms_H

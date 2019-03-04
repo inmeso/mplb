@@ -67,7 +67,6 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
     }
 }
 
-
 /*!
  * For most of cases, in particular, tau may not change actually
  * But for compressible flows, it will change
@@ -369,9 +368,10 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
                 Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
                 Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
 
-                //ops_printf("\n w = %f", w);
-                //ops_printf("\n Xi index start = %i ", COMPOINDEX[2 * compoIndex]);
-                //ops_printf("\n Xi index end = %i ", COMPOINDEX[2 * compoIndex+1]);
+                // ops_printf("\n w = %f", w);
+                // ops_printf("\n Xi index start = %i ", COMPOINDEX[2 *
+                // compoIndex]); ops_printf("\n Xi index end = %i ", COMPOINDEX[2
+                // * compoIndex+1]);
 
                 const Real T{1};
                 const int polyOrder{2};
@@ -380,11 +380,11 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
                     feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                         CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder);
                 }
-                //ops_printf("\n We have calculated BGK Feq ");
+                // ops_printf("\n We have calculated BGK Feq ");
             }
             if (Equilibrium_BGKThermal4th == equilibriumType) {
-
-                //ops_printf("\n This is 4th order if condition and I should not be here ");
+                // ops_printf("\n This is 4th order if condition and I should
+                // not be here ");
 
                 Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
                 Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
@@ -399,10 +399,10 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
                 }
             }
 
-            //ops_printf("\n About to finish KerCalcFeq3D");
+            // ops_printf("\n About to finish KerCalcFeq3D");
         }
     }
-    //ops_printf("\n Last stage to finish KerCalcFeq3D");
+    // ops_printf("\n Last stage to finish KerCalcFeq3D");
 }
 
 void KerCalcBodyForce3D(const Real* time, const int* nodeType,
@@ -418,7 +418,7 @@ void KerCalcBodyForce3D(const Real* time, const int* nodeType,
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
             if (BodyForce_1st == forceType) {
                 Real rho{macroVars[OPS_ACC_MD3(startPos, 0, 0, 0)]};
-                //ops_printf("rho=%f g=%f\n",rho,g[0]);
+                // ops_printf("rho=%f g=%f\n",rho,g[0]);
                 for (int xiIndex = COMPOINDEX[2 * compoIndex];
                      xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
                     bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)] =
@@ -466,12 +466,14 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
  * similar to the Gauss-Hermite quadrature
  *
  */
-void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordinates, const Real* f, Real* macroVars) {
+void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
+                        const Real* coordinates, const Real* f,
+                        Real* macroVars) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
     Real* acceleration = new Real[LATTDIM * NUMCOMPONENTS];
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
         for (int i = 0; i < LATTDIM; i++) {
-            acceleration[compoIndex+i] = 0;
+            acceleration[compoIndex + i] = 0;
         }
     }
     acceleration[0] = 0.0001;
@@ -846,7 +848,7 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordin
             delete[] veloCalculated;
             delete[] velo;
         }  // compoIdx
-    }  // isVertex
+    }      // isVertex
     delete[] acceleration;
 }
 #endif
