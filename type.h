@@ -28,7 +28,7 @@ const int zaxis = 3;
 // ZERO is the zero constant with the desired precision, i.e., float or double
 const Real ZERO{(Real)((int)0)};
 //#define debug
-#define OPS_3D
+
 #include "ops_seq.h"
 // It looks that OPS always fills the uninitialised storage with 0 so
 // we try to avoid 0 value for these types
