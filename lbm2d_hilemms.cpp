@@ -23,8 +23,6 @@
 // Code_modifcication needed
 // Currently defining OPS 3d here. We need some mechanism to generate this
 // automatically.
-#define OPS_2D
-
 extern int HALODEPTH;
 
 BoundarySurface surface[4] = {BoundSurf_Inlet, BoundSurf_Outlet, BoundSurf_Top,
