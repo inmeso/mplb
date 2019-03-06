@@ -8,6 +8,7 @@
 #include "type.h"
 
 //#include "setup_comput_domain.h"
+#define OPS_2D
 
 int MAXITER;
 int CHECKPERIOD;
@@ -1222,6 +1223,114 @@ void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
 
     // boundaryHaloPt = Num_Bound_Halo_Points;
     SetBoundaryHaloNum(Num_Bound_Halo_Points);
+}
 
-    // Setup_Stencil_Model();
+// mark all solid points inside the circle to be ImmersedSolid
+void SolidPointsInsideCircle(int blockIndex, Real diameter,
+                             std::vector<Real> circlePos) {
+    int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
+    Real* circlePosition = &circlePos[0];
+    ops_par_loop(
+        KerSetEmbededCircle, "KerSetEmbededCircle", g_Block[blockIndex],
+        SPACEDIM, bulkRng, ops_arg_gbl(&diameter, 1, "double", OPS_READ),
+        ops_arg_gbl(circlePosition, SPACEDIM, "Real", OPS_READ),
+        ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM, LOCALSTENCIL,
+                    "double", OPS_READ),
+        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE),
+        ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL, "int",
+                    OPS_WRITE));
+}
+
+void SolidPointsInsideEllipse(int blockIndex, Real semiMajorAxes,
+                              Real semiMinorAxes, std::vector<Real> centerPos) {
+    int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
+    Real* centerPosition = &centerPos[0];
+    ops_par_loop(
+        KerSetEmbeddedEllipse, "KerSetEmbededCircle", g_Block[blockIndex],
+        SPACEDIM, bulkRng, ops_arg_gbl(&semiMajorAxes, 1, "double", OPS_READ),
+        ops_arg_gbl(&semiMinorAxes, 1, "double", OPS_READ),
+        ops_arg_gbl(centerPosition, SPACEDIM, "Real", OPS_READ),
+        ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM, LOCALSTENCIL,
+                    "double", OPS_READ),
+        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE),
+        ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL, "int",
+                    OPS_WRITE));
+}
+
+// Wrapper function for embedded body.
+void HandleImmersedSoild() {
+    for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
+        int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
+        // wipe off some solid points that cannot be consideres
+        // as a good surface point
+        ops_par_loop(KerSweep, "KerSweep", g_Block[blockIndex], SPACEDIM,
+                     bulkRng,
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+                                 OPS_WRITE));
+
+        // sync the Geometry property to reflect the modifed solid property
+        ops_par_loop(KerSyncGeometryProperty, "KerSyncGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, bulkRng,
+                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+                                 OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_RW));
+
+        // set the correct  geometry property e.g., corner types
+        // i.e., mark out the surface points
+        ops_par_loop(KerSetEmbededBodyGeometry, "KerSetEmbededBodyGeometry",
+                     g_Block[blockIndex], SPACEDIM, bulkRng,
+                     ops_arg_dat(g_NodeType[blockIndex], 1, ONEPTLATTICESTENCIL,
+                                 "int", OPS_RW),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+
+        // set the boundary type
+        // int nodeType{ surface };
+        int nodeType{Vertex_EQMDiffuseRefl};
+        ops_par_loop(KerSetEmbededBodyBoundary, "KerSetEmbededBodyBoundary",
+                     g_Block[blockIndex], SPACEDIM, bulkRng,
+                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+                                 OPS_RW));
+    }
+}
+
+// Function to provide details of embedded solid body into the fluid.
+void EmbeddedBody(SolidBodyType type, int blockIndex,
+                  std::vector<Real> centerPos, std::vector<Real> controlParas) {
+    int numCoordCenterPos;
+    numCoordCenterPos = centerPos.size();
+
+    if (numCoordCenterPos == SPACEDIM) {
+        switch (type) {
+            case SolidBody_circle: {
+                SolidPointsInsideCircle(blockIndex, controlParas[0], centerPos);
+                break;
+            }
+
+            case SolidBody_ellipse: {
+                Real semiMajorAxes{controlParas[0]};
+                Real semiMinorAxes{controlParas[1]};
+                SolidPointsInsideEllipse(blockIndex, semiMajorAxes,
+                                         semiMinorAxes, centerPos);
+                break;
+            }
+
+            default:
+                ops_printf(
+                    "\n This solid body is not yet implemented in the "
+                    "code");
+                break;
+        }
+    } else {
+        ops_printf(
+            "\n For %i dimensional problem, number of coordinates should be "
+            "%d, however %d were provided.",
+            SPACEDIM, SPACEDIM, numCoordCenterPos);
+    }
 }

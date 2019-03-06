@@ -28,7 +28,7 @@ const int zaxis = 3;
 // ZERO is the zero constant with the desired precision, i.e., float or double
 const Real ZERO{(Real)((int)0)};
 //#define debug
-
+#define OPS_2D
 #include "ops_seq.h"
 // It looks that OPS always fills the uninitialised storage with 0 so
 // we try to avoid 0 value for these types
@@ -160,10 +160,10 @@ enum VariableTypes {
     Variable_Qx = 5,
     Variable_Qy = 6,
     Variable_Qz = 7,
-    //This is for the force correction needed by using He1998 scheme.
-    Variable_U_Force  = 8,
-    Variable_V_Force  = 9,
-    Variable_W_Force  = 10,
+    // This is for the force correction needed by using He1998 scheme.
+    Variable_U_Force = 8,
+    Variable_V_Force = 9,
+    Variable_W_Force = 10,
 };
 
 enum EquilibriumType {
@@ -173,6 +173,8 @@ enum EquilibriumType {
 };
 
 enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };
+
+enum SolidBodyType { SolidBody_circle = 0, SolidBody_ellipse = 1 };
 
 enum SpaceSchemeType {
     sstupwind2nd = 10,

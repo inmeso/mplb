@@ -1,3 +1,12 @@
+ #set path and
+define DEBUG
+endef
+OPS_COMPILER=clang
+MPI_INSTALL_PATH=/usr
+HDF5_INCLUDE_PATH=/usr/include/hdf5/openmpi
+HDF5_LIB_PATH=/usr/lib/x86_64-linux-gnu/hdf5/openmpi
+#OPS_INSTALL_PATH=/home/lokesh/Desktop/OPS/OPS_repository/OPS-master/ops  #/mnt/e/mhi63623/Documents/OPS/ops
+
 OPS_INSTALL_PATH := $(OPS_INSTALL_PATH)/c
 OPS_INC   = -I$(OPS_INSTALL_PATH)/include
 OPS_LIB   = -L$(OPS_INSTALL_PATH)/lib
@@ -6,7 +15,7 @@ CUDA_INC = -I$(CUDA_INSTALL_PATH)/include
 
 OPENCL_INC = -I$(OPENCL_INSTALL_PATH)/include
 OPENCL_LIB = -L$(OPENCL_INSTALL_PATH)/lib64 -lOpenCL
-
+DEBUG = DEBUG
 
 ifdef HDF5_INCLUDE_PATH
   HDF5_INC 	  	:= -I$(HDF5_INCLUDE_PATH) 
@@ -153,39 +162,42 @@ else
 #TARGETS += openacc_error
 endif
 
+
+
 all: clean $(TARGETS)
 
 lbm3d_dev_seq: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution3d.cpp lbm3d.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
-	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_3D type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution3d.cpp lbm3d.cpp -lops_seq -lops_hdf5_seq  $(HDF5_LIB) -o lbm3d_dev_seq
+	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB)  type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution3d.cpp lbm3d.cpp -lops_seq -lops_hdf5_seq  $(HDF5_LIB) -o lbm3d_dev_seq
 
 
 lbm3d_hilemms_dev_seq: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution.cpp evolution3d.cpp lbm3d_hilemms.cpp hilemms_ops.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
-	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_3D type.cpp boundary.cpp scheme.cpp flowfield.cpp evolution.cpp  model.cpp evolution3d.cpp lbm3d_hilemms.cpp hilemms_ops.cpp -lops_seq -lops_hdf5_seq  $(HDF5_LIB) -o lbm3d_hilemms_dev_seq
+	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB)  type.cpp boundary.cpp scheme.cpp flowfield.cpp evolution.cpp  model.cpp evolution3d.cpp lbm3d_hilemms.cpp hilemms_ops.cpp -lops_seq -lops_hdf5_seq  $(HDF5_LIB) -o lbm3d_hilemms_dev_seq
 
 lbm3d_dev_mpi: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution3d.cpp lbm3d.cpp $(OPS_INSTALL_PATH)/lib/libops_mpi.a
-	$(MPICPP) $(MPIFLAGS) -DOPS_MPI $(OPS_INC) $(OPS_LIB) $(HDF5_INC) -DOPS_3D type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution3d.cpp lbm3d.cpp -lops_mpi  -lops_hdf5_mpi $(HDF5_LIB) -o lbm3d_dev_mpi
+	$(MPICPP) $(MPIFLAGS) -DOPS_MPI $(OPS_INC) $(OPS_LIB) $(HDF5_INC) type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution3d.cpp lbm3d.cpp -lops_mpi  -lops_hdf5_mpi $(HDF5_LIB) -o lbm3d_dev_mpi
 
 setupdomain: Makefile setup_comput_domain.cpp scheme.cpp model.cpp boundary.cpp Case_Setup.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
-	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_2D type.cpp boundary.cpp setup_comput_domain.cpp scheme.cpp model.cpp Case_Setup.cpp -lops_seq -lops_hdf5_seq $(HDF5_LIB) -o setup_comput_domain
-
-setupdomain3D: Makefile setup_comput_domain.cpp scheme.cpp model.cpp boundary.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
-	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_3D type.cpp boundary.cpp setup_comput_domain.cpp scheme.cpp model.cpp -lops_seq -lops_hdf5_seq $(HDF5_LIB) -o setup_comput_domain
+	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB)  type.cpp boundary.cpp setup_comput_domain.cpp scheme.cpp model.cpp Case_Setup.cpp -lops_seq -lops_hdf5_seq $(HDF5_LIB) -o setup_comput_domain
 
 # Original
 #lbm2d_dev_seq: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution.cpp lbm2d.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
 #	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB)  type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution.cpp lbm2d.cpp -lops_seq  -lops_hdf5_seq $(HDF5_LIB) -o lbm2d_dev_seq
 
 lbm2d_dev_seq: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution.cpp lbm2d.cpp Case_Setup.cpp setup_comput_domain.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
-	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_2D  type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution.cpp lbm2d.cpp Case_Setup.cpp setup_comput_domain.cpp -lops_seq  -lops_hdf5_seq $(HDF5_LIB) -o lbm2d_dev_seq
+	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB)  type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution.cpp lbm2d.cpp Case_Setup.cpp setup_comput_domain.cpp -lops_seq  -lops_hdf5_seq $(HDF5_LIB) -o lbm2d_dev_seq
 
 
 lbm2d_hilemms_dev_seq: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution.cpp lbm2d_hilemms.cpp hilemms_ops.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
-	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_2D  type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution.cpp lbm2d_hilemms.cpp hilemms_ops.cpp -lops_seq  -lops_hdf5_seq $(HDF5_LIB) -o lbm2d_hilemms_dev_seq
+	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB)  type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution.cpp lbm2d_hilemms.cpp hilemms_ops.cpp -lops_seq  -lops_hdf5_seq $(HDF5_LIB) -o lbm2d_hilemms_dev_seq
+
+lbm2d_hilemms_solid_body_dev_seq: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution.cpp lbm2d_hilemms_solid_body.cpp hilemms_ops.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
+	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB)  type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution.cpp lbm2d_hilemms_solid_body.cpp hilemms_ops.cpp -lops_seq  -lops_hdf5_seq $(HDF5_LIB) -o lbm2d_hilemms_solid_body_dev_seq
+
 
 
 
 lbm2d_dev_mpi: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution.cpp lbm2d.cpp $(OPS_INSTALL_PATH)/lib/libops_mpi.a
-	$(MPICPP) $(MPIFLAGS) -DOPS_MPI $(OPS_INC) $(OPS_LIB) $(HDF5_INC) -DOPS_2D type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution.cpp lbm2d.cpp -lops_mpi -lops_hdf5_mpi  $(HDF5_LIB) -o lbm2d_dev_mpi
+	$(MPICPP) $(MPIFLAGS) -DOPS_MPI $(OPS_INC) $(OPS_LIB) $(HDF5_INC) type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution.cpp lbm2d.cpp -lops_mpi -lops_hdf5_mpi  $(HDF5_LIB) -o lbm2d_dev_mpi
 #
 # mpi version
 #
@@ -276,6 +288,7 @@ lbm2d_mpi_openacc: $(openacc_mpi_obj_list) ./OpenACC/lbm2d_kernels_mpi.o type_op
 #
 lbm2d_opencl: ./OpenCL/lbm2d_opencl_kernels.o lbm2d_ops.cpp lbm2d_kernel.h lbm2d_print_kernel.h lbm2d_copy_kernel.h Makefile $(OPS_INSTALL_PATH)/lib/libops_opencl.a
 	$(CPP) $(MPIFLAGS) $(OPS_INC) $(OPS_LIB) $(OPENCL_LIB) lbm2d_ops.cpp ./OpenCL/lbm2d_opencl_kernels.o  -lops_opencl -o lbm2d_opencl
+
 
 lbm2d_mpi_opencl: ./OpenCL/lbm2d_mpi_opencl_kernels.o lbm2d_ops.cpp lbm2d_kernel.h lbm2d_print_kernel.h lbm2d_copy_kernel.h Makefile $(OPS_INSTALL_PATH)/lib/libops_mpi_opencl.a
 	$(MPICPP) $(MPIFLAGS) -DOPS_MPI $(OPS_INC) $(OPS_LIB) $(OPENCL_LIB) lbm2d_ops.cpp ./OpenCL/lbm2d_opencl_kernels.o -lops_mpi_opencl -o lbm2d_mpi_opencl

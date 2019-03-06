@@ -96,10 +96,40 @@ void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType);
 void SetupDomainGeometryProperty(int blockIndex);
 void SetupDomainNodeType(int blockIndex, VertexTypes* faceType);
 
-// Functions to check for inclusion.
 void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
                       int Num_Bound_Halo_Points);
+// Functions to check for inclusion.
 
-// A wrapper Function which implements all the boundary conditions.
 void ImplementBoundaryConditions();
+// A wrapper Function which implements all the boundary conditions.
+
+void EmbeddedBody(SolidBodyType type, int blockIndex,
+                  std::vector<Real> centerPos, std::vector<Real> controlParas);
+// type: Circle/Sphere, Ellipse/Ellipsoid, superquadrics, ...
+// centerPos: the position vector of the center point.
+// controlParas: control parameters, e.g. radius for Circle/Sphere, ...
+
+/**********************************************************/
+/* Functions for embedded body.                           */
+/**********************************************************/
+
+void KerSetEmbededBodyBoundary(int* surfaceBoundary,
+                               const int* geometryProperty, int* nodeType);
+
+void KerSetEmbededCircle(Real* diameter, Real* centerPos,
+                         const Real* coordinates, int* nodeType,
+                         int* geometryProperty);
+
+void KerSetEmbeddedEllipse(Real* semiMajorAxes, Real* semiMinorAxis,
+                           Real* centerPos, const Real* coordinates,
+                           int* nodeType, int* geometryProperty);
+
+void KerSweep(const int* geometryProperty, int* nodeType);
+
+void KerSyncGeometryProperty(const int* nodeType, int* geometryProperty);
+
+void KerSetEmbededBodyGeometry(const int* nodeType, int* geometryProperty);
+
+void HandleImmersedSoild();
+
 #endif  // Hilemms_H
