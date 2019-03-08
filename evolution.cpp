@@ -439,6 +439,8 @@ void DispResidualError(const int iter, const Real checkPeriod) {
 
 void StreamCollision() {
     UpdateMacroVars();
+    //ops_printf("Varibale have beeen updated in stream collision. \n");
+    
     // Real TotalMass{0};
     // CalcTotalMass(&TotalMass);
     // Real Ratio{TotalMass/TotalMeshSize()};
@@ -448,10 +450,20 @@ void StreamCollision() {
     // ops_printf("\n Updated macro vars ");
 
     CopyDistribution(g_f, g_fStage);
+    //ops_printf("Distribution function copied. \n");
+
     UpdateFeqandBodyforce();
+    //ops_printf("Feq and Body Force have been updated. \n");
+
     UpdateTau();
+    //ops_printf("Tau has been updated. \n");
+
     Collision();
+    //ops_printf("Collision done. \n");
+
     Stream();
+    //ops_printf("Streaming done. \n");
+
     ImplementBoundaryConditions();
 }
 

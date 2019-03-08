@@ -79,7 +79,7 @@ void simulate() {
     ops_printf("%s\n", "Starting to allocate...");
     DefineHaloTransfer();
     // above calls must be before the ops_partition call.
-    ops_partition((char*)"LBM");
+    //ops_partition((char*)"LBM");
     ops_printf("%s\n", "Flowfield is setup now!");
     InitialiseSolution();
 

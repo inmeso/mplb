@@ -8,7 +8,6 @@
 #include "type.h"
 
 //#include "setup_comput_domain.h"
-#define OPS_2D
 
 int MAXITER;
 int CHECKPERIOD;
@@ -38,35 +37,10 @@ void DefineCase(std::string caseName, const int spaceDim) {
     SPACEDIM = spaceDim;
 }
 
-void CalBlockCoordinates(const int blockIndex, Real* blockStartPos,
-                         Real meshSize) {
-    Real* coordinates[SPACEDIM];
-
-    for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) {
-        int numCellsOneDir =
-            BlockSize(blockIndex)[SPACEDIM * blockIndex + coordIndex];
-
-        coordinates[coordIndex] = new Real[numCellsOneDir + 1];
-
-        coordinates[coordIndex][0] = blockStartPos[coordIndex];
-
-        for (int nodeIndex = 0; nodeIndex < numCellsOneDir; nodeIndex++) {
-            coordinates[coordIndex][nodeIndex + 1] =
-                coordinates[coordIndex][nodeIndex] + meshSize;
-        }
-    }
-
-    AssignCoordinates(blockIndex, coordinates);
-
-    // Deleting the memeory allocated to coordinates.
-    for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) {
-        if (coordinates[coordIndex] != nullptr)
-            delete[] coordinates[coordIndex];
-    }
-}
 
 // Function copied from Setup_comput_domain.cpp (3D File)
-void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]) {
+//void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]) {
+void AssignCoordinates(int blockIndex, Real** coordinates) {
 #ifdef OPS_2D
     if (SPACEDIM == 2) {
         int* range = BlockIterRng(blockIndex, IterRngWhole());
@@ -100,6 +74,35 @@ void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]) {
     }
 #endif
 }
+
+void CalBlockCoordinates(const int blockIndex, Real* blockStartPos,
+                         Real meshSize) {
+    Real* coordinates[SPACEDIM];
+
+    for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) {
+        int numCellsOneDir =
+            BlockSize(blockIndex)[SPACEDIM * blockIndex + coordIndex];
+
+        coordinates[coordIndex] = new Real[numCellsOneDir + 1];
+
+        coordinates[coordIndex][0] = blockStartPos[coordIndex];
+
+        for (int nodeIndex = 0; nodeIndex < numCellsOneDir; nodeIndex++) {
+            coordinates[coordIndex][nodeIndex + 1] =
+                coordinates[coordIndex][nodeIndex] + meshSize;
+        }
+    }
+
+    AssignCoordinates(blockIndex, coordinates);
+    //AssignCoordinates(blockIndex, &coordinates[SPACEDIM]);
+
+    // Deleting the memeory allocated to coordinates.
+    for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) {
+        if (coordinates[coordIndex] != nullptr)
+            delete[] coordinates[coordIndex];
+    }
+}
+
 
 // This subroutine is for internal use only.
 VertexTypes BoundTypeToVertexType(BoundaryType type) {
@@ -213,6 +216,7 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
     SetBlockSize(blockSize);
 
     DefineVariables();
+    //ops_printf("Variables Defined \n");
     ops_partition((char*)"LBMPreProcessor");
 
     int numBlockStartPos;
@@ -1225,6 +1229,7 @@ void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
     SetBoundaryHaloNum(Num_Bound_Halo_Points);
 }
 
+#ifdef OPS_2d
 // mark all solid points inside the circle to be ImmersedSolid
 void SolidPointsInsideCircle(int blockIndex, Real diameter,
                              std::vector<Real> circlePos) {
@@ -1334,3 +1339,4 @@ void EmbeddedBody(SolidBodyType type, int blockIndex,
             SPACEDIM, SPACEDIM, numCoordCenterPos);
     }
 }
+#endif

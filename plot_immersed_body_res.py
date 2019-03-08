@@ -19,7 +19,7 @@ front=4
 nx=501
 ny=251
 # Reading the data at a time step into memory(res)
-res = ReadOPSDataHDF5(nx, ny, BlockIndex, HaloNum,SPACEDIM, MacroVarNum, MacroVarNames, XINUM, "Flow_past_2_cylinders_Block_0_12000.h5")
+res = ReadOPSDataHDF5(nx, ny, BlockIndex, HaloNum,SPACEDIM, MacroVarNum, MacroVarNames, XINUM, "Flow_past_2_cylinders_Block_0_12500.h5")
 #Convert the data into a layout more friendly to matlab or tecplot
 WriteMacroVarsPlainHDF5(res,"testD.h5")
 #Density contour plot 

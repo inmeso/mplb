@@ -44,6 +44,7 @@ void KerCollide(const Real* dt, const int* nodeType, const Real* f,
 }
 void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                Real* f) {
+    //ops_printf("Inside stream kernel!!!!!. \n");
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
     VertexGeometryTypes vg = (VertexGeometryTypes)geometry[OPS_ACC1(0, 0)];
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
@@ -52,6 +53,7 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
             int cx = (int)XI[xiIndex * LATTDIM];
             int cy = (int)XI[xiIndex * LATTDIM + 1];
             if ((vt >= Vertex_Fluid) && (vt < Vertex_Boundary)) {
+                //ops_printf("I am inside if vt = %d. \n", (int)vt);
                 f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                     fStage[OPS_ACC_MD2(xiIndex, -cx, -cy)];
             }

@@ -79,7 +79,8 @@ void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
 // coordinates: Coordinate array of nodes.
 // idx: An array used by OPS which gives the index of the current grid point.
 
-void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]);
+//void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]);
+void AssignCoordinates(int blockIndex, Real** coordinates);
 // blockIndex: Block id.
 // Coordinates: Array to store coordinates of various points inside the domain.
 // This function was defined in setup_comput_domain and has been declared here

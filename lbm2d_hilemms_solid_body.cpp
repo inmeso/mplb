@@ -33,7 +33,7 @@ BoundaryType boundType[4] = {
     BoundType_EQMDiffuseRefl, BoundType_EQMDiffuseRefl};
 
 void simulate() {
-    std::string caseName{"Flow_past_2_cylinders"};
+    std::string caseName{"Flow_past_2_cylinders_and_ellipse"};
     int spaceDim{2};
     DefineCase(caseName, spaceDim);
 
@@ -79,7 +79,7 @@ void simulate() {
     ops_printf("%s\n", "Starting to allocate...");
     DefineHaloTransfer();
     // above calls must be before the ops_partition call.
-    ops_partition((char*)"LBM");
+    //ops_partition((char*)"LBM");
     ops_printf("%s\n", "Flowfield is setup now!");
     InitialiseSolution();
 
@@ -122,23 +122,23 @@ void simulate() {
     DefineBlockBoundary(blockIndex, componentId, surface[3], boundType[3],
                         MacroVarsComp, bottomValMacroVarsComp);
 
-#if 0
+//if 0
     // currently this information is not playin major role in this
     // implementation.
     SchemeType scheme{stStreamCollision};                                
-    const int steps{5000};
+    const int steps{1001};
     const int checkPeriod{500};
     Iterate(scheme, steps, checkPeriod);
-#endif
+//#endif
 
-    // if 0
+#if 0
     // currently this information is not playin major role in this
     // implementation.
     SchemeType scheme{stStreamCollision};
     const Real convergenceCriteria{1E-2};
     const int checkPeriod{500};
     Iterate(scheme, convergenceCriteria, checkPeriod);
-    //#endif
+#endif
 }
 
 int main(int argc, char** argv) {
