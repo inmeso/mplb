@@ -709,35 +709,33 @@ void DefineHaloTransfer3D() {
     int nx = BlockSize(0)[0];
     int ny = BlockSize(0)[1];
     int nz = BlockSize(0)[2];
+    // {
+    //     // Template for the periodic pair (front-back)
+    //     int dir[] = {1, 2, 3};
+    //     int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
+    //     int base_from[] = {d_m[0], d_m[0], 0};
+    //     int base_to[] = {d_m[0], d_m[0], nz};
+    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    //     base_from[2] = nz - 1;
+    //     base_to[2] = d_m[1];
+    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    // }
+
     {
-        // Template for the periodic pair (front-back)
+        // Template for the periodic pair (left-right)
         int dir[] = {1, 2, 3};
-        int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
-        int base_from[] = {d_m[0], d_m[0], 0};
-        int base_to[] = {d_m[0], d_m[0], nz};
+        int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
+        int base_from[] = {0, d_m[0], d_m[0]};
+        int base_to[] = {nx, d_m[0], d_m[0]};
         HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
                                          base_to, dir, dir);
-        base_from[2] = nz - 1;
-        base_to[2] = d_m[1];
+        base_from[0] = nx - 1;  // need to be changed
+        base_to[0] = d_m[1];
         HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
                                          base_to, dir, dir);
     }
-
-    // {
-    //     // Template for the periodic pair (left-right)
-    //     int dir[] = {1, 2, 3};
-    //     int halo_iter[] = {1,ny+d_p[0]-d_m[0], nz+d_p[0]-d_m[0]};
-    //     int base_from[] = {0, d_m[0], d_m[0]};
-    //     int base_to[] = {nx, d_m[0], d_m[0]};
-    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter,
-    //     base_from,
-    //                                      base_to, dir, dir);
-    //     base_from[0] = nx - 1;  // need to be changed
-    //     base_to[0] = d_m[1];
-    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter,
-    //     base_from,
-    //                                      base_to, dir, dir);
-    // }
 
     HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
 }

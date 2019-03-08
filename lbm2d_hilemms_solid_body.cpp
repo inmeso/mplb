@@ -25,12 +25,12 @@
 // automatically.
 extern int HALODEPTH;
 
-BoundarySurface surface[4] = {BoundSurf_Inlet, BoundSurf_Outlet, BoundSurf_Top,
-                              BoundSurf_Bottom};
+BoundarySurface surface[4] = {BoundarySurface_Left, BoundarySurface_Right, BoundarySurface_Top,
+                              BoundarySurface_Bottom};
 
 BoundaryType boundType[4] = {
-    BoundType_EQMDiffuseRefl, BoundType_ExtrapolPressure1ST,
-    BoundType_EQMDiffuseRefl, BoundType_EQMDiffuseRefl};
+    BoundaryType_EQMDiffuseRefl, BoundaryType_ExtrapolPressure1ST,
+    BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl};
 
 void simulate() {
     std::string caseName{"Flow_past_2_cylinders_and_ellipse"};

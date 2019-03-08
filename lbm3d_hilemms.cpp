@@ -24,18 +24,7 @@
 // Currently defining OPS 3d here. We need some mechanism to generate this
 // automatically.
 
-using namespace std;
-
 extern int HALODEPTH;
-
-BoundarySurface surface[6] = {BoundSurf_Inlet, BoundSurf_Outlet,
-                              BoundSurf_Top,   BoundSurf_Bottom,
-                              BoundSurf_Front, BoundSurf_Back};
-
-BoundaryType boundType[6] = {
-    BoundType_EQMDiffuseRefl, BoundType_EQMDiffuseRefl,
-    BoundType_EQMDiffuseRefl, BoundType_EQMDiffuseRefl,
-    BoundType_EQMDiffuseRefl, BoundType_EQMDiffuseRefl};
 
 void simulate() {
     std::string caseName{"3D_lid_Driven_cavity"};
@@ -66,12 +55,16 @@ void simulate() {
     SetupBoundary();
 
     int blockNum{1};
-    std::vector<int> blockSize{11, 11, 11};
-    Real meshSize{0.1};
+    std::vector<int> blockSize{3, 101,101};
+    Real meshSize{1./100};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
     DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
 
     int blockIndex{0};
+    BoundaryType boundType[6] = {
+        BoundaryType_Periodic, BoundaryType_Periodic,
+        BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl,
+        BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl};
     SetupGeomPropAndNodeType(blockIndex, boundType);
 
     int compoIdInitialCond{0};
@@ -79,7 +72,7 @@ void simulate() {
     DefineIntialCond(blockIndex, compoIdInitialCond, initialMacroValues);
     ops_printf("%s\n", "Flowfield is Initialised now!");
 
-    std::vector<Real> tauRef{0.001};
+    std::vector<Real> tauRef{0.01};
     SetTauRef(tauRef);
 
     SetTimeStep(meshSize / SoundSpeed());
@@ -87,8 +80,6 @@ void simulate() {
     HALODEPTH = HaloPtNum();
     ops_printf("%s\n", "Starting to allocate...");
     DefineHaloTransfer3D();
-    // above calls must be before the ops_partition call
-    //ops_partition((char*)"LBM");
     ops_printf("%s\n", "Flowfield is setup now!");
     InitialiseSolution3D();
 
@@ -97,6 +88,12 @@ void simulate() {
     std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,
                                              Variable_V, Variable_W};
     std::vector<Real> inletValMacroVarsComp{1, 0, 0, 0};
+
+    BoundarySurface surface[6] = {BoundarySurface_Left,  BoundarySurface_Right,
+                                  BoundarySurface_Top,   BoundarySurface_Bottom,
+                                  BoundarySurface_Front, BoundarySurface_Back};
+
+   
     DefineBlockBoundary(blockIndex, componentId, surface[0], boundType[0],
                         MacroVarsComp, inletValMacroVarsComp);
 
@@ -104,7 +101,7 @@ void simulate() {
     DefineBlockBoundary(blockIndex, componentId, surface[1], boundType[1],
                         MacroVarsComp, outletValMacroVarsComp);
 
-    std::vector<Real> topValMacroVarsComp{1, 0.01, 0, 0};
+    std::vector<Real> topValMacroVarsComp{1, 0, 0, 0.01};
     DefineBlockBoundary(blockIndex, componentId, surface[2], boundType[2],
                         MacroVarsComp, topValMacroVarsComp);
 
@@ -120,20 +117,20 @@ void simulate() {
     DefineBlockBoundary(blockIndex, componentId, surface[5], boundType[5],
                         MacroVarsComp, backValMacroVarsComp);
 
-#if 0
+
     // currently this information is not playin major role in this
     // implementation.
-    SchemeType scheme{stStreamCollision}; 
-    const int steps{10000};
-    const int checkPeriod{1000};
-    Iterate(scheme, steps, checkPeriod);
-#endif
+    // SchemeType scheme{stStreamCollision}; 
+    // const int steps{10000};
+    // const int checkPeriod{1000};
+    // Iterate(scheme, steps, checkPeriod);
 
-    // if 0
+
+   
     // currently this information is not playin major role in this
     // implementation.
     SchemeType scheme{stStreamCollision};
-    const Real convergenceCriteria{1E-3};
+    const Real convergenceCriteria{1E-5};
     const int checkPeriod{1000};
     Iterate(scheme, convergenceCriteria, checkPeriod);
     //#endif

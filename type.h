@@ -207,30 +207,30 @@ typedef enum {
 } FluidType;
 
 enum BoundarySurface {
-    BoundSurf_Inlet = 0,
-    BoundSurf_Outlet = 1,
-    BoundSurf_Top = 2,
-    BoundSurf_Bottom = 3,
-    BoundSurf_Front = 4,
-    BoundSurf_Back = 5,
+    BoundarySurface_Left = 0,
+    BoundarySurface_Right = 1,
+    BoundarySurface_Top = 2,
+    BoundarySurface_Bottom = 3,
+    BoundarySurface_Front = 4,
+    BoundarySurface_Back = 5,
 };
 
 enum BoundaryType {
-    BoundType_KineticDiffuseWall = 11,
-    BoundType_KineticSpelluarWall = 12,
-    BoundType_SlipWall = 13,
-    BoundType_VelocityInlet = 14,
-    BoundType_VelocityOutlet = 15,
-    BoundType_ExtrapolPressure1ST = 16,
-    BoundType_ExtrapolPressure2ND = 17,
-    BoundType_Periodic = 18,
-    BoundType_Uniform = 19,
-    BoundType_BounceBackWall = 20,
-    BoundType_FreeFlux = 21,
-    BoundType_ZouHeVelocity = 22,
-    BoundType_NoneqExtrapol = 23,
-    BoundType_EQMDiffuseRefl = 24,
-    BoundType_NonEqExtrapolPressure = 25,
+    BoundaryType_KineticDiffuseWall = 11,
+    BoundaryType_KineticSpelluarWall = 12,
+    BoundaryType_SlipWall = 13,
+    BoundaryType_VelocityInlet = 14,
+    BoundaryType_VelocityOutlet = 15,
+    BoundaryType_ExtrapolPressure1ST = 16,
+    BoundaryType_ExtrapolPressure2ND = 17,
+    BoundaryType_Periodic = 18,
+    BoundaryType_Uniform = 19,
+    BoundaryType_BounceBackWall = 20,
+    BoundaryType_FreeFlux = 21,
+    BoundaryType_ZouHeVelocity = 22,
+    BoundaryType_NoneqExtrapol = 23,
+    BoundaryType_EQMDiffuseRefl = 24,
+    BoundaryType_NonEqExtrapolPressure = 25,
 };
 
 typedef enum {

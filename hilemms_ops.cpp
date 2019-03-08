@@ -109,63 +109,63 @@ VertexTypes BoundTypeToVertexType(BoundaryType type) {
     VertexTypes vtType;
 
     switch (type) {
-        case BoundType_KineticDiffuseWall:
+        case BoundaryType_KineticDiffuseWall:
             vtType = Vertex_KineticDiffuseWall;
             break;
 
-        case BoundType_KineticSpelluarWall:
+        case BoundaryType_KineticSpelluarWall:
             vtType = Vertex_KineticSpelluarWall;
             break;
 
-        case BoundType_SlipWall:
+        case BoundaryType_SlipWall:
             vtType = Vertex_SlipWall;
             break;
 
-        case BoundType_VelocityInlet:
+        case BoundaryType_VelocityInlet:
             vtType = Vertex_VelocityInlet;
             break;
 
-        case BoundType_VelocityOutlet:
+        case BoundaryType_VelocityOutlet:
             vtType = Vertex_VelocityOutlet;
             break;
 
-        case BoundType_ExtrapolPressure1ST:
+        case BoundaryType_ExtrapolPressure1ST:
             vtType = Vertex_ExtrapolPressure1ST;
             break;
 
-        case BoundType_ExtrapolPressure2ND:
+        case BoundaryType_ExtrapolPressure2ND:
             vtType = Vertex_ExtrapolPressure2ND;
             break;
 
-        case BoundType_Periodic:
+        case BoundaryType_Periodic:
             vtType = Vertex_Periodic;
             break;
 
-        case BoundType_Uniform:
+        case BoundaryType_Uniform:
             vtType = Vertex_Uniform;
             break;
 
-        case BoundType_BounceBackWall:
+        case BoundaryType_BounceBackWall:
             vtType = Vertex_BounceBackWall;
             break;
 
-        case BoundType_FreeFlux:
+        case BoundaryType_FreeFlux:
             vtType = Vertex_FreeFlux;
             break;
 
-        case BoundType_ZouHeVelocity:
+        case BoundaryType_ZouHeVelocity:
             vtType = Vertex_ZouHeVelocity;
             break;
 
-        case BoundType_NoneqExtrapol:
+        case BoundaryType_NoneqExtrapol:
             vtType = Vertex_NoneqExtrapol;
             break;
 
-        case BoundType_EQMDiffuseRefl:
+        case BoundaryType_EQMDiffuseRefl:
             vtType = Vertex_EQMDiffuseRefl;
             break;
 
-        case BoundType_NonEqExtrapolPressure:
+        case BoundaryType_NonEqExtrapolPressure:
             vtType = Vertex_NonEqExtrapolPressure;
             break;
 
@@ -413,27 +413,27 @@ void AddEmbededBody(int vertexNum, Real* vertexCoords) {
 int* RangeBoundCond(const int blockId, BoundarySurface surface) {
     int* rangeBoundaryCond;
     switch (surface) {
-        case BoundSurf_Inlet:
+        case BoundarySurface_Left:
             rangeBoundaryCond = BlockIterRng(blockId, IterRngImin());
             break;
 
-        case BoundSurf_Outlet:
+        case BoundarySurface_Right:
             rangeBoundaryCond = BlockIterRng(blockId, IterRngImax());
             break;
 
-        case BoundSurf_Top:
+        case BoundarySurface_Top:
             rangeBoundaryCond = BlockIterRng(blockId, IterRngJmax());
             break;
 
-        case BoundSurf_Bottom:
+        case BoundarySurface_Bottom:
             rangeBoundaryCond = BlockIterRng(blockId, IterRngJmin());
             break;
 
-        case BoundSurf_Front:
+        case BoundarySurface_Front:
             rangeBoundaryCond = BlockIterRng(blockId, IterRngKmax());
             break;
 
-        case BoundSurf_Back:
+        case BoundarySurface_Back:
             rangeBoundaryCond = BlockIterRng(blockId, IterRngKmin());
             break;
 

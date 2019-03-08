@@ -124,9 +124,8 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
     // VertexTypes boundaryType) for (int blockIdx = 0; blockIdx < BlockNum();
     // blockIdx++) {
     int blockIdx;
-    blockIdx =
-        blockIndex;  // This way will require minimum changes in the MPLB code.
-
+    // This way will require minimum changes in the MPLB code.
+    blockIdx = blockIndex;
     switch (boundaryType) {
         case Vertex_NoneqExtrapol: {
             //                ops_par_loop(
