@@ -22,8 +22,13 @@ lbm3d_dev_mpi
 
 #Object files.
 lbm2d_hilemms_dev_seq
+lbm2d_hilemms_dev_mpi
+
 lbm3d_hilemms_dev_seq
+lbm3d_hilemms_dev_mpi
+
 lbm2d_hilemms_solid_body_dev_seq
+lbm2d_hilemms_solid_body_dev_mpi
 __pycache__/
 
 

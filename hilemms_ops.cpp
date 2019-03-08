@@ -1229,7 +1229,7 @@ void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
     SetBoundaryHaloNum(Num_Bound_Halo_Points);
 }
 
-#ifdef OPS_2d
+#ifdef OPS_2D
 // mark all solid points inside the circle to be ImmersedSolid
 void SolidPointsInsideCircle(int blockIndex, Real diameter,
                              std::vector<Real> circlePos) {
