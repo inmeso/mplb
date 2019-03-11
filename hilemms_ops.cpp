@@ -176,16 +176,60 @@ VertexTypes BoundTypeToVertexType(BoundaryType type) {
     return vtType;
 }
 
-// This routine is for both 3D and 2D.
-void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType) {
+// // This routine is for both 3D and 2D.
+// void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType) {
+// #ifdef OPS_3D
+
+//     VertexTypes faceType[6];
+
+//     // Get Vertx type information from boundary Type. This is because MPLB code
+//     // uses vertex type information.
+//     for (int i = 0; i < 6; i++) {
+//         faceType[i] = BoundTypeToVertexType(boundType[i]);
+//     }
+
+// #endif  // end of OPS_3D
+
+// #ifdef OPS_2D
+
+//     VertexTypes faceType[4];
+
+//     // Get Vertx type information from boundary Type. This is because MPLB code
+//     // uses vertex type information.
+//     for (int i = 0; i < 4; i++) {
+//         faceType[i] = BoundTypeToVertexType(boundType[i]);
+//     }
+
+// #endif  // end of OPS_2D
+
+//     // This function assocaites various ranges such as imin, imax etc for a
+//     // block.
+//     SetupDomainGeometryProperty(blockIndex);
+
+//     SetupDomainNodeType(blockIndex, faceType);
+// }
+
+
+// This routine is for both 3D and 2D. It defines types of edges and corners also. 
+void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType, BoundaryType* edgeType, BoundaryType* cornerType) {
 #ifdef OPS_3D
 
     VertexTypes faceType[6];
+    VertexTypes geomEdgeType[12];
+    VertexTypes geomCornerType[8];
 
     // Get Vertx type information from boundary Type. This is because MPLB code
     // uses vertex type information.
     for (int i = 0; i < 6; i++) {
         faceType[i] = BoundTypeToVertexType(boundType[i]);
+    }
+
+    for (int i = 0; i < 12; i++) {
+        geomEdgeType[i] = BoundTypeToVertexType(edgeType[i]);
+    }
+
+    for (int i = 0; i < 8; i++) {
+        geomCornerType[i] = BoundTypeToVertexType(cornerType[i]);
     }
 
 #endif  // end of OPS_3D
@@ -206,8 +250,9 @@ void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType) {
     // block.
     SetupDomainGeometryProperty(blockIndex);
 
-    SetupDomainNodeType(blockIndex, faceType);
+    SetupDomainNodeType(blockIndex, faceType, geomEdgeType, geomCornerType);
 }
+
 
 void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
                          const Real meshSize,
@@ -557,7 +602,7 @@ void DefineIntialCond(const int blockIndex, const int componentId,
     }
 }
 
-void SetupDomainNodeType(int blockIndex, VertexTypes* faceType) {
+void SetupDomainNodeType(int blockIndex, VertexTypes* faceType, VertexTypes* edgeType, VertexTypes* cornerType) {
     int nodeType = (int)Vertex_Fluid;
     int* iterRange = BlockIterRng(blockIndex, IterRngBulk());
     ops_par_loop(
@@ -692,7 +737,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType) {
                                  OPS_WRITE));
     }
 
-#if 0
+//if 0
 
     const int nx = BlockSize(blockIndex)[0];
     const int ny = BlockSize(blockIndex)[1];
@@ -884,7 +929,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType) {
                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
                                  OPS_WRITE));
     }
-#endif  // end of #ifdef 0. Currently disabling this piece of code.
+//#endif  // end of #ifdef 0. Currently disabling this piece of code.
 }
 
 void SetupDomainGeometryProperty(int blockIndex) {
@@ -1028,7 +1073,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
                                  LOCALSTENCIL, "int", OPS_WRITE));
     }
 
-#if 0
+//if 0
     const int nx = BlockSize(blockIndex)[0];
     const int ny = BlockSize(blockIndex)[1];
     // 2D Domain corner points four types
@@ -1211,7 +1256,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
     }
-#endif  // end of if 0.
+//#endif  // end of if 0.
 }
 
 // Define varios halo numbers such as HaloNum, HaloDepth and SchemeHaloPt.

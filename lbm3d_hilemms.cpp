@@ -55,8 +55,8 @@ void simulate() {
     SetupBoundary();
 
     int blockNum{1};
-    std::vector<int> blockSize{3, 101,101};
-    Real meshSize{1./100};
+    std::vector<int> blockSize{3, 21, 21};
+    Real meshSize{1. / 20};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
     DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
 
@@ -65,7 +65,41 @@ void simulate() {
         BoundaryType_Periodic, BoundaryType_Periodic,
         BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl,
         BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl};
-    SetupGeomPropAndNodeType(blockIndex, boundType);
+
+    BoundaryType leftBottomBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType leftTopBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType rightBottomBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType rightTopBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType leftBackBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType leftFrontBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType rightBackBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType rightFrontBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType bottomBackBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType bottomFrontBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType topBackBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType topFrontBcType{BoundaryType_EQMDiffuseRefl};
+
+    BoundaryType edgeType[12] = {
+        leftBottomBcType,  leftTopBcType,    rightBottomBcType,
+        rightTopBcType,    leftBackBcType,   leftFrontBcType,
+        rightBackBcType,   rightFrontBcType, bottomBackBcType,
+        bottomFrontBcType, topBackBcType,    topFrontBcType};
+
+    BoundaryType leftBottomBackBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType leftBottomFrontBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType leftTopBackBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType leftTopFrontBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType rightBottomBackBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType rightBottomFrontBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType rightTopBackBcType{BoundaryType_EQMDiffuseRefl};
+    BoundaryType rightTopFrontBcType{BoundaryType_EQMDiffuseRefl};
+
+    BoundaryType cornerType[8] = {leftBottomBackBcType,  leftBottomFrontBcType,
+                                  leftTopBackBcType,     leftTopFrontBcType,
+                                  rightBottomBackBcType, rightBottomFrontBcType,
+                                  rightTopBackBcType,    rightTopFrontBcType};
+
+    SetupGeomPropAndNodeType(blockIndex, boundType, edgeType, cornerType);
 
     int compoIdInitialCond{0};
     std::vector<Real> initialMacroValues{1, 0, 0, 0};
@@ -93,7 +127,6 @@ void simulate() {
                                   BoundarySurface_Top,   BoundarySurface_Bottom,
                                   BoundarySurface_Front, BoundarySurface_Back};
 
-   
     DefineBlockBoundary(blockIndex, componentId, surface[0], boundType[0],
                         MacroVarsComp, inletValMacroVarsComp);
 
@@ -117,21 +150,18 @@ void simulate() {
     DefineBlockBoundary(blockIndex, componentId, surface[5], boundType[5],
                         MacroVarsComp, backValMacroVarsComp);
 
-
     // currently this information is not playin major role in this
     // implementation.
-    // SchemeType scheme{stStreamCollision}; 
+    // SchemeType scheme{stStreamCollision};
     // const int steps{10000};
     // const int checkPeriod{1000};
     // Iterate(scheme, steps, checkPeriod);
 
-
-   
     // currently this information is not playin major role in this
     // implementation.
     SchemeType scheme{stStreamCollision};
     const Real convergenceCriteria{1E-5};
-    const int checkPeriod{1000};
+    const int checkPeriod{500};
     Iterate(scheme, convergenceCriteria, checkPeriod);
     //#endif
 }

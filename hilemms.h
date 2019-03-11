@@ -94,8 +94,10 @@ void DefineIntialCond(int blockIndex, int componentId,
 // component in a particluar block.
 
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType);
+void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType,
+                              BoundaryType* edgeType, BoundaryType* cornerType);
 void SetupDomainGeometryProperty(int blockIndex);
-void SetupDomainNodeType(int blockIndex, VertexTypes* faceType);
+void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,VertexTypes* edgeType, VertexTypes* cornerType);
 
 void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
                       int Num_Bound_Halo_Points);

@@ -13,6 +13,7 @@ __pycache__/PostProcess\.cpython-36\.pyc
 lbm3d_dev_seq
 lbm3d_dev_mpi
 *.ipynb
+*.py
 
 
 # Exlude eclipse files.
