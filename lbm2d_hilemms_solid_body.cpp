@@ -67,7 +67,7 @@ void simulate() {
 
     int compoIdInitialCond{0};
     std::vector<Real> initialMacroValues{1, 0, 0};
-    DefineIntialCond(blockIndex, compoIdInitialCond, initialMacroValues);
+    DefineInitialCondition(blockIndex, compoIdInitialCond, initialMacroValues);
     ops_printf("%s\n", "Flowfield is Initialised now!");
 
     std::vector<Real> tauRef{0.001};

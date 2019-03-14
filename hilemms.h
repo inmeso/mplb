@@ -86,18 +86,17 @@ void AssignCoordinates(int blockIndex, Real** coordinates);
 // This function was defined in setup_comput_domain and has been declared here
 // as we are not using the preprocessor code separately.
 
-void DefineIntialCond(int blockIndex, int componentId,
+void DefineInitialCondition(int blockIndex, int componentId,
                       std::vector<Real> initialMacroValues);
 // blockIndex: Block Id.
 // componentId: Id of the component.
 // initialMacroValues: Initial values of the macroscopic variables for a given
-// component in a particluar block.
+// component in a particular block.
 
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType);
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType,
                               BoundaryType* edgeType, BoundaryType* cornerType);
 void SetupDomainGeometryProperty(int blockIndex);
-void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,VertexTypes* edgeType, VertexTypes* cornerType);
 
 void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
                       int Num_Bound_Halo_Points);
