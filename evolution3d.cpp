@@ -25,8 +25,8 @@ void UpdateTau3D() {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCalcTau3D, "KerCalcTau3D", g_Block[blockIndex],
                      SPACEDIM, iterRng,
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_gbl(TauRef(), NUMCOMPONENTS, "double", OPS_READ),
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
                                  LOCALSTENCIL, "double", OPS_READ),
@@ -41,8 +41,8 @@ void Collision3D() {
         ops_par_loop(KerCollide3D, "KerCollide3D", g_Block[blockIndex],
                      SPACEDIM, iterRng,
                      ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
                                  OPS_READ),
                      ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
@@ -61,8 +61,8 @@ void Stream3D() {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerStream3D, "KerStream3D", g_Block[blockIndex], SPACEDIM,
                      iterRng,
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_fStage[blockIndex], NUMXI,
@@ -78,8 +78,8 @@ void UpdateMacroVars3D() {
         ops_par_loop(KerCalcMacroVars3D, "KerCalcMacroVars3D",
                      g_Block[blockIndex], SPACEDIM, iterRng,
                      ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
@@ -94,8 +94,8 @@ void UpdateFeqandBodyforce3D() {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCalcFeq3D, "KerCalcFeq3D", g_Block[blockIndex],
                      SPACEDIM, iterRng,
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
@@ -106,8 +106,8 @@ void UpdateFeqandBodyforce3D() {
         ops_par_loop(KerCalcBodyForce3D, "KerCalcBodyForce3D",
                      g_Block[blockIndex], SPACEDIM, iterRng,
                      ops_arg_gbl(&timeF, 1, "double", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
@@ -155,8 +155,8 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                 KerCutCellExtrapolPressure1ST3D,
                 "KerCutCellExtrapolPressure1ST3D", g_Block[blockIdx], SPACEDIM,
                 range, ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_dat(g_NodeType[blockIdx], 1, ONEPTREGULARSTENCIL, "int",
-                            OPS_READ),
+                ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS,
+                            ONEPTREGULARSTENCIL, "int", OPS_READ),
                 ops_arg_dat(g_GeometryProperty[blockIdx], 1, LOCALSTENCIL,
                             "int", OPS_READ),
                 ops_arg_dat(g_f[blockIdx], NUMXI, ONEPTREGULARSTENCIL, "double",
@@ -241,26 +241,25 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                 KerCutCellEQMDiffuseRefl3D, "KerCutCellEQMDiffuseRefl3D",
                 g_Block[blockIdx], SPACEDIM, range,
                 ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_dat(g_NodeType[blockIdx], 1, LOCALSTENCIL, "int",
-                            OPS_READ),
+                ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS, LOCALSTENCIL,
+                            "int", OPS_READ),
                 ops_arg_dat(g_GeometryProperty[blockIdx], 1, LOCALSTENCIL,
                             "int", OPS_READ),
                 ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double",
                             OPS_RW),
                 ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
-        /*
         case Vertex_NoslipEQN: {
             ops_par_loop(
                 KerCutCellNoslipEQN3D, "KerCutCellNoslipEQN3D",
                 g_Block[blockIdx], SPACEDIM, range,
                 ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_dat(g_NodeType[blockIdx], 1, LOCALSTENCIL, "int",
-                            OPS_READ),
+                ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS, LOCALSTENCIL,
+                            "int", OPS_READ),
                 ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double",
-                            OPS_RW));
+                            OPS_RW),
+                ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
-        */
         case Vertex_FreeFlux: {
             //                ops_par_loop(KerCutCellZeroFlux,
             //                "KerCutCellZeroFlux",
@@ -279,12 +278,13 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
         case Vertex_Periodic: {
             ops_par_loop(KerCutCellPeriodic3D, "KerCutCellPeriodic3D",
                          g_Block[blockIdx], SPACEDIM, range,
-                         ops_arg_dat(g_NodeType[blockIdx], 1, LOCALSTENCIL,
-                                     "int", OPS_READ),
+                         ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS,
+                                     LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_GeometryProperty[blockIdx], 1,
                                      LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL,
-                                     "double", OPS_RW));
+                                     "double", OPS_RW),
+                         ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
         default:
             break;
@@ -481,8 +481,8 @@ void DispResidualError3D(const int iter, const Real checkPeriod) {
         Real residualError = g_ResidualError[2 * macroVarIdx] /
                              g_ResidualError[2 * macroVarIdx + 1] /
                              (checkPeriod * TimeStep());
-        ops_printf("%s = %.17g\n", MacroVarName()[macroVarIdx].c_str(),
-                   residualError);
+        ops_printf("Residual of %s = %.17g\n",
+                   MacroVarName()[macroVarIdx].c_str(), residualError);
     }
 }
 
@@ -500,7 +500,6 @@ void StreamCollision3D() {
     Stream3D();
     ops_halo_transfer(HaloGroup());
     ImplementBoundaryConditions();
-    // ImplementBoundary3D();
 }
 
 // void TimeMarching() {

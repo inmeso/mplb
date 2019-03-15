@@ -376,8 +376,8 @@ void DefineVariables() {
         dataName = "Nodetype_" + label;
         // problem specific -- cut cell method
         g_NodeType[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], 1, size, base, d_m, d_p,
-                         (int*)temp, "int", dataName.c_str());
+            ops_decl_dat(g_Block[blockIndex], NUMCOMPONENTS, size, base, d_m,
+                         d_p, (int*)temp, "int", dataName.c_str());
         dataName = "GeometryProperty_" + label;
         g_GeometryProperty[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], 1, size, base, d_m, d_p,
@@ -546,7 +546,7 @@ void DefineVariablesFromHDF5() {
         dataName = "Nodetype_" + label;
         // problem specific -- cut cell method
         g_NodeType[blockIndex] = ops_decl_dat_hdf5(
-            g_Block[blockIndex], 1, "int", dataName.c_str(), fileName.c_str());
+            g_Block[blockIndex], NUMCOMPONENTS, "int", dataName.c_str(), fileName.c_str());
         dataName = "GeometryProperty_" + label;
         g_GeometryProperty[blockIndex] = ops_decl_dat_hdf5(
             g_Block[blockIndex], 1, "int", dataName.c_str(), fileName.c_str());

@@ -24,8 +24,8 @@ void UpdateTau() {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCalcTau, "KerCalcTau", g_Block[blockIndex], SPACEDIM,
                      iterRng,
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_gbl(TauRef(), NUMCOMPONENTS, "double", OPS_READ),
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
                                  LOCALSTENCIL, "double", OPS_READ),
@@ -39,8 +39,8 @@ void Collision() {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCollide, "KerCollide", g_Block[blockIndex], SPACEDIM,
                      iterRng, ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
                                  OPS_READ),
                      ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
@@ -59,8 +59,8 @@ void Stream() {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerStream, "KerStream", g_Block[blockIndex], SPACEDIM,
                      iterRng,
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_fStage[blockIndex], NUMXI,
@@ -75,8 +75,8 @@ void UpdateMacroVars() {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCalcMacroVars, "KerCalcMacroVars", g_Block[blockIndex],
                      SPACEDIM, iterRng,
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
                                  OPS_READ),
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
@@ -89,8 +89,8 @@ void UpdateFeqandBodyforce() {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCalcFeq, "KerCalcPolyFeq", g_Block[blockIndex],
                      SPACEDIM, iterRng,
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
@@ -134,8 +134,8 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
                 KerCutCellExtrapolPressure1ST, "KerCutCellExtrapolPressure1ST",
                 g_Block[blockIdx], SPACEDIM, range,
                 ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_dat(g_NodeType[blockIdx], 1, ONEPTREGULARSTENCIL, "int",
-                            OPS_READ),
+                ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS,
+                            ONEPTREGULARSTENCIL, "int", OPS_READ),
                 ops_arg_dat(g_GeometryProperty[blockIdx], 1, LOCALSTENCIL,
                             "int", OPS_READ),
                 ops_arg_dat(g_f[blockIdx], NUMXI, ONEPTREGULARSTENCIL, "double",
@@ -212,8 +212,8 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
                 KerCutCellEQMDiffuseRefl, "KerCutCellEQMDiffuseRefl",
                 g_Block[blockIdx], SPACEDIM, range,
                 ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_dat(g_NodeType[blockIdx], 1, LOCALSTENCIL, "int",
-                            OPS_READ),
+                ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS, LOCALSTENCIL,
+                            "int", OPS_READ),
                 ops_arg_dat(g_GeometryProperty[blockIdx], 1, LOCALSTENCIL,
                             "int", OPS_READ),
                 ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double",
@@ -233,8 +233,8 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
         case Vertex_Periodic: {
             ops_par_loop(KerCutCellPeriodic, "KerCutCellPeriodic",
                          g_Block[blockIdx], SPACEDIM, range,
-                         ops_arg_dat(g_NodeType[blockIdx], 1, LOCALSTENCIL,
-                                     "int", OPS_READ),
+                         ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS,
+                                     LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_GeometryProperty[blockIdx], 1,
                                      LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL,
@@ -252,7 +252,8 @@ void TreatEmbededBoundary() {
         ops_par_loop(
             KerCutCellEmbededBoundary, "KerCutCellImmersedBoundary",
             g_Block[blockIdx], SPACEDIM, iterRng,
-            ops_arg_dat(g_NodeType[blockIdx], 1, LOCALSTENCIL, "int", OPS_READ),
+            ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS, LOCALSTENCIL,
+                        "int", OPS_READ),
             ops_arg_dat(g_GeometryProperty[blockIdx], 1, LOCALSTENCIL, "int",
                         OPS_READ),
             ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double", OPS_RW));
@@ -381,8 +382,8 @@ void ForwardEuler() {
                      g_Block[blockIndex], SPACEDIM, iterRng,
                      ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
                                  ONEPTREGULARSTENCIL, "double", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_f[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
@@ -394,8 +395,8 @@ void ForwardEuler() {
                      g_Block[blockIndex], SPACEDIM, iterRng,
                      ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
                      ops_arg_gbl(&schemeCoeff, 1, "double", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
@@ -440,7 +441,7 @@ void DispResidualError(const int iter, const Real checkPeriod) {
 void StreamCollision() {
     UpdateMacroVars();
     //ops_printf("Varibale have beeen updated in stream collision. \n");
-    
+
     // Real TotalMass{0};
     // CalcTotalMass(&TotalMass);
     // Real Ratio{TotalMass/TotalMeshSize()};
