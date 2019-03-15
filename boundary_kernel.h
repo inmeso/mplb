@@ -2489,7 +2489,8 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
     const int equilibriumOrder{2};
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
+    const int compoIdx{*componentId};
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC_MD1(compoIdx, 0, 0, 0)];
     if (vt == Vertex_EQMDiffuseRefl) {
         VertexGeometryTypes vg =
             (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0, 0)];
@@ -2499,7 +2500,7 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
         // loop to classify types of discrete velocity i.e., incoming, outgoing
         // and parallel
         // for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
-        const int compoIdx{*componentId};
+
         // compoIdx = *componentId;
 
         int numOutgoing{0};
@@ -2570,8 +2571,9 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
 }
 
 void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
-                           Real *f, const int *compoId) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
+                           Real *f, const int *componentId) {
+    const int compoId{*componentId};
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC_MD1(compoId, 0, 0, 0)];
 
     if (vt == Vertex_NoslipEQN) {
         Real u = givenMacroVars[1];
@@ -2582,8 +2584,8 @@ void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
         Real vIntermidate{0};
         Real wIntermidate{0};
 
-        for (int xiIdx = COMPOINDEX[2 * (*compoId)];
-             xiIdx <= COMPOINDEX[2 * (*compoId) + 1]; xiIdx++) {
+        for (int xiIdx = COMPOINDEX[2 * compoId];
+             xiIdx <= COMPOINDEX[2 * compoId + 1]; xiIdx++) {
             Real cx{CS * XI[xiIdx * LATTDIM]};
             Real cy{CS * XI[xiIdx * LATTDIM + 1]};
             Real cz{CS * XI[xiIdx * LATTDIM + 2]};
@@ -2593,8 +2595,8 @@ void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
             wIntermidate += (cz * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
         }
 
-        for (int xiIdx = COMPOINDEX[2 * (*compoId)];
-             xiIdx <= COMPOINDEX[2 * (*compoId) + 1]; xiIdx++) {
+        for (int xiIdx = COMPOINDEX[2 * compoId];
+             xiIdx <= COMPOINDEX[2 * compoId + 1]; xiIdx++) {
             f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] =
                 
                        
@@ -2612,44 +2614,47 @@ void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
 }
 
 void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
-                          Real *f) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
+                          Real *f, const int *componentId) {
+    const int compoId{*componentId};
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC_MD0(compoId, 0, 0, 0)];
+    const int xiStartPos{COMPOINDEX[2 * compoId]};
+    const int xiEndPos{COMPOINDEX[2 * compoId + 1]};
     if (vt == Vertex_Periodic) {
         VertexGeometryTypes vg =
             (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0, 0)];
         switch (vg) {
             case VG_IP:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                         f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
                 }
                 break;
             case VG_IM:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                         f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
                 }
                 break;
             case VG_JP:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                         f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
                 }
                 break;
             case VG_JM:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                         f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
                 }
                 break;
             case VG_KP:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                         f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
                 }
                 break;
             case VG_KM:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
                 }
@@ -2658,13 +2663,15 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             // corner
             case VG_IPJP_I: {                             // corner point
                 if (vt == nodeType[OPS_ACC0(0, 1, 0)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC0(1, 0, 0)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
                     }
@@ -2672,13 +2679,15 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             } break;
             case VG_IPJM_I: {                              // inner corner point
                 if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(1, 0, 0)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
                     }
@@ -2686,13 +2695,15 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             } break;
             case VG_IMJP_I: {                             // inner corner point
                 if (vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
                     }
@@ -2701,13 +2712,15 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             case VG_IMJM_I: {
                 // inner corner point
                 if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
                     }
@@ -2716,13 +2729,15 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
 
             case VG_IPKP_I: {                             // corner point
                 if (vt == nodeType[OPS_ACC0(0, 0, 1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC0(1, 0, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
                     }
@@ -2730,13 +2745,15 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             } break;
             case VG_IPKM_I: {                              // inner corner point
                 if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(1, 0, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
                     }
@@ -2744,13 +2761,15 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             } break;
             case VG_IMKP_I: {                             // inner corner point
                 if (vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
                     }
@@ -2759,13 +2778,15 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             case VG_IMKM_I: {
                 // inner corner point
                 if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
                     }
@@ -2773,13 +2794,15 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             } break;
             case VG_JPKP_I: {                             // corner point
                 if (vt == nodeType[OPS_ACC0(0, 0, 1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC0(0, 1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
                     }
@@ -2787,14 +2810,16 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             } break;
             case VG_JPKM_I: {                              // inner corner point
                 if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
                     }
                 }
 
                 if (vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
                     }
@@ -2802,13 +2827,15 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             } break;
             case VG_JMKP_I: {                             // inner corner point
                 if (vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
                     }
@@ -2817,13 +2844,15 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             case VG_JMKM_I: {
                 // inner corner point
                 if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
                     }
@@ -2832,21 +2861,24 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             case VG_IPJPKP_I: {
                 if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
                     }
@@ -2855,21 +2887,24 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             case VG_IPJPKM_I: {
                 if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
                     }
@@ -2878,21 +2913,24 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             case VG_IPJMKP_I: {
                 if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
                     }
@@ -2901,21 +2939,24 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             case VG_IPJMKM_I: {
                 if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
                     }
@@ -2924,21 +2965,24 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             case VG_IMJPKP_I: {
                 if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
                     }
@@ -2947,21 +2991,24 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             case VG_IMJPKM_I: {
                 if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
                     }
@@ -2970,21 +3017,24 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             case VG_IMJMKP_I: {
                 if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
                     }
@@ -2994,21 +3044,24 @@ void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
             case VG_IMJMKM_I: {
                 if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
                     }
                 }
                 if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
                     vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
                     }

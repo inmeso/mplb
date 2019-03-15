@@ -130,10 +130,10 @@ void KerCutCellEQMDiffuseRefl3D(const Real* givenMacroVars, const int* nodeType,
  * @param f distribution function
  */
 void KerCutCellNoslipEQN3D(const Real* givenMacroVars, const int* nodeType,
-                           Real* f);
+                           Real* f, const int* componentId);
 
 void KerCutCellPeriodic3D(const int* nodeType, const int* geometryProperty,
-                          Real* f);
+                          Real* f, const int* componentId);
 #endif /* OPS_3D*/
 /*!
  * For updating halo points, f must have wind direction
