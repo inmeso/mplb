@@ -706,7 +706,7 @@ void DefineHaloTransfer3D() {
     // could be used as an example for user-defined routines.
     HaloRelationNum = 2;
     HaloRelations = new ops_halo[HaloRelationNum];
-    int haloDepth = HaloDepth();   
+    int haloDepth = HaloDepth();
     // max halo depths for the dat in the positive direction
     int d_p[3] = {haloDepth, haloDepth, haloDepth};
     // max halo depths for the dat in the negative direction

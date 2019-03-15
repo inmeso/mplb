@@ -15,20 +15,12 @@
 #include "ops_seq.h"
 #include "scheme.h"
 #include "type.h"
-
-extern int SPACEDIM;
-
-void DefineCase(std::string caseName, const int spaceDim);
-// caseName: case name
-// spaceDim: 2D or 3D application
-
-void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
-                         const Real meshSize, const std::vector<Real> startPos);
 // blockNum: total number if blocks.
 // blockSize: array of integers specifying the block blocksize.
 // meshSize: The size of mesh i.e. dx (At present dx = dy = dz).
 // startPos: Starting position of each block.
-
+void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
+                         const Real meshSize, const std::vector<Real> startPos);
 /*
 void DefineForceTerm(std::vector<ForceType> types, std::vector<int> compoId);
 // types: which kind of force function to use.
