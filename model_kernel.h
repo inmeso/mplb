@@ -356,9 +356,10 @@ void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars) {
 #endif
 #ifdef OPS_3D
 void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
-    if (vt != Vertex_ImmersedSolid) {
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        VertexTypes vt =
+            (VertexTypes)nodeType[OPS_ACC_MD0(compoIndex, 0, 0, 0)];
+        if (vt != Vertex_ImmersedSolid) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
@@ -367,20 +368,20 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
                 Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
                 Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
                 Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
-
-                // ops_printf("\n w = %f", w);
-                // ops_printf("\n Xi index start = %i ", COMPOINDEX[2 *
-                // compoIndex]); ops_printf("\n Xi index end = %i ", COMPOINDEX[2
-                // * compoIndex+1]);
-
                 const Real T{1};
                 const int polyOrder{2};
                 for (int xiIndex = COMPOINDEX[2 * compoIndex];
                      xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                    feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder);
+                    const Real res{
+                        CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
+                    feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] = res;
+                    if (isnan(res) || res <= 0 || isinf(res)) {
+                         ops_printf("%sfeq=%f\n",
+                                   "Equilibrium becomes invalid! Maybe "
+                                   "something wrong...",
+                                   res);
+                    }
                 }
-                // ops_printf("\n We have calculated BGK Feq ");
             }
             if (Equilibrium_BGKThermal4th == equilibriumType) {
                 // ops_printf("\n This is 4th order if condition and I should
@@ -394,8 +395,15 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
                 const int polyOrder{4};
                 for (int xiIndex = COMPOINDEX[2 * compoIndex];
                      xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                    feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder);
+                    const Real res{
+                        CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
+                    feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] = res;
+                    if (isnan(res) || res <= 0 || isinf(res)) {
+                        ops_printf("%sfeq=%f\n",
+                                   "Equilibrium becomes invalid! Maybe "
+                                   "something wrong...",
+                                   res);
+                    }
                 }
             }
 
@@ -411,9 +419,11 @@ void KerCalcBodyForce3D(const Real* time, const int* nodeType,
     // here we assume the force is constant
     // user may introduce a function of g(r,t) for the body force
     const Real g[]{0.0001, 0, 0};
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
-    if (vt != Vertex_ImmersedSolid) {
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+
+    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        VertexTypes vt =
+            (VertexTypes)nodeType[OPS_ACC_MD1(compoIndex, 0, 0, 0)];
+        if (vt != Vertex_ImmersedSolid) {
             BodyForceType forceType{(BodyForceType)FORCETYPE[compoIndex]};
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
             if (BodyForce_1st == forceType) {
@@ -440,9 +450,10 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
     /*
      *@note: multicomponent ready for incompressible flows.
      */
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
-    if (vt != Vertex_ImmersedSolid) {
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        VertexTypes vt =
+            (VertexTypes)nodeType[OPS_ACC_MD0(compoIndex, 0, 0, 0)];
+        if (vt != Vertex_ImmersedSolid) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
@@ -469,7 +480,6 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
 void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                         const Real* coordinates, const Real* f,
                         Real* macroVars) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
     Real* acceleration = new Real[LATTDIM * NUMCOMPONENTS];
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
         for (int i = 0; i < LATTDIM; i++) {
@@ -477,8 +487,11 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
         }
     }
     acceleration[0] = 0.0001;
-    if (vt != Vertex_ImmersedSolid) {
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+
+    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        VertexTypes vt =
+            (VertexTypes)nodeType[OPS_ACC_MD1(compoIndex, 0, 0, 0)];
+        if (vt != Vertex_ImmersedSolid) {
             bool rhoCalculated{false};
             Real rho{0};
             bool* veloCalculated = new bool[LATTDIM];
@@ -500,14 +513,12 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                 f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                         }
                         rho = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-#ifdef debug
                         if (isnan(rho) || rho <= 0 || isinf(rho)) {
                             ops_printf("%sDensity=%f\n",
                                        "Density becomes invalid! Maybe "
                                        "something wrong...",
                                        rho);
                         }
-#endif
                     } break;
                     case Variable_U: {
                         if (rhoCalculated) {
