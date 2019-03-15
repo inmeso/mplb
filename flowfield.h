@@ -147,4 +147,7 @@ void DefineHaloTransfer();
 void DefineHaloTransfer3D();
 void SetHaloDepth(const int haloDepth);
 void SetHaloRelationNum(const int haloRelationNum);
+// caseName: case name
+// spaceDim: 2D or 3D application
+void DefineCase(std::string caseName, const int spaceDim);
 #endif

@@ -76,6 +76,11 @@ int* BlockIterRngBulk{nullptr};
 int* BLOCKSIZE{nullptr};
 
 const int HaloPtNum() { return std::max(SchemeHaloNum(), BoundaryHaloNum()); }
+
+void DefineCase(std::string caseName, const int spaceDim) {
+    SetCaseName(caseName);
+    SPACEDIM = spaceDim;
+}
 /*!
  * Manually setting up all the variables necessary for the simulation
  * This function has not been updated for 3D problems.
@@ -240,6 +245,7 @@ void DefineVariables() {
 
     // int haloDepth = HaloDepth();  // zero for the current case
     int haloDepth{std::max(SchemeHaloNum(), BoundaryHaloNum())};
+    HALODEPTH = HaloPtNum();
 
 #ifdef debug
     ops_printf("%s%i\n", "DefineVariable: haloDepth=", haloDepth);
@@ -700,7 +706,7 @@ void DefineHaloTransfer3D() {
     // could be used as an example for user-defined routines.
     HaloRelationNum = 2;
     HaloRelations = new ops_halo[HaloRelationNum];
-    int haloDepth = HaloDepth();
+    int haloDepth = HaloDepth();   
     // max halo depths for the dat in the positive direction
     int d_p[3] = {haloDepth, haloDepth, haloDepth};
     // max halo depths for the dat in the negative direction
@@ -939,5 +945,6 @@ void SetBlockNum(const int blockNum) {
         ops_printf("%s\n", "There must be at least one block");
     }
 }
+
 
 // const int* GetBlockNum() { return &BLOCKNUM; }
