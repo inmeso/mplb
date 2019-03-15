@@ -204,7 +204,8 @@ void KerCopyCoordinateXYZ(const Real* src, Real* dest);
 /*!
  * Set a scalar variable to a specific value.Mainly used in initialisation.
  */
-void KerAssignProperty(const int* value, int* var);
+void KerSetGeometryProperty(const int* value, int* var);
+void KerSetNodeType(const int* value, int* var, const int* compoId);
 /*!
  * Set macroscopic variable to values specified by value.
  */

@@ -1176,18 +1176,19 @@ void KerCutCellExplicitTimeMach(const Real* dt, const Real* schemeCoeff,
 void KerCollide3D(const Real* dt, const int* nodeType, const Real* f,
                   const Real* feq, const Real* relaxationTime,
                   const Real* bodyForce, Real* fStage) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
-    // collisionRequired: means if collision is required at boundary
-    // e.g., the ZouHe boundary condition explicitly requires collision
-    bool collisionRequired =
-        (vt == Vertex_Fluid || vt == Vertex_NoneqExtrapol ||
-         vt == Vertex_ZouHeVelocity ||
-         // vt == Vertex_KineticDiffuseWall ||
-         vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
-         vt == Vertex_ExtrapolPressure2ND || vt == Vertex_Periodic ||
-         vt == Vertex_NoslipEQN || vt == Vertex_NonEqExtrapolPressure);
-    if (collisionRequired) {
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        // collisionRequired: means if collision is required at boundary
+        // e.g., the ZouHe boundary condition explicitly requires collision
+        VertexTypes vt =
+            (VertexTypes)nodeType[OPS_ACC_MD1(compoIndex, 0, 0, 0)];
+        bool collisionRequired =
+            (vt == Vertex_Fluid || vt == Vertex_NoneqExtrapol ||
+             vt == Vertex_ZouHeVelocity ||
+             // vt == Vertex_KineticDiffuseWall ||
+             vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
+             vt == Vertex_ExtrapolPressure2ND || vt == Vertex_Periodic ||
+             vt == Vertex_NoslipEQN || vt == Vertex_NonEqExtrapolPressure);
+        if (collisionRequired) {
             Real tau = relaxationTime[OPS_ACC_MD4(compoIndex, 0, 0, 0)];
             Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
             for (int xiIndex = COMPOINDEX[2 * compoIndex];
@@ -1205,9 +1206,9 @@ void KerCollide3D(const Real* dt, const int* nodeType, const Real* f,
 
 void KerStream3D(const int* nodeType, const int* geometry, const Real* fStage,
                  Real* f) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
     VertexGeometryTypes vg = (VertexGeometryTypes)geometry[OPS_ACC1(0, 0, 0)];
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        VertexTypes vt = (VertexTypes)nodeType[OPS_ACC_MD0(compoIndex,0, 0, 0)];
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
             int cx = (int)XI[xiIndex * LATTDIM];
@@ -1860,13 +1861,23 @@ void KerStream3D(const int* nodeType, const int* geometry, const Real* fStage,
         }
     }
 }
+
 #endif  // OPS_3D
-void KerAssignProperty(const int* value, int* var) {
+void KerSetGeometryProperty(const int* value, int* var) {
 #ifdef OPS_2D
     var[OPS_ACC1(0, 0)] = (*value);
 #endif
 #ifdef OPS_3D
     var[OPS_ACC1(0, 0, 0)] = (*value);
+#endif
+}
+
+void KerSetNodeType(const int* value, int* var, const int* compoId) {
+#ifdef OPS_2D
+    var[OPS_ACC_MD1((*compoId), 0, 0)] = (*value);
+#endif
+#ifdef OPS_3D
+    var[OPS_ACC_MD1((*compoId), 0, 0, 0)] = (*value);
 #endif
 }
 
