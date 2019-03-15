@@ -2570,8 +2570,9 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
 }
 
 void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
-                           Real *f) {
+                           Real *f, const int *compoId) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
+
     if (vt == Vertex_NoslipEQN) {
         Real u = givenMacroVars[1];
         Real v = givenMacroVars[2];
@@ -2580,38 +2581,27 @@ void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
         Real uIntermidate{0};
         Real vIntermidate{0};
         Real wIntermidate{0};
-        // Only one-component at this moment.
-        for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
-            for (int xiIdx = COMPOINDEX[2 * compoIdx];
-                 xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
-                Real cx{CS * XI[xiIdx * LATTDIM]};
-                Real cy{CS * XI[xiIdx * LATTDIM + 1]};
-                Real cz{CS * XI[xiIdx * LATTDIM + 2]};
-                rhoIntermidate += f[OPS_ACC_MD2(xiIdx, 0, 0, 0)];
-                uIntermidate += (cx * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
-                vIntermidate += (cy * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
-                wIntermidate += (cz * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
-            }
+
+        for (int xiIdx = COMPOINDEX[2 * (*compoId)];
+             xiIdx <= COMPOINDEX[2 * (*compoId) + 1]; xiIdx++) {
+            Real cx{CS * XI[xiIdx * LATTDIM]};
+            Real cy{CS * XI[xiIdx * LATTDIM + 1]};
+            Real cz{CS * XI[xiIdx * LATTDIM + 2]};
+            rhoIntermidate += f[OPS_ACC_MD2(xiIdx, 0, 0, 0)];
+            uIntermidate += (cx * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
+            vIntermidate += (cy * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
+            wIntermidate += (cz * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
         }
 
-        for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
-            for (int xiIdx = COMPOINDEX[2 * compoIdx];
-                 xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
-                f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] =
-                    
-                           
-                                      
-                    CalcBGKFeq(xiIdx, rhoIntermidate, u, v, w, 1, 2);
-                if (f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] > 1 ||
-                    f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] < 0) {
-                    ops_printf("f=%f rhoInter=%f xiIdx=%i, u=%f\n",
-                               f[OPS_ACC_MD2(xiIdx, 0, 0, 0)], rhoIntermidate,
-                               xiIdx, u);
-                    Real tmp;
-                    std::cin >> tmp;
-                }
-            }
+        for (int xiIdx = COMPOINDEX[2 * (*compoId)];
+             xiIdx <= COMPOINDEX[2 * (*compoId) + 1]; xiIdx++) {
+            f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] =
+                
+                       
+                                  
+                CalcBGKFeq(xiIdx, rhoIntermidate, u, v, w, 1, 2);
         }
+
     } else {
 #ifdef debug
         ops_printf("%s\n",
