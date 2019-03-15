@@ -7,9 +7,6 @@
 #include "scheme.h"
 #include "type.h"
 
-int MAXITER;
-int CHECKPERIOD;
-
 Real* VERTEXCOORDINATES{nullptr};
 int NUMVERTICES{0};
 
@@ -18,31 +15,65 @@ int NUMVERTICES{0};
 //                          const VertexTypes boundaryType)
 
 // Structure to hold the values whenever user specifies a boundary condition.
-struct DomainBoundary {
+struct BlockBoundary {
     int blockIndex;
     int componentID;
     Real* givenVars;
-    int* range;
+    BoundarySurface surface;
     VertexTypes boundaryType;
 };
 
 // Vector to assemble all boundary conditions so as to use
 // in TreatDomainBoundary().
-vector<DomainBoundary> g_domainBoundCond;
+std::vector<BlockBoundary> blockBoundaryConditions;
 
-void DefineCase(std::string caseName, const int spaceDim) {
-    SetCaseName(caseName);
-    SPACEDIM = spaceDim;
+// This routine is for internal use and gives the cells on which a
+// particular BC is to be applied.
+int* RangeBoundCond(const int blockId, BoundarySurface surface) {
+    int* rangeBoundaryCond;
+    switch (surface) {
+        case BoundarySurface_Left:
+            rangeBoundaryCond = BlockIterRng(blockId, IterRngImin());
+            break;
+
+        case BoundarySurface_Right:
+            rangeBoundaryCond = BlockIterRng(blockId, IterRngImax());
+            break;
+
+        case BoundarySurface_Top:
+            rangeBoundaryCond = BlockIterRng(blockId, IterRngJmax());
+            break;
+
+        case BoundarySurface_Bottom:
+            rangeBoundaryCond = BlockIterRng(blockId, IterRngJmin());
+            break;
+
+        case BoundarySurface_Front:
+            rangeBoundaryCond = BlockIterRng(blockId, IterRngKmax());
+            break;
+
+        case BoundarySurface_Back:
+            rangeBoundaryCond = BlockIterRng(blockId, IterRngKmin());
+            break;
+
+        default:
+            ops_printf("\n Surface entered for the BC is incorrect.");
+    }
+
+    return rangeBoundaryCond;
 }
 
-//Simplified version not allowing corner and edge types
-void SetupDomainNodeType(int blockIndex, VertexTypes* faceType) {
+
+
+void SetBulkNodesType(int blockIndex, int compoId) {
     int nodeType = (int)Vertex_Fluid;
     int* iterRange = BlockIterRng(blockIndex, IterRngBulk());
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, iterRange,
+                 ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
 
     // specify halo points
     nodeType = (int)Vertex_ImmersedSolid;
@@ -56,10 +87,13 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType) {
         haloIterRng[4] = iterRange[4] - 1;
         haloIterRng[5] = iterRange[5] + 1;
     }
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+
     iterRange = BlockIterRng(blockIndex, IterRngJmax());
     haloIterRng[0] = iterRange[0] - 1;
     haloIterRng[1] = iterRange[1] + 1;
@@ -69,10 +103,13 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType) {
         haloIterRng[4] = iterRange[4] - 1;
         haloIterRng[5] = iterRange[5] + 1;
     }
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+
     iterRange = BlockIterRng(blockIndex, IterRngImin());
     haloIterRng[0] = iterRange[0] - 1;
     haloIterRng[1] = iterRange[1] - 1;
@@ -82,10 +119,13 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType) {
         haloIterRng[4] = iterRange[4] - 1;
         haloIterRng[5] = iterRange[5] + 1;
     }
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+
     iterRange = BlockIterRng(blockIndex, IterRngImax());
     haloIterRng[0] = iterRange[0] + 1;
     haloIterRng[1] = iterRange[1] + 1;
@@ -95,10 +135,13 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType) {
         haloIterRng[4] = iterRange[4] - 1;
         haloIterRng[5] = iterRange[5] + 1;
     }
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+
     if (3 == SPACEDIM) {
         iterRange = BlockIterRng(blockIndex, IterRngKmin());
         haloIterRng[0] = iterRange[0] - 1;
@@ -107,11 +150,13 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType) {
         haloIterRng[3] = iterRange[3] + 1;
         haloIterRng[4] = iterRange[4] - 1;
         haloIterRng[5] = iterRange[5] - 1;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, haloIterRng,
+        ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                     SPACEDIM, haloIterRng,
                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+
         iterRange = BlockIterRng(blockIndex, IterRngKmax());
         haloIterRng[0] = iterRange[0] - 1;
         haloIterRng[1] = iterRange[1] + 1;
@@ -119,385 +164,344 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType) {
         haloIterRng[3] = iterRange[3] + 1;
         haloIterRng[4] = iterRange[4] + 1;
         haloIterRng[5] = iterRange[5] + 1;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, haloIterRng,
+        ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                     SPACEDIM, haloIterRng,
                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_gbl(&compoId, 1, "int", OPS_READ));
     }
-    // specify faces for 2D cases, they are actually edges.
-    // 0 VG_IP left, 1 VG_IM right
-    // 2 VG_JP bottom, 3 VG_JM top
-    // 4 VG_KP back, 5 VG_KM front
-    nodeType = (int)faceType[0];
-    iterRange = BlockIterRng(blockIndex, IterRngImin());
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    nodeType = (int)faceType[1];
-    iterRange = BlockIterRng(blockIndex, IterRngImax());
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    nodeType = (int)faceType[2];
-    iterRange = BlockIterRng(blockIndex, IterRngJmin());
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    nodeType = (int)faceType[3];
-    iterRange = BlockIterRng(blockIndex, IterRngJmax());
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-
-    if (3 == SPACEDIM) {
-        nodeType = (int)faceType[4];
-        iterRange = BlockIterRng(blockIndex, IterRngKmin());
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iterRange,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        nodeType = (int)faceType[5];
-        iterRange = BlockIterRng(blockIndex, IterRngKmax());
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iterRange,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-    }
+    FreeArrayMemory(haloIterRng);
 }
+
+
 //Advanced version allowing corner and edge types.
-void SetupDomainNodeType(int blockIndex, VertexTypes* faceType, VertexTypes* edgeType, VertexTypes* cornerType) {
-    int nodeType = (int)Vertex_Fluid;
-    int* iterRange = BlockIterRng(blockIndex, IterRngBulk());
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+// void SetupDomainNodeType(int blockIndex, VertexTypes* faceType, VertexTypes* edgeType, VertexTypes* cornerType) {
+//     int nodeType = (int)Vertex_Fluid;
+//     int* iterRange = BlockIterRng(blockIndex, IterRngBulk());
+//     ops_par_loop(
+//         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
+//         iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
 
-    // specify halo points
-    nodeType = (int)Vertex_ImmersedSolid;
-    iterRange = BlockIterRng(blockIndex, IterRngJmin());
-    int* haloIterRng = new int[2 * SPACEDIM];
-    haloIterRng[0] = iterRange[0] - 1;
-    haloIterRng[1] = iterRange[1] + 1;
-    haloIterRng[2] = iterRange[2] - 1;
-    haloIterRng[3] = iterRange[3] - 1;
-    if (3 == SPACEDIM) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    iterRange = BlockIterRng(blockIndex, IterRngJmax());
-    haloIterRng[0] = iterRange[0] - 1;
-    haloIterRng[1] = iterRange[1] + 1;
-    haloIterRng[2] = iterRange[2] + 1;
-    haloIterRng[3] = iterRange[3] + 1;
-    if (3 == SPACEDIM) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    iterRange = BlockIterRng(blockIndex, IterRngImin());
-    haloIterRng[0] = iterRange[0] - 1;
-    haloIterRng[1] = iterRange[1] - 1;
-    haloIterRng[2] = iterRange[2] - 1;
-    haloIterRng[3] = iterRange[3] + 1;
-    if (3 == SPACEDIM) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    iterRange = BlockIterRng(blockIndex, IterRngImax());
-    haloIterRng[0] = iterRange[0] + 1;
-    haloIterRng[1] = iterRange[1] + 1;
-    haloIterRng[2] = iterRange[2] - 1;
-    haloIterRng[3] = iterRange[3] + 1;
-    if (3 == SPACEDIM) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    if (3 == SPACEDIM) {
-        iterRange = BlockIterRng(blockIndex, IterRngKmin());
-        haloIterRng[0] = iterRange[0] - 1;
-        haloIterRng[1] = iterRange[1] + 1;
-        haloIterRng[2] = iterRange[2] - 1;
-        haloIterRng[3] = iterRange[3] + 1;
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] - 1;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, haloIterRng,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        iterRange = BlockIterRng(blockIndex, IterRngKmax());
-        haloIterRng[0] = iterRange[0] - 1;
-        haloIterRng[1] = iterRange[1] + 1;
-        haloIterRng[2] = iterRange[2] - 1;
-        haloIterRng[3] = iterRange[3] + 1;
-        haloIterRng[4] = iterRange[4] + 1;
-        haloIterRng[5] = iterRange[5] + 1;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, haloIterRng,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-    }
-    // specify faces for 2D cases, they are actually edges.
-    // 0 VG_IP left, 1 VG_IM right
-    // 2 VG_JP bottom, 3 VG_JM top
-    // 4 VG_KP back, 5 VG_KM front
-    nodeType = (int)faceType[0];
-    iterRange = BlockIterRng(blockIndex, IterRngImin());
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    nodeType = (int)faceType[1];
-    iterRange = BlockIterRng(blockIndex, IterRngImax());
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    nodeType = (int)faceType[2];
-    iterRange = BlockIterRng(blockIndex, IterRngJmin());
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
-    nodeType = (int)faceType[3];
-    iterRange = BlockIterRng(blockIndex, IterRngJmax());
-    ops_par_loop(
-        KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
-        iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+//     // specify halo points
+//     nodeType = (int)Vertex_ImmersedSolid;
+//     iterRange = BlockIterRng(blockIndex, IterRngJmin());
+//     int* haloIterRng = new int[2 * SPACEDIM];
+//     haloIterRng[0] = iterRange[0] - 1;
+//     haloIterRng[1] = iterRange[1] + 1;
+//     haloIterRng[2] = iterRange[2] - 1;
+//     haloIterRng[3] = iterRange[3] - 1;
+//     if (3 == SPACEDIM) {
+//         haloIterRng[4] = iterRange[4] - 1;
+//         haloIterRng[5] = iterRange[5] + 1;
+//     }
+//     ops_par_loop(
+//         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
+//         haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+//     iterRange = BlockIterRng(blockIndex, IterRngJmax());
+//     haloIterRng[0] = iterRange[0] - 1;
+//     haloIterRng[1] = iterRange[1] + 1;
+//     haloIterRng[2] = iterRange[2] + 1;
+//     haloIterRng[3] = iterRange[3] + 1;
+//     if (3 == SPACEDIM) {
+//         haloIterRng[4] = iterRange[4] - 1;
+//         haloIterRng[5] = iterRange[5] + 1;
+//     }
+//     ops_par_loop(
+//         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
+//         haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+//     iterRange = BlockIterRng(blockIndex, IterRngImin());
+//     haloIterRng[0] = iterRange[0] - 1;
+//     haloIterRng[1] = iterRange[1] - 1;
+//     haloIterRng[2] = iterRange[2] - 1;
+//     haloIterRng[3] = iterRange[3] + 1;
+//     if (3 == SPACEDIM) {
+//         haloIterRng[4] = iterRange[4] - 1;
+//         haloIterRng[5] = iterRange[5] + 1;
+//     }
+//     ops_par_loop(
+//         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
+//         haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+//     iterRange = BlockIterRng(blockIndex, IterRngImax());
+//     haloIterRng[0] = iterRange[0] + 1;
+//     haloIterRng[1] = iterRange[1] + 1;
+//     haloIterRng[2] = iterRange[2] - 1;
+//     haloIterRng[3] = iterRange[3] + 1;
+//     if (3 == SPACEDIM) {
+//         haloIterRng[4] = iterRange[4] - 1;
+//         haloIterRng[5] = iterRange[5] + 1;
+//     }
+//     ops_par_loop(
+//         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
+//         haloIterRng, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+//     if (3 == SPACEDIM) {
+//         iterRange = BlockIterRng(blockIndex, IterRngKmin());
+//         haloIterRng[0] = iterRange[0] - 1;
+//         haloIterRng[1] = iterRange[1] + 1;
+//         haloIterRng[2] = iterRange[2] - 1;
+//         haloIterRng[3] = iterRange[3] + 1;
+//         haloIterRng[4] = iterRange[4] - 1;
+//         haloIterRng[5] = iterRange[5] - 1;
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, haloIterRng,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         iterRange = BlockIterRng(blockIndex, IterRngKmax());
+//         haloIterRng[0] = iterRange[0] - 1;
+//         haloIterRng[1] = iterRange[1] + 1;
+//         haloIterRng[2] = iterRange[2] - 1;
+//         haloIterRng[3] = iterRange[3] + 1;
+//         haloIterRng[4] = iterRange[4] + 1;
+//         haloIterRng[5] = iterRange[5] + 1;
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, haloIterRng,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//     }
+//     // specify faces for 2D cases, they are actually edges.
+//     // 0 VG_IP left, 1 VG_IM right
+//     // 2 VG_JP bottom, 3 VG_JM top
+//     // 4 VG_KP back, 5 VG_KM front
+//     nodeType = (int)faceType[0];
+//     iterRange = BlockIterRng(blockIndex, IterRngImin());
+//     ops_par_loop(
+//         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
+//         iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+//     nodeType = (int)faceType[1];
+//     iterRange = BlockIterRng(blockIndex, IterRngImax());
+//     ops_par_loop(
+//         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
+//         iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+//     nodeType = (int)faceType[2];
+//     iterRange = BlockIterRng(blockIndex, IterRngJmin());
+//     ops_par_loop(
+//         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
+//         iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
+//     nodeType = (int)faceType[3];
+//     iterRange = BlockIterRng(blockIndex, IterRngJmax());
+//     ops_par_loop(
+//         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
+//         iterRange, ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
 
-    if (3 == SPACEDIM) {
-        nodeType = (int)faceType[4];
-        iterRange = BlockIterRng(blockIndex, IterRngKmin());
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iterRange,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        nodeType = (int)faceType[5];
-        iterRange = BlockIterRng(blockIndex, IterRngKmax());
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iterRange,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-    }
+//     if (3 == SPACEDIM) {
+//         nodeType = (int)faceType[4];
+//         iterRange = BlockIterRng(blockIndex, IterRngKmin());
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iterRange,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         nodeType = (int)faceType[5];
+//         iterRange = BlockIterRng(blockIndex, IterRngKmax());
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iterRange,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//     }
 
-    const int nx = BlockSize(blockIndex)[0];
-    const int ny = BlockSize(blockIndex)[1];
-    // 2D Domain corner points 4 types
-    // 0 IPJP leftBottom, 1 IPJM leftTop
-    // 2 IMJP rightBottom, 3 IMJM rightTop
-    if (2 == SPACEDIM) {
-        int iminjmin[]{0, 1, 0, 1};
-        nodeType = (int)cornerType[0];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iminjmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int iminjmax[] = {0, 1, ny - 1, ny};
-        nodeType = (int)cornerType[1];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iminjmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int imaxjmax[] = {nx - 1, nx, ny - 1, ny};
-        nodeType = (int)cornerType[3];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, imaxjmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int imaxjmin[] = {nx - 1, nx, 0, 1};
-        nodeType = (int)cornerType[2];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, imaxjmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-    }
+//     const int nx = BlockSize(blockIndex)[0];
+//     const int ny = BlockSize(blockIndex)[1];
+//     // 2D Domain corner points 4 types
+//     // 0 IPJP leftBottom, 1 IPJM leftTop
+//     // 2 IMJP rightBottom, 3 IMJM rightTop
+//     if (2 == SPACEDIM) {
+//         int iminjmin[]{0, 1, 0, 1};
+//         nodeType = (int)cornerType[0];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iminjmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int iminjmax[] = {0, 1, ny - 1, ny};
+//         nodeType = (int)cornerType[1];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iminjmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int imaxjmax[] = {nx - 1, nx, ny - 1, ny};
+//         nodeType = (int)cornerType[3];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, imaxjmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int imaxjmin[] = {nx - 1, nx, 0, 1};
+//         nodeType = (int)cornerType[2];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, imaxjmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//     }
 
-    if (3 == SPACEDIM) {
-        const int nz = BlockSize(blockIndex)[2];
-        // 3D Domain edges 12 types
-        // 0 IPJP leftBottom, 1 IPJM leftTop, 2 IMJP rightBottom, 3 IMJM
-        // rightTop 4 IPKP leftBack, 5  IPKM leftFront, 6 IMKP rightBack, 7 IMKM
-        // rightFront 8 JPKP bottomBack, 9 JPKM bottomFront, 10 JMKP topBack, 11
-        // JMKM topFront
-        int iminjmin[]{0, 1, 0, 1, 0, nz};
-        nodeType = (int)edgeType[0];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iminjmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int iminjmax[]{0, 1, ny - 1, ny, 0, nz};
-        nodeType = (int)edgeType[1];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iminjmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int imaxjmin[]{nx - 1, nx, 0, 1, 0, nz};
-        nodeType = (int)edgeType[2];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, imaxjmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int imaxjmax[]{nx - 1, nx, ny - 1, ny, 0, nz};
-        nodeType = (int)edgeType[3];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, imaxjmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int iminkmin[]{0, 1, 0, ny, 0, 1};
-        nodeType = (int)edgeType[4];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iminkmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int iminkmax[]{0, 1, 0, ny, nz - 1, nz};
-        nodeType = (int)edgeType[5];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iminkmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int imaxkmin[]{nx - 1, nx, 0, ny, 0, 1};
-        nodeType = (int)edgeType[6];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, imaxkmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int imaxkmax[]{nx - 1, nx, 0, ny, nz - 1, nz};
-        nodeType = (int)edgeType[7];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, imaxkmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int jminkmin[]{0, nx, 0, 1, 0, 1};
-        nodeType = (int)edgeType[8];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, jminkmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int jminkmax[]{0, nx, 0, 1, nz - 1, nz};
-        nodeType = (int)edgeType[9];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, jminkmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int jmaxkmin[]{0, nx, ny - 1, ny, 0, 1};
-        nodeType = (int)edgeType[10];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, jmaxkmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int jmaxkmax[]{0, nx, ny - 1, ny, nz - 1, nz};
-        nodeType = (int)edgeType[11];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, jmaxkmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
+//     if (3 == SPACEDIM) {
+//         const int nz = BlockSize(blockIndex)[2];
+//         // 3D Domain edges 12 types
+//         // 0 IPJP leftBottom, 1 IPJM leftTop, 2 IMJP rightBottom, 3 IMJM
+//         // rightTop 4 IPKP leftBack, 5  IPKM leftFront, 6 IMKP rightBack, 7 IMKM
+//         // rightFront 8 JPKP bottomBack, 9 JPKM bottomFront, 10 JMKP topBack, 11
+//         // JMKM topFront
+//         int iminjmin[]{0, 1, 0, 1, 0, nz};
+//         nodeType = (int)edgeType[0];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iminjmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int iminjmax[]{0, 1, ny - 1, ny, 0, nz};
+//         nodeType = (int)edgeType[1];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iminjmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int imaxjmin[]{nx - 1, nx, 0, 1, 0, nz};
+//         nodeType = (int)edgeType[2];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, imaxjmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int imaxjmax[]{nx - 1, nx, ny - 1, ny, 0, nz};
+//         nodeType = (int)edgeType[3];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, imaxjmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int iminkmin[]{0, 1, 0, ny, 0, 1};
+//         nodeType = (int)edgeType[4];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iminkmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int iminkmax[]{0, 1, 0, ny, nz - 1, nz};
+//         nodeType = (int)edgeType[5];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iminkmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int imaxkmin[]{nx - 1, nx, 0, ny, 0, 1};
+//         nodeType = (int)edgeType[6];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, imaxkmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int imaxkmax[]{nx - 1, nx, 0, ny, nz - 1, nz};
+//         nodeType = (int)edgeType[7];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, imaxkmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int jminkmin[]{0, nx, 0, 1, 0, 1};
+//         nodeType = (int)edgeType[8];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, jminkmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int jminkmax[]{0, nx, 0, 1, nz - 1, nz};
+//         nodeType = (int)edgeType[9];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, jminkmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int jmaxkmin[]{0, nx, ny - 1, ny, 0, 1};
+//         nodeType = (int)edgeType[10];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, jmaxkmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int jmaxkmax[]{0, nx, ny - 1, ny, nz - 1, nz};
+//         nodeType = (int)edgeType[11];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, jmaxkmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
 
-        // 3D domain corners 8 types
-        // 0 IPJPKP LeftBottomBack 1 IPJPKM LeftBottomFront
-        // 2 IPJMKP LeftTopBack 3 IPJMKM LeftTopFront
-        // 4 IMJPKP RightBottomBack 5 IMJPKM RightBottomFront
-        // 6 IMJMKP RightTopBack 7 IMJMKM RightTopFront
-        int iminjminkmin[]{0, 1, 0, 1, 0, 1};
-        nodeType = (int)cornerType[0];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iminjminkmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int iminjminkmax[]{0, 1, 0, 1, nz - 1, nz};
-        nodeType = (int)cornerType[1];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iminjminkmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int iminjmaxkmin[]{0, 1, ny - 1, ny, 0, 1};
-        nodeType = (int)cornerType[2];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iminjmaxkmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int iminjmaxkmax[]{0, 1, ny-1, ny, nz - 1, nz};
-        nodeType = (int)cornerType[3];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, iminjmaxkmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int imaxjminkmin[]{nx - 1, nx, 0, 1, 0, 1};
-        nodeType = (int)cornerType[4];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, imaxjminkmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int imaxjminkmax[]{nx - 1, nx, 0, 1, nz - 1, nz};
-        nodeType = (int)cornerType[5];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, imaxjminkmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int imaxjmaxkmin[]{nx - 1, nx, ny - 1, ny, 0, 1};
-        nodeType = (int)cornerType[6];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, imaxjmaxkmin,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-        int imaxjmaxkmax[]{nx - 1, nx, ny-1, ny, nz - 1, nz};
-        nodeType = (int)cornerType[7];
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
-                     g_Block[blockIndex], SPACEDIM, imaxjmaxkmax,
-                     ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
-    }
-}
+//         // 3D domain corners 8 types
+//         // 0 IPJPKP LeftBottomBack 1 IPJPKM LeftBottomFront
+//         // 2 IPJMKP LeftTopBack 3 IPJMKM LeftTopFront
+//         // 4 IMJPKP RightBottomBack 5 IMJPKM RightBottomFront
+//         // 6 IMJMKP RightTopBack 7 IMJMKM RightTopFront
+//         int iminjminkmin[]{0, 1, 0, 1, 0, 1};
+//         nodeType = (int)cornerType[0];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iminjminkmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int iminjminkmax[]{0, 1, 0, 1, nz - 1, nz};
+//         nodeType = (int)cornerType[1];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iminjminkmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int iminjmaxkmin[]{0, 1, ny - 1, ny, 0, 1};
+//         nodeType = (int)cornerType[2];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iminjmaxkmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int iminjmaxkmax[]{0, 1, ny-1, ny, nz - 1, nz};
+//         nodeType = (int)cornerType[3];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, iminjmaxkmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int imaxjminkmin[]{nx - 1, nx, 0, 1, 0, 1};
+//         nodeType = (int)cornerType[4];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, imaxjminkmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int imaxjminkmax[]{nx - 1, nx, 0, 1, nz - 1, nz};
+//         nodeType = (int)cornerType[5];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, imaxjminkmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int imaxjmaxkmin[]{nx - 1, nx, ny - 1, ny, 0, 1};
+//         nodeType = (int)cornerType[6];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, imaxjmaxkmin,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//         int imaxjmaxkmax[]{nx - 1, nx, ny-1, ny, nz - 1, nz};
+//         nodeType = (int)cornerType[7];
+//         ops_par_loop(KerAssignProperty, "KerAssignProperty",
+//                      g_Block[blockIndex], SPACEDIM, imaxjmaxkmax,
+//                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
+//                      ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+//                                  OPS_WRITE));
+//     }
+// }
 
 
 // Function copied from Setup_comput_domain.cpp (3D File)
@@ -558,7 +562,7 @@ void CalBlockCoordinates(const int blockIndex, Real* blockStartPos,
     AssignCoordinates(blockIndex, coordinates);
     //AssignCoordinates(blockIndex, &coordinates[SPACEDIM]);
 
-    // Deleting the memeory allocated to coordinates.
+    // Deleting the memory allocated to coordinates.
     for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) {
         if (coordinates[coordIndex] != nullptr)
             delete[] coordinates[coordIndex];
@@ -662,61 +666,60 @@ void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType) {
     // block.
     SetupDomainGeometryProperty(blockIndex);
 
-    SetupDomainNodeType(blockIndex, faceType);
+
 }
 
 // This routine is for both 3D and 2D. It defines types of edges and corners also.
-void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType, BoundaryType* edgeType, BoundaryType* cornerType) {
-#ifdef OPS_3D
-    VertexTypes faceType[6];
-    VertexTypes geomEdgeType[12];
-    VertexTypes geomCornerType[8];
-    // Get Vertex type information from boundary Type. This is because MPLB code
-    // uses vertex type information.
-    for (int i = 0; i < 6; i++) {
-        faceType[i] = BoundTypeToVertexType(boundType[i]);
-    }
+// void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType, BoundaryType* edgeType, BoundaryType* cornerType) {
+// #ifdef OPS_3D
+//     VertexTypes faceType[6];
+//     VertexTypes geomEdgeType[12];
+//     VertexTypes geomCornerType[8];
+//     // Get Vertex type information from boundary Type. This is because MPLB code
+//     // uses vertex type information.
+//     for (int i = 0; i < 6; i++) {
+//         faceType[i] = BoundTypeToVertexType(boundType[i]);
+//     }
 
-    for (int i = 0; i < 12; i++) {
-        geomEdgeType[i] = BoundTypeToVertexType(edgeType[i]);
-    }
+//     for (int i = 0; i < 12; i++) {
+//         geomEdgeType[i] = BoundTypeToVertexType(edgeType[i]);
+//     }
 
-    for (int i = 0; i < 8; i++) {
-        geomCornerType[i] = BoundTypeToVertexType(cornerType[i]);
-    }
+//     for (int i = 0; i < 8; i++) {
+//         geomCornerType[i] = BoundTypeToVertexType(cornerType[i]);
+//     }
 
-#endif  // end of OPS_3D
+// #endif  // end of OPS_3D
 
-#ifdef OPS_2D
+// #ifdef OPS_2D
 
-    VertexTypes faceType[4];
+//     VertexTypes faceType[4];
 
-    // Get Vertex type information from boundary Type. This is because MPLB code
-    // uses vertex type information.
-    for (int i = 0; i < 4; i++) {
-        faceType[i] = BoundTypeToVertexType(boundType[i]);
-    }
+//     // Get Vertex type information from boundary Type. This is because MPLB code
+//     // uses vertex type information.
+//     for (int i = 0; i < 4; i++) {
+//         faceType[i] = BoundTypeToVertexType(boundType[i]);
+//     }
 
-#endif  // end of OPS_2D
+// #endif  // end of OPS_2D
 
-    // This function associates various ranges such as imin, imax etc for a
-    // block.
-    SetupDomainGeometryProperty(blockIndex);
+//     // This function associates various ranges such as imin, imax etc for a
+//     // block.
+//     SetupDomainGeometryProperty(blockIndex);
 
-    SetupDomainNodeType(blockIndex, faceType, geomEdgeType, geomCornerType);
-}
-
+//     SetupDomainNodeType(blockIndex, faceType, geomEdgeType, geomCornerType);
+// }
 
 void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
                          const Real meshSize,
                          const std::vector<Real> startPos) {
     SetBlockNum(blockNum);
     SetBlockSize(blockSize);
-
     DefineVariables();
-    //ops_printf("Variables Defined \n");
+    ops_printf("Variable memory allocated!\n");
+    DefineHaloTransfer3D();
     ops_partition((char*)"LBMPreProcessor");
-
+    ops_printf("Block partition finished\n");
     int numBlockStartPos;
     numBlockStartPos = startPos.size();
 
@@ -741,21 +744,87 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
             "only =%i \n",
             SPACEDIM * blockNum, numBlockStartPos);
     }
+    for (int blockId = 0; blockId < blockNum; blockId++) {
+        SetupDomainGeometryProperty(blockId);
+        for (int compoId = 0; compoId < NUMCOMPONENTS; compoId++) {
+            SetBulkNodesType(blockId, compoId);
+        }
+    }
+
+    for (int bcIdx = 0; bcIdx < blockBoundaryConditions.size();
+         bcIdx++) {
+        const int compoId{blockBoundaryConditions[bcIdx].componentID};
+        const int blockIndex{blockBoundaryConditions[bcIdx].blockIndex};
+        int* bcRange = RangeBoundCond(blockBoundaryConditions[bcIdx].blockIndex,
+                                      blockBoundaryConditions[bcIdx].surface);
+        const int vtType{(int)blockBoundaryConditions[bcIdx].boundaryType};
+        ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                     SPACEDIM, bcRange,
+                     ops_arg_gbl(&vtType, 1, "int", OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+    }
+}
+
+// Check whether this needs to be defines using OPS Kernel.
+Real GetMaximumResidualError(const Real checkPeriod) {
+    Real maxResError = 1E-15;
+    Real relResErrorMacroVar;
+    for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
+        relResErrorMacroVar = g_ResidualError[2 * macroVarIdx] /
+                              g_ResidualError[2 * macroVarIdx + 1] /
+                              (checkPeriod * TimeStep());
+
+        if (maxResError <= relResErrorMacroVar) {
+            maxResError = relResErrorMacroVar;
+        }
+    }
+    return maxResError;
 }
 
 void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod) {
-    MAXITER = steps;
-    CHECKPERIOD = checkPointPeriod;
-
-    for (int iter = 0; iter < MAXITER; iter++) {
+    for (int iter = 0; iter < steps; iter++) {
 #ifdef OPS_3D
         StreamCollision3D();  // Stream-Collision scheme
         // TimeMarching();//Finite difference scheme + cutting cell
-        if ((iter % CHECKPERIOD) == 0 && iter != 0) {
+        if ((iter % checkPointPeriod) == 0 && iter != 0) {
+            UpdateMacroVars3D();
+            WriteFlowfieldToHdf5(iter);
+            WriteDistributionsToHdf5(iter);
+            WriteNodePropertyToHdf5(iter);
+        }
+#endif  // end of OPS_3D
+#ifdef OPS_2D
+        StreamCollision();  // Stream-Collision scheme
+        // TimeMarching();//Finite difference scheme + cutting cell
+        if ((iter % checkPointPeriod) == 0 && iter != 0) {
+            UpdateMacroVars();
+            WriteFlowfieldToHdf5(iter);
+            WriteDistributionsToHdf5(iter);
+            WriteNodePropertyToHdf5(iter);
+        }
+#endif  // end of OPS_2D
+    }
+    DestroyModel();
+    DestroyFlowfield();
+}
+
+void Iterate(SchemeType scheme, const Real convergenceCriteria,
+             const int checkPointPeriod) {
+    int iter{0};
+    Real residualError{1};
+    do {
+#ifdef OPS_3D
+        StreamCollision3D();  // Stream-Collision scheme
+        // TimeMarching();//Finite difference scheme + cutting cell
+        if ((iter % checkPointPeriod) == 0 && iter != 0) {
             //#ifdef debug
             UpdateMacroVars3D();
             CalcResidualError3D();
-            DispResidualError3D(iter, CHECKPERIOD * TimeStep());
+            residualError =
+                GetMaximumResidualError(checkPointPeriod * TimeStep());
+            DispResidualError3D(iter, checkPointPeriod * TimeStep());
             WriteFlowfieldToHdf5(iter);
             WriteDistributionsToHdf5(iter);
             WriteNodePropertyToHdf5(iter);
@@ -769,11 +838,13 @@ void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod) {
 
 #ifdef OPS_2D
         StreamCollision();  // Stream-Collision scheme
+
         // TimeMarching();//Finite difference scheme + cutting cell
         if ((iter % CHECKPERIOD) == 0 && iter != 0) {
             //#ifdef debug
             UpdateMacroVars();
             CalcResidualError();
+            residualError = GetMaximumResidualError(CHECKPERIOD * TimeStep());
             DispResidualError(iter, CHECKPERIOD * TimeStep());
             WriteFlowfieldToHdf5(iter);
             WriteDistributionsToHdf5(iter);
@@ -784,81 +855,10 @@ void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod) {
             // WriteNodePropertyToHdf5(iter);
             //#endif
         }
+
 #endif  // end of OPS_2D
-    }
-
-    DestroyModel();
-    DestroyFlowfield();
-}
-
-// Check whether this needs to be defines using OPS Kernel.
-Real GetMaximumResidualError(const Real checkPeriod) {
-    Real maxResError = 1E-15;
-    Real relResErrorMacroVar;
-
-    for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
-        relResErrorMacroVar = g_ResidualError[2 * macroVarIdx] /
-                              g_ResidualError[2 * macroVarIdx + 1] /
-                              (checkPeriod * TimeStep());
-
-        if (maxResError <= relResErrorMacroVar) {
-            maxResError = relResErrorMacroVar;
-        }
-    }
-    return maxResError;
-}
-
-void Iterate(SchemeType scheme, const Real convergenceCriteria,
-             const int checkPointPeriod) {
-    CHECKPERIOD = checkPointPeriod;
-    int iter = 0;
-    Real residualError = 10000;  // initially defining to be a very high value.
-
-    while (residualError >= convergenceCriteria) {
-#ifdef OPS_3D
-        StreamCollision3D();  // Stream-Collision scheme
-        // TimeMarching();//Finite difference scheme + cutting cell
-        if ((iter % CHECKPERIOD) == 0 && iter != 0) {
-            //#ifdef debug
-            UpdateMacroVars3D();
-            CalcResidualError3D();
-            residualError = GetMaximumResidualError(CHECKPERIOD * TimeStep());
-            DispResidualError3D(iter, CHECKPERIOD * TimeStep());
-            WriteFlowfieldToHdf5(iter);
-            WriteDistributionsToHdf5(iter);
-            WriteNodePropertyToHdf5(iter);
-            // if ((densityResidualError + uResidualError+vResidualError) <=
-            // 1e-12) break;
-            // WriteDistributionsToHdf5(iter);
-            // WriteNodePropertyToHdf5(iter);
-            //#endif
-        }
-        iter = iter + 1;  // Required for checkpoint.
-#endif                    // end of OPS_3D
-
-#ifdef OPS_2D
-        StreamCollision();  // Stream-Collision scheme
-
-        // TimeMarching();//Finite difference scheme + cutting cell
-        if ((iter % CHECKPERIOD) == 0 && iter != 0) {
-            //#ifdef debug
-            UpdateMacroVars();
-            CalcResidualError();
-            residualError = GetMaximumResidualError(CHECKPERIOD * TimeStep());
-            DispResidualError(iter, CHECKPERIOD * TimeStep());
-            WriteFlowfieldToHdf5(iter);
-            WriteDistributionsToHdf5(iter);
-            WriteNodePropertyToHdf5(iter);
-            // if ((densityResidualError + uResidualError+vResidualError) <=
-            // 1e-12) break;
-            // WriteDistributionsToHdf5(iter);
-            // WriteNodePropertyToHdf5(iter);
-            //#endif
-        }
-
-        iter = iter + 1;  // Required for checkpoint.
-#endif                    // end of OPS_2D
-    }
+        iter = iter + 1;
+    } while (residualError >= convergenceCriteria);
 
     DestroyModel();
     DestroyFlowfield();
@@ -906,50 +906,10 @@ void AddEmbededBody(int vertexNum, Real* vertexCoords) {
                    VERTEXCOORDINATES);
 }
 
-// This routine is for internal use and gives the cells on which a
-// particular BC is to be applied.
-int* RangeBoundCond(const int blockId, BoundarySurface surface) {
-    int* rangeBoundaryCond;
-    switch (surface) {
-        case BoundarySurface_Left:
-            rangeBoundaryCond = BlockIterRng(blockId, IterRngImin());
-            break;
-
-        case BoundarySurface_Right:
-            rangeBoundaryCond = BlockIterRng(blockId, IterRngImax());
-            break;
-
-        case BoundarySurface_Top:
-            rangeBoundaryCond = BlockIterRng(blockId, IterRngJmax());
-            break;
-
-        case BoundarySurface_Bottom:
-            rangeBoundaryCond = BlockIterRng(blockId, IterRngJmin());
-            break;
-
-        case BoundarySurface_Front:
-            rangeBoundaryCond = BlockIterRng(blockId, IterRngKmax());
-            break;
-
-        case BoundarySurface_Back:
-            rangeBoundaryCond = BlockIterRng(blockId, IterRngKmin());
-            break;
-
-        default:
-            ops_printf("\n Surface entered for the BC is incorrect.");
-    }
-
-    return rangeBoundaryCond;
-}
-
 void DefineBlockBoundary(int blockIndex, int componentID,
                          BoundarySurface surface, BoundaryType type,
                          std::vector<VariableTypes> macroVarsComp,
                          std::vector<Real> valuesMacroVarsComp) {
-    // Find the range of cells on which a BC will act on.
-    int* rangeBoundaryCond;
-    rangeBoundaryCond = RangeBoundCond(blockIndex, surface);
-
     // Type conversion from BoundaryType to VertexType.
     VertexTypes vtType;
     vtType = BoundTypeToVertexType(type);
@@ -975,16 +935,13 @@ void DefineBlockBoundary(int blockIndex, int componentID,
         for (int i = 0; i < numValuesMacroVarsComp; i++) {
             macroVarsBoundCond[(int)macroVarsComp[i]] = valuesMacroVarsComp[i];
         }
-
-        DomainBoundary domainBoundCondition;
+        BlockBoundary domainBoundCondition;
         domainBoundCondition.blockIndex = blockIndex;
         domainBoundCondition.componentID = componentID;
         domainBoundCondition.givenVars = macroVarsBoundCond;
-        domainBoundCondition.range = rangeBoundaryCond;
+        domainBoundCondition.surface = surface;
         domainBoundCondition.boundaryType = vtType;
-
-        g_domainBoundCond.push_back(domainBoundCondition);
-
+        blockBoundaryConditions.push_back(domainBoundCondition);
     } else {
         ops_printf("\n Expected %i values for BC but received only %i ",
                    numMacroVarsComp, numValuesMacroVarsComp);
@@ -993,24 +950,27 @@ void DefineBlockBoundary(int blockIndex, int componentID,
 
 void ImplementBoundaryConditions() {
     int totalNumBoundCond;
-    totalNumBoundCond = g_domainBoundCond.size();
+    totalNumBoundCond = blockBoundaryConditions.size();
     if (totalNumBoundCond != 0) {
         for (int i = 0; i < totalNumBoundCond; i++) {
+            int* rangeBoundaryCondition;
+            rangeBoundaryCondition = RangeBoundCond(
+                blockBoundaryConditions[i].blockIndex, blockBoundaryConditions[i].surface);
 #ifdef OPS_2D
 
-            TreatDomainBoundary(g_domainBoundCond[i].blockIndex,
-                                g_domainBoundCond[i].componentID,
-                                g_domainBoundCond[i].givenVars,
-                                g_domainBoundCond[i].range,
-                                g_domainBoundCond[i].boundaryType);
+            TreatDomainBoundary(blockBoundaryConditions[i].blockIndex,
+                                blockBoundaryConditions[i].componentID,
+                                blockBoundaryConditions[i].givenVars,
+                                rangeBoundaryCondition,
+                                blockBoundaryConditions[i].boundaryType);
 #endif  // End of OPS_2D
 
 #ifdef OPS_3D
-            TreatBlockBoundary3D(g_domainBoundCond[i].blockIndex,
-                                 g_domainBoundCond[i].componentID,
-                                 g_domainBoundCond[i].givenVars,
-                                 g_domainBoundCond[i].range,
-                                 g_domainBoundCond[i].boundaryType);
+            TreatBlockBoundary3D(blockBoundaryConditions[i].blockIndex,
+                                 blockBoundaryConditions[i].componentID,
+                                 blockBoundaryConditions[i].givenVars,
+                                 rangeBoundaryCondition,
+                                 blockBoundaryConditions[i].boundaryType);
 #endif  // End of OPS_3D
         }
 
@@ -1053,13 +1013,16 @@ void DefineInitialCondition(const int blockIndex, const int componentId,
             "= %i",
             componentId, numMacroVarsComp, numInitialMacroComp);
     }
+#ifdef OPS_3D
+    InitialiseSolution3D();
+#endif
 }
 
 void SetupDomainGeometryProperty(int blockIndex) {
     int geometryProperty = (int)VG_Fluid;
     int* iterRange = BlockIterRng(blockIndex, IterRngBulk());
-    ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
-                 SPACEDIM, iterRange,
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, iterRange,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
@@ -1075,8 +1038,8 @@ void SetupDomainGeometryProperty(int blockIndex) {
         haloIterRng[4] = iterRange[4] - 1;
         haloIterRng[5] = iterRange[5] + 1;
     }
-    ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
-                 SPACEDIM, haloIterRng,
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, haloIterRng,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
@@ -1089,8 +1052,8 @@ void SetupDomainGeometryProperty(int blockIndex) {
         haloIterRng[4] = iterRange[4] - 1;
         haloIterRng[5] = iterRange[5] + 1;
     }
-    ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
-                 SPACEDIM, haloIterRng,
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, haloIterRng,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
@@ -1103,8 +1066,8 @@ void SetupDomainGeometryProperty(int blockIndex) {
         haloIterRng[4] = iterRange[4] - 1;
         haloIterRng[5] = iterRange[5] + 1;
     }
-    ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
-                 SPACEDIM, haloIterRng,
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, haloIterRng,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
@@ -1118,8 +1081,8 @@ void SetupDomainGeometryProperty(int blockIndex) {
         haloIterRng[4] = iterRange[4] - 1;
         haloIterRng[5] = iterRange[5] + 1;
     }
-    ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
-                 SPACEDIM, haloIterRng,
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, haloIterRng,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
@@ -1131,7 +1094,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
         haloIterRng[3] = iterRange[3] + 1;
         haloIterRng[4] = iterRange[4] - 1;
         haloIterRng[5] = iterRange[5] - 1;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, haloIterRng,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
@@ -1143,7 +1106,7 @@ void SetupDomainGeometryProperty(int blockIndex) {
         haloIterRng[3] = iterRange[3] + 1;
         haloIterRng[4] = iterRange[4] + 1;
         haloIterRng[5] = iterRange[5] + 1;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, haloIterRng,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
@@ -1153,78 +1116,77 @@ void SetupDomainGeometryProperty(int blockIndex) {
     // specify domain
     geometryProperty = VG_JP;
     iterRange = BlockIterRng(blockIndex, IterRngJmin());
-    ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
-                 SPACEDIM, iterRange,
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, iterRange,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
     geometryProperty = VG_JM;
     iterRange = BlockIterRng(blockIndex, IterRngJmax());
-    ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
-                 SPACEDIM, iterRange,
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, iterRange,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
     geometryProperty = VG_IP;
     iterRange = BlockIterRng(blockIndex, IterRngImin());
-    ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
-                 SPACEDIM, iterRange,
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, iterRange,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
     geometryProperty = VG_IM;
     iterRange = BlockIterRng(blockIndex, IterRngImax());
-    ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
-                 SPACEDIM, iterRange,
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, iterRange,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
     if (3 == SPACEDIM) {
         geometryProperty = VG_KP;
         iterRange = BlockIterRng(blockIndex, IterRngKmin());
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iterRange,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         geometryProperty = VG_KM;
         iterRange = BlockIterRng(blockIndex, IterRngKmax());
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iterRange,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
     }
 
-//if 0
     const int nx = BlockSize(blockIndex)[0];
     const int ny = BlockSize(blockIndex)[1];
     // 2D Domain corner points four types
     if (2 == SPACEDIM) {
         int iminjmin[]{0, 1, 0, 1};
         geometryProperty = VG_IPJP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iminjmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int iminjmax[] = {0, 1, ny - 1, ny};
         geometryProperty = VG_IPJM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iminjmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int imaxjmax[] = {nx - 1, nx, ny - 1, ny};
         geometryProperty = VG_IMJM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, imaxjmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int imaxjmin[] = {nx - 1, nx, 0, 1};
         geometryProperty = VG_IMJP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, imaxjmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
@@ -1236,28 +1198,28 @@ void SetupDomainGeometryProperty(int blockIndex) {
         // 3D Domain edges 12 types
         int iminjmin[]{0, 1, 0, 1, 0, nz};
         geometryProperty = VG_IPJP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iminjmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int iminjmax[]{0, 1, ny - 1, ny, 0, nz};
         geometryProperty = VG_IPJM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iminjmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int imaxjmax[]{nx - 1, nx, ny - 1, ny, 0, nz};
         geometryProperty = VG_IMJM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, imaxjmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int imaxjmin[]{nx - 1, nx, 0, 1, 0, nz};
         geometryProperty = VG_IMJP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, imaxjmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
@@ -1265,28 +1227,28 @@ void SetupDomainGeometryProperty(int blockIndex) {
 
         int iminkmin[]{0, 1, 0, ny, 0, 1};
         geometryProperty = VG_IPKP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iminkmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int iminkmax[]{0, 1, 0, ny, nz - 1, nz};
         geometryProperty = VG_IPKM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iminkmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int imaxkmax[]{nx - 1, nx, 0, ny, nz - 1, nz};
         geometryProperty = VG_IMKM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, imaxkmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int imaxkmin[]{nx - 1, nx, 0, ny, 0, 1};
         geometryProperty = VG_IMKP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, imaxkmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
@@ -1294,28 +1256,28 @@ void SetupDomainGeometryProperty(int blockIndex) {
 
         int jminkmin[]{0, nx, 0, 1, 0, 1};
         geometryProperty = VG_JPKP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, jminkmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int jminkmax[]{0, nx, 0, 1, nz - 1, nz};
         geometryProperty = VG_JPKM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, jminkmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int jmaxkmax[]{0, nx, ny - 1, ny, nz - 1, nz};
         geometryProperty = VG_JMKM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, jmaxkmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int jmaxkmin[]{0, nx, ny - 1, ny, 0, 1};
         geometryProperty = VG_JMKP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, jmaxkmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
@@ -1324,62 +1286,61 @@ void SetupDomainGeometryProperty(int blockIndex) {
         // 3D domain corners 8 types
         int iminjminkmin[]{0, 1, 0, 1, 0, 1};
         geometryProperty = VG_IPJPKP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iminjminkmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int iminjminkmax[]{0, 1, 0, 1, nz - 1, nz};
         geometryProperty = VG_IPJPKM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iminjminkmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int iminjmaxkmin[]{0, 1, ny - 1, ny, 0, 1};
         geometryProperty = VG_IPJMKP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iminjmaxkmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
-        int iminjmaxkmax[]{0, 1, ny-1, ny, nz - 1, nz};
+        int iminjmaxkmax[]{0, 1, ny - 1, ny, nz - 1, nz};
         geometryProperty = VG_IPJMKM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, iminjmaxkmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int imaxjminkmin[]{nx - 1, nx, 0, 1, 0, 1};
         geometryProperty = VG_IMJPKP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, imaxjminkmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int imaxjminkmax[]{nx - 1, nx, 0, 1, nz - 1, nz};
         geometryProperty = VG_IMJPKM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, imaxjminkmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
         int imaxjmaxkmin[]{nx - 1, nx, ny - 1, ny, 0, 1};
         geometryProperty = VG_IMJMKP_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, imaxjmaxkmin,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
-        int imaxjmaxkmax[]{nx - 1, nx, ny-1, ny, nz - 1, nz};
+        int imaxjmaxkmax[]{nx - 1, nx, ny - 1, ny, nz - 1, nz};
         geometryProperty = VG_IMJMKM_I;
-        ops_par_loop(KerAssignProperty, "KerAssignProperty",
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, imaxjmaxkmax,
                      ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
     }
-//#endif  // end of if 0.
 }
 
 // Define varios halo numbers such as HaloNum, HaloDepth and SchemeHaloPt.
@@ -1403,15 +1364,16 @@ void SolidPointsInsideCircle(int blockIndex, Real diameter,
                              std::vector<Real> circlePos) {
     int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
     Real* circlePosition = &circlePos[0];
-    ops_par_loop(
-        KerSetEmbededCircle, "KerSetEmbededCircle", g_Block[blockIndex],
-        SPACEDIM, bulkRng, ops_arg_gbl(&diameter, 1, "double", OPS_READ),
-        ops_arg_gbl(circlePosition, SPACEDIM, "Real", OPS_READ),
-        ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM, LOCALSTENCIL,
-                    "double", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE),
-        ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL, "int",
-                    OPS_WRITE));
+    ops_par_loop(KerSetEmbededCircle, "KerSetEmbededCircle",
+                 g_Block[blockIndex], SPACEDIM, bulkRng,
+                 ops_arg_gbl(&diameter, 1, "double", OPS_READ),
+                 ops_arg_gbl(circlePosition, SPACEDIM, "Real", OPS_READ),
+                 ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
+                             LOCALSTENCIL, "double", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
 }
 
 void SolidPointsInsideEllipse(int blockIndex, Real semiMajorAxes,
@@ -1425,7 +1387,7 @@ void SolidPointsInsideEllipse(int blockIndex, Real semiMajorAxes,
         ops_arg_gbl(centerPosition, SPACEDIM, "Real", OPS_READ),
         ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM, LOCALSTENCIL,
                     "double", OPS_READ),
-        ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE),
+        ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS, LOCALSTENCIL, "int", OPS_WRITE),
         ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL, "int",
                     OPS_WRITE));
 }
@@ -1440,14 +1402,14 @@ void HandleImmersedSoild() {
                      bulkRng,
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_WRITE));
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
 
         // sync the Geometry property to reflect the modifed solid property
         ops_par_loop(KerSyncGeometryProperty, "KerSyncGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, bulkRng,
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_RW));
 
@@ -1455,8 +1417,8 @@ void HandleImmersedSoild() {
         // i.e., mark out the surface points
         ops_par_loop(KerSetEmbededBodyGeometry, "KerSetEmbededBodyGeometry",
                      g_Block[blockIndex], SPACEDIM, bulkRng,
-                     ops_arg_dat(g_NodeType[blockIndex], 1, ONEPTLATTICESTENCIL,
-                                 "int", OPS_RW),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 ONEPTLATTICESTENCIL, "int", OPS_RW),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
 
@@ -1468,8 +1430,8 @@ void HandleImmersedSoild() {
                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                                 OPS_RW));
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_RW));
     }
 }
 

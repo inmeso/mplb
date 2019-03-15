@@ -27,6 +27,7 @@
 extern int HALODEPTH;
 
 void simulate() {
+
     std::string caseName{"3D_lid_Driven_cavity"};
     int spaceDim{3};
     DefineCase(caseName, spaceDim);
@@ -54,17 +55,54 @@ void simulate() {
     SetupScheme();
     SetupBoundary();
 
+    //Setting boundary conditions
+    int blockIndex{0};
+    int componentId{0};
+    std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,
+                                             Variable_V, Variable_W};
+
+    BoundaryType boundType[6] = {
+        BoundaryType_Periodic,       BoundaryType_Periodic,
+        BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl,
+        BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl};
+
+    BoundarySurface surface[6] = {BoundarySurface_Left,  BoundarySurface_Right,
+                                  BoundarySurface_Top,   BoundarySurface_Bottom,
+                                  BoundarySurface_Front, BoundarySurface_Back};
+    std::vector<Real> inletValMacroVarsComp{1, 0, 0, 0};
+    DefineBlockBoundary(blockIndex, componentId, surface[0], boundType[0],
+                        MacroVarsComp, inletValMacroVarsComp);
+
+    std::vector<Real> outletValMacroVarsComp{1, 0, 0, 0};
+    DefineBlockBoundary(blockIndex, componentId, surface[1], boundType[1],
+                        MacroVarsComp, outletValMacroVarsComp);
+
+    std::vector<Real> topValMacroVarsComp{1, 0, 0, 0.01};
+    DefineBlockBoundary(blockIndex, componentId, surface[2], boundType[2],
+                        MacroVarsComp, topValMacroVarsComp);
+
+    std::vector<Real> bottomValMacroVarsComp{1, 0, 0, 0};
+    DefineBlockBoundary(blockIndex, componentId, surface[3], boundType[3],
+                        MacroVarsComp, bottomValMacroVarsComp);
+
+    std::vector<Real> frontValMacroVarsComp{1, 0, 0, 0};
+    DefineBlockBoundary(blockIndex, componentId, surface[4], boundType[4],
+                        MacroVarsComp, frontValMacroVarsComp);
+
+    std::vector<Real> backValMacroVarsComp{1, 0, 0, 0};
+    DefineBlockBoundary(blockIndex, componentId, surface[5], boundType[5],
+                        MacroVarsComp, backValMacroVarsComp);
+
+    ops_printf("Block boundary defined!\n");
     int blockNum{1};
     std::vector<int> blockSize{3, 21, 21};
     Real meshSize{1. / 20};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
     DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
 
-    int blockIndex{0};
-    BoundaryType boundType[6] = {
-        BoundaryType_Periodic, BoundaryType_Periodic,
-        BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl,
-        BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl};
+    //If necessary we can also precisely specify the boundary types
+    //for edges and corners
+    //must be after DefineProblemDomain
 
     // BoundaryType leftBottomBcType{BoundaryType_EQMDiffuseRefl};
     // BoundaryType leftTopBcType{BoundaryType_EQMDiffuseRefl};
@@ -97,58 +135,21 @@ void simulate() {
     // BoundaryType cornerType[8] = {leftBottomBackBcType,  leftBottomFrontBcType,
     //                               leftTopBackBcType,     leftTopFrontBcType,
     //                               rightBottomBackBcType, rightBottomFrontBcType,
-    //                               rightTopBackBcType,    rightTopFrontBcType};
+    //                               rightTopBackBcType,    rightTopFrontBcType}
 
-    SetupGeomPropAndNodeType(blockIndex, boundType);  //, edgeType, cornerType);
-
-    int compoIdInitialCond{0};
     std::vector<Real> initialMacroValues{1, 0, 0, 0};
-    DefineInitialCondition(blockIndex, compoIdInitialCond, initialMacroValues);
-    ops_printf("%s\n", "Flowfield is Initialised now!");
+    DefineInitialCondition(blockIndex, componentId, initialMacroValues);
+
+    // WriteFlowfieldToHdf5(100000);
+    // WriteDistributionsToHdf5(100000);
+    // WriteNodePropertyToHdf5(100000);
 
     std::vector<Real> tauRef{0.01};
     SetTauRef(tauRef);
 
     SetTimeStep(meshSize / SoundSpeed());
 
-    HALODEPTH = HaloPtNum();
-    ops_printf("%s\n", "Starting to allocate...");
-    DefineHaloTransfer3D();
-    ops_printf("%s\n", "Flowfield is setup now!");
-    InitialiseSolution3D();
 
-    blockIndex = 0;
-    int componentId{0};
-    std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,
-                                             Variable_V, Variable_W};
-    std::vector<Real> inletValMacroVarsComp{1, 0, 0, 0};
-
-    BoundarySurface surface[6] = {BoundarySurface_Left,  BoundarySurface_Right,
-                                  BoundarySurface_Top,   BoundarySurface_Bottom,
-                                  BoundarySurface_Front, BoundarySurface_Back};
-
-    DefineBlockBoundary(blockIndex, componentId, surface[0], boundType[0],
-                        MacroVarsComp, inletValMacroVarsComp);
-
-    std::vector<Real> outletValMacroVarsComp{1, 0, 0, 0};
-    DefineBlockBoundary(blockIndex, componentId, surface[1], boundType[1],
-                        MacroVarsComp, outletValMacroVarsComp);
-
-    std::vector<Real> topValMacroVarsComp{1, 0, 0, 0.01};
-    DefineBlockBoundary(blockIndex, componentId, surface[2], boundType[2],
-                        MacroVarsComp, topValMacroVarsComp);
-
-    std::vector<Real> bottomValMacroVarsComp{1, 0, 0, 0};
-    DefineBlockBoundary(blockIndex, componentId, surface[3], boundType[3],
-                        MacroVarsComp, bottomValMacroVarsComp);
-
-    std::vector<Real> frontValMacroVarsComp{1, 0, 0, 0};
-    DefineBlockBoundary(blockIndex, componentId, surface[4], boundType[4],
-                        MacroVarsComp, frontValMacroVarsComp);
-
-    std::vector<Real> backValMacroVarsComp{1, 0, 0, 0};
-    DefineBlockBoundary(blockIndex, componentId, surface[5], boundType[5],
-                        MacroVarsComp, backValMacroVarsComp);
 
     // currently this information is not playing major role in this
     // implementation.
@@ -159,11 +160,11 @@ void simulate() {
 
     // currently this information is not playing major role in this
     // implementation.
+
     SchemeType scheme{stStreamCollision};
     const Real convergenceCriteria{1E-5};
-    const int checkPeriod{500};
+    const int checkPeriod{1000};
     Iterate(scheme, convergenceCriteria, checkPeriod);
-    //#endif
 }
 
 int main(int argc, char** argv) {
