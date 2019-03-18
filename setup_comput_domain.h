@@ -20,12 +20,12 @@ void KerSetCoordinates(const Real* coordX, const Real* coordY, const int* idx,
 /*!
  * set the boundary condition type to boundary surface points
  */
-void KerSetEmbededBodyBoundary(int* surfaceBoundary,
+void KerSetEmbeddedBodyBoundary(int* surfaceBoundary,
                                const int* geometryProperty, int* nodeType);
 /*!
  * set geometry property for boundary surface points 
  */
-void KerSetEmbededBodyGeometry(const int* nodeType, int* geometryProperty);
+void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty);
 /*!
  * set the initial conditions
  */
@@ -35,7 +35,7 @@ void KerSetInitialMacroVars(const Real* coordinates, const int* idx,
 /*!
  * mark solid points enclosed in a circle
  */
-void KerSetEmbededCircle(Real* diameter, Real* centerPos,
+void KerSetEmbeddedCircle(Real* diameter, Real* centerPos,
                          const Real* coordinates, int* nodeType,
                          int* geometryProperty);
 /*!

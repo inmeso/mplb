@@ -129,7 +129,7 @@ void KerCutCellZeroFlux(const int *nodeType, const int *geometryProperty,
     }
 }
 
-void KerCutCellEmbededBoundary(const int *nodeType, const int *geometryProperty,
+void KerCutCellEmbeddedBoundary(const int *nodeType, const int *geometryProperty,
                                Real *f) {
     /*!
      For the bounce back scheme,We consider zero velocity boundary first.

@@ -128,7 +128,7 @@ Currently the prepration of a simulation includes two major steps for both the s
 
   ```c++
   void ImplementBoundary3D() {
-      //TreatEmbededBoundary3D();   
+      //TreatEmbeddedBoundary3D();   
       int* inletRng = BlockIterRng(0, g_BlockIterRngImin);    
       Real givenInletVars[]{1, 0, 0, 0};  // Input Parameters
       TreatBlockBoundary3D(givenInletVars, inletRng, Vertex_EQMDiffuseRefl);

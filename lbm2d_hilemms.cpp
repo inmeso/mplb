@@ -56,34 +56,7 @@ void simulate() {
     SetupScheme();
     SetupBoundary();
 
-    int blockNum{1};
-    std::vector<int> blockSize{51, 51};
-    Real meshSize{0.02};
-    std::vector<Real> startPos{0.0, 0.0};
-    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
-
-    int blockIndex{0};
-    SetupGeomPropAndNodeType(blockIndex, boundType);
-
-    int compoIdInitialCond{0};
-    std::vector<Real> initialMacroValues{1, 0, 0};
-    DefineInitialCondition(blockIndex, compoIdInitialCond, initialMacroValues);
-    ops_printf("%s\n", "Flowfield is Initialised now!");
-
-    std::vector<Real> tauRef{0.001};
-    SetTauRef(tauRef);
-
-    SetTimeStep(meshSize / SoundSpeed());
-
-    HALODEPTH = HaloPtNum();
-    ops_printf("%s\n", "Starting to allocate...");
-    DefineHaloTransfer();
-    // above calls must be before the ops_partition call.
-    //ops_partition((char*)"LBM");
-    ops_printf("%s\n", "Flowfield is setup now!");
-    InitialiseSolution();
-
-    blockIndex = 0;
+    int blockIndex = 0;
     int componentId{0};
     std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,
                                              Variable_V};
@@ -102,6 +75,34 @@ void simulate() {
     std::vector<Real> bottomValMacroVarsComp{1, 0, 0};
     DefineBlockBoundary(blockIndex, componentId, surface[3], boundType[3],
                         MacroVarsComp, bottomValMacroVarsComp);
+    ops_printf("Block boundary defined!\n");                   
+
+    int blockNum{1};
+    std::vector<int> blockSize{51, 51};
+    Real meshSize{0.02};
+    std::vector<Real> startPos{0.0, 0.0};
+    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+
+    //int blockIndex{0};
+    //SetupGeomPropAndNodeType(blockIndex, boundType);
+
+    int compoIdInitialCond{0};
+    std::vector<Real> initialMacroValues{1, 0, 0};
+    DefineInitialCondition(blockIndex, compoIdInitialCond, initialMacroValues);
+    ops_printf("%s\n", "Flowfield is Initialised now!");
+
+    std::vector<Real> tauRef{0.001};
+    SetTauRef(tauRef);
+
+    SetTimeStep(meshSize / SoundSpeed());
+
+    // HALODEPTH = HaloPtNum();
+    // ops_printf("%s\n", "Starting to allocate...");
+    // DefineHaloTransfer();
+    // // above calls must be before the ops_partition call.
+    // //ops_partition((char*)"LBM");
+    // ops_printf("%s\n", "Flowfield is setup now!");
+    // InitialiseSolution();
 
 #if 0
     // currently this information is not playin major role in this

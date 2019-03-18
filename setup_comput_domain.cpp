@@ -876,7 +876,7 @@ void SetupEmbeddedBodyFlowAroundCircle(const int ratioLD, const int front,
     // mark all solid points inside the first circle to be ImmersedSolid
     int* bulkRng = BlockIterRng(blockIndex, BlockIterRngBulk);
     ops_par_loop(
-        KerSetEmbededCircle, "KerSetEmbededCircle", g_Block[blockIndex],
+        KerSetEmbeddedCircle, "KerSetEmbeddedCircle", g_Block[blockIndex],
         SPACEDIM, bulkRng, ops_arg_gbl(&diameter, 1, "double", OPS_READ),
         ops_arg_gbl(circlePos, SPACEDIM, "double", OPS_READ),
         ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM, LOCALSTENCIL,
@@ -888,7 +888,7 @@ void SetupEmbeddedBodyFlowAroundCircle(const int ratioLD, const int front,
     //circlePos[0] = front + 3.5;
     // mark all solid points inside the second circle to be ImmersedSolid
     // ops_par_loop(
-    //     KerSetEmbededCircle, "KerSetEmbededCircle", g_Block[blockIndex],
+    //     KerSetEmbeddedCircle, "KerSetEmbeddedCircle", g_Block[blockIndex],
     //     SPACEDIM, bulkRng, ops_arg_gbl(&diameter, 1, "double", OPS_READ),
     //     ops_arg_gbl(circlePos, SPACEDIM, "double", OPS_READ),
     //     ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM, LOCALSTENCIL,
@@ -913,7 +913,7 @@ void SetupEmbeddedBodyFlowAroundCircle(const int ratioLD, const int front,
                     OPS_RW));
     // set the correct  geometry property e.g., corner types
     // i.e., mark out the surface points
-    ops_par_loop(KerSetEmbededBodyGeometry, "KerSetEmbededBodyGeometry",
+    ops_par_loop(KerSetEmbeddedBodyGeometry, "KerSetEmbeddedBodyGeometry",
                  g_Block[blockIndex], SPACEDIM, bulkRng,
                  ops_arg_dat(g_NodeType[blockIndex], 1, ONEPTLATTICESTENCIL,
                              "int", OPS_RW),
@@ -922,7 +922,7 @@ void SetupEmbeddedBodyFlowAroundCircle(const int ratioLD, const int front,
     // set the boundary type
     int nodeType{surface};
     ops_par_loop(
-        KerSetEmbededBodyBoundary, "KerSetEmbededBodyBoundary",
+        KerSetEmbeddedBodyBoundary, "KerSetEmbeddedBodyBoundary",
         g_Block[blockIndex], SPACEDIM, bulkRng,
         ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
         ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL, "int",

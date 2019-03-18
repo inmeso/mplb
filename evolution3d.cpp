@@ -292,7 +292,7 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
     //}
 }
 
-// void TreatEmbededBoundary3D() {
+// void TreatEmbeddedBoundary3D() {
 //     for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
 //         int* iterRng = BlockIterRng(blockIdx, IterRngBulk());
 //         ops_par_loop(
@@ -309,7 +309,7 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
 
 /*
 void ImplementBoundary3D() {
-    // TreatEmbededBoundary3D();
+    // TreatEmbeddedBoundary3D();
     // Real givenInletVars[]{1.00005, 0, 0};
     int* inletRng = BlockIterRng(0, IterRngImin());
     Real givenInletVars[]{1, 0, 0, 0};  // Input Parameters

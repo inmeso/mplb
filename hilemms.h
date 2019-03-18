@@ -35,7 +35,7 @@ void Iterate(SchemeType scheme, const Real convergenceCriteria,
              const int checkPointPeriod);
 // Same as iterate but for transient simulations.
 
-void AddEmbededBody(int vertexNum, Real* vertexCoords);
+void AddEmbeddedBody(int vertexNum, Real* vertexCoords);
 // Add 2D polygon.
 // vertexNum: total number of vertexes.
 // vertexCoords: Coordinates of each vertex.
@@ -107,10 +107,10 @@ void EmbeddedBody(SolidBodyType type, int blockIndex,
 /* Functions for embedded body.                           */
 /**********************************************************/
 
-void KerSetEmbededBodyBoundary(int* surfaceBoundary,
+void KerSetEmbeddedBodyBoundary(int* surfaceBoundary,
                                const int* geometryProperty, int* nodeType);
 
-void KerSetEmbededCircle(Real* diameter, Real* centerPos,
+void KerSetEmbeddedCircle(Real* diameter, Real* centerPos,
                          const Real* coordinates, int* nodeType,
                          int* geometryProperty);
 
@@ -122,8 +122,8 @@ void KerSweep(const int* geometryProperty, int* nodeType);
 
 void KerSyncGeometryProperty(const int* nodeType, int* geometryProperty);
 
-void KerSetEmbededBodyGeometry(const int* nodeType, int* geometryProperty);
+void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty);
 
-void HandleImmersedSoild();
+void HandleImmersedSolid();
 
 #endif  // Hilemms_H

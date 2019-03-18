@@ -246,11 +246,11 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
     //}
 }
 
-void TreatEmbededBoundary() {
+void TreatEmbeddedBoundary() {
     for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
         int* iterRng = BlockIterRng(blockIdx, IterRngBulk());
         ops_par_loop(
-            KerCutCellEmbededBoundary, "KerCutCellImmersedBoundary",
+            KerCutCellEmbeddedBoundary, "KerCutCellImmersedBoundary",
             g_Block[blockIdx], SPACEDIM, iterRng,
             ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS, LOCALSTENCIL,
                         "int", OPS_READ),
@@ -262,7 +262,7 @@ void TreatEmbededBoundary() {
 
 /*
 void ImplementBoundary() {
-    // TreatEmbededBoundary();
+    // TreatEmbeddedBoundary();
     // Real givenInletVars[]{1.00005, 0, 0};
     int* inletRng = BlockIterRng(0, IterRngImin());
     Real givenInletVars[]{1, 0.05, 0};  // Input Parameters

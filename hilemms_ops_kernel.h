@@ -50,7 +50,7 @@ void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
 }
 
 #ifdef OPS_2D
-void KerSetEmbededBodyBoundary(int* surfaceBoundary,
+void KerSetEmbeddedBodyBoundary(int* surfaceBoundary,
                                const int* geometryProperty, int* nodeType) {
     VertexGeometryTypes gp =
         (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0)];
@@ -60,7 +60,7 @@ void KerSetEmbededBodyBoundary(int* surfaceBoundary,
     }
 }
 
-void KerSetEmbededCircle(Real* diameter, Real* centerPos,
+void KerSetEmbeddedCircle(Real* diameter, Real* centerPos,
                          const Real* coordinates, int* nodeType,
                          int* geometryProperty) {
     if ((coordinates[OPS_ACC_MD3(0, 0, 0)] - centerPos[0]) *
@@ -142,7 +142,7 @@ void KerSyncGeometryProperty(const int* nodeType, int* geometryProperty) {
     }
 }
 
-void KerSetEmbededBodyGeometry(const int* nodeType, int* geometryProperty) {
+void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
     if (Vertex_ImmersedSolid == vt) {
         VertexTypes neiborVertexType[8];

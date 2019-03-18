@@ -717,7 +717,15 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
     SetBlockSize(blockSize);
     DefineVariables();
     ops_printf("Variable memory allocated!\n");
-    DefineHaloTransfer3D();
+    
+    #ifdef OPS_3D
+        DefineHaloTransfer3D();
+    #endif //OPS_3D
+
+    #ifdef OPS_2D
+        DefineHaloTransfer();
+    #endif
+
     ops_partition((char*)"LBMPreProcessor");
     ops_printf("Block partition finished\n");
     int numBlockStartPos;
@@ -790,6 +798,8 @@ void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod) {
         // TimeMarching();//Finite difference scheme + cutting cell
         if ((iter % checkPointPeriod) == 0 && iter != 0) {
             UpdateMacroVars3D();
+            CalcResidualError3D();
+            DispResidualError3D(iter, checkPointPeriod * TimeStep());
             WriteFlowfieldToHdf5(iter);
             WriteDistributionsToHdf5(iter);
             WriteNodePropertyToHdf5(iter);
@@ -800,6 +810,8 @@ void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod) {
         // TimeMarching();//Finite difference scheme + cutting cell
         if ((iter % checkPointPeriod) == 0 && iter != 0) {
             UpdateMacroVars();
+            CalcResidualError();
+            DispResidualError(iter, checkPointPeriod * TimeStep());
             WriteFlowfieldToHdf5(iter);
             WriteDistributionsToHdf5(iter);
             WriteNodePropertyToHdf5(iter);
@@ -819,7 +831,6 @@ void Iterate(SchemeType scheme, const Real convergenceCriteria,
         StreamCollision3D();  // Stream-Collision scheme
         // TimeMarching();//Finite difference scheme + cutting cell
         if ((iter % checkPointPeriod) == 0 && iter != 0) {
-            //#ifdef debug
             UpdateMacroVars3D();
             CalcResidualError3D();
             residualError =
@@ -828,11 +839,6 @@ void Iterate(SchemeType scheme, const Real convergenceCriteria,
             WriteFlowfieldToHdf5(iter);
             WriteDistributionsToHdf5(iter);
             WriteNodePropertyToHdf5(iter);
-            // if ((densityResidualError + uResidualError+vResidualError) <=
-            // 1e-12) break;
-            // WriteDistributionsToHdf5(iter);
-            // WriteNodePropertyToHdf5(iter);
-            //#endif
         }
 #endif  // end of OPS_3D
 
@@ -840,20 +846,14 @@ void Iterate(SchemeType scheme, const Real convergenceCriteria,
         StreamCollision();  // Stream-Collision scheme
 
         // TimeMarching();//Finite difference scheme + cutting cell
-        if ((iter % CHECKPERIOD) == 0 && iter != 0) {
-            //#ifdef debug
+        if ((iter % checkPointPeriod) == 0 && iter != 0) {
             UpdateMacroVars();
             CalcResidualError();
-            residualError = GetMaximumResidualError(CHECKPERIOD * TimeStep());
-            DispResidualError(iter, CHECKPERIOD * TimeStep());
+            residualError = GetMaximumResidualError(checkPointPeriod * TimeStep());
+            DispResidualError(iter, checkPointPeriod * TimeStep());
             WriteFlowfieldToHdf5(iter);
             WriteDistributionsToHdf5(iter);
             WriteNodePropertyToHdf5(iter);
-            // if ((densityResidualError + uResidualError+vResidualError) <=
-            // 1e-12) break;
-            // WriteDistributionsToHdf5(iter);
-            // WriteNodePropertyToHdf5(iter);
-            //#endif
         }
 
 #endif  // end of OPS_2D
@@ -872,7 +872,7 @@ void AllocateVertices(const int vertexNum) {
     }
 }
 
-void AddEmbededBody(int vertexNum, Real* vertexCoords) {
+void AddEmbeddedBody(int vertexNum, Real* vertexCoords) {
     NUMVERTICES = vertexNum;
     AllocateVertices(vertexNum);
 
@@ -1015,6 +1015,9 @@ void DefineInitialCondition(const int blockIndex, const int componentId,
     }
 #ifdef OPS_3D
     InitialiseSolution3D();
+#endif
+#ifdef OPS_2D
+    InitialiseSolution();
 #endif
 }
 
@@ -1364,7 +1367,7 @@ void SolidPointsInsideCircle(int blockIndex, Real diameter,
                              std::vector<Real> circlePos) {
     int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
     Real* circlePosition = &circlePos[0];
-    ops_par_loop(KerSetEmbededCircle, "KerSetEmbededCircle",
+    ops_par_loop(KerSetEmbeddedCircle, "KerSetEmbeddedCircle",
                  g_Block[blockIndex], SPACEDIM, bulkRng,
                  ops_arg_gbl(&diameter, 1, "double", OPS_READ),
                  ops_arg_gbl(circlePosition, SPACEDIM, "Real", OPS_READ),
@@ -1381,7 +1384,7 @@ void SolidPointsInsideEllipse(int blockIndex, Real semiMajorAxes,
     int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
     Real* centerPosition = &centerPos[0];
     ops_par_loop(
-        KerSetEmbeddedEllipse, "KerSetEmbededCircle", g_Block[blockIndex],
+        KerSetEmbeddedEllipse, "KerSetEmbeddedCircle", g_Block[blockIndex],
         SPACEDIM, bulkRng, ops_arg_gbl(&semiMajorAxes, 1, "double", OPS_READ),
         ops_arg_gbl(&semiMinorAxes, 1, "double", OPS_READ),
         ops_arg_gbl(centerPosition, SPACEDIM, "Real", OPS_READ),
@@ -1393,7 +1396,7 @@ void SolidPointsInsideEllipse(int blockIndex, Real semiMajorAxes,
 }
 
 // Wrapper function for embedded body.
-void HandleImmersedSoild() {
+void HandleImmersedSolid() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
         // wipe off some solid points that cannot be consideres
@@ -1415,7 +1418,7 @@ void HandleImmersedSoild() {
 
         // set the correct  geometry property e.g., corner types
         // i.e., mark out the surface points
-        ops_par_loop(KerSetEmbededBodyGeometry, "KerSetEmbededBodyGeometry",
+        ops_par_loop(KerSetEmbeddedBodyGeometry, "KerSetEmbeddedBodyGeometry",
                      g_Block[blockIndex], SPACEDIM, bulkRng,
                      ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                                  ONEPTLATTICESTENCIL, "int", OPS_RW),
@@ -1425,7 +1428,7 @@ void HandleImmersedSoild() {
         // set the boundary type
         // int nodeType{ surface };
         int nodeType{Vertex_EQMDiffuseRefl};
-        ops_par_loop(KerSetEmbededBodyBoundary, "KerSetEmbededBodyBoundary",
+        ops_par_loop(KerSetEmbeddedBodyBoundary, "KerSetEmbeddedBodyBoundary",
                      g_Block[blockIndex], SPACEDIM, bulkRng,
                      ops_arg_gbl(&nodeType, 1, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,

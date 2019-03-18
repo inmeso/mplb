@@ -89,7 +89,7 @@ void KerCutCellZeroFlux(const int* nodeType, const int* geometryProperty,
  */
 void KerEquibriumVelocity(const Real* givenMacroVars, Real* f);
 // CutCell immersed solid boundary condition
-void KerCutCellEmbededBoundary(const int* nodeType, const int* geometryProperty,
+void KerCutCellEmbeddedBoundary(const int* nodeType, const int* geometryProperty,
                                Real* f);
 /*!
  * Non-equilibrium Extraploation boundary condition by Guo et al.
