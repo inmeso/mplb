@@ -1,7 +1,3 @@
-define DEBUG
-endef
-DEBUG = DEBUG
-
 OPS_INSTALL_PATH := $(OPS_INSTALL_PATH)/c
 OPS_INC   = -I$(OPS_INSTALL_PATH)/include
 OPS_LIB   = -L$(OPS_INSTALL_PATH)/lib
