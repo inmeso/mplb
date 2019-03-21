@@ -487,6 +487,7 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
         }
     }
     acceleration[0] = 0.0001;
+    //acceleration[0] = 0.0;
 
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
         VertexTypes vt =
@@ -514,7 +515,7 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                         }
                         rho = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
                         if (isnan(rho) || rho <= 0 || isinf(rho)) {
-                            ops_printf("%sDensity=%f\n",
+                            ops_printf("\n %sDensity=%f",
                                        "Density becomes invalid! Maybe "
                                        "something wrong...",
                                        rho);

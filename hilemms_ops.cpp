@@ -818,6 +818,7 @@ void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod) {
         }
 #endif  // end of OPS_2D
     }
+    
     DestroyModel();
     DestroyFlowfield();
 }

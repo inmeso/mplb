@@ -63,12 +63,13 @@ void simulate() {
 
     BoundaryType boundType[6] = {
         BoundaryType_Periodic,       BoundaryType_Periodic,
-        BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl,
-        BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl};
+        BoundaryType_Periodic,       BoundaryType_Periodic,    
+        BoundaryType_Periodic,       BoundaryType_Periodic};
 
     BoundarySurface surface[6] = {BoundarySurface_Left,  BoundarySurface_Right,
                                   BoundarySurface_Top,   BoundarySurface_Bottom,
                                   BoundarySurface_Front, BoundarySurface_Back};
+
     std::vector<Real> inletValMacroVarsComp{1, 0, 0, 0};
     DefineBlockBoundary(blockIndex, componentId, surface[0], boundType[0],
                         MacroVarsComp, inletValMacroVarsComp);
@@ -95,8 +96,8 @@ void simulate() {
 
     ops_printf("Block boundary defined!\n");
     int blockNum{1};
-    std::vector<int> blockSize{3, 21, 21};
-    Real meshSize{1. / 20};
+    std::vector<int> blockSize{64, 64, 64};
+    Real meshSize{1. / 63};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
     DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
 
@@ -153,18 +154,18 @@ void simulate() {
 
     // currently this information is not playing major role in this
     // implementation.
-    // SchemeType scheme{stStreamCollision};
-    // const int steps{10000};
-    // const int checkPeriod{1000};
-    // Iterate(scheme, steps, checkPeriod);
+    SchemeType scheme{stStreamCollision};
+    const int steps{10000};
+    const int checkPeriod{500};
+    Iterate(scheme, steps, checkPeriod);
 
     // currently this information is not playing major role in this
     // implementation.
 
-    SchemeType scheme{stStreamCollision};
-    const Real convergenceCriteria{1E-5};
-    const int checkPeriod{1000};
-    Iterate(scheme, convergenceCriteria, checkPeriod);
+    // SchemeType scheme{stStreamCollision};
+    // const Real convergenceCriteria{1E-5};
+    // const int checkPeriod{1000};
+    // Iterate(scheme, convergenceCriteria, checkPeriod);
 }
 
 int main(int argc, char** argv) {

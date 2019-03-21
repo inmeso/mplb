@@ -43,8 +43,21 @@ void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
 
     for (int m = VARIABLECOMPPOS[2 * compoIndex], i = 0;
          m <= VARIABLECOMPPOS[2 * compoIndex + 1]; m++, i++) {
-        macroVars[OPS_ACC_MD2(m, 0, 0, 0)] =
-            macroVarsInitVal[OPS_ACC_MD3(i, 0, 0, 0)];
+        //macroVars[OPS_ACC_MD2(m, 0, 0, 0)] =
+        //    macroVarsInitVal[OPS_ACC_MD3(i, 0, 0, 0)];
+        Real U0{0.01};
+        Real X;
+        Real Y;
+        Real Z;
+
+        X = coordinates[OPS_ACC_MD0(0, 0, 0, 0)];
+        Y = coordinates[OPS_ACC_MD0(1, 0, 0, 0)];
+        Z = coordinates[OPS_ACC_MD0(2, 0, 0, 0)];
+
+        macroVars[OPS_ACC_MD2(0, 0, 0, 0)] = 1.0;
+        macroVars[OPS_ACC_MD2(1, 0, 0, 0)] = U0     * cos(2 * PI * X) * sin(2 * PI * Y) * sin(2 * PI * Z);
+        macroVars[OPS_ACC_MD2(2, 0, 0, 0)] =-U0 / 2 * sin(2 * PI * X) * cos(2 * PI * Y) * sin(2 * PI * Z);
+        macroVars[OPS_ACC_MD2(3, 0, 0, 0)] =-U0 / 2 * sin(2 * PI * X) * sin(2 * PI * Y) * cos(2 * PI * Z);
     }
 #endif
 }

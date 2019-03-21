@@ -8,7 +8,7 @@
     usage: from PostProcess import ReadOPSDataHDF5
            from PostProcess import WriteMacroVarsPlainHDF5
     Specific examples can be found in provide source codes
-    Dependency: numpy, h5py, matplotlib for 2D visualisation, and mayavi2 for 3D visualisation.
+    Dependency: numpy, h5py, matplotlib for 2D visualisation, and mayavi2 for 3D visualisation. 
 """
 
 import numpy as np
@@ -16,6 +16,7 @@ import h5py as h5
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import math
+from mayavi import mlab
 
 
 def ChangeShape(data, nx, ny, dataLength, haloNum):
@@ -221,7 +222,6 @@ def VectorPlot(res, varName, imgSize=1):
     plt.show()
 
 def VectorPlot3D(res, varName):
-    from mayavi import mlab
     x = res['MacroVars']['X'].transpose(1,0,2)
     y = res['MacroVars']['Y'].transpose(1,0,2)
     z = res['MacroVars']['Z'].transpose(1,0,2)
@@ -231,12 +231,11 @@ def VectorPlot3D(res, varName):
     mlab.quiver3d(x,y,z,varX,varY,varZ)
     mlab.show()
 
-def ContourPlot3D(res, varName, contours):
-    from mayavi import mlab
+def ContourPlot3D(res, varName,contours):
     x = res['MacroVars']['X']
     y = res['MacroVars']['Y']
     z = res['MacroVars']['Z']
-    var = res['MacroVars'][varName]
+    var = res['MacroVars'][varName]  
     mlab.contour3d(x,y,z,var, contours=contours, transparent=True)
     mlab.show()
 
