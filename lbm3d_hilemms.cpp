@@ -156,7 +156,7 @@ void simulate() {
     // implementation.
     SchemeType scheme{stStreamCollision};
     const int steps{10000};
-    const int checkPeriod{500};
+    const int checkPeriod{50};
     Iterate(scheme, steps, checkPeriod);
 
     // currently this information is not playing major role in this

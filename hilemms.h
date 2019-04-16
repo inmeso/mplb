@@ -41,9 +41,9 @@ void AddEmbeddedBody(int vertexNum, Real* vertexCoords);
 // vertexCoords: Coordinates of each vertex.
 
 void DefineBlockBoundary(int blockIndex, int componentID,
-                         BoundarySurface surface, BoundaryType type,
-                         std::vector<VariableTypes> MacorVarsComp,
-                         std::vector<Real> valuesMacroVarsComp);
+                         BoundarySurface boundarSurface, BoundaryType boundarType,
+                         const std::vector<VariableTypes>& macroVarTypes,
+                         const std::vector<Real>& macroValValues);
 // blockIndex: block Index
 // compoId: component ID whose BC we want to set.
 // surface: which surface to set.

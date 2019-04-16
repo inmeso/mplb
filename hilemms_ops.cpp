@@ -18,8 +18,8 @@ int NUMVERTICES{0};
 struct BlockBoundary {
     int blockIndex;
     int componentID;
-    Real* givenVars;
-    BoundarySurface surface;
+    std::vector<Real> givenVars;
+    BoundarySurface boundarySurface;
     VertexTypes boundaryType;
 };
 
@@ -764,7 +764,7 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
         const int compoId{blockBoundaryConditions[bcIdx].componentID};
         const int blockIndex{blockBoundaryConditions[bcIdx].blockIndex};
         int* bcRange = RangeBoundCond(blockBoundaryConditions[bcIdx].blockIndex,
-                                      blockBoundaryConditions[bcIdx].surface);
+                                      blockBoundaryConditions[bcIdx].boundarySurface);
         const int vtType{(int)blockBoundaryConditions[bcIdx].boundaryType};
         ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
                      SPACEDIM, bcRange,
@@ -908,44 +908,92 @@ void AddEmbeddedBody(int vertexNum, Real* vertexCoords) {
 }
 
 void DefineBlockBoundary(int blockIndex, int componentID,
-                         BoundarySurface surface, BoundaryType type,
-                         std::vector<VariableTypes> macroVarsComp,
-                         std::vector<Real> valuesMacroVarsComp) {
+                         BoundarySurface boundarySurface,
+                         BoundaryType boundaryType,
+                         const std::vector<VariableTypes>& macroVarTypes,
+                         const std::vector<Real>& macroVarValues) {
     // Type conversion from BoundaryType to VertexType.
     VertexTypes vtType;
-    vtType = BoundTypeToVertexType(type);
+    vtType = BoundTypeToVertexType(boundaryType);
 
-    // A component can only define BC for the macrovars which were used in
-    // the DefineMacroVars. The number of BC can be less than or equal to the
-    // number of macrovars for the component defined in DefineMacroVars.
-    int numBcComponent;
-    numBcComponent = VARIABLECOMPPOS[2 * componentID + 1] -
-                     VARIABLECOMPPOS[2 * componentID] + 1;
+    // Here we adopt the assumtion that a boundary is defined by [\rho,u,v,w,T]
+    // in 3D or  [\rho,u,v,T] in 2D. For a kernel function for dealing with
+    // a boundary condition, these parameters shall be passed in a fixed order
+    // as shown.
+    const int numMacroVarTypes{(int)macroVarTypes.size()};
+    const int numMacroVarValues{(int)macroVarValues.size()};
 
-    // Array which will store all maco vars according to predefined order
-    // and pass it to treat domain boundary. This way will involve less
-    // change in the MPLB code.
-    Real* macroVarsBoundCond{nullptr};
+    std::vector<Real> macroVarsAtBoundary;
+    if (2 == SPACEDIM) {
+        macroVarsAtBoundary.reserve(4);
+    }
+    if (3 == SPACEDIM) {
+        macroVarsAtBoundary.reserve(5);
+    }
 
-    const int numMacroVarsComp{(int)macroVarsComp.size()};
-    const int numValuesMacroVarsComp{(int)valuesMacroVarsComp.size()};
-
-    if (numMacroVarsComp == numValuesMacroVarsComp) {
-        macroVarsBoundCond = new Real[numBcComponent];
-
-        for (int i = 0; i < numValuesMacroVarsComp; i++) {
-            macroVarsBoundCond[(int)macroVarsComp[i]] = valuesMacroVarsComp[i];
+    if (numMacroVarTypes == numMacroVarValues) {
+        for (int i = 0; i < numMacroVarValues; i++) {
+            int varPos{0};
+            switch (macroVarTypes[i]) {
+                case Variable_Rho:
+                    varPos = 0;
+                    break;
+                case Variable_U:
+                    varPos = 1;
+                    break;
+                case Variable_V:
+                    varPos = 2;
+                    break;
+                case Variable_W:
+                    if (3 == SPACEDIM) {
+                        varPos = 3;
+                    } else {
+                        varPos = -1;
+                        ops_printf(
+                            "The velocity component w is defined/used for %iD "
+                            "problem.\n",
+                            SPACEDIM);
+                    }
+                    break;
+                case Variable_U_Force:
+                    varPos = 1;
+                    break;
+                case Variable_V_Force:
+                    varPos = 2;
+                    break;
+                case Variable_W_Force:
+                    if (3 == SPACEDIM) {
+                        varPos = 3;
+                    } else {
+                        varPos = -1;
+                        ops_printf(
+                            "The velocity component w is defined/used for %iD "
+                            "problem.\n",
+                            SPACEDIM);
+                    }
+                    break;
+                case Variable_T:
+                    if (3 == SPACEDIM) {
+                        varPos = 4;
+                    } else {
+                        varPos = 2;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            macroVarsAtBoundary[varPos] = macroVarValues[i];
         }
-        BlockBoundary domainBoundCondition;
-        domainBoundCondition.blockIndex = blockIndex;
-        domainBoundCondition.componentID = componentID;
-        domainBoundCondition.givenVars = macroVarsBoundCond;
-        domainBoundCondition.surface = surface;
-        domainBoundCondition.boundaryType = vtType;
-        blockBoundaryConditions.push_back(domainBoundCondition);
+        BlockBoundary domainBoundaryCondition;
+        domainBoundaryCondition.blockIndex = blockIndex;
+        domainBoundaryCondition.componentID = componentID;
+        domainBoundaryCondition.givenVars = macroVarsAtBoundary;
+        domainBoundaryCondition.boundarySurface = boundarySurface;
+        domainBoundaryCondition.boundaryType = vtType;
+        blockBoundaryConditions.push_back(domainBoundaryCondition);
     } else {
         ops_printf("\n Expected %i values for BC but received only %i ",
-                   numMacroVarsComp, numValuesMacroVarsComp);
+                   numMacroVarTypes, numMacroVarValues);
     }
 }
 
@@ -956,12 +1004,12 @@ void ImplementBoundaryConditions() {
         for (int i = 0; i < totalNumBoundCond; i++) {
             int* rangeBoundaryCondition;
             rangeBoundaryCondition = RangeBoundCond(
-                blockBoundaryConditions[i].blockIndex, blockBoundaryConditions[i].surface);
+                blockBoundaryConditions[i].blockIndex, blockBoundaryConditions[i].boundarySurface);
 #ifdef OPS_2D
 
             TreatDomainBoundary(blockBoundaryConditions[i].blockIndex,
                                 blockBoundaryConditions[i].componentID,
-                                blockBoundaryConditions[i].givenVars,
+                                blockBoundaryConditions[i].givenVars.data(),
                                 rangeBoundaryCondition,
                                 blockBoundaryConditions[i].boundaryType);
 #endif  // End of OPS_2D
@@ -969,7 +1017,7 @@ void ImplementBoundaryConditions() {
 #ifdef OPS_3D
             TreatBlockBoundary3D(blockBoundaryConditions[i].blockIndex,
                                  blockBoundaryConditions[i].componentID,
-                                 blockBoundaryConditions[i].givenVars,
+                                 blockBoundaryConditions[i].givenVars.data(),
                                  rangeBoundaryCondition,
                                  blockBoundaryConditions[i].boundaryType);
 #endif  // End of OPS_3D
