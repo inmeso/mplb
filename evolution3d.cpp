@@ -240,13 +240,13 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
             ops_par_loop(
                 KerCutCellEQMDiffuseRefl3D, "KerCutCellEQMDiffuseRefl3D",
                 g_Block[blockIdx], SPACEDIM, range,
-                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
+                ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double",
+                            OPS_RW),
                 ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS, LOCALSTENCIL,
                             "int", OPS_READ),
                 ops_arg_dat(g_GeometryProperty[blockIdx], 1, LOCALSTENCIL,
                             "int", OPS_READ),
-                ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double",
-                            OPS_RW),
+                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
                 ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
         case Vertex_NoslipEQN: {
@@ -278,12 +278,12 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
         case Vertex_Periodic: {
             ops_par_loop(KerCutCellPeriodic3D, "KerCutCellPeriodic3D",
                          g_Block[blockIdx], SPACEDIM, range,
+                         ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL,
+                                     "double", OPS_RW),
                          ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS,
                                      LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_GeometryProperty[blockIdx], 1,
                                      LOCALSTENCIL, "int", OPS_READ),
-                         ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL,
-                                     "double", OPS_RW),
                          ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
         default:

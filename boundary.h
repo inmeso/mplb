@@ -119,8 +119,9 @@ void KerCutCellExtrapolPressure1ST3D(const Real* givenBoundaryVars,
  * @param geometryProperty e.g., corner types
  * @param f distribution function
  */
-void KerCutCellEQMDiffuseRefl3D(const Real* givenMacroVars, const int* nodeType,
-                                const int* geometryProperty, Real* f,
+void KerCutCellEQMDiffuseRefl3D(Real* f, const int* nodeType,
+                                const int* geometryProperty,
+                                const Real* givenMacroVars,
                                 const int* componentId);
 
 /*!
@@ -132,8 +133,8 @@ void KerCutCellEQMDiffuseRefl3D(const Real* givenMacroVars, const int* nodeType,
 void KerCutCellNoslipEQN3D(const Real* givenMacroVars, const int* nodeType,
                            Real* f, const int* componentId);
 
-void KerCutCellPeriodic3D(const int* nodeType, const int* geometryProperty,
-                          Real* f, const int* componentId);
+void KerCutCellPeriodic3D(Real* f, const int* nodeType,
+                          const int* geometryProperty, const int* componentId);
 #endif /* OPS_3D*/
 /*!
  * For updating halo points, f must have wind direction

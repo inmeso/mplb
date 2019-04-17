@@ -2482,8 +2482,9 @@ void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
     }
 }
 
-void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
-                                const int *geometryProperty, Real *f,
+void KerCutCellEQMDiffuseRefl3D(Real *f, const int *nodeType,
+                                const int *geometryProperty,
+                                const Real *givenMacroVars,
                                 const int *componentId) {
     // This kernel is suitable for any single-speed lattice
     // but only for the second-order expansion at this moment
@@ -2524,7 +2525,7 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
             switch (bdt) {
                 case BndryDv_Incoming: {
                     incoming[numIncoming] = xiIdx;
-                    rhoIncoming += f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
+                    rhoIncoming += f[OPS_ACC_MD0(xiIdx, 0, 0, 0)];
                     numIncoming++;
                 } break;
                 case BndryDv_Outgoing: {
@@ -2545,7 +2546,7 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
         }
         Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
         for (int idx = 0; idx < numParallel; idx++) {
-            f[OPS_ACC_MD3(parallel[idx], 0, 0, 0)] = CalcBGKFeq(
+            f[OPS_ACC_MD0(parallel[idx], 0, 0, 0)] = CalcBGKFeq(
                 parallel[idx], rhoWall, u, v, w, 1, equilibriumOrder);
         }
         for (int idx = 0; idx < numOutgoing; idx++) {
@@ -2553,8 +2554,8 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
             Real cx{CS * XI[xiIdx * LATTDIM]};
             Real cy{CS * XI[xiIdx * LATTDIM + 1]};
             Real cz{CS * XI[xiIdx * LATTDIM + 2]};
-            f[OPS_ACC_MD3(xiIdx, 0, 0, 0)] =
-                f[OPS_ACC_MD3(OPP[xiIdx], 0, 0, 0)] +
+            f[OPS_ACC_MD0(xiIdx, 0, 0, 0)] =
+                f[OPS_ACC_MD0(OPP[xiIdx], 0, 0, 0)] +
                 2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
         }
         delete[] outgoing;
@@ -2613,457 +2614,457 @@ void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
     }
 }
 
-void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
-                          Real *f, const int *componentId) {
+void KerCutCellPeriodic3D(Real *f, const int *nodeType,
+                          const int *geometryProperty, const int *componentId) {
     const int compoId{*componentId};
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC_MD0(compoId, 0, 0, 0)];
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC_MD1(compoId, 0, 0, 0)];
     const int xiStartPos{COMPOINDEX[2 * compoId]};
     const int xiEndPos{COMPOINDEX[2 * compoId + 1]};
     if (vt == Vertex_Periodic) {
         VertexGeometryTypes vg =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0, 0)];
+            (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0, 0)];
         switch (vg) {
             case VG_IP:
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                 }
                 break;
             case VG_IM:
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                 }
                 break;
             case VG_JP:
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                 }
                 break;
             case VG_JM:
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                 }
                 break;
             case VG_KP:
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                 }
                 break;
             case VG_KM:
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                 }
                 break;
             // as we are dealing with domain boundary, there can be only inner
             // corner
-            case VG_IPJP_I: {                             // corner point
-                if (vt == nodeType[OPS_ACC0(0, 1, 0)]) {  // VG_IP
+            case VG_IPJP_I: {  // corner point
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {  // VG_IP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC0(1, 0, 0)]) {  // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)]) {  // VG_JP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
-                    }
-                }
-            } break;
-            case VG_IPJM_I: {                              // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_IP
-                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
-                         xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
-                    }
-                }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)]) {  // VG_JM
-                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
-                         xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
             } break;
-            case VG_IMJP_I: {                             // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_IM
+            case VG_IPJM_I: {  // inner corner point
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {  // VG_IP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)]) {  // VG_JM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
+                    }
+                }
+            } break;
+            case VG_IMJP_I: {  // inner corner point
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {  // VG_IM
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)]) {  // VG_JP
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
             } break;
             case VG_IMJM_I: {
                 // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {  // VG_IM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)]) {  // VG_JM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
             } break;
 
-            case VG_IPKP_I: {                             // corner point
-                if (vt == nodeType[OPS_ACC0(0, 0, 1)]) {  // VG_IP
+            case VG_IPKP_I: {  // corner point
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_IP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC0(1, 0, 0)]) {  // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)]) {  // VG_KP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
-                    }
-                }
-            } break;
-            case VG_IPKM_I: {                              // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
-                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
-                         xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
-                    }
-                }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)]) {  // VG_KM
-                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
-                         xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
-            case VG_IMKP_I: {                             // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
+            case VG_IPKM_I: {  // inner corner point
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_IP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)]) {  // VG_KM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
+                    }
+                }
+            } break;
+            case VG_IMKP_I: {  // inner corner point
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_IM
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)]) {  // VG_KP
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
             case VG_IMKM_I: {
                 // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_IM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)]) {  // VG_KM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
-                    }
-                }
-            } break;
-            case VG_JPKP_I: {                             // corner point
-                if (vt == nodeType[OPS_ACC0(0, 0, 1)]) {  // VG_JP
-                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
-                         xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
-                    }
-                }
-                if (vt == nodeType[OPS_ACC0(0, 1, 0)]) {  // VG_KP
-                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
-                         xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
-            case VG_JPKM_I: {                              // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
+            case VG_JPKP_I: {  // corner point
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_JP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
+                    }
+                }
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {  // VG_KP
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
+                    }
+                }
+            } break;
+            case VG_JPKM_I: {  // inner corner point
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_JP
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
 
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {  // VG_KM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
-            case VG_JMKP_I: {                             // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
+            case VG_JMKP_I: {  // inner corner point
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_JM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {  // VG_KP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
             case VG_JMKM_I: {
                 // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_JM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {  // VG_KM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
             case VG_IPJPKP_I: {
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_IP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_JP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {  // VG_KP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
             case VG_IPJPKM_I: {
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_IP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_JP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {  // VG_KM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
             case VG_IPJMKP_I: {
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_IP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_JM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {  // VG_KP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
             case VG_IPJMKM_I: {
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_IP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_JM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {  // VG_KM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
             case VG_IMJPKP_I: {
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_IM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_JP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {  // VG_KP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
             case VG_IMJPKM_I: {
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_IM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_JP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {  // VG_KM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
             case VG_IMJMKP_I: {
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_IM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {  // VG_JM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {  // VG_KP
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
 
             } break;
             case VG_IMJMKM_I: {
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_IM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {  // VG_JM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {  // VG_KM
                     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
                          xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
