@@ -8,16 +8,50 @@
     usage: from PostProcess import ReadOPSDataHDF5
            from PostProcess import WriteMacroVarsPlainHDF5
     Specific examples can be found in provide source codes
-    Dependency: numpy, h5py, matplotlib for 2D visualisation, and mayavi2 for 3D visualisation. 
+    Dependency: numpy, h5py, matplotlib for 2D visualisation, and mayavi2 for 3D visualisation.
 """
+# python 2 and python 3 compatibility for the print function
+from __future__ import print_function
 
-import numpy as np
-import h5py as h5
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import math
-from mayavi import mlab
+try:
+    import numpy as np
+    numpyLoaded = True
+except ImportError:
+    numpyLoaded = False
+if (not numpyLoaded):
+    print("The numpy module cannot be imported! Without it, all functions cannot work!")
 
+try:
+    import h5py as h5
+    h5Loaded = True
+except ImportError:
+    h5Loaded = False
+if (not h5Loaded):
+    print("The h5py module cannot be imported!  Without it, all functions cannot work!")
+
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    mplLoaded = True
+except ImportError:
+    mplLoaded = False
+if (not mplLoaded):
+    print("The matplotlib module cannot be imported! Please install it for two-dimensional visualisation!")
+
+try:
+    import math
+    mathLoaded = True
+except ImportError:
+    mathLoaded = False
+if (not mathLoaded):
+    print("The math module cannot be imported! Please install it for two-dimensional visualisation!")
+try:
+    from mayavi import mlab
+    mlabLoaded = True
+except ImportError:
+    mlabLoaded = False
+if (not mlabLoaded):
+    print("The mayavi module cannot be imported! Please install it for three-dimensional visualisation!")
 
 def ChangeShape(data, nx, ny, dataLength, haloNum):
     """Converting the storage order of multidim array in 2D space."""
@@ -33,6 +67,10 @@ def ChangeShape3D(data, nx, ny, nz, dataLength, haloNum):
 
 def ReadOPSDataHDF5(nx, ny, blockIndex, haloNum, spaceDim, macroVarNum, macroVarNames, xiNum, fileName):
     """Converting a 2D result file into a single dictionary enclosing two sub-dictionaries, MacroVars and Distributions. In particular, all vectors or tensors will be accessed through components. """
+    if ((not h5Loaded) or (not numpyLoaded)):
+        print("The h5py or numpy is not installed!")
+        res = "The h5py or numpy is not installed!"
+        return res
     strBlockIdx = str(blockIndex)
     dataFile = h5.File(fileName)
     blockKey = 'Block_' + strBlockIdx
@@ -94,6 +132,10 @@ def ReadOPSDataHDF5(nx, ny, blockIndex, haloNum, spaceDim, macroVarNum, macroVar
 
 def ReadOPSDataHDF53D(nx, ny, nz, blockIndex, haloNum, spaceDim, macroVarNum, macroVarNames, xiNum, fileName):
     """Converting a 3D result file into a single dictionary enclosing two sub-dictionaries, MacroVars and Distributions. In particular, all vectors or tensors will be accessed through components. """
+    if ((not h5Loaded) or (not numpyLoaded)):
+        print("The h5py or numpy is not installed!")
+        res = "The h5py or numpy is not installed!"
+        return res
     strBlockIdx = str(blockIndex)
     dataFile = h5.File(fileName)
     blockKey = 'Block_' + strBlockIdx
@@ -159,9 +201,11 @@ def ReadOPSDataHDF53D(nx, ny, nz, blockIndex, haloNum, spaceDim, macroVarNum, ma
     dataFile.close()
     return res
 
-
 def WriteMacroVarsPlainHDF5(res, fileName):
     """ Save the data into a plain HDF5 file"""
+    if ((not h5Loaded) or (not numpyLoaded)):
+        print("The h5py or numpy is not installed!")
+        return
     dataFile = h5.File(fileName, "w")
     for key in res['MacroVars'].keys():
         dataFile.create_dataset(key, data=res['MacroVars'][key])
@@ -170,6 +214,9 @@ def WriteMacroVarsPlainHDF5(res, fileName):
 
 def WriteMacroVarsTecplotHDF5(res, fileName):
     """ Save the data into a Tecplot HDF5 file"""
+    if ((not h5Loaded) or (not numpyLoaded)):
+        print("The h5py or numpy is not installed!")
+        return
     dataFile = h5.File(fileName, "w")
     spaceDim = len(res['MacroVars']['X'].shape)
     if (2 == spaceDim):
@@ -187,7 +234,10 @@ def WriteMacroVarsTecplotHDF5(res, fileName):
 
 def ContourPlot(res, varName, lineNum, imgSize=1):
     """Plot the Contour of a scalar.
-       Note: for better results,the minimal value is taken away from the data, and the data normalised by its maximal difference."""
+       Note: for better results, the minimal value is taken away from the data, and the data normalised by its maximal difference. """
+    if ((not mplLoaded) or (not numpyLoaded)):
+        print("The matplotlib or numpy is not installed!")
+        return
     x = res['MacroVars']['X']
     y = res['MacroVars']['Y']
     ratio = (np.max(x) - np.min(x)) / (np.max(y) - np.min(y))
@@ -205,6 +255,9 @@ def ContourPlot(res, varName, lineNum, imgSize=1):
 
 
 def VectorPlot(res, varName, imgSize=1):
+    if ((not mplLoaded) or (not numpyLoaded) or (not mathLoaded)):
+        print("The matplotlib, math or numpy is not installed!")
+        return
     x = res['MacroVars']['X']
     y = res['MacroVars']['Y']
     ratio = (np.max(x) - np.min(x)) / (np.max(y) - np.min(y))
@@ -222,6 +275,9 @@ def VectorPlot(res, varName, imgSize=1):
     plt.show()
 
 def VectorPlot3D(res, varName):
+    if ((not mlabLoaded)):
+        print("The mayavi is not installed!")
+        return
     x = res['MacroVars']['X'].transpose(1,0,2)
     y = res['MacroVars']['Y'].transpose(1,0,2)
     z = res['MacroVars']['Z'].transpose(1,0,2)
@@ -231,11 +287,14 @@ def VectorPlot3D(res, varName):
     mlab.quiver3d(x,y,z,varX,varY,varZ)
     mlab.show()
 
-def ContourPlot3D(res, varName,contours):
+def ContourPlot3D(res, varName, contours):
+    if ((not mlabLoaded)):
+        print("The mayavi is not installed!")
+        return
     x = res['MacroVars']['X']
     y = res['MacroVars']['Y']
     z = res['MacroVars']['Z']
-    var = res['MacroVars'][varName]  
+    var = res['MacroVars'][varName]
     mlab.contour3d(x,y,z,var, contours=contours, transparent=True)
     mlab.show()
 
