@@ -53,8 +53,6 @@ void simulate() {
     DefineBodyForce(bodyForceTypes, bodyForceCompoId);
 
     SetupScheme();
-    SetupBoundary();
-
     //Setting boundary conditions
     int blockIndex{0};
     int componentId{0};
@@ -63,7 +61,7 @@ void simulate() {
 
     BoundaryType boundType[6] = {
         BoundaryType_Periodic,       BoundaryType_Periodic,
-        BoundaryType_Periodic,       BoundaryType_Periodic,    
+        BoundaryType_Periodic,       BoundaryType_Periodic,
         BoundaryType_Periodic,       BoundaryType_Periodic};
 
     BoundarySurface surface[6] = {BoundarySurface_Left,  BoundarySurface_Right,

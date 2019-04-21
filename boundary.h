@@ -144,5 +144,4 @@ void KerCutCellPeriodic3D(Real* f, const int* nodeType,
 void KerUpdateHalo();
 const int BoundaryHaloNum();
 void SetBoundaryHaloNum(const int boundaryhaloNum);
-void SetupBoundary();
 #endif  // BOUNDARY_H

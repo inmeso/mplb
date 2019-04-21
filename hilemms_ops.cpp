@@ -717,7 +717,7 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
     SetBlockSize(blockSize);
     DefineVariables();
     ops_printf("Variable memory allocated!\n");
-    
+
     #ifdef OPS_3D
         DefineHaloTransfer3D();
     #endif //OPS_3D
@@ -818,7 +818,7 @@ void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod) {
         }
 #endif  // end of OPS_2D
     }
-    
+
     DestroyModel();
     DestroyFlowfield();
 }
@@ -915,6 +915,12 @@ void DefineBlockBoundary(int blockIndex, int componentID,
     // Type conversion from BoundaryType to VertexType.
     VertexTypes vtType;
     vtType = BoundTypeToVertexType(boundaryType);
+    // Set the number of halo point required by the boundary condition
+    // So far all boundary conditions are implemented in a way that requires no // halos so we leave it as the initial value 1
+    // The only difference is the periodic boundary condition which needs same  // halos as required by the numerical scheme, which is set by the scheme
+    // module
+    // If necessary, uncomment the sentence below and give a corret number
+    //SetBoundaryHaloNum(1);
 
     // Here we adopt the assumtion that a boundary is defined by [\rho,u,v,w,T]
     // in 3D or  [\rho,u,v,T] in 2D. For a kernel function for dealing with

@@ -14,12 +14,11 @@
  * Other physical boundary schemes usually don't need halo point.
  *
  */
-int boundaryHaloPt = 1;
+int boundaryHaloPt{1};
 const int BoundaryHaloNum() { return boundaryHaloPt; }
 void SetBoundaryHaloNum(const int boundaryHaloNum) {
     boundaryHaloPt = boundaryHaloNum;
 }
-void SetupBoundary() { boundaryHaloPt = 1; }
 BndryDvType FindBdyDvType(const VertexGeometryTypes vg,
                           const Real* discreteVelocity) {
     Real cx = discreteVelocity[0];
