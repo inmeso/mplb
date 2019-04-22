@@ -940,10 +940,10 @@ void DefineBlockBoundary(int blockIndex, int componentID,
 
     std::vector<Real> macroVarsAtBoundary;
     if (2 == SPACEDIM) {
-        macroVarsAtBoundary.reserve(4);
+        macroVarsAtBoundary.resize(4);
     }
     if (3 == SPACEDIM) {
-        macroVarsAtBoundary.reserve(5);
+        macroVarsAtBoundary.resize(5);
     }
 
     if (numMacroVarTypes == numMacroVarValues) {
