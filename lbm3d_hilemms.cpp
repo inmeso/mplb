@@ -24,7 +24,7 @@
 // Currently defining OPS 3d here. We need some mechanism to generate this
 // automatically.
 
-extern int HALODEPTH;
+//extern int HALODEPTH;
 
 void simulate() {
 
@@ -61,9 +61,9 @@ void simulate() {
                                              Variable_V, Variable_W};
 
     BoundaryType boundType[6] = {
-        BoundaryType_Periodic,       BoundaryType_Periodic,
-        BoundaryType_Periodic,       BoundaryType_Periodic,
-        BoundaryType_Periodic,       BoundaryType_Periodic};
+        BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl,
+        BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl,
+        BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl};
 
     BoundarySurface surface[6] = {BoundarySurface_Left,  BoundarySurface_Right,
                                   BoundarySurface_Top,   BoundarySurface_Bottom,
@@ -95,8 +95,8 @@ void simulate() {
 
     ops_printf("Block boundary defined!\n");
     int blockNum{1};
-    std::vector<int> blockSize{64, 64, 64};
-    Real meshSize{1. / 63};
+    std::vector<int> blockSize{33, 33, 33};
+    Real meshSize{1. / 32};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
     DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
 
@@ -155,7 +155,7 @@ void simulate() {
     // implementation.
 
     const int steps{10000};
-    const int checkPeriod{50};
+    const int checkPeriod{1000};
     Iterate(steps, checkPeriod);
 
     // currently this information is not playing major role in this
