@@ -248,9 +248,9 @@ typedef enum {
 } StructuredBoundaryPosition;
 
 typedef enum {
-    stE1st2nd = 1,
-    stI1st2nd = -1,
-    stStreamCollision = 10,
+    Scheme_E1st2nd = 1,
+    Scheme_I1st2nd = -1,
+    Scheme_StreamCollision = 10,
 } SchemeType;
 
 inline bool EssentiallyEqual(const Real* a, const Real* b, const Real epsilon) {

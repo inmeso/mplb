@@ -52,7 +52,8 @@ void simulate() {
     std::vector<int> bodyForceCompoId{0};
     DefineBodyForce(bodyForceTypes, bodyForceCompoId);
 
-    SetupScheme();
+    SchemeType scheme{Scheme_StreamCollision};
+    DefineScheme(scheme);
     //Setting boundary conditions
     int blockIndex{0};
     int componentId{0};
@@ -152,10 +153,10 @@ void simulate() {
 
     // currently this information is not playing major role in this
     // implementation.
-    SchemeType scheme{stStreamCollision};
+
     const int steps{10000};
     const int checkPeriod{50};
-    Iterate(scheme, steps, checkPeriod);
+    Iterate(steps, checkPeriod);
 
     // currently this information is not playing major role in this
     // implementation.
@@ -163,7 +164,7 @@ void simulate() {
     // SchemeType scheme{stStreamCollision};
     // const Real convergenceCriteria{1E-5};
     // const int checkPeriod{1000};
-    // Iterate(scheme, convergenceCriteria, checkPeriod);
+    // Iterate(convergenceCriteria, checkPeriod);
 }
 
 int main(int argc, char** argv) {

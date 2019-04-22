@@ -27,12 +27,11 @@ void DefineForceTerm(std::vector<ForceType> types, std::vector<int> compoId);
 // compoID: which component to act on.
 */
 
-void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod);
+void Iterate(const int steps, const int checkPointPeriod);
 // scheme: which schemes to use for implementing such as finite difference
 // scheme. for steady state simulations.
 
-void Iterate(SchemeType scheme, const Real convergenceCriteria,
-             const int checkPointPeriod);
+void Iterate(const Real convergenceCriteria, const int checkPointPeriod);
 // Same as iterate but for transient simulations.
 
 void AddEmbeddedBody(int vertexNum, Real* vertexCoords);

@@ -474,7 +474,7 @@ void CalcResidualError3D() {
 //                                 OPS_RW));
 //    }
 //}
-
+ 
 void DispResidualError3D(const int iter, const Real checkPeriod) {
     ops_printf("##########Residual Error at %i time step##########\n", iter);
     for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {

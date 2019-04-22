@@ -63,8 +63,6 @@ int* RangeBoundCond(const int blockId, BoundarySurface surface) {
     return rangeBoundaryCond;
 }
 
-
-
 void SetBulkNodesType(int blockIndex, int compoId) {
     int nodeType = (int)Vertex_Fluid;
     int* iterRange = BlockIterRng(blockIndex, IterRngBulk());
@@ -791,76 +789,87 @@ Real GetMaximumResidualError(const Real checkPeriod) {
     return maxResError;
 }
 
-void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod) {
-    for (int iter = 0; iter < steps; iter++) {
+void Iterate(const int steps, const int checkPointPeriod) {
+    const SchemeType scheme = Scheme();
+    switch (scheme) {
+        case Scheme_StreamCollision: {
+            for (int iter = 0; iter < steps; iter++) {
 #ifdef OPS_3D
-        StreamCollision3D();  // Stream-Collision scheme
-        // TimeMarching();//Finite difference scheme + cutting cell
-        if ((iter % checkPointPeriod) == 0 && iter != 0) {
-            UpdateMacroVars3D();
-            CalcResidualError3D();
-            DispResidualError3D(iter, checkPointPeriod * TimeStep());
-            WriteFlowfieldToHdf5(iter);
-            WriteDistributionsToHdf5(iter);
-            WriteNodePropertyToHdf5(iter);
-        }
+                StreamCollision3D();  // Stream-Collision scheme
+                // TimeMarching();//Finite difference scheme + cutting cell
+                if ((iter % checkPointPeriod) == 0 && iter != 0) {
+                    UpdateMacroVars3D();
+                    CalcResidualError3D();
+                    DispResidualError3D(iter, checkPointPeriod * TimeStep());
+                    WriteFlowfieldToHdf5(iter);
+                    WriteDistributionsToHdf5(iter);
+                    WriteNodePropertyToHdf5(iter);
+                }
 #endif  // end of OPS_3D
 #ifdef OPS_2D
-        StreamCollision();  // Stream-Collision scheme
-        // TimeMarching();//Finite difference scheme + cutting cell
-        if ((iter % checkPointPeriod) == 0 && iter != 0) {
-            UpdateMacroVars();
-            CalcResidualError();
-            DispResidualError(iter, checkPointPeriod * TimeStep());
-            WriteFlowfieldToHdf5(iter);
-            WriteDistributionsToHdf5(iter);
-            WriteNodePropertyToHdf5(iter);
-        }
+                StreamCollision();  // Stream-Collision scheme
+                // TimeMarching();//Finite difference scheme + cutting cell
+                if ((iter % checkPointPeriod) == 0 && iter != 0) {
+                    UpdateMacroVars();
+                    CalcResidualError();
+                    DispResidualError(iter, checkPointPeriod * TimeStep());
+                    WriteFlowfieldToHdf5(iter);
+                    WriteDistributionsToHdf5(iter);
+                    WriteNodePropertyToHdf5(iter);
+                }
 #endif  // end of OPS_2D
+            }
+        } break;
+        default:
+            break;
     }
-
     DestroyModel();
     DestroyFlowfield();
 }
 
-void Iterate(SchemeType scheme, const Real convergenceCriteria,
-             const int checkPointPeriod) {
+void Iterate(const Real convergenceCriteria, const int checkPointPeriod) {
+    const SchemeType scheme = Scheme();
     int iter{0};
     Real residualError{1};
-    do {
+    switch (scheme) {
+        case Scheme_StreamCollision: {
+            do {
 #ifdef OPS_3D
-        StreamCollision3D();  // Stream-Collision scheme
-        // TimeMarching();//Finite difference scheme + cutting cell
-        if ((iter % checkPointPeriod) == 0 && iter != 0) {
-            UpdateMacroVars3D();
-            CalcResidualError3D();
-            residualError =
-                GetMaximumResidualError(checkPointPeriod * TimeStep());
-            DispResidualError3D(iter, checkPointPeriod * TimeStep());
-            WriteFlowfieldToHdf5(iter);
-            WriteDistributionsToHdf5(iter);
-            WriteNodePropertyToHdf5(iter);
-        }
+                StreamCollision3D();  // Stream-Collision scheme
+                // TimeMarching();//Finite difference scheme + cutting cell
+                if ((iter % checkPointPeriod) == 0 && iter != 0) {
+                    UpdateMacroVars3D();
+                    CalcResidualError3D();
+                    residualError =
+                        GetMaximumResidualError(checkPointPeriod * TimeStep());
+                    DispResidualError3D(iter, checkPointPeriod * TimeStep());
+                    WriteFlowfieldToHdf5(iter);
+                    WriteDistributionsToHdf5(iter);
+                    WriteNodePropertyToHdf5(iter);
+                }
 #endif  // end of OPS_3D
 
 #ifdef OPS_2D
-        StreamCollision();  // Stream-Collision scheme
-
-        // TimeMarching();//Finite difference scheme + cutting cell
-        if ((iter % checkPointPeriod) == 0 && iter != 0) {
-            UpdateMacroVars();
-            CalcResidualError();
-            residualError = GetMaximumResidualError(checkPointPeriod * TimeStep());
-            DispResidualError(iter, checkPointPeriod * TimeStep());
-            WriteFlowfieldToHdf5(iter);
-            WriteDistributionsToHdf5(iter);
-            WriteNodePropertyToHdf5(iter);
-        }
+                StreamCollision();  // Stream-Collision scheme
+                // TimeMarching();//Finite difference scheme + cutting cell
+                if ((iter % checkPointPeriod) == 0 && iter != 0) {
+                    UpdateMacroVars();
+                    CalcResidualError();
+                    residualError =
+                        GetMaximumResidualError(checkPointPeriod * TimeStep());
+                    DispResidualError(iter, checkPointPeriod * TimeStep());
+                    WriteFlowfieldToHdf5(iter);
+                    WriteDistributionsToHdf5(iter);
+                    WriteNodePropertyToHdf5(iter);
+                }
 
 #endif  // end of OPS_2D
-        iter = iter + 1;
-    } while (residualError >= convergenceCriteria);
-
+                iter = iter + 1;
+            } while (residualError >= convergenceCriteria);
+        } break;
+        default:
+            break;
+    }
     DestroyModel();
     DestroyFlowfield();
 }

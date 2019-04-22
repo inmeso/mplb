@@ -215,10 +215,11 @@ void KerSetMacroVarToConst(const Real* value, Real* macroVar);
  */
 void KerGetPointMacroVarValue(const Real* macroVars, Real* pointValue);
 
-void SetupScheme();
+void DefineScheme(const SchemeType scheme);
 /*!
  * Periodic boundary condition may need to adjust the HALODEPTH value
  */
 const int SchemeHaloNum();
 void SetSchemeHaloNum(const int schemeHaloNum);
+const SchemeType Scheme();
 #endif

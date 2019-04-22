@@ -24,7 +24,8 @@ ops_stencil TWOPTREGULARSTENCIL;
  * need one. We will use the larger one here.
  */
 int schemeHaloPt = 1;
-
+SchemeType schemeType{Scheme_StreamCollision};
+const SchemeType Scheme() { return schemeType; }
 void SetupCommonStencils() {
 #ifdef OPS_2D
     int currentNode[] = {0, 0};
@@ -63,9 +64,17 @@ void SetupCommonStencils() {
     ONEPTLATTICESTENCIL = ops_decl_stencil(3, 28, d3q27, "D3Q27");
 #endif /* OPS_3D */
 }
-void SetupScheme() {
-    schemeHaloPt = 1;  // a stream-collision scheme needs no halo point
+
+void DefineScheme(const SchemeType scheme) {
+    schemeType = scheme;
     SetupCommonStencils();
+    switch (schemeType) {
+        case Scheme_StreamCollision: {
+            SetSchemeHaloNum(1);
+        } break;
+        default:
+            break;
+    }
 }
 const int SchemeHaloNum() { return schemeHaloPt; }
 void SetSchemeHaloNum(const int schemeHaloNum) { schemeHaloPt = schemeHaloNum; }
