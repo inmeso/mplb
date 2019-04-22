@@ -856,32 +856,32 @@ void SetHaloRelationNum(const int haloRelationNum) {
 }
 
 void DestroyFlowfield() {
-    delete[] g_f;
-    delete[] g_fStage;
-    delete[] g_feq;
-    delete[] g_Bodyforce;
-    delete[] g_Block;
-    delete[] g_MacroVars;
-    delete[] g_Tau;
-    delete[] TAUREF;
-    delete[] g_CoordinateXYZ;
-    if (HaloRelationNum > 0) delete[] HaloRelations;
-    delete[] g_NodeType;
-    delete[] g_GeometryProperty;
-    delete[] BlockIterRngWhole;
-    delete[] BlockIterRngBulk;
-    delete[] BlockIterRngImax;
-    delete[] BlockIterRngImin;
-    delete[] BlockIterRngJmax;
-    delete[] BlockIterRngJmin;
-    delete[] BLOCKSIZE;
+    FreeArrayMemory(g_f);
+    FreeArrayMemory(g_fStage);
+    FreeArrayMemory(g_feq);
+    FreeArrayMemory(g_Bodyforce);
+    FreeArrayMemory(g_Block);
+    FreeArrayMemory(g_MacroVars);
+    FreeArrayMemory(g_Tau);
+    FreeArrayMemory(TAUREF);
+    FreeArrayMemory(g_CoordinateXYZ);
+    if (HaloRelationNum > 0) FreeArrayMemory(HaloRelations);
+    FreeArrayMemory(g_NodeType);
+    FreeArrayMemory(g_GeometryProperty);
+    FreeArrayMemory(BlockIterRngWhole);
+    FreeArrayMemory(BlockIterRngBulk);
+    FreeArrayMemory(BlockIterRngImax);
+    FreeArrayMemory(BlockIterRngImin);
+    FreeArrayMemory(BlockIterRngJmax);
+    FreeArrayMemory(BlockIterRngJmin);
+    FreeArrayMemory(BLOCKSIZE);
     // if steady flow
-    delete[] g_MacroVarsCopy;
-    delete[] g_ResidualErrorHandle;
-    delete[] g_ResidualError;
+    FreeArrayMemory(g_MacroVarsCopy);
+    FreeArrayMemory(g_ResidualErrorHandle);
+    FreeArrayMemory(g_ResidualError);
     if (3 == SPACEDIM) {
-        delete[] BlockIterRngKmax;
-        delete[] BlockIterRngKmin;
+        FreeArrayMemory(BlockIterRngKmax);
+        FreeArrayMemory(BlockIterRngKmin);
     }
     // end if steady flow
     // delete[] halos;
