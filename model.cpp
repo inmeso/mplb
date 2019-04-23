@@ -68,7 +68,7 @@ void FindReverseXi(const int startPos, const int latticeSize) {
     }
 }
 
-void SetupD2Q9Latt(const int startPos) { 
+void SetupD2Q9Latt(const int startPos) {
     const int nc9{9};
     Real t00 = 4.0 / 9.0, t01 = 1.0 / 9.0, t11 = 1.0 / 36.0;
     Real t[nc9] = {t00, t01, t01, t01, t01, t11, t11, t11, t11};
@@ -261,8 +261,8 @@ void DefineComponents(std::vector<std::string> compoNames,
         if (latticeSet.find(lattNames[idx]) != latticeSet.end()) {
             lattice currentLattice{latticeSet[lattNames[idx]]};
             totalSize += currentLattice.length;
-            COMPOINDEX[posCompo] = 0;
-            COMPOINDEX[posCompo + 1] = currentLattice.length - 1;
+            COMPOINDEX[posCompo] = totalSize;
+            COMPOINDEX[posCompo + 1] = totalSize + currentLattice.length - 1;
             posCompo += 2;
             isLattDimSame =
                 isLattDimSame && (latticeDimension == currentLattice.lattDim);
