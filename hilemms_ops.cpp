@@ -1061,8 +1061,8 @@ void ImplementBoundaryConditions() {
 
 void DefineInitialCondition(const int blockIndex, const int componentId,
                       std::vector<Real> initialMacroValues) {
-    int numMacroVarsComp;  // Number of macroscopic variables for a given
-                           // component.
+    // Number of macroscopic variables for a given component.
+    int numMacroVarsComp;
     numMacroVarsComp = VARIABLECOMPPOS[2 * componentId + 1] -
                        VARIABLECOMPPOS[2 * componentId] + 1;
 

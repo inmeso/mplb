@@ -21,28 +21,20 @@
 // startPos: Starting position of each block.
 void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
                          const Real meshSize, const std::vector<Real> startPos);
-/*
-void DefineForceTerm(std::vector<ForceType> types, std::vector<int> compoId);
-// types: which kind of force function to use.
-// compoID: which component to act on.
-*/
 
+// Iterator for transient simulations.
 void Iterate(const int steps, const int checkPointPeriod);
-// scheme: which schemes to use for implementing such as finite difference
-// scheme. for steady state simulations.
 
+// Iterator for steady simulations.
 void Iterate(const Real convergenceCriteria, const int checkPointPeriod);
-// Same as iterate but for transient simulations.
 
-void AddEmbeddedBody(int vertexNum, Real* vertexCoords);
+
 // Add 2D polygon.
 // vertexNum: total number of vertexes.
 // vertexCoords: Coordinates of each vertex.
+void AddEmbeddedBody(int vertexNum, Real* vertexCoords);
 
-void DefineBlockBoundary(int blockIndex, int componentID,
-                         BoundarySurface boundarSurface, BoundaryType boundarType,
-                         const std::vector<VariableTypes>& macroVarTypes,
-                         const std::vector<Real>& macroValValues);
+
 // blockIndex: block Index
 // compoId: component ID whose BC we want to set.
 // surface: which surface to set.
@@ -50,13 +42,19 @@ void DefineBlockBoundary(int blockIndex, int componentID,
 // MacroVarsComp: which all macrovars are to be used in specifying the BC.
 // valueMacroVarsComp: specified value for the boundary condition for the macro
 // vars which are defined using MacroVarsComp.
+void DefineBlockBoundary(int blockIndex, int componentID,
+                         BoundarySurface boundarSurface, BoundaryType boundarType,
+                         const std::vector<VariableTypes>& macroVarTypes,
+                         const std::vector<Real>& macroValValues);
 
-void CalBlockCoordinates(const int blockIndex, Real* blockStartPos,
-                         Real meshsize);
+
 // blockIndex: Block Index
 // blockStartPos: Starting position of the block in x, y, z directions to find
 // coordinates. meshSize: Size of mesh (Assuming a constant in all 3 directions
 // for stream collision scheme).
+void CalBlockCoordinates(const int blockIndex, Real* blockStartPos,
+                         Real meshsize);
+
 
 void KerSetCoordinates(const Real* coordX, const Real* coordY, const int* idx,
                        Real* coordinates);
@@ -77,12 +75,17 @@ void AssignCoordinates(int blockIndex, Real** coordinates);
 // This function was defined in setup_comput_domain and has been declared here
 // as we are not using the preprocessor code separately.
 
-void DefineInitialCondition(int blockIndex, int componentId,
-                      std::vector<Real> initialMacroValues);
 // blockIndex: Block Id.
 // componentId: Id of the component.
 // initialMacroValues: Initial values of the macroscopic variables for a given
 // component in a particular block.
+void DefineInitialCondition(int blockIndex, int componentId,
+                      std::vector<Real> initialMacroValues);
+
+//User-defined function for initialising macroscopic variables
+void InitialiseMacroVars(Real* nodeMacroVars, const Real* coordinates);
+//Defining the initial conditions by using user-defined functions
+void DefineInitialCondition();
 
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType);
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType,
@@ -93,14 +96,16 @@ void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
                       int Num_Bound_Halo_Points);
 // Functions to check for inclusion.
 
-void ImplementBoundaryConditions();
 // A wrapper Function which implements all the boundary conditions.
+void ImplementBoundaryConditions();
 
-void EmbeddedBody(SolidBodyType type, int blockIndex,
-                  std::vector<Real> centerPos, std::vector<Real> controlParas);
+
 // type: Circle/Sphere, Ellipse/Ellipsoid, superquadrics, ...
 // centerPos: the position vector of the center point.
 // controlParas: control parameters, e.g. radius for Circle/Sphere, ...
+void EmbeddedBody(SolidBodyType type, int blockIndex,
+                  std::vector<Real> centerPos, std::vector<Real> controlParas);
+
 
 /**********************************************************/
 /* Functions for embedded body.                           */
