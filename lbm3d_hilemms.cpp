@@ -92,8 +92,6 @@ void simulate() {
     std::vector<Real> backValMacroVarsComp{1, 0, 0, 0};
     DefineBlockBoundary(blockIndex, componentId, surface[5], boundType[5],
                         MacroVarsComp, backValMacroVarsComp);
-
-    ops_printf("Block boundary defined!\n");
     int blockNum{1};
     std::vector<int> blockSize{33, 33, 33};
     Real meshSize{1. / 32};

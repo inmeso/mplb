@@ -379,7 +379,7 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
 #ifdef CPU
                         if (isnan(res) || res <= 0 || isinf(res)) {
                             ops_printf(
-                                "Error! equilibrium function %f becomes "
+                                "Error! Equilibrium function %f becomes "
                                 "invalid for the component %i at the lattice "
                                 "%i\n",
                                 res, compoIndex, xiIndex);
@@ -403,7 +403,7 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
 #ifdef CPU
                         if (isnan(res) || res <= 0 || isinf(res)) {
                             ops_printf(
-                                "Error! equilibrium function %f becomes "
+                                "Error! Equilibrium function %f becomes "
                                 "invalid for the component %i at  the lattice "
                                 "%i\n",
                                 res, compoIndex, xiIndex);
@@ -446,12 +446,36 @@ void KerCalcBodyForce3D(const Real* time, const int* nodeType,
                          xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
                         bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)] =
                             CalcBodyForce(xiIndex, rho, g);
+#ifdef CPU
+                        const Real res{
+                            bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)]};
+                        if (isnan(res) || isinf(res)) {
+                            ops_printf(
+                                "Error! Body force  %f becomes "
+                                "invalid for the component %i at  the lattice "
+                                "%i\n",
+                                res, compoIndex, xiIndex);
+                            assert(!(isnan(res) || res <= 0 || isinf(res)));
+                        }
+#endif
                     }
                 } break;
-                case BodyForce_None : {
+                case BodyForce_None: {
                     for (int xiIndex = COMPOINDEX[2 * compoIndex];
                          xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
                         bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)] = 0;
+#ifdef CPU
+                        const Real res{
+                            bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)]};
+                        if (isnan(res) || isinf(res)) {
+                            ops_printf(
+                                "Error! Body force %f becomes "
+                                "invalid for the component %i at  the lattice "
+                                "%i\n",
+                                res, compoIndex, xiIndex);
+                            assert(!(isnan(res) || res <= 0 || isinf(res)));
+                        }
+#endif
                     }
                 } break;
                 default:
@@ -485,6 +509,16 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
                     const Real T{1};
                     tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =
                         tauRef[compoIndex] / (rho * sqrt(T));
+#ifdef CPU
+                const Real res{tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)]};
+                if (isnan(res) || res <= 0 || isinf(res)) {
+                    ops_printf(
+                        "Error! Relaxation time %f becomes "
+                        "invalid for the component %i\n",
+                        res, compoIndex);
+                    assert(!(isnan(res) || res <= 0 || isinf(res)));
+                }
+#endif
 
                 } break;
                 case Equilibrium_BGKThermal4th: {
@@ -492,7 +526,16 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
                     Real T{macroVars[OPS_ACC_MD2(startPos + 3, 0, 0, 0)]};
                     tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =
                         tauRef[compoIndex] / (rho * sqrt(T));
-
+#ifdef CPU
+                const Real res{tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)]};
+                if (isnan(res) || res <= 0 || isinf(res)) {
+                    ops_printf(
+                        "Error! Relaxation time %f becomes "
+                        "invalid for the component %i\n",
+                        res, compoIndex);
+                    assert(!(isnan(res) || res <= 0 || isinf(res)));
+                }
+#endif
                 } break;
                 default:
 #ifdef CPU

@@ -1199,6 +1199,17 @@ void KerCollide3D(const Real* dt, const int* nodeType, const Real* f,
                                        feq[OPS_ACC_MD3(xiIndex, 0, 0, 0)]) +
                     tau * dtOvertauPlusdt *
                         bodyForce[OPS_ACC_MD5(xiIndex, 0, 0, 0)];
+#ifdef CPU
+                const Real res{fStage[OPS_ACC_MD6(xiIndex, 0, 0, 0)]};
+                if (isnan(res) || res <= 0 || isinf(res)) {
+                    ops_printf(
+                        "Error! Distribution function %f becomes "
+                        "invalid for the component %i at  the lattice "
+                        "%i\n",
+                        res, compoIndex, xiIndex);
+                    assert(!(isnan(res) || res <= 0 || isinf(res)));
+                }
+#endif
             }
         }
     }

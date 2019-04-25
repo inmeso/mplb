@@ -212,7 +212,6 @@ void AllocateComponentIndex(const int compoNum) {
 void AllocateXi(const int length) {
     if (length == NUMXI) {
         if (nullptr == XI) {
-            ops_printf("LATTDIM in All XI=%i\n", LATTDIM);
             XI = new Real[length * LATTDIM];
         }
         if (nullptr == WEIGHTS) {
@@ -389,6 +388,10 @@ void DefineEquilibrium(std::vector<EquilibriumType> types,
             EQUILIBRIUMTYPE = new int[typeNum];
             for (int idx = 0; idx < typeNum; idx++) {
                 EQUILIBRIUMTYPE[idx] = types[idx];
+                ops_printf(
+                    "The equilibrium function type %i is chosen for Component "
+                    "%i\n",
+                    EQUILIBRIUMTYPE[idx], compoId[idx]);
             }
         } else {
             ops_printf("%s\n", "Warning! EQUILIBRIUMTYPE has been allocated!");
@@ -411,6 +414,10 @@ void DefineBodyForce(std::vector<BodyForceType> types,
             FORCETYPE = new int[typeNum];
             for (int idx = 0; idx < typeNum; idx++) {
                 FORCETYPE[idx] = types[idx];
+                ops_printf(
+                    "The body force function type %i is chosen for Component "
+                    "%i\n",
+                    FORCETYPE[idx], compoId[idx]);
             }
         } else {
             ops_printf("%s\n", "Warning! BODYFORCE has been allocated!");

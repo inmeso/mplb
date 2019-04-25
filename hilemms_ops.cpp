@@ -714,7 +714,6 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
     SetBlockNum(blockNum);
     SetBlockSize(blockSize);
     DefineVariables();
-    ops_printf("Variable memory allocated!\n");
     //TODO We need to define the halo relation and
     #ifdef OPS_3D
         DefineHaloTransfer3D();
@@ -725,7 +724,7 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
     #endif
 
     ops_partition((char*)"LBM Solver");
-    ops_printf("Block partition done and all field variabls allocated!\n");
+    ops_printf("%i blocks are parted and all field variabls allocated!\n",BlockNum());
     int numBlockStartPos;
     numBlockStartPos = startPos.size();
 
@@ -1013,8 +1012,15 @@ void DefineBlockBoundary(int blockIndex, int componentID,
         domainBoundaryCondition.boundarySurface = boundarySurface;
         domainBoundaryCondition.boundaryType = vtType;
         blockBoundaryConditions.push_back(domainBoundaryCondition);
+        ops_printf(
+            "The boundary condition %i is adopted for Component %i at Surface "
+            "%i, Block %i.\n",
+            domainBoundaryCondition.boundaryType,
+            domainBoundaryCondition.componentID,
+            domainBoundaryCondition.boundarySurface,
+            domainBoundaryCondition.blockIndex);
     } else {
-        ops_printf("Expected %i values for BC but received only %i \n",
+        ops_printf("Error! Expected %i values for BC but received only %i \n",
                    numMacroVarTypes, numMacroVarValues);
         assert(numMacroVarTypes == numMacroVarValues);
     }

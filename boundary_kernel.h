@@ -2498,9 +2498,19 @@ void KerCutCellEQMDiffuseRefl3D(Real *f, const int *nodeType,
         Real u = givenMacroVars[1];
         Real v = givenMacroVars[2];
         Real w = givenMacroVars[3];
-        // loop to classify types of discrete velocity i.e., incoming, outgoing
-        // and parallel
-        // for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
+#ifdef CPU
+#if DebugLevel >= 2
+        ops_printf(
+            "KerCutCellEQMDiffuseRefl3D: We received the following "
+            "conditions for the surface %i:\n",
+            geometryProperty[OPS_ACC2(0, 0, 0)]);
+        ops_printf("U=%f, V=%f, W=%f for the component %i\n", u, v, w,
+                   compoIdx);
+#endif
+#endif
+        // loop to classify types of discrete velocity i.e., incoming,
+        // outgoing and parallel for (int compoIdx = 0; compoIdx <
+        // NUMCOMPONENTS; compoIdx++) {
 
         // compoIdx = *componentId;
 
@@ -2545,6 +2555,11 @@ void KerCutCellEQMDiffuseRefl3D(Real *f, const int *nodeType,
             }
         }
         Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
+#ifdef CPU
+#if DebugLevel >= 2
+        ops_printf("Calculated wall density =  %f\n", rhoWall);
+#endif
+#endif
         for (int idx = 0; idx < numParallel; idx++) {
             f[OPS_ACC_MD0(parallel[idx], 0, 0, 0)] = CalcBGKFeq(
                 parallel[idx], rhoWall, u, v, w, 1, equilibriumOrder);
@@ -2557,16 +2572,29 @@ void KerCutCellEQMDiffuseRefl3D(Real *f, const int *nodeType,
             f[OPS_ACC_MD0(xiIdx, 0, 0, 0)] =
                 f[OPS_ACC_MD0(OPP[xiIdx], 0, 0, 0)] +
                 2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+#ifdef CPU
+            const Real res{f[OPS_ACC_MD0(xiIdx, 0, 0, 0)]};
+            if (isnan(res) || res <= 0 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes "
+                    "invalid for the component %i at the lattice "
+                    "%i\n",
+                    res, compoIdx, xiIdx);
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
+            }
+#endif
         }
         delete[] outgoing;
         delete[] incoming;
         delete[] parallel;
         //}
     } else {
-#ifdef debug
+#ifdef CPU
+#if DebugLevel >= 2
         ops_printf("%s\n",
                    "Warning: this node is not a equilibrium diffuse reflection "
-                   "boundary condition point: KerCutCellEQMDiffuseRefl3D");
+                   "boundary condition point.");
+#endif
 #endif
     }
 }
@@ -2580,6 +2608,15 @@ void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
         Real u = givenMacroVars[1];
         Real v = givenMacroVars[2];
         Real w = givenMacroVars[3];
+#ifdef CPU
+#if DebugLevel >= 2
+        ops_printf(
+            "KerCutCellNoslipEQN3D: We received the following "
+            "conditions:\n");
+        ops_printf("U=%f, V=%f, W=%f for the component %i\n", u, v, w,
+                   compoId);
+#endif
+#endif
         Real rhoIntermidate{0};
         Real uIntermidate{0};
         Real vIntermidate{0};
@@ -2595,7 +2632,14 @@ void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
             vIntermidate += (cy * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
             wIntermidate += (cz * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
         }
-
+#ifdef CPU
+#if DebugLevel >= 2
+        ops_printf("Calculated intermidate density =  %f\n", rhoIntermidate);
+        ops_printf("Calculated intermidate U =  %f\n", uIntermidate);
+        ops_printf("Calculated intermidate V =  %f\n", vIntermidate);
+        ops_printf("Calculated intermidate W =  %f\n", wIntermidate);
+#endif
+#endif
         for (int xiIdx = COMPOINDEX[2 * compoId];
              xiIdx <= COMPOINDEX[2 * compoId + 1]; xiIdx++) {
             f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] =
@@ -2603,13 +2647,26 @@ void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
                        
                                   
                 CalcBGKFeq(xiIdx, rhoIntermidate, u, v, w, 1, 2);
+#ifdef CPU
+            const Real res{f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]};
+            if (isnan(res) || res <= 0 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes "
+                    "invalid for the component %i at the lattice "
+                    "%i\n",
+                    res, compoId, xiIdx);
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
+            }
+#endif
         }
 
     } else {
-#ifdef debug
+#ifdef CPU
+#if DebugLevel >= 2
         ops_printf("%s\n",
-                   "Warning: this node is not a equilibrium diffuse reflection "
-                   "boundary condition point: KerCutCellEQMDiffuseRefl3D");
+                   "Warning: this node is not a Noslip EQN "
+                   "boundary condition point!");
+#endif
 #endif
     }
 }
@@ -3071,11 +3128,28 @@ void KerCutCellPeriodic3D(Real *f, const int *nodeType,
             default:
                 break;
         }
+#ifdef CPU
+        for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
+            f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
+            const Real res{f[OPS_ACC_MD0(xiIndex, 0, 0, 0)]};
+            if (isnan(res) || res <= 0 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes "
+                    "invalid for the component %i at the lattice "
+                    "%i\n at the surface %i\n",
+                    res, compoId, xiIndex, geometryProperty[OPS_ACC2(0, 0, 0)]);
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
+            }
+        }
+#endif
     } else {
-#ifdef debug
+#ifdef CPU
+#if DebugLevel >= 2
         ops_printf("%s\n",
                    "Warning: this node is not a periodic boundary "
-                   "point: KerCutCellPeriodic");
+                   "point.");
+#endif
 #endif
     }
 }

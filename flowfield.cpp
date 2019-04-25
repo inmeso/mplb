@@ -928,8 +928,9 @@ void SetTauRef(const std::vector<Real> tauRef) {
             // ops_printf("\n tau is %f \n",TAUREF[idx]);
         }
     } else {
-        ops_printf("%i taus are requried but there are %i!\n", tauNum,
+        ops_printf("Error! %i taus are required but there are %i!\n", tauNum,
                    tauRef.size());
+        assert(tauRef.size() == tauNum);
     }
 }
 
@@ -947,8 +948,9 @@ void SetBlockSize(const std::vector<int> blockSize) {
 
     } else {
         ops_printf(
-            "%i numbers are required for specifying the size of %i blocks!\n",
+            "Error! %i numbers are required for specifying the size of %i blocks!\n",
             dim, BLOCKNUM);
+            assert(blockSize.size() == dim);
     }
 }
 
@@ -956,7 +958,8 @@ void SetBlockNum(const int blockNum) {
     if (blockNum > 0) {
         BLOCKNUM = blockNum;
     } else {
-        ops_printf("%s\n", "There must be at least one block");
+        ops_printf("%s\n", "Error! There must be at least one block");
+        assert(blockNum > 0);
     }
 }
 
