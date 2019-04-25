@@ -159,7 +159,7 @@ lbm3d_dev_seq: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp
 
 
 lbm3d_hilemms_dev_seq: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution.cpp evolution3d.cpp lbm3d_hilemms.cpp hilemms_ops.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
-	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_3D -DCPU -DDebugLevel=0 type.cpp boundary.cpp scheme.cpp flowfield.cpp evolution.cpp  model.cpp evolution3d.cpp lbm3d_hilemms.cpp hilemms_ops.cpp -lops_seq -lops_hdf5_seq  $(HDF5_LIB) -o lbm3d_hilemms_dev_seq
+	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_3D -DCPU -D$(LEVEL) type.cpp boundary.cpp scheme.cpp flowfield.cpp evolution.cpp  model.cpp evolution3d.cpp lbm3d_hilemms.cpp hilemms_ops.cpp -lops_seq -lops_hdf5_seq  $(HDF5_LIB) -o lbm3d_hilemms_dev_seq
 
 lbm3d_dev_mpi: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution3d.cpp lbm3d.cpp $(OPS_INSTALL_PATH)/lib/libops_mpi.a
 	$(MPICPP) $(MPIFLAGS) -DOPS_MPI $(OPS_INC) $(OPS_LIB) $(HDF5_INC) -DOPS_3D type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution3d.cpp lbm3d.cpp -lops_mpi  -lops_hdf5_mpi $(HDF5_LIB) -o lbm3d_dev_mpi
