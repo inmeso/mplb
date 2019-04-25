@@ -474,7 +474,7 @@ void CalcResidualError3D() {
 //                                 OPS_RW));
 //    }
 //}
- 
+
 void DispResidualError3D(const int iter, const Real checkPeriod) {
     ops_printf("##########Residual Error at %i time step##########\n", iter);
     for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
@@ -487,6 +487,9 @@ void DispResidualError3D(const int iter, const Real checkPeriod) {
 }
 
 void StreamCollision3D() {
+#if DebugLevel >= 1
+    ops_printf("Calculating the macroscopic variables...\n");
+#endif
     UpdateMacroVars3D();
     // Real TotalMass{0};
     // CalcTotalMass(&TotalMass);
@@ -494,11 +497,29 @@ void StreamCollision3D() {
     // NormaliseF(&Ratio);
     // UpdateMacroVars();
     CopyDistribution3D(g_f, g_fStage);
+#if DebugLevel >= 1
+    ops_printf("Calculating the equilibrium function and the body force term...\n");
+#endif
     UpdateFeqandBodyforce3D();
+#if DebugLevel >= 1
+    ops_printf("Calculating the relaxation time...\n");
+#endif
     UpdateTau3D();
+#if DebugLevel >= 1
+    ops_printf("Colliding...\n");
+#endif
     Collision3D();
+#if DebugLevel >= 1
+    ops_printf("Streaming...\n");
+#endif
     Stream3D();
+#if DebugLevel >= 1
+    ops_printf("Updating the halos...\n");
+#endif
     ops_halo_transfer(HaloGroup());
+#if DebugLevel >= 1
+    ops_printf("Implementing the boundary conditions...\n");
+#endif
     ImplementBoundaryConditions();
 }
 

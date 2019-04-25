@@ -71,6 +71,7 @@ void DefineScheme(const SchemeType scheme) {
     switch (schemeType) {
         case Scheme_StreamCollision: {
             SetSchemeHaloNum(1);
+            ops_printf("The stream-collision scheme is chosen!\n");
         } break;
         default:
             break;

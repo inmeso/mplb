@@ -229,15 +229,18 @@ void AllocateMacroVarProperty(const int macroVarNum) {
         if (nullptr == VARIABLETYPE) {
             VARIABLETYPE = new int[NUMMACROVAR];
         } else {
-            ops_printf("%s\n", "VARIABLETYPE has been allocated!");
+            ops_printf("%s\n", "Warning! VARIABLETYPE has been allocated!");
         }
         if (nullptr == VARIABLECOMPINDEX) {
             VARIABLECOMPINDEX = new int[NUMMACROVAR];
         } else {
-            ops_printf("%s\n", "VARIABLECOMPINDEX has been allocated!");
+            ops_printf("%s\n",
+                       "Warning! VARIABLECOMPINDEX has been allocated!");
         }
     } else {
-        ops_printf("%s\n", "The macroVarNum must be equal to NUMMACROVAR");
+        ops_printf("%s\n",
+                   "Error! The macroVarNum must be equal to NUMMACROVAR");
+        assert(macroVarNum == NUMMACROVAR);
     }
 }
 
@@ -247,9 +250,12 @@ void DefineComponents(std::vector<std::string> compoNames,
     NUMCOMPONENTS = compoNames.size();
     if (NUMCOMPONENTS > 0) {
         AllocateComponentIndex(NUMCOMPONENTS);
+        ops_printf("There are %i components defined.\n", NUMCOMPONENTS);
     } else {
-        ops_printf("There muse be at least one component but we get:%i\n",
-                   NUMCOMPONENTS);
+        ops_printf(
+            "Error! There muse be at least one component but we get:%i\n",
+            NUMCOMPONENTS);
+        assert(NUMCOMPONENTS > 0);
     }
     bool isLattDimSame{true};
     bool isCsSame{true};
@@ -260,23 +266,25 @@ void DefineComponents(std::vector<std::string> compoNames,
     for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
         if (latticeSet.find(lattNames[idx]) != latticeSet.end()) {
             lattice currentLattice{latticeSet[lattNames[idx]]};
-            totalSize += currentLattice.length;
             COMPOINDEX[posCompo] = totalSize;
             COMPOINDEX[posCompo + 1] = totalSize + currentLattice.length - 1;
+            totalSize += currentLattice.length;
             posCompo += 2;
             isLattDimSame =
                 isLattDimSame && (latticeDimension == currentLattice.lattDim);
             isCsSame = isCsSame && (currentCs == currentLattice.cs);
         } else {
-            ops_printf("There is no predefined lattice:%s\n",
+            ops_printf("Error! There is no predefined lattice:%s\n",
                        lattNames[idx].c_str());
+            assert(latticeSet.find(lattNames[idx]) != latticeSet.end());
         }
     }
     if (!isLattDimSame) {
-        ops_printf("%s\n", "The lattice dimension is inconsistent!");
+        ops_printf("%s\n", "Error! The lattice dimension is inconsistent!");
+        assert(isLattDimSame);
     }
     if (!isCsSame) {
-        ops_printf("%s\n", "The lattice sound speed is inconsistent!");
+        ops_printf("%s\n", "Warning: The lattice sound speed is inconsistent!");
     }
     if (isLattDimSame && isCsSame) {
         NUMXI = totalSize;
@@ -296,6 +304,8 @@ void DefineComponents(std::vector<std::string> compoNames,
                 SetupD2Q9Latt(startPos);
             }
             startPos += latticeSet[lattNames[idx]].length;
+            ops_printf("The %s lattice is employed for Component %i.\n",
+                       lattNames[idx].c_str(), idx);
         }
         Real maxValue{0};
         for (int l = 0; l < totalSize * LATTDIM; l++) {
@@ -319,12 +329,22 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     // It seems varId is not necessary at this moment
     NUMMACROVAR = names.size();
     MACROVARNAME = names;
-    AllocateMacroVarProperty(NUMMACROVAR);
+    if (NUMMACROVAR > 0) {
+        AllocateMacroVarProperty(NUMMACROVAR);
+        ops_printf("There are %i macroscopic variables defined.\n",
+                   NUMMACROVAR);
+    } else {
+        ops_printf(
+            "Warning! There seems no macroscopic variables defined!\n");
+    }
+
     for (int idx = 0; idx < NUMMACROVAR; idx++) {
         VARIABLETYPE[idx] = (int)types[idx];
         VARIABLECOMPINDEX[idx] = (int)compoId[idx];
+        ops_printf("The macroscopic variable %s defined for Component %i.\n",
+                   names[idx].c_str(), compoId[idx]);
     }
-
+    //TODO one bug needes fix here
     /*
     if (nullptr != VARIABLECOMPPOS) {
         int startPos{0};
@@ -348,9 +368,11 @@ void DefineMacroVars(std::vector<VariableTypes> types,
         }
 
     } else {
-        ops_printf("%s\n",
-                   "It appears that the DefineComponents routine has not been "
-                   "callsed!");
+        ops_printf(
+            "%s\n",
+            "Error! It appears that the DefineComponents routine has not been "
+            "called!");
+        assert(nullptr != VARIABLECOMPPOS);
     }
 
     ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
@@ -369,13 +391,14 @@ void DefineEquilibrium(std::vector<EquilibriumType> types,
                 EQUILIBRIUMTYPE[idx] = types[idx];
             }
         } else {
-            ops_printf("%s\n", "EQUILIBRIUMTYPE has been allocated!");
+            ops_printf("%s\n", "Warning! EQUILIBRIUMTYPE has been allocated!");
         }
     } else {
         ops_printf(
-            "There are %i equilibrium types defined but we have %i "
+            "Error! There are %i equilibrium types defined but we have %i "
             "components\n",
             typeNum, NUMCOMPONENTS);
+            assert(typeNum == NUMCOMPONENTS);
     }
     ops_decl_const("EQUILIBRIUMTYPE", NUMCOMPONENTS, "int", EQUILIBRIUMTYPE);
 }
@@ -390,13 +413,14 @@ void DefineBodyForce(std::vector<BodyForceType> types,
                 FORCETYPE[idx] = types[idx];
             }
         } else {
-            ops_printf("%s\n", "BODYFORCE has been allocated!");
+            ops_printf("%s\n", "Warning! BODYFORCE has been allocated!");
         }
     } else {
         ops_printf(
             "There are %i force types defined but we have %i "
             "components\n",
             typeNum, NUMCOMPONENTS);
+            assert(typeNum == NUMCOMPONENTS);
     }
     ops_decl_const("FORCETYPE", NUMCOMPONENTS, "int", FORCETYPE);
 }

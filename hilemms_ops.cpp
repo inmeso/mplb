@@ -707,7 +707,7 @@ void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType) {
 
 //     SetupDomainNodeType(blockIndex, faceType, geomEdgeType, geomCornerType);
 // }
-
+//TODO It may be better to add one more init module
 void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
                          const Real meshSize,
                          const std::vector<Real> startPos) {
@@ -715,7 +715,7 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
     SetBlockSize(blockSize);
     DefineVariables();
     ops_printf("Variable memory allocated!\n");
-
+    //TODO We need to define the halo relation and
     #ifdef OPS_3D
         DefineHaloTransfer3D();
     #endif //OPS_3D
@@ -724,8 +724,8 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
         DefineHaloTransfer();
     #endif
 
-    ops_partition((char*)"LBMPreProcessor");
-    ops_printf("Block partition finished\n");
+    ops_partition((char*)"LBM Solver");
+    ops_printf("Block partition done and all field variabls allocated!\n");
     int numBlockStartPos;
     numBlockStartPos = startPos.size();
 
@@ -746,9 +746,9 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
         }
     } else {
         ops_printf(
-            "\n Expected number of starting positions are = %i, but received "
-            "only =%i \n",
+            "Error! Expected %i coordinates of three starting points %i, but received only =%i \n",
             SPACEDIM * blockNum, numBlockStartPos);
+            assert(numBlockStartPos == blockNum * SPACEDIM);
     }
     for (int blockId = 0; blockId < blockNum; blockId++) {
         SetupDomainGeometryProperty(blockId);
@@ -791,6 +791,7 @@ Real GetMaximumResidualError(const Real checkPeriod) {
 
 void Iterate(const int steps, const int checkPointPeriod) {
     const SchemeType scheme = Scheme();
+    ops_printf("Starting the iteration...\n");
     switch (scheme) {
         case Scheme_StreamCollision: {
             for (int iter = 0; iter < steps; iter++) {
@@ -823,21 +824,22 @@ void Iterate(const int steps, const int checkPointPeriod) {
         default:
             break;
     }
+    ops_printf("Simulation finished! Exiting...\n");
     DestroyModel();
     DestroyFlowfield();
 }
 
 void Iterate(const Real convergenceCriteria, const int checkPointPeriod) {
     const SchemeType scheme = Scheme();
-    int iter{0};
-    Real residualError{1};
+    ops_printf("Starting the iteration...\n");
     switch (scheme) {
         case Scheme_StreamCollision: {
+            int iter{0};
+            Real residualError{1};
             do {
 #ifdef OPS_3D
                 StreamCollision3D();  // Stream-Collision scheme
-                // TimeMarching();//Finite difference scheme + cutting cell
-                if ((iter % checkPointPeriod) == 0 && iter != 0) {
+                if ((iter % checkPointPeriod) == 0) {
                     UpdateMacroVars3D();
                     CalcResidualError3D();
                     residualError =
@@ -870,6 +872,7 @@ void Iterate(const Real convergenceCriteria, const int checkPointPeriod) {
         default:
             break;
     }
+    ops_printf("Simulation finished! Exiting...\n");
     DestroyModel();
     DestroyFlowfield();
 }
@@ -925,11 +928,13 @@ void DefineBlockBoundary(int blockIndex, int componentID,
     VertexTypes vtType;
     vtType = BoundTypeToVertexType(boundaryType);
     // Set the number of halo point required by the boundary condition
-    // So far all boundary conditions are implemented in a way that requires no // halos so we leave it as the initial value 1
-    // The only difference is the periodic boundary condition which needs same  // halos as required by the numerical scheme, which is set by the scheme
+    // So far all boundary conditions are implemented in a way that requires no
+    // halos so we leave it as the initial value 1
+    // The only difference is the periodic boundary condition which needs same
+    // halos as required by the numerical scheme, which is set by the scheme
     // module
     // If necessary, uncomment the sentence below and give a corret number
-    //SetBoundaryHaloNum(1);
+    // SetBoundaryHaloNum(1);
 
     // Here we adopt the assumtion that a boundary is defined by [\rho,u,v,w,T]
     // in 3D or  [\rho,u,v,T] in 2D. For a kernel function for dealing with
@@ -937,7 +942,7 @@ void DefineBlockBoundary(int blockIndex, int componentID,
     // as shown.
     const int numMacroVarTypes{(int)macroVarTypes.size()};
     const int numMacroVarValues{(int)macroVarValues.size()};
-
+    // TODO The logic may need rethink
     std::vector<Real> macroVarsAtBoundary;
     if (2 == SPACEDIM) {
         macroVarsAtBoundary.resize(4);
@@ -965,9 +970,10 @@ void DefineBlockBoundary(int blockIndex, int componentID,
                     } else {
                         varPos = -1;
                         ops_printf(
-                            "The velocity component w is defined/used for %iD "
-                            "problem.\n",
+                            "Error! The velocity component w is defined/used "
+                            "for %iD problem.\n",
                             SPACEDIM);
+                        assert(3 == SPACEDIM);
                     }
                     break;
                 case Variable_U_Force:
@@ -982,9 +988,10 @@ void DefineBlockBoundary(int blockIndex, int componentID,
                     } else {
                         varPos = -1;
                         ops_printf(
-                            "The velocity component w is defined/used for %iD "
-                            "problem.\n",
+                            "Error! The velocity component w is defined/used "
+                            "for %iD problem.\n",
                             SPACEDIM);
+                        assert(3 == SPACEDIM);
                     }
                     break;
                 case Variable_T:
@@ -1007,8 +1014,9 @@ void DefineBlockBoundary(int blockIndex, int componentID,
         domainBoundaryCondition.boundaryType = vtType;
         blockBoundaryConditions.push_back(domainBoundaryCondition);
     } else {
-        ops_printf("\n Expected %i values for BC but received only %i ",
+        ops_printf("Expected %i values for BC but received only %i \n",
                    numMacroVarTypes, numMacroVarValues);
+        assert(numMacroVarTypes == numMacroVarValues);
     }
 }
 
