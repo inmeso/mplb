@@ -1099,6 +1099,40 @@ void DefineInitialCondition(const int blockIndex, const int componentId,
 #endif
 }
 
+void InitialiseNodeMacroVars(Real* nodeMacroVars, const Real* nodeCoordinates) {
+    // 3D exmaple
+    Real x{nodeCoordinates[0]};
+    Real y{nodeCoordinates[1]};
+    Real z{nodeCoordinates[2]};  // for 3D problems
+    nodeMacroVars[0] = 1;        // rho
+    nodeMacroVars[1] = 0;        // u
+    nodeMacroVars[2] = 0;        // v
+    nodeMacroVars[3] = 0;        // w
+}
+
+void DefineInitialCondition() {
+    for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+        void KerSetInitialMacroVars(Real * macroVars, const Real* coordinates,
+                                    const int* idx);
+        int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
+        ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
+                     g_Block[blockIdx], SPACEDIM, iterRng,
+                     ops_arg_dat(g_MacroVars[blockIdx], NUMMACROVAR,
+                                 LOCALSTENCIL, "double", OPS_RW),
+                     ops_arg_dat(g_CoordinateXYZ[blockIdx], SPACEDIM,
+                                 LOCALSTENCIL, "double", OPS_READ),
+                     ops_arg_idx());
+    }
+    ops_printf("Macroscopic variables are initialised!\n");
+#ifdef OPS_3D
+    InitialiseSolution3D();
+#endif
+#ifdef OPS_2D
+    InitialiseSolution();
+#endif
+    ops_printf("Distribution functions are initialised\n");
+}
+
 void SetupDomainGeometryProperty(int blockIndex) {
     int geometryProperty = (int)VG_Fluid;
     int* iterRange = BlockIterRng(blockIndex, IterRngBulk());

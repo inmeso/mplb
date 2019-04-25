@@ -2,8 +2,6 @@
 #define HILEMMS_OPS_KERNEL
 #include "hilemms.h"
 
-using namespace std;
-
 #ifdef OPS_2D
 void KerSetCoordinates(const Real* coordX, const Real* coordY, const int* idx,
                        Real* coordinates) {
@@ -23,7 +21,32 @@ void KerSetCoordinates3D(const Real* coordX, const Real* coordY,
 #endif  // OPS_3D
 
 // Kernel to set initial value for a particlaur component.
-// This kernel is multicomponent ready.
+void KerSetInitialMacroVars(Real* macroVars, const Real* coordinates,
+                            const int* idx) {
+    Real* initiaNodeMacroVars = new Real[NUMMACROVAR];
+    Real* nodeCoordinates = new Real[SPACEDIM];
+    for (int i = 0; i < SPACEDIM; i++) {
+#ifdef OPS_2D
+        nodeCoordinates[i] = coordinates[OPS_ACC_MD1(i, 0, 0)];
+#endif
+#ifdef OPS_3D
+        nodeCoordinates[i] = coordinates[OPS_ACC_MD1(i, 0, 0, 0)];
+#endif
+    }
+    InitialiseNodeMacroVars(initiaNodeMacroVars, nodeCoordinates);
+    for (int i = 0; i < NUMMACROVAR; i++) {
+#ifdef OPS_2D
+        macroVars[OPS_ACC_MD0(i, 0, 0)] = initiaNodeMacroVars[i];
+#endif
+#ifdef OPS_3D
+        macroVars[OPS_ACC_MD0(i, 0, 0, 0)] = initiaNodeMacroVars[i];
+#endif
+    }
+    delete[] initiaNodeMacroVars;
+    delete[] nodeCoordinates;
+}
+
+// Kernel to set initial value for a particlaur component.
 void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
                                    Real* macroVars, Real* macroVarsInitVal,
                                    const int* componentId) {

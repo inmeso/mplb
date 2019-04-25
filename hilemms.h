@@ -28,7 +28,6 @@ void Iterate(const int steps, const int checkPointPeriod);
 // Iterator for steady simulations.
 void Iterate(const Real convergenceCriteria, const int checkPointPeriod);
 
-
 // Add 2D polygon.
 // vertexNum: total number of vertexes.
 // vertexCoords: Coordinates of each vertex.
@@ -43,10 +42,10 @@ void AddEmbeddedBody(int vertexNum, Real* vertexCoords);
 // valueMacroVarsComp: specified value for the boundary condition for the macro
 // vars which are defined using MacroVarsComp.
 void DefineBlockBoundary(int blockIndex, int componentID,
-                         BoundarySurface boundarSurface, BoundaryType boundarType,
+                         BoundarySurface boundarySurface,
+                         BoundaryType boundaryType,
                          const std::vector<VariableTypes>& macroVarTypes,
-                         const std::vector<Real>& macroValValues);
-
+                         const std::vector<Real>& macroVarValues);
 
 // blockIndex: Block Index
 // blockStartPos: Starting position of the block in x, y, z directions to find
@@ -61,13 +60,15 @@ void KerSetCoordinates(const Real* coordX, const Real* coordY, const int* idx,
 void KerSetCoordinates3D(const Real* coordX, const Real* coordY,
                          const Real* coordZ, const int* idx, Real* coordinates);
 
-void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
-                                   Real* macroVars, Real* macroVarsInitVal,
-                                   const int* componentId);
 // Interface for Setting the initial values.
 // coordinates: Coordinate array of nodes.
 // idx: An array used by OPS which gives the index of the current grid point.
-
+void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
+                                   Real* macroVars, Real* macroVarsInitVal,
+                                   const int* componentId);
+// Kernel which will call a user-defined function for inital conditions
+void KerSetInitialMacroVars(Real* macroVars, const Real* coordinates,
+                            const int* idx);
 //void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]);
 void AssignCoordinates(int blockIndex, Real** coordinates);
 // blockIndex: Block id.
@@ -83,7 +84,7 @@ void DefineInitialCondition(int blockIndex, int componentId,
                       std::vector<Real> initialMacroValues);
 
 //User-defined function for initialising macroscopic variables
-void InitialiseMacroVars(Real* nodeMacroVars, const Real* coordinates);
+void InitialiseNodeMacroVars(Real* nodeMacroVars, const Real* nodeCoordinates);
 //Defining the initial conditions by using user-defined functions
 void DefineInitialCondition();
 
