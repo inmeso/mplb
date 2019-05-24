@@ -618,8 +618,7 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             velo[0] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
 #ifdef CPU
                             if (isnan(velo[0]) || isinf(velo[0])) {
@@ -653,8 +652,7 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM + 1] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             velo[1] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
 #ifdef CPU
                             if (isnan(velo[1]) || isinf(velo[1])) {
@@ -688,8 +686,7 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM + 2] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             velo[2] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
 #ifdef CPU
                             if (isnan(velo[2]) || isinf(velo[2])) {
@@ -904,8 +901,7 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             if (Vertex_Fluid == vt) {
                                 macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     ((*dt) *
@@ -947,8 +943,7 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM + 1] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             if (Vertex_Fluid == vt) {
                                 macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     ((*dt) *
@@ -988,8 +983,7 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM + 2] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             if (Vertex_Fluid == vt) {
                                 macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     ((*dt) *

@@ -56,8 +56,8 @@ void FindReverseXi(const int startPos, const int latticeSize) {
         for (int j = 0; j < latticeSize; j++) {
             bool isReverse{true};
             for (int k = 0; k < LATTDIM; k++) {
-                Real sum{XI[startPos + i * LATTDIM + k] +
-                         XI[startPos + j * LATTDIM + k]};
+                Real sum{XI[(startPos + i) * LATTDIM + k] +
+                         XI[(startPos + j) * LATTDIM + k]};
                 isReverse = isReverse && EssentiallyEqual(&sum, &ZERO, EPS);
             }
             if (isReverse) {
@@ -76,8 +76,8 @@ void SetupD2Q9Latt(const int startPos) {
     int cyi[nc9] = {0, 0, 1, 0, -1, 1, 1, -1, -1};
     int op9[nc9] = {0, 3, 4, 1, 2, 7, 8, 5, 6};
     for (int l = 0; l < nc9; l++) {
-        XI[startPos + l * LATTDIM] = cxi[l];
-        XI[startPos + l * LATTDIM + 1] = cyi[l];
+        XI[(startPos + l) * LATTDIM] = cxi[l];
+        XI[(startPos + l) * LATTDIM + 1] = cyi[l];
         WEIGHTS[startPos + l] = t[l];
         OPP[startPos + l] = op9[l];
     }
@@ -97,9 +97,9 @@ void SetupD3Q19Latt(const int startPos) {
     int czi[nc19] = {0,  0, 0,  0, 0, 1,  -1, 0,  0, 1,
                      -1, 1, -1, 0, 0, -1, 1,  -1, 1};
     for (int l = 0; l < nc19; l++) {
-        XI[startPos + l * LATTDIM] = cxi[l];
-        XI[startPos + l * LATTDIM + 1] = cyi[l];
-        XI[startPos + l * LATTDIM + 2] = czi[l];
+        XI[(startPos + l) * LATTDIM] = cxi[l];
+        XI[(startPos + l) * LATTDIM + 1] = cyi[l];
+        XI[(startPos + l) * LATTDIM + 2] = czi[l];
         WEIGHTS[startPos + l] = t[l];
     }
     FindReverseXi(startPos, nc19);
@@ -116,9 +116,9 @@ void SetupD3Q15Latt(const int startPos) {
     int cyi[nc15] = {0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, -1, 1, 1, -1};
     int czi[nc15] = {0, 0, 0, 0, 0, 1, -1, 1, -1, -1, 1, 1, -1, 1, -1};
     for (int l = 0; l < nc15; l++) {
-        XI[startPos + l * LATTDIM] = cxi[l];
-        XI[startPos + l * LATTDIM + 1] = cyi[l];
-        XI[startPos + l * LATTDIM + 2] = czi[l];
+        XI[(startPos + l) * LATTDIM] = cxi[l];
+        XI[(startPos + l) * LATTDIM + 1] = cyi[l];
+        XI[(startPos + l) * LATTDIM + 2] = czi[l];
         WEIGHTS[startPos + l] = t[l];
     }
     FindReverseXi(startPos, nc15);
@@ -134,8 +134,8 @@ void SetupD2Q16Latt(const int startPos) {
     int l{0};
     for (int i = 0; i < nc1d; i++) {
         for (int j = 0; j < nc1d; j++) {
-            XI[startPos + l * LATTDIM] = roots[i];
-            XI[startPos + l * LATTDIM + 1] = roots[j];
+            XI[(startPos + l) * LATTDIM] = roots[i];
+            XI[(startPos + l) * LATTDIM + 1] = roots[j];
             WEIGHTS[startPos + l] = coeff[i] * coeff[j];
             l++;
         }
@@ -155,8 +155,8 @@ void SetupD2Q36Latt(const int startPos) {
     int l{0};
     for (int i = 0; i < nc1d; i++) {
         for (int j = 0; j < nc1d; j++) {
-            XI[startPos + l * LATTDIM] = roots[i];
-            XI[startPos + l * LATTDIM + 1] = roots[j];
+            XI[(startPos + l) * LATTDIM] = roots[i];
+            XI[(startPos + l) * LATTDIM + 1] = roots[j];
             WEIGHTS[startPos + l] = coeff[i] * coeff[j];
             l++;
         }

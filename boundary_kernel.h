@@ -2632,6 +2632,9 @@ void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
             vIntermidate += (cy * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
             wIntermidate += (cz * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
         }
+        uIntermidate /= rhoIntermidate;
+        vIntermidate /= rhoIntermidate;
+        wIntermidate /= rhoIntermidate;
 #ifdef CPU
 #if DebugLevel >= 2
         ops_printf("Calculated intermidate density =  %f\n", rhoIntermidate);
