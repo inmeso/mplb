@@ -12,6 +12,10 @@ Dist_f[CompoVeloSpaIdx(0, 18, 0,0,0)] =
 
         Macro_Vars[CompoMacroSpaIdx(1,T,0,0,0)] +
 
+        { Macro_Vars[CompoMacroSpaIdx(1,T,0,0,0)] } ^ {3} +
+
+        {Micro_Vel_Cy[CompoVeloIdx(0, 5)]}^{4} +
+
         ( Macro_Vars[CompoMacroSpaIdx(0, u, 0,0,0)] - Macro_Vars[CompoMacroSpaIdx(0, u, -1,0,0)] ) /
         ( Coord_X[SpaIndex(0,0,0)] - Coord_X[SpaIndex(-1,0,0)])
 

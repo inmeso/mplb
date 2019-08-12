@@ -519,6 +519,58 @@ def ParseCppFile(FileName, FunName, ArgNum):
 
 
 
+#------------------------------------------------------------------
+# Function to parse information {x}^{m} to pow(x,m).
+#------------------------------------------------------------------
+
+def Parse_Base_Exponents(Text):
+    regExpr= r'(\{)( )*([a-zA-Z0-9_\-,\[\]\(\) ]+)(\})( )*(\^)( )*(\{)( )*([0-9]+)( )*(\})'
+    pattern = re.compile(regExpr)
+    StartPosExpr = []
+    EndPosExpr = []
+
+    Base = []
+    Exponent = []
+    
+    #Loop to search base and exponent in user defined functions.
+    for match in pattern.finditer(Text):
+
+        #Base_Text saves the combination of matched groups in above
+        #Re to get the exact base.
+        Base_Text = ''
+        for i in range(2, 4):
+            if match.group(i) == None:
+                Base_Text += ''
+            else:
+                Base_Text += match.group(i)
+        
+        StartIndex = match.start(0)
+        EndIndex = match.end(0)
+        #print Text[StartIndex:EndIndex]
+
+        StartPosExpr.append(StartIndex)
+        EndPosExpr.append(EndIndex)
+
+        Base.append(Base_Text)
+        Exponent.append(match.group(10))
+
+    #Loop to insert pow(base, exponent) at appropriate places.
+    Temp = Text[:StartPosExpr[0]]
+    Temp += 'pow(' + Base[0] + ',' + Exponent[0] + ')'
+
+    for i in range(1,len(Base)):
+        Temp += Text[EndPosExpr[i-1]+1:StartPosExpr[i]]
+        Temp += 'pow(' + Base[i] + ',' + Exponent[i] + ')'
+
+    Temp += Text[EndPosExpr[-1]+1:]
+    Text = Temp
+
+    return Text
+# End of function to parse base and exponents.
+#------------------------------------------------------------------
+
+
+
 FileName = 'Dist_func_eqn.txt'
 Text = ReadFile(FileName)[0]
 
@@ -531,6 +583,9 @@ UserVarsCpp = {}
 # Translated text would be the one where we will use
 # Parsed text date and genarate the code that has to be inserted.
 Translated_Text = ''
+
+# Convert user written code for exponents into C++ format (i.e. insert pow(Variable, m) into code).
+Text = Parse_Base_Exponents(Text)
 
 #print 'Starting to Parse information from User written file'
 PlaceHolder = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars', 'Coord_']
@@ -581,7 +636,8 @@ for i in range(0, NumComponents):
     UserVarsCpp[CompNum]['MacroStartPos'] = MacroVarStartPos
     UserVarsCpp[CompNum]['MacroEndPos'] = MacroVarEndPos
     MacroVarStartPos = MacroVarEndPos + 1
-            
+
+
 #print UserVarsCpp
 GenCodeCoordinates(Parsed_Text)
 GenCodeMacroVars(Parsed_Text)
