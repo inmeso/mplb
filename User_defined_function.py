@@ -1,6 +1,37 @@
 """
-    This Pyhton code will read a User written file for Initilaistion and will generate a code 
-    that has to be inserted at appropriate place for the purpose of customisable ingredients. 
+ # Copyright 2019 United Kingdom Research and Innovation
+ #
+ # Authors: See AUTHORS
+ #
+ # Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ #
+ # Redistribution and use in source and binary forms, with or without
+ # modification, are permitted provided that the #following conditions are met:
+ #
+ # 1. Redistributions of source code must retain the above copyright notice,    #    this list of conditions and the following disclaimer.
+ # 2. Redistributions in binary form must reproduce the above copyright notice
+ #    this list of conditions and the following disclaimer in the documentation
+ #    and or other materials provided with the distribution.
+ # 3. Neither the name of the copyright holder nor the names of its contributors
+ #    may be used to endorse or promote products derived from this software
+ #    without specific prior written permission.
+ #
+ # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ # ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ # LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ # CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ # SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ # POSSIBILITY OF SUCH DAMAGE.
+"""
+
+"""
+    This Python code will read a User written file for Initialisation and will generate a code
+    that has to be inserted at appropriate place for the purpose of customisable ingredients.
 """
 
 import glob
@@ -33,7 +64,7 @@ def FindPositionStringText(String, Text):
         pos = match.start()
         position.append(pos)
         numMatched = numMatched + 1
-  
+
     if(numMatched >= 1):
         #print 'Multiple ',String,' found in the text at positions',position
         return position
@@ -51,12 +82,12 @@ def Comment(line,Translated_Text):
         Translated_Text += '//' + line + '\n'
     return Translated_Text
 #End of Function Comment.
-    
+
 
 def GetValueofVariable(VariableName, Text):
     regexExpr = r'( |\t|\n)*(\b'
     regexExpr = regexExpr + VariableName
-    regexExpr = regexExpr + r'\b)( |\t|\n)*(=)( |\t|\n)*(\w+\.\w+)(;)' 
+    regexExpr = regexExpr + r'\b)( |\t|\n)*(=)( |\t|\n)*(\w+\.\w+)(;)'
     pattern = re.compile(regexExpr)
     NumMatchFound = 0
 
@@ -71,25 +102,25 @@ def GetValueofVariable(VariableName, Text):
     if NumMatchFound <= 0:
         print 'Warning! Cannot find the value of',VariableName
 #End of function definition GetValueofVariable
- 
+
 
 def Code(Line, Translated_Text):
     Translated_Text += Line + '\n'
     return Translated_Text
-#End of function code defintion. 
+#End of function code defintion.
 
 
 
 def InsertInitCodeHilemms(File, TextToInsert, NumberSpaceDim):
-    
+
     Text = ReadFile(FileName)
 
     #StartPosInitFunction: will be used at starting position to search for OPS 3D and insert
     #the parsed text.
-    StartPosInitFunction = FindPositionStringText('KerSetInitialMacroVarsHilemms', Text[0]) 
+    StartPosInitFunction = FindPositionStringText('KerSetInitialMacroVarsHilemms', Text[0])
 
 
-    #To Do :- We can limit the search to KerSetInitialMacroVarsHilemms as a safeguard 
+    #To Do :- We can limit the search to KerSetInitialMacroVarsHilemms as a safeguard
     #against destroying the original code.
 
     if NumberSpaceDim == '2':
@@ -111,25 +142,25 @@ def InsertInitCodeHilemms(File, TextToInsert, NumberSpaceDim):
 
 
 #----------------------------------------------------------
-# Routine to check number of arguements suuplied to routines 
-# such as CompiVeloIdx, SpaIdx etc. 
+# Routine to check number of arguements suuplied to routines
+# such as CompiVeloIdx, SpaIdx etc.
 #----------------------------------------------------------
 
 def CheckNumArgs(FunctionName, ArgsGiven):
 
-    # To Do:- Modify this for 2D code. 
+    # To Do:- Modify this for 2D code.
     # USe spacedim and subtract one number of arguements.
     if FunctionName == 'CompoVeloSpaIdx' and ArgsGiven!=5:
-        print 'CompoVeloSpaIdx expects 5 Arguements but supplied =', ArgsGiven 
+        print 'CompoVeloSpaIdx expects 5 Arguements but supplied =', ArgsGiven
 
     if FunctionName == 'CompoVeloIdx' and ArgsGiven!=2:
-        print 'CompoVeloIdx expects 2 Arguements but supplied =', ArgsGiven 
+        print 'CompoVeloIdx expects 2 Arguements but supplied =', ArgsGiven
 
     if FunctionName == 'CompoMacroSpaIdx' and ArgsGiven!=5:
-        print 'CompoMacroSpaIdx expects 5 Arguements but supplied =', ArgsGiven 
+        print 'CompoMacroSpaIdx expects 5 Arguements but supplied =', ArgsGiven
 
     if FunctionName == 'SpaIdx' and ArgsGiven!=3:
-        print 'SpaIdx expects 3 Arguements but supplied =', ArgsGiven 
+        print 'SpaIdx expects 3 Arguements but supplied =', ArgsGiven
 
 # End of routine to check number of arguements.
 
@@ -140,7 +171,7 @@ def CheckNumArgs(FunctionName, ArgsGiven):
 #----------------------------------------------------------
 
 def ParseArguements(FunName, Args):
-    
+
     ArgDic = {}
     if FunName == 'CompoVeloSpaIdx':
         ArgDic['CompoId'] = Args[0]
@@ -155,7 +186,7 @@ def ParseArguements(FunName, Args):
         ArgDic['RelSpaIdx_X'] = Args[2]
         ArgDic['RelSpaIdx_Y'] = Args[3]
         ArgDic['RelSpaIdx_Z'] = Args[4]
-    
+
     if FunName == 'SpaIndex':
         ArgDic['RelSpaIdx_X'] = Args[0]
         ArgDic['RelSpaIdx_Y'] = Args[1]
@@ -170,21 +201,21 @@ def ParseArguements(FunName, Args):
 
 
 #----------------------------------------------------------
-# Routine to get variable name. 
-# This information might be needed in the final code. 
+# Routine to get variable name.
+# This information might be needed in the final code.
 #----------------------------------------------------------
 
-def ParseText(Text, Positions, TypeVar): 
+def ParseText(Text, Positions, TypeVar):
     for pos in Positions:
         Item = {}
 
-        #Which type of variable to search for such as 
+        #Which type of variable to search for such as
         #Dist_f, Weights, Micro_Vel_, Macro_Vars.
         VarNameStartPos = pos + len(TypeVar)
         VarNameEndPos = Text.find('[', VarNameStartPos)
         VarName  = Text[VarNameStartPos:VarNameEndPos].strip()
         Item['VarName'] = VarName
-        
+
         #Everything inside a square bracket from which information
         #has to be extracted.
         ArgStartPos = VarNameEndPos+1
@@ -192,7 +223,7 @@ def ParseText(Text, Positions, TypeVar):
         Arguement =  Text[ArgStartPos:ArgEndPos].strip()
         Item['Arguement'] = Arguement
 
-        #The following two positions will be used to insert the 
+        #The following two positions will be used to insert the
         #genrated code at the write place in the translated text.
         Item['StartPosTextInsert'] = pos
         Item['EndPosTextInsert'] = ArgEndPos+1
@@ -212,12 +243,12 @@ def ParseText(Text, Positions, TypeVar):
         FunArgs = Text[FunArgsStart:FunArgsEnd].strip()
         Item['FunArgs'] = FunArgs
         #Parsed_Text.append([Item])
-        
+
 
         FunArgs = FunArgs.split(',')
         NumArgsFun = len(FunArgs)
         CheckNumArgs(FunName, NumArgsFun)
-        
+
         for i in range(NumArgsFun):
             FunArgs[i] = FunArgs[i].strip()
 
@@ -244,19 +275,19 @@ def merge_two_dicts(x, y):
 
 
 #----------------------------------------------------
-# Function to generate code for the coordinates in 
+# Function to generate code for the coordinates in
 # the user defined function.
 #----------------------------------------------------
 
 def GenCodeCoordinates(Parsed_Text):
 
     for i in range(0,len(Parsed_Text)):
-        
+
         CodeCoord = {}
         FunName = Parsed_Text[i]['Function']
-        
+
         if FunName == 'SpaIndex':
-            
+
             VariableName = Parsed_Text[i]['VarName']
             RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
             RelPos_Y = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Y']
@@ -281,12 +312,12 @@ def GenCodeCoordinates(Parsed_Text):
 
 
 #-------------------------------------------------------------------------------------------------
-# Function to get the correct index of macro vars to be 
+# Function to get the correct index of macro vars to be
 # used in generating code.
 # MacroVarNames :- List of all macro vars parsed from User written Cpp file.
 # CompoIdMacroVars :- List of Id's all macro vars spec. which component macro vars belongs to.
 # MacroVarSearch :- For Which macro var, we are genrating the index.
-# CompoIdSearch :- The component ID of macro var being searched.   
+# CompoIdSearch :- The component ID of macro var being searched.
 #--------------------------------------------------------------------------------------------------
 
 def GetIndexMacroVarsforCodeGen(MacroVarNames, CompoIdMacroVars, MacroVarSearch, CompIdSearch):
@@ -301,26 +332,26 @@ def GetIndexMacroVarsforCodeGen(MacroVarNames, CompoIdMacroVars, MacroVarSearch,
         print 'Could not find the macroscopic variable ', MacroVarSearch, 'for component ', CompIdSearch
     else:
         return Index
-            
+
 #End of function to generate the correct index.
 #--------------------------------------------------------
 
 
 
 #----------------------------------------------------
-# Function to generate code for the Macroscopic 
+# Function to generate code for the Macroscopic
 # Variables in the user defined function.
 #----------------------------------------------------
 
 def GenCodeMacroVars(Parsed_Text):
-    
+
     for i in range(0,len(Parsed_Text)):
-        
+
         CodeMacroVars = {}
         FunName = Parsed_Text[i]['Function']
-        
+
         if FunName == 'CompoMacroSpaIdx':
-            
+
             MacroVarName = Parsed_Text[i]['ParsedArgs']['MacroVarId']
             ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
             RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
@@ -345,12 +376,12 @@ def GenCodeMacroVars(Parsed_Text):
 def GenCodeDistFun(Parsed_Text):
 
     for i in range(0,len(Parsed_Text)):
-        
+
         CodeDistFun = {}
         FunName = Parsed_Text[i]['Function']
-        
+
         if FunName == 'CompoVeloSpaIdx':
-            
+
             ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
             VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
             RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
@@ -358,7 +389,7 @@ def GenCodeDistFun(Parsed_Text):
             RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
 
             ComponentNumber = 'Component' + ComponentId
-            
+
             if int(VeloId) >= 0 and int(VeloId) <= UserVarsCpp[ComponentNumber]['LattSize']:
                 Index = UserVarsCpp[ComponentNumber]['XiStart'] + int(VeloId)
                 CodeDistFun['GenCode'] = 'f[OPS_ACC_MD2(' + str(Index) + ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
@@ -379,9 +410,9 @@ def GenCodeDistFun(Parsed_Text):
 #----------------------------------------------------
 
 def GenCodeWeights(Parsed_Text):
-    
+
     for i in range(0, len(Parsed_Text)):
-        
+
         CodeWeights = {}
         FunName = Parsed_Text[i]['Function']
         VariableName = Parsed_Text[i]['VarName']
@@ -389,12 +420,12 @@ def GenCodeWeights(Parsed_Text):
         if FunName == 'CompoVeloIdx' and VariableName=='':
 
             #print 'Running code gen for weights'
-            
+
             ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
             VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
 
             ComponentNumber = 'Component' + ComponentId
-            
+
             if int(VeloId) >= 0 and int(VeloId) <= UserVarsCpp[ComponentNumber]['LattSize']:
                 Index = UserVarsCpp[ComponentNumber]['XiStart'] + int(VeloId)
                 CodeWeights['GenCode'] = 'WEIGHTS[' + str(Index) + ']'
@@ -413,14 +444,14 @@ def GenCodeWeights(Parsed_Text):
 
 
 #----------------------------------------------------
-# Function to generate code for the Microscopic 
+# Function to generate code for the Microscopic
 # velocity i.e. XI.
 #----------------------------------------------------
 
 def GenCodeXi(Parsed_Text):
 
     for i in range(0, len(Parsed_Text)):
-        
+
         CodeXi = {}
         FunName = Parsed_Text[i]['Function']
         SpaceDim = int(UserVarsCpp['SpaceDim'])
@@ -430,22 +461,22 @@ def GenCodeXi(Parsed_Text):
         if FunName == 'CompoVeloIdx' and VariableName != '':
 
             #print FunName, VariableName
-            
+
             ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
             VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
-            
+
             ComponentNumber = 'Component' + ComponentId
-            
+
             if int(VeloId) >= 0 and int(VeloId) <= UserVarsCpp[ComponentNumber]['LattSize']:
                 Index = UserVarsCpp[ComponentNumber]['XiStart'] + int(VeloId)
 
-                if VariableName == 'Cx':    
+                if VariableName == 'Cx':
                     CodeXi['GenCode'] = 'XI[' + str(Index * SpaceDim) + ']'
-                    
-                elif VariableName == 'Cy':    
+
+                elif VariableName == 'Cy':
                     CodeXi['GenCode'] = 'XI[' + str(Index * SpaceDim + 1) + ']'
 
-                elif VariableName == 'Cz':    
+                elif VariableName == 'Cz':
                     CodeXi['GenCode'] = 'XI[' + str(Index * SpaceDim + 2) + ']'
 
                 else:
@@ -465,19 +496,19 @@ def GenCodeXi(Parsed_Text):
 
 
 #-----------------------------------------------------------------------------
-# Function to extract values from the user written 
-# CPP file (Eg.- lbm3d_hilemms 
+# Function to extract values from the user written
+# CPP file (Eg.- lbm3d_hilemms
 
 # FunName: function name which is constant as defined  by the iinterface.
-# ArgNum : Number of arguement whose value is to be found. Note: Argname 
-# might change and cannot be used directly. 
+# ArgNum : Number of arguement whose value is to be found. Note: Argname
+# might change and cannot be used directly.
 #------------------------------------------------------------------------------
 def ParseCppFile(FileName, FunName, ArgNum):
     ArgValue = []
     CppText = ReadFile(FileName)[0]
 
     FunCallStartPos =  FindPositionStringText(FunName, CppText)[0]
-   
+
     FunParanthesisStart = CppText.find('(', FunCallStartPos)
 
     FunParanthesisEnd = CppText.find(')', FunParanthesisStart)
@@ -485,7 +516,7 @@ def ParseCppFile(FileName, FunName, ArgNum):
 
     FunArgs = FunArgs.split(',')
     NumArgsFun = len(FunArgs)
-        
+
     for i in range(NumArgsFun):
         FunArgs[i] = FunArgs[i].strip()
 
@@ -493,7 +524,7 @@ def ParseCppFile(FileName, FunName, ArgNum):
     ArgPosCppFile = FindPositionStringText(ArgNameFindValue, CppText)[0]
     ArgValStart = CppText.find('{', ArgPosCppFile)
     ArgValEnd = CppText.find('}', ArgValStart)
-    
+
     if FunName == 'DefineComponents':
         String = CppText[ArgValStart+1:ArgValEnd].replace('"','')
         String = String.split(',')
@@ -511,7 +542,7 @@ def ParseCppFile(FileName, FunName, ArgNum):
     else:
         ArgValue.append(CppText[ArgValStart+1:ArgValEnd])
     #ArgValue[ArgNameFindValue] = CppText[ArgValStart+1:ArgValEnd]
-    
+
     return ArgValue
 
 # End of function to parse cpp file.
@@ -531,7 +562,7 @@ def Parse_Base_Exponents(Text):
 
     Base = []
     Exponent = []
-    
+
     #Loop to search base and exponent in user defined functions.
     for match in pattern.finditer(Text):
 
@@ -543,7 +574,7 @@ def Parse_Base_Exponents(Text):
                 Base_Text += ''
             else:
                 Base_Text += match.group(i)
-        
+
         StartIndex = match.start(0)
         EndIndex = match.end(0)
         #print Text[StartIndex:EndIndex]
@@ -621,8 +652,8 @@ NumComponents = len(LatticeNames)
 MacroVarNames = ParseCppFile(CppFileName, 'DefineMacroVars', 1)[0]
 #print MacroVarNames, CompoIdMacroVars
 
-# Counting the starting and ending position of macroscopic variable of 
-# each component. 
+# Counting the starting and ending position of macroscopic variable of
+# each component.
 MacroVarStartPos = 0
 for i in range(0, NumComponents):
     NumMacroVarsComp = 0
@@ -659,7 +690,7 @@ Parsed_Text_Sorted = sorted(Parsed_Text, key=lambda k: k['StartPosTextInsert'])
 for i in range(0, len(Parsed_Text_Sorted)):
     Translated_Text = Translated_Text + Parsed_Text_Sorted[i]['GenCode']
     Start_Pos_Copy_Text = Parsed_Text_Sorted[i]['EndPosTextInsert']
-    
+
     if i < len(Parsed_Text_Sorted)-1:
         End_Pos_Copy_Text = Parsed_Text_Sorted[i + 1]['StartPosTextInsert']
         Translated_Text += Text[Start_Pos_Copy_Text:End_Pos_Copy_Text]
@@ -669,7 +700,7 @@ for i in range(0, len(Parsed_Text_Sorted)):
 #print Translated_Text
 
 FileToWrite = 'UDF_Translated.cpp'
-WriteToFile(Translated_Text, FileToWrite)  
+WriteToFile(Translated_Text, FileToWrite)
 
 """
 #Read the Universal constants.
@@ -741,7 +772,7 @@ itr = 0     #Loop iterator.
 
 #Loop to search base and exponent in user defined dunctions.
 for match in pattern.finditer(Text[0]):
-    
+
     StartIndex = match.start(0)
     EndIndex = Text[0].find('}',StartIndex)
 
@@ -780,7 +811,7 @@ StartPosExpr = []
 EndPosExpr = []
 
 for match in pattern.finditer(Text[0]):
-    
+
     StartIndex = match.start(0)
     EndIndex = Text[0].find('=',StartIndex)
 
