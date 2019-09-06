@@ -7,9 +7,10 @@
  * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the *following conditions are met:
+ * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,    *    this list of conditions and the following disclaimer.
+ * 1. Redistributions of source code must retain the above copyright notice, 
+ *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
  *    and or other materials provided with the distribution.
@@ -558,7 +559,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
     }
 }
 
-void SetupDomainGeometryProperty(int blockIndex) {
+void  SetBlockGeometryProperty(int blockIndex) {
     int geometryProperty = (int)VG_Fluid;
     int* iterRange = BlockIterRng(blockIndex, BlockIterRngBulk);
     ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
@@ -1392,7 +1393,7 @@ int main(int argc, char* argv[]) {
                   << " finished****" << std::endl;
         geometryList << "****Constructing coordinates for Block " << blockIndex
                      << " finished****" << std::endl;
-        SetupDomainGeometryProperty(blockIndex);
+         SetBlockGeometryProperty(blockIndex);
         std::cout << "****Constructing boundary property for Block "
                   << blockIndex << "****" << std::endl;
         geometryList << "****Constructing boundary property for Block "

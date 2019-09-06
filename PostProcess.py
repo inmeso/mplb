@@ -1,5 +1,5 @@
 """
- # Copyright 2019 United Kingdom Research and Innovation
+# Copyright 2019 United Kingdom Research and Innovation
  #
  # Authors: See AUTHORS
  #
@@ -27,16 +27,14 @@
  # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  # POSSIBILITY OF SUCH DAMAGE.
-"""
-
-"""
-    @brief   Post-processing utilities
-    @author  Jianping Meng
-    @details Providing post-processing utilities including data format transformation, basic visualisation facilities.
-    usage: from PostProcess import ReadOPSDataHDF5
-           from PostProcess import WriteMacroVarsPlainHDF5
-    Specific examples can be found in provide source codes
-    Dependency: numpy, h5py, matplotlib for 2D visualisation, and mayavi2 for 3D visualisation.
+ 
+ @brief   Post-processing utilities
+ @author  Jianping Meng
+ @details Providing post-processing utilities including data format transformation, basic visualisation facilities.
+ usage: from PostProcess import ReadOPSDataHDF5
+        from PostProcess import WriteMacroVarsPlainHDF5
+ Specific examples can be found in provide source codes
+ Dependency: numpy, h5py, matplotlib for 2D visualisation, and mayavi2 for 3D visualisation.
 """
 # python 2 and python 3 compatibility for the print function
 from __future__ import print_function
