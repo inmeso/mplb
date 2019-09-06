@@ -75,8 +75,8 @@ For the flexibility of assembling various application using the HiLeMMS interfac
 #### Developing mode
 
 ```bash
-make lbm2d_dev_seq DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # sequential
-make lbm2d_dev_mpi DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # parallel
+make lbm2d_dev_seq LEVEL=DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # sequential
+make lbm2d_dev_mpi LEVEL=DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # parallel
 ```
 
 #### Optimized mode
@@ -174,7 +174,24 @@ In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source i
    std::vector<int> bodyForceCompoId{0};
    DefineBodyForce(bodyForceTypes, bodyForceCompoId);
    ```
-6. Define the boundary conditions for the problem under consideration. For a 3D problem, we have six faces namely: Right, Left, Top, Bottom, Front and Back. We need to define the BC for each surface one by one. The function call requires specifying the `BlockID` on which BC is to applied, `ComponentID` of the component whose BC is being specified, on which `Suface` BC has to be applied, the list of macroscopic variables which are being used to specify the BC, their values and the type of Boundary condition.
+6. Define the numerical scheme for solving the lattice Boltzmann equation.
+
+    ```C++
+    typedef enum {
+    Scheme_E1st2nd = 1,
+    Scheme_I1st2nd = -1,
+    Scheme_StreamCollision = 10,
+    } SchemeType;
+    ```
+
+    We provide support for both the stream-collision scheme and the so-called finite-difference lattice Boltzmann method, see e.g., the `KerCutCellCVTUpwind2nd` kernel function in the scheme_kernel.h which implements the second-order upwind scheme for the convection term of the lattice Boltzmann equation. For the cavity case, we use the standard stream-collision scheme, which is the major scheme supported at this moment.
+
+    ```c++
+     SchemeType scheme{Scheme_StreamCollision};
+     DefineScheme(scheme);
+    ```
+
+7. Define the boundary conditions for the problem under consideration. For a 3D problem, we have six faces namely: Right, Left, Top, Bottom, Front and Back. We need to define the BC for each surface one by one. The function call requires specifying the `BlockID` on which BC is to applied, `ComponentID` of the component whose BC is being specified, on which `Suface` BC has to be applied, the list of macroscopic variables which are being used to specify the BC, their values and the type of Boundary condition.
 
    For the type of Boundary conditions, the user can choose from the following list.
 
@@ -229,7 +246,7 @@ In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source i
    BoundaryType_EQMDiffuseRefl, macroVarTypesatBoundary,noSlipStationaryWall);
    ```
 
-7. Define the domain of the problem such as the number of block to be used in the simulation, the mesh count of each block, mesh size, starting position of the grid. For 3D cavity case, the domain can be defined as shown below.
+8. Define the domain of the problem such as the number of block to be used in the simulation, the mesh count of each block, mesh size, starting position of the grid. For 3D cavity case, the domain can be defined as shown below.
 
    ```c++
    int blockNum{1};
@@ -239,6 +256,7 @@ In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source i
    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
    ```
    This call will formally allocate the memory needed by the macroscopic variables and distribution functions.
+   **Note** This function must be called after steps 1-7.
 
 8. Define the initial conditions by providing a user defined function (UDF) `InitialiseNodeMacroVars`, which is currently located in the hilemms_ops.cpp
 
@@ -254,9 +272,12 @@ In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source i
     nodeMacroVars[3] = 0;        // w
     }
     ```
-    As shown above, the UDF will specify how to initialise all macroscopic variables at a computational node $(x,y,z)$ with assumption that the initial condition relies only coordinates. Then the system will automatically distribute this UDF to the whold domain.
+    As shown above, the UDF will specify how to initialise all macroscopic variables at a computational node $(x,y,z)$ with assumption that the initial condition relies only coordinates. Then the system will automatically distribute this UDF to the whole domain.
 
-    At the mesoscopic level, we can have different method to initialise the distribution based on the given macroscopic qunatities while we currently support the equilibrium one.
+    At the mesoscopic level, we can have different method to initialise the distribution based on the given macroscopic qunatities while we currently support the equilibrium one. To activate the funtionality, we call
+    ```c++
+    DefineInitialCondition();
+    ```
 
 9. Set the relaxation time and the time step.
     ```c++
@@ -265,22 +286,6 @@ In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source i
     SetTimeStep(meshSize / SoundSpeed());
     ```
     Here the tricky part is the dimension system. By using the pre-defined lattice, the code is working on a non-dimensional system that was discussed in [Meng, Zhang and Hadjiconstantinou et al, Journal of Fluid Mechanics, 2013.](https://www.cambridge.org/core/journals/journal-of-fluid-mechanics/article/lattice-ellipsoidal-statistical-bgk-model-for-thermal-nonequilibrium-flows/55E5853AD92469389AF5EC4A78E271D7) and  [Hu, Meng and Zhang et al, Computer & Fluids, 2017](https://store.enthought.com/downloads/). However, it can also support physical unit or and other non-dimensional system if the user can provide their corresponding lattice and the corresponding sound speed.
-
-10. Define the scheme to be used.
-
-    ```C++
-    typedef enum {
-        stE1st2nd = 1,
-        stI1st2nd = -1,
-        stStreamCollision = 10, //Stream-collision
-    } SchemeType;
-    ```
-
-    We provide support for both the stream-collision scheme and the so-called finite-difference lattice Boltzmann method, see e.g., the `KerCutCellCVTUpwind2nd` kernel function in the scheme_kernel.h which implements the second-order upwind scheme for the convection term of the lattice Boltzmann equation. For the cavity case, we use the standard stream-collision scheme, which is the major scheme supported at this moment.
-
-    ```c++
-    SchemeType scheme{stStreamCollision};
-    ```
 
 11. Specify the convergence criteria for this steady case. Also specify the interval after which results have to be stored for the post-processing purpose. For this purpose, we can call a wrapper routine `Iterate` which is responsible for calling all sub functions for running the simulation.
 
@@ -409,7 +414,9 @@ Compared to the lid-driven cavity Case, there are several differences:
 
 Finally, a user needs to write a c++ source file where he defines the simulation parameters and call the necessary functions for the simulation. Let us assume that the source file is named as "Taylor_Green.cpp". The function `void simulate()` that was defined in detail for the cavity case has to be changed slightly (SEE COMMENTS IN CODE SECTION) and its full definition is given below.
 3 Iteration()
-  Here we use the version designed for unsteady simulations.
+  Here we need to use the version designed for unsteady simulations.
+
+Finally the function `simulate()' may read
 
 ```c++
 void simulate() {
@@ -437,6 +444,10 @@ void simulate() {
     std::vector<BodyForceType> bodyForceTypes{BodyForce_None};
     std::vector<int> bodyForceCompoId{0};
     DefineBodyForce(bodyForceTypes, bodyForceCompoId);
+
+    SchemeType scheme{Scheme_StreamCollision};
+    DefineScheme(scheme);
+
     //Setting boundary conditions
     int blockIndex{0};
     int componentId{0};
@@ -454,7 +465,8 @@ void simulate() {
                                   BoundarySurface_Top,   BoundarySurface_Bottom,
                                   BoundarySurface_Front, BoundarySurface_Back};
 
-    // The values of macroscopic variables (such as inletValMacroVarsComp{1, 0, 0, 0})     		  becomes irrelevant as the periodic BC is used.
+    // The values of macroscopic variables (such as inletValMacroVarsComp{1, 0, 0, 0})
+    // becomes irrelevant as the periodic BC is used.
     std::vector<Real> inletValMacroVarsComp{1, 0, 0, 0};
     DefineBlockBoundary(blockIndex, componentId, surface[0], boundType[0],
                         MacroVarsComp, inletValMacroVarsComp);
@@ -486,8 +498,7 @@ void simulate() {
     std::vector<Real> startPos{0.0, 0.0, 0.0};
     DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
 
-    std::vector<Real> initialMacroValues{1, 0, 0, 0};
-    DefineInitialCondition(blockIndex, componentId, initialMacroValues);
+    DefineInitialCondition();
 
     std::vector<Real> tauRef{0.01};
     SetTauRef(tauRef);
@@ -666,7 +677,8 @@ import numpy as np
 #Their meaning are same to those in the c++ code
 HaloNum = 1
 MacroVarNum = 4
-XINUM = 15
+#say we are using the D3Q19 lattice
+XINUM = 19
 SPACEDIM = 3
 BlockIndex = 0
 MacroVarNames = ['rho', 'u', 'v', 'w']
