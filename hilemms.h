@@ -6,9 +6,10 @@
  * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
  *
  * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the *following conditions are met:
+ * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,    *    this list of conditions and the following disclaimer.
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
  *    and or other materials provided with the distribution.
@@ -82,7 +83,7 @@ void DefineBlockBoundary(int blockIndex, int componentID,
 // blockStartPos: Starting position of the block in x, y, z directions to find
 // coordinates. meshSize: Size of mesh (Assuming a constant in all 3 directions
 // for stream collision scheme).
-void CalBlockCoordinates(const int blockIndex, Real* blockStartPos,
+void CalculateBlockCoordinates(const int blockIndex, Real* blockStartPos,
                          Real meshsize);
 
 
@@ -100,8 +101,8 @@ void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
 // Kernel which will call a user-defined function for inital conditions
 void KerSetInitialMacroVars(Real* macroVars, const Real* coordinates,
                             const int* idx);
-//void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]);
-void AssignCoordinates(int blockIndex, Real** coordinates);
+void AssignCoordinates(int blockIndex,
+                       const std::vector<std::vector<Real>>& coordinates);
 // blockIndex: Block id.
 // Coordinates: Array to store coordinates of various points inside the domain.
 // This function was defined in setup_comput_domain and has been declared here
@@ -122,7 +123,7 @@ void DefineInitialCondition();
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType);
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType,
                               BoundaryType* edgeType, BoundaryType* cornerType);
-void SetupDomainGeometryProperty(int blockIndex);
+void  SetBlockGeometryProperty(int blockIndex);
 
 void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
                       int Num_Bound_Halo_Points);
