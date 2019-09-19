@@ -8,7 +8,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,    
+ * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
@@ -28,7 +28,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 /*! @brief   Head files for boundary conditions
  * @author  Jianping Meng
@@ -49,7 +49,6 @@ enum BndryDvType {
 };
 /*!
  * @brief Determining discrete velocity type a solid wall boundary: 3D
- *
  * @param vg Geometry property, e.g., corner type
  * @param discreteVelocity components of a discrete velocity
  * @return BndryDvType discrete velocity type
@@ -58,7 +57,6 @@ BndryDvType FindBdyDvType3D(const VertexGeometryTypes vg,
                             const Real* discreteVelocity);
 /*!
  * @brief Determining discrete velocity type a solid wall boundary
- *
  * @param vg Geometry property, e.g., corner type
  * @param discreteVelocity components of a discrete velocity
  * @return BndryDvType discrete velocity type
@@ -66,25 +64,29 @@ BndryDvType FindBdyDvType3D(const VertexGeometryTypes vg,
 BndryDvType FindBdyDvType(const VertexGeometryTypes vg,
                           const Real* discreteVelocity);
 #ifdef OPS_2D
-
 // CutCell block boundary condition
 /*!
  * @brief  Equilibrium diffuse reflection boundary condition
- *
  * @param givenMacroVars  specified velocity
  * @param nodeType if the current node is set to be EDR node
  * @param geometryProperty e.g., corner types
  * @param f distribution function
+ * see Meng, Gu Emerson, Peng and Zhang, https://arxiv.org/abs/1803.00390.
  */
 void KerCutCellEQMDiffuseRefl(const Real* givenMacroVars, const int* nodeType,
                               const int* geometryProperty, Real* f,
                               const int* componentId);
 void KerCutCellPeriodic(const int* nodeType, const int* geometryProperty,
                         Real* f);
+/*!
+ * Standard bounce back boundary condition for block boundaries
+ * As discussed by Meng, Gu and Emerson, Journal of Computational Science
+ * 2018 (28): 476-482, its definition is incomplete which will induc
+ * non-physical slip velocity at wall
+ */
 void KerCutCellBounceBack(const int* nodeType, const int* geometryProperty,
                           Real* f);
-void KerCutCellBounceBackNew(const int* nodeType, const int* geometryProperty,
-                             Real* f);
+
 void KerCutCellKinetic(const Real* givenMacroVars, const int* nodeType,
                        const int* geometryProperty, Real* f);
 void KerCutCellCorrectedKinetic(const Real* givenMacroVars, const Real* dt,
@@ -97,11 +99,7 @@ void KerCutCellExtrapolPressure1ST(const Real* givenBoundaryVars,
 void KerCutCellExtrapolPressure2ND(const Real* givenBoundaryVars,
                                    const int* nodeType,
                                    const int* geometryProperty, Real* f);
-void KerCutCellNonEqExtrapolPressure(const Real* givenMacroVars,
-                                     const int* nodeType,
-                                     const int* geometryProperty,
-                                     const Real* macroVars, const Real* feq,
-                                     Real* f);
+
 
 /*!
  * The Zou-He boundary condition can only be valid for the D2Q9 lattice and
@@ -115,18 +113,11 @@ void KerCutCellZeroFlux(const int* nodeType, const int* geometryProperty,
 /*
  * @givenMacroVars:given macroscopic variables for the boundary condition.
  */
-void KerEquibriumVelocity(const Real* givenMacroVars, Real* f);
-// CutCell immersed solid boundary condition
-void KerCutCellEmbeddedBoundary(const int* nodeType, const int* geometryProperty,
-                               Real* f);
-/*!
- * Non-equilibrium Extraploation boundary condition by Guo et al.
- */
-void KerCutCellNonEqExtrapol(const Real* givenMacroVars, const int* nodeType,
-                             const int* geometryProperty, const Real* macroVars,
-                             const Real* feq, Real* f);
 
-// Boundary fitting
+// CutCell immersed solid boundary condition
+void KerCutCellEmbeddedBoundary(const int* nodeType,
+                                const int* geometryProperty, Real* f);
+
 #endif /* OPS_2D  */
 #ifdef OPS_3D
 // CutCell block boundary condition
@@ -164,12 +155,7 @@ void KerCutCellNoslipEQN3D(const Real* givenMacroVars, const int* nodeType,
 void KerCutCellPeriodic3D(Real* f, const int* nodeType,
                           const int* geometryProperty, const int* componentId);
 #endif /* OPS_3D*/
-/*!
- * For updating halo points, f must have wind direction
- * the geometry variable can use central difference
- * According the boundary condition, may need different method
- */
-void KerUpdateHalo();
+
 const int BoundaryHaloNum();
 void SetBoundaryHaloNum(const int boundaryhaloNum);
 #endif  // BOUNDARY_H
