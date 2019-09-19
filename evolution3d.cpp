@@ -8,7 +8,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,    
+ * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
@@ -37,8 +37,7 @@
  * cycle
  */
 #include "evolution3d.h"
-#include "hilemms.h"
-#include "model.h"
+
 
 /*
  * In the following routines, there are some variables are defined
@@ -144,135 +143,33 @@ void UpdateFeqandBodyforce3D() {
                                  "double", OPS_RW));
     }
 }
-
+// TODO Delete unimplemented functionalities for release
 void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                           const Real* givenVars, int* range,
                           const VertexTypes boundaryType) {
-    // void TreatBlockBoundary3D(const Real* givenVars, int* range, const
-    // VertexTypes boundaryType) for (int blockIdx = 0; blockIdx < BlockNum();
-    // blockIdx++) {
-    int blockIdx;
-    // This way will require minimum changes in the MPLB code.
-    blockIdx = blockIndex;
     switch (boundaryType) {
-        case Vertex_NoneqExtrapol: {
-            //                ops_par_loop(
-            //                    KerCutCellNonEqExtrapol,
-            //                    "KerCutCellNonEqExtrapol", g_Block[blockIdx],
-            //                    SPACEDIM, range, ops_arg_gbl(givenVars,
-            //                    NUMMACROVAR, "double", OPS_READ),
-            //                    ops_arg_dat(g_NodeType[blockIdx], 1,
-            //                    LOCALSTENCIL, "int",
-            //                                OPS_READ),
-            //                    ops_arg_dat(g_GeometryProperty[blockIdx], 1,
-            //                    LOCALSTENCIL,
-            //                                "int", OPS_READ),
-            //                    ops_arg_dat(g_MacroVars[blockIdx],
-            //                    NUMMACROVAR,
-            //                                ONEPTLATTICESTENCIL, "double",
-            //                                OPS_READ),
-            //                    ops_arg_dat(g_feq[blockIdx], NUMXI,
-            //                    ONEPTLATTICESTENCIL,
-            //                                "double", OPS_RW),
-            //                    ops_arg_dat(g_f[blockIdx], NUMXI,
-            //                    ONEPTLATTICESTENCIL,
-            //                                "double", OPS_RW));
-        } break;
         case Vertex_ExtrapolPressure1ST: {
             ops_par_loop(
                 KerCutCellExtrapolPressure1ST3D,
-                "KerCutCellExtrapolPressure1ST3D", g_Block[blockIdx], SPACEDIM,
-                range, ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS,
+                "KerCutCellExtrapolPressure1ST3D", g_Block[blockIndex],
+                SPACEDIM, range,
+                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
+                ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                             ONEPTREGULARSTENCIL, "int", OPS_READ),
-                ops_arg_dat(g_GeometryProperty[blockIdx], 1, LOCALSTENCIL,
+                ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                             "int", OPS_READ),
-                ops_arg_dat(g_f[blockIdx], NUMXI, ONEPTREGULARSTENCIL, "double",
-                            OPS_RW));
-        } break;
-        case Vertex_ExtrapolPressure2ND: {
-            //                ops_par_loop(
-            //                    KerCutCellExtrapolPressure2ND,
-            //                    "KerCutCellExtrapolPressure2ND",
-            //                    g_Block[blockIdx], SPACEDIM, range,
-            //                    ops_arg_gbl(givenVars, NUMMACROVAR, "double",
-            //                    OPS_READ), ops_arg_dat(g_NodeType[blockIdx],
-            //                    1, ONEPTREGULARSTENCIL,
-            //                                "int", OPS_READ),
-            //                    ops_arg_dat(g_GeometryProperty[blockIdx], 1,
-            //                    LOCALSTENCIL,
-            //                                "int", OPS_READ),
-            //                    ops_arg_dat(g_f[blockIdx], NUMXI,
-            //                    TWOPTREGULARSTENCIL,
-            //                                "double", OPS_RW));
-        } break;
-        case Vertex_NonEqExtrapolPressure: {
-            //                ops_par_loop(
-            //                    KerCutCellNonEqExtrapolPressure,
-            //                    "KerCutCellNonEqExtrapolPressure",
-            //                    g_Block[blockIdx], SPACEDIM, range,
-            //                    ops_arg_gbl(givenVars, NUMMACROVAR, "double",
-            //                    OPS_READ), ops_arg_dat(g_NodeType[blockIdx],
-            //                    1, LOCALSTENCIL, "int",
-            //                                OPS_READ),
-            //                    ops_arg_dat(g_GeometryProperty[blockIdx], 1,
-            //                    LOCALSTENCIL,
-            //                                "int", OPS_READ),
-            //                    ops_arg_dat(g_MacroVars[blockIdx],
-            //                    NUMMACROVAR,
-            //                                ONEPTLATTICESTENCIL, "double",
-            //                                OPS_READ),
-            //                    ops_arg_dat(g_feq[blockIdx], NUMXI,
-            //                    ONEPTLATTICESTENCIL,
-            //                                "double", OPS_RW),
-            //                    ops_arg_dat(g_f[blockIdx], NUMXI,
-            //                    ONEPTLATTICESTENCIL,
-            //                                "double", OPS_RW));
-        } break;
-        case Vertex_ZouHeVelocity: {
-            //                ops_par_loop(
-            //                    KerCutCellZouHeVelocity,
-            //                    "KerCutCellZouHeVelocity,", g_Block[blockIdx],
-            //                    SPACEDIM, range, ops_arg_gbl(givenVars,
-            //                    NUMMACROVAR, "double", OPS_READ),
-            //                    ops_arg_dat(g_NodeType[blockIdx], 1,
-            //                    LOCALSTENCIL, "int",
-            //                                OPS_READ),
-            //                    ops_arg_dat(g_GeometryProperty[blockIdx], 1,
-            //                    LOCALSTENCIL,
-            //                                "int", OPS_READ),
-            //                    ops_arg_dat(g_MacroVars[blockIdx],
-            //                    NUMMACROVAR,
-            //                                ONEPTLATTICESTENCIL, "double",
-            //                                OPS_READ),
-            //                    ops_arg_dat(g_f[blockIdx], NUMXI,
-            //                    ONEPTLATTICESTENCIL,
-            //                                "double", OPS_RW));
-        } break;
-        case Vertex_KineticDiffuseWall: {
-            //                ops_par_loop(
-            //                    KerCutCellKinetic, "KerCutCellKinetic",
-            //                    g_Block[blockIdx], SPACEDIM, range,
-            //                    ops_arg_gbl(givenVars, NUMMACROVAR, "double",
-            //                    OPS_READ), ops_arg_dat(g_NodeType[blockIdx],
-            //                    1, LOCALSTENCIL, "int",
-            //                                OPS_READ),
-            //                    ops_arg_dat(g_GeometryProperty[blockIdx], 1,
-            //                    LOCALSTENCIL,
-            //                                "int", OPS_READ),
-            //                    ops_arg_dat(g_f[blockIdx], NUMXI,
-            //                    LOCALSTENCIL, "double",
-            //                                OPS_RW));
+                ops_arg_dat(g_f[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
+                            "double", OPS_RW));
         } break;
         case Vertex_EQMDiffuseRefl: {
             ops_par_loop(
                 KerCutCellEQMDiffuseRefl3D, "KerCutCellEQMDiffuseRefl3D",
-                g_Block[blockIdx], SPACEDIM, range,
-                ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double",
+                g_Block[blockIndex], SPACEDIM, range,
+                ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
                             OPS_RW),
-                ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS, LOCALSTENCIL,
+                ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
                             "int", OPS_READ),
-                ops_arg_dat(g_GeometryProperty[blockIdx], 1, LOCALSTENCIL,
+                ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                             "int", OPS_READ),
                 ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
                 ops_arg_gbl(&componentID, 1, "int", OPS_READ));
@@ -280,37 +177,22 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
         case Vertex_NoslipEQN: {
             ops_par_loop(
                 KerCutCellNoslipEQN3D, "KerCutCellNoslipEQN3D",
-                g_Block[blockIdx], SPACEDIM, range,
+                g_Block[blockIndex], SPACEDIM, range,
                 ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS, LOCALSTENCIL,
+                ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
                             "int", OPS_READ),
-                ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL, "double",
+                ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
                             OPS_RW),
                 ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
-        case Vertex_FreeFlux: {
-            //                ops_par_loop(KerCutCellZeroFlux,
-            //                "KerCutCellZeroFlux",
-            //                             g_Block[blockIdx], SPACEDIM, range,
-            //                             ops_arg_dat(g_NodeType[blockIdx], 1,
-            //                             LOCALSTENCIL,
-            //                                         "int", OPS_READ),
-            //                             ops_arg_dat(g_GeometryProperty[blockIdx],
-            //                             1,
-            //                                         LOCALSTENCIL, "int",
-            //                                         OPS_READ),
-            //                             ops_arg_dat(g_f[blockIdx], NUMXI,
-            //                             LOCALSTENCIL,
-            //                                         "double", OPS_RW));
-        } break;
         case Vertex_Periodic: {
             ops_par_loop(KerCutCellPeriodic3D, "KerCutCellPeriodic3D",
-                         g_Block[blockIdx], SPACEDIM, range,
-                         ops_arg_dat(g_f[blockIdx], NUMXI, LOCALSTENCIL,
+                         g_Block[blockIndex], SPACEDIM, range,
+                         ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL,
                                      "double", OPS_RW),
-                         ops_arg_dat(g_NodeType[blockIdx], NUMCOMPONENTS,
+                         ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                                      LOCALSTENCIL, "int", OPS_READ),
-                         ops_arg_dat(g_GeometryProperty[blockIdx], 1,
+                         ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                      LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
@@ -335,40 +217,6 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
 //     }
 // }
 
-/*
-void ImplementBoundary3D() {
-    // TreatEmbeddedBoundary3D();
-    // Real givenInletVars[]{1.00005, 0, 0};
-    int* inletRng = BlockIterRng(0, IterRngImin());
-    Real givenInletVars[]{1, 0, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenInletVars, inletRng, Vertex_Periodic);
-
-    int* outletRng = BlockIterRng(0, IterRngImax());
-    Real givenOutletVars[] = {1, 0, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenOutletVars, outletRng, Vertex_Periodic );
-
-    int* topRng = BlockIterRng(0, IterRngJmax());
-    // Real givenTopWallBoundaryVars[]{1, 0, 0};
-    Real givenTopWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenTopWallBoundaryVars, topRng,
-                          Vertex_NoslipEQN);
-
-    int* bottomRng = BlockIterRng(0, IterRngJmin());
-    Real givenBotWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenBotWallBoundaryVars, bottomRng,
-                         Vertex_NoslipEQN);
-
-    int* backRng = BlockIterRng(0, IterRngKmin());
-    Real givenBackWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenBackWallBoundaryVars, backRng,
-                          Vertex_NoslipEQN);
-
-    int* frontRng = BlockIterRng(0, IterRngKmax());
-    Real givenFrontWallBoundaryVars[]{1, 0, 0, 0};  // Input Parameters
-    TreatBlockBoundary3D(givenFrontWallBoundaryVars, frontRng,
-                         Vertex_NoslipEQN);
-}
-*/
 
 void InitialiseSolution3D() {
     UpdateFeqandBodyforce3D();
@@ -400,7 +248,7 @@ void CalcTotalMass3D(double* totalMass) {
     }
     ops_reduction_result(massHandle, (double*)totalMass);
 }
-
+// TODO Delete for release
 void NormaliseF3D(Real* ratio) {
     for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
         int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
@@ -462,47 +310,6 @@ void CalcResidualError3D() {
     }
 }
 
-// void ForwardEuler() {
-//    for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-//        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-//        ops_par_loop(KerCutCellCVTUpwind, "KerCutCellCVTUpwind2nd",
-//                     g_Block[blockIndex], SPACEDIM, iterRng,
-//                     ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
-//                                 ONEPTREGULARSTENCIL, "double", OPS_READ),
-//                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL,
-//                     "int",
-//                                 OPS_READ),
-//                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
-//                                 LOCALSTENCIL, "int", OPS_READ),
-//                     ops_arg_dat(g_f[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
-//                                 "double", OPS_READ),
-//                     ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
-//                                 "double", OPS_RW));
-//        Real schemeCoeff{1};
-//        ops_par_loop(KerCutCellExplicitTimeMach, "KerCutCellExplicitTimeMach",
-//                     g_Block[blockIndex], SPACEDIM, iterRng,
-//                     ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
-//                     ops_arg_gbl(&schemeCoeff, 1, "double", OPS_READ),
-//                     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL,
-//                     "int",
-//                                 OPS_READ),
-//                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
-//                                 LOCALSTENCIL, "int", OPS_READ),
-//                     ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
-//                                 "double", OPS_READ),
-//                     ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
-//                                 "double", OPS_READ),
-//                     ops_arg_dat(g_Tau[blockIndex], NUMCOMPONENTS,
-//                     LOCALSTENCIL,
-//                                 "double", OPS_READ),
-//                     ops_arg_dat(g_Bodyforce[blockIndex], NUMXI, LOCALSTENCIL,
-//                                 "double", OPS_READ),
-//                     ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL,
-//                     "double",
-//                                 OPS_RW));
-//    }
-//}
-
 void DispResidualError3D(const int iter, const Real checkPeriod) {
     ops_printf("##########Residual Error at %i time step##########\n", iter);
     for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
@@ -552,25 +359,5 @@ void StreamCollision3D() {
 #endif
     ImplementBoundaryConditions();
 }
-
-// void TimeMarching() {
-//    UpdateMacroVars();
-//    //CopyDistribution(g_f, g_fStage);
-//    UpdateSWEFeqandBodyforce();
-//    UpdateSWETau();
-//    ForwardEuler();
-//    //ops_halo_transfer(HaloGroups);
-//    ImplementBoundary();
-// }
-
-// void TimeMarching() {
-//     UpdateMacroVars();
-//     //CopyDistribution(g_f, g_fStage);
-//     UpdateFeqandBodyforce();
-//     UpdateTau();
-//     ForwardEuler();
-//     //ops_halo_transfer(HaloGroups);
-//     ImplementBoundary();
-// }
 
 #endif /* OPS_3D */

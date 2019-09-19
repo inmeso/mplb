@@ -8,7 +8,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,    
+ * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
@@ -30,10 +30,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*! @brief   Head file for wrap functions.
+/*! @brief  Head file for wrap functions.
  * @author  Jianping Meng
- * @details Declare wrap functions for implementing the main evolution
- * cycle
+ * @details Declare wrap functions for implementing the main evolution cycle
  */
 
 #ifndef EVOLUTION_H_
@@ -42,6 +41,8 @@
 #include "flowfield.h"
 #include "scheme.h"
 #include "type.h"
+#include "model.h"
+#include "hilemms.h"
 
 /*!
  * In this module, we provide subroutines that implement a update system over
@@ -67,7 +68,6 @@ void CalcResidualError();
  * Routine for completing one full time step
  */
 void StreamCollision();
-void StreamCollisionSWE();
 // Routines for the general finite-difference scheme.
 void UpdateBoundary();
 void TimeMarching();
@@ -75,9 +75,7 @@ void TimeMarching();
 void InitialiseSolution();
 void UpdateMacroVars();
 void UpdateTau();
-void UpdateSWETau();
 void UpdateFeqandBodyforce();
-void UpdateSWEFeqandBodyforce();
 void UpdateHalos();
 void CopyDistribution(const ops_dat *fSrc, ops_dat *fDest);
 void DispResidualError(const int iter, const Real timePeriod);
