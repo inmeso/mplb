@@ -92,12 +92,6 @@ void KerSetCoordinates(const Real* coordX, const Real* coordY, const int* idx,
 void KerSetCoordinates3D(const Real* coordX, const Real* coordY,
                          const Real* coordZ, const int* idx, Real* coordinates);
 
-// Interface for Setting the initial values.
-// coordinates: Coordinate array of nodes.
-// idx: An array used by OPS which gives the index of the current grid point.
-void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
-                                   Real* macroVars, Real* macroVarsInitVal,
-                                   const int* componentId);
 // Kernel which will call a user-defined function for inital conditions
 void KerSetInitialMacroVars(Real* macroVars, const Real* coordinates,
                             const int* idx);

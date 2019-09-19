@@ -8,7 +8,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,    
+ * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
@@ -77,46 +77,6 @@ void KerSetInitialMacroVars(Real* macroVars, const Real* coordinates,
     delete[] initiaNodeMacroVars;
     delete[] nodeCoordinates;
 }
-
-// Kernel to set initial value for a particlaur component.
-void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
-                                   Real* macroVars, Real* macroVarsInitVal,
-                                   const int* componentId) {
-#ifdef OPS_2D
-
-    int compoIndex{*componentId};
-    for (int m = VARIABLECOMPPOS[2 * compoIndex], i = 0;
-         m <= VARIABLECOMPPOS[2 * compoIndex + 1]; m++, i++) {
-        macroVars[OPS_ACC_MD2(m, 0, 0)] =
-            macroVarsInitVal[OPS_ACC_MD3(i, 0, 0)];
-    }
-#endif
-
-#ifdef OPS_3D
-
-    int compoIndex{*componentId};
-
-    for (int m = VARIABLECOMPPOS[2 * compoIndex], i = 0;
-         m <= VARIABLECOMPPOS[2 * compoIndex + 1]; m++, i++) {
-        //macroVars[OPS_ACC_MD2(m, 0, 0, 0)] =
-        //    macroVarsInitVal[OPS_ACC_MD3(i, 0, 0, 0)];
-        Real U0{0.01};
-        Real X;
-        Real Y;
-        Real Z;
-
-        X = coordinates[OPS_ACC_MD0(0, 0, 0, 0)];
-        Y = coordinates[OPS_ACC_MD0(1, 0, 0, 0)];
-        Z = coordinates[OPS_ACC_MD0(2, 0, 0, 0)];
-
-        macroVars[OPS_ACC_MD2(0, 0, 0, 0)] = 1.0;
-        macroVars[OPS_ACC_MD2(1, 0, 0, 0)] = U0     * cos(2 * PI * X) * sin(2 * PI * Y) * sin(2 * PI * Z);
-        macroVars[OPS_ACC_MD2(2, 0, 0, 0)] =-U0 / 2 * sin(2 * PI * X) * cos(2 * PI * Y) * sin(2 * PI * Z);
-        macroVars[OPS_ACC_MD2(3, 0, 0, 0)] =-U0 / 2 * sin(2 * PI * X) * sin(2 * PI * Y) * cos(2 * PI * Z);
-    }
-#endif
-}
-
 #ifdef OPS_2D
 void KerSetEmbeddedBodyBoundary(int* surfaceBoundary,
                                const int* geometryProperty, int* nodeType) {
