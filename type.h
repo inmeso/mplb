@@ -9,7 +9,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,    
+ * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
@@ -92,10 +92,7 @@ enum VertexTypes {
     Vertex_BounceBackWall = 1010,
     Vertex_FreeFlux = 1011,
     Vertex_ZouHeVelocity = 1012,
-    Vertex_NoneqExtrapol = 1013,
     Vertex_EQMDiffuseRefl = 1014,
-    Vertex_NonEqExtrapolPressure = 1015,
-
     Vertex_NoslipEQN = 1020,
     // Vertex_BoundaryCorner is the general corner type of node
     // All specific corner types should be started as vtbtco
@@ -257,9 +254,7 @@ enum BoundaryType {
     BoundaryType_BounceBackWall = 20,
     BoundaryType_FreeFlux = 21,
     BoundaryType_ZouHeVelocity = 22,
-    BoundaryType_NoneqExtrapol = 23,
-    BoundaryType_EQMDiffuseRefl = 24,
-    BoundaryType_NonEqExtrapolPressure = 25,
+    BoundaryType_EQMDiffuseRefl = 24
 };
 
 typedef enum {

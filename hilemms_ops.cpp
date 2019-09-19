@@ -297,16 +297,8 @@ VertexTypes BoundTypeToVertexType(BoundaryType type) {
             vtType = Vertex_ZouHeVelocity;
             break;
 
-        case BoundaryType_NoneqExtrapol:
-            vtType = Vertex_NoneqExtrapol;
-            break;
-
         case BoundaryType_EQMDiffuseRefl:
             vtType = Vertex_EQMDiffuseRefl;
-            break;
-
-        case BoundaryType_NonEqExtrapolPressure:
-            vtType = Vertex_NonEqExtrapolPressure;
             break;
 
         default:
@@ -323,14 +315,14 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
     SetBlockNum(blockNum);
     SetBlockSize(blockSize);
     DefineVariables();
-    //TODO We need to define the halo relation and
-    #ifdef OPS_3D
-        DefineHaloTransfer3D();
-    #endif //OPS_3D
+// TODO We need to define the halo relation and
+#ifdef OPS_3D
+    DefineHaloTransfer3D();
+#endif  // OPS_3D
 
-    #ifdef OPS_2D
-        DefineHaloTransfer();
-    #endif
+#ifdef OPS_2D
+    DefineHaloTransfer();
+#endif
 
     ops_partition((char*)"LBM Solver");
     ops_printf("%i blocks are parted and all field variabls allocated!\n",
@@ -342,7 +334,7 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
         for (int blockIndex = 0; blockIndex < blockNum; blockIndex++) {
             // One block will have 3 values as starting position in x, y, z
             // direction respectively.
-            Real* blockStartPosition=new Real[SPACEDIM];
+            Real* blockStartPosition = new Real[SPACEDIM];
 
             for (int spaceDim = 0; spaceDim < SPACEDIM; spaceDim++) {
                 blockStartPosition[spaceDim] =
@@ -354,9 +346,10 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
         }
     } else {
         ops_printf(
-            "Error! Expected %i coordinates of three starting points %i, but received only =%i \n",
+            "Error! Expected %i coordinates of three starting points %i, but "
+            "received only =%i \n",
             SPACEDIM * blockNum, numBlockStartPos);
-            assert(numBlockStartPos == blockNum * SPACEDIM);
+        assert(numBlockStartPos == blockNum * SPACEDIM);
     }
     ops_printf("The coordinates are assigned!\n");
     for (int blockId = 0; blockId < blockNum; blockId++) {
@@ -371,12 +364,12 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
         }
     }
 
-    for (int bcIdx = 0; bcIdx < blockBoundaryConditions.size();
-         bcIdx++) {
+    for (int bcIdx = 0; bcIdx < blockBoundaryConditions.size(); bcIdx++) {
         const int compoId{blockBoundaryConditions[bcIdx].componentID};
         const int blockIndex{blockBoundaryConditions[bcIdx].blockIndex};
-        int* bcRange = BoundarySurfaceRange(blockBoundaryConditions[bcIdx].blockIndex,
-                                      blockBoundaryConditions[bcIdx].boundarySurface);
+        int* bcRange = BoundarySurfaceRange(
+            blockBoundaryConditions[bcIdx].blockIndex,
+            blockBoundaryConditions[bcIdx].boundarySurface);
         const int vtType{(int)blockBoundaryConditions[bcIdx].boundaryType};
         ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
                      SPACEDIM, bcRange,
@@ -672,46 +665,6 @@ void ImplementBoundaryConditions() {
     else {
         ops_printf("\n No Boundary condition has been defined.");
     }
-}
-
-void DefineInitialCondition(const int blockIndex, const int componentId,
-                      std::vector<Real> initialMacroValues) {
-    // Number of macroscopic variables for a given component.
-    int numMacroVarsComp;
-    numMacroVarsComp = VARIABLECOMPPOS[2 * componentId + 1] -
-                       VARIABLECOMPPOS[2 * componentId] + 1;
-
-    const int numInitialMacroComp{(int)initialMacroValues.size()};
-
-    Real* initMacroVal;
-    initMacroVal = &initialMacroValues[0];
-
-    if (numInitialMacroComp == numMacroVarsComp) {
-        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-
-        ops_par_loop(KerSetInitialMacroVarsHilemms,
-                     "KerSetInitialMacroVarsHilemms", g_Block[blockIndex],
-                     SPACEDIM, iterRng,
-                     ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
-                                 LOCALSTENCIL, "double", OPS_READ),
-                     ops_arg_idx(),
-                     ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
-                                 LOCALSTENCIL, "double", OPS_RW),
-                     ops_arg_gbl(initMacroVal, NUMMACROVAR, "Real", OPS_READ),
-                     ops_arg_gbl(&componentId, 1, "int", OPS_READ));
-    } else {
-        ops_printf(
-            "\n For component = %i expected number of macroscopic values "
-            "for initial condition = %i however number of values received "
-            "= %i",
-            componentId, numMacroVarsComp, numInitialMacroComp);
-    }
-#ifdef OPS_3D
-    InitialiseSolution3D();
-#endif
-#ifdef OPS_2D
-    InitialiseSolution();
-#endif
 }
 
 void InitialiseNodeMacroVars(Real* nodeMacroVars, const Real* nodeCoordinates) {
