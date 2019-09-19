@@ -8,7 +8,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,  
+ * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
@@ -39,6 +39,10 @@
 
 PointPosition IfPointInPoly(const Real* point, const Real* polygon,
                             const long long polyVertexNum) {
+    /*This routine implements the algorithm discussed in Joseph O' Rourke,
+     *Computational Geometry in C, 1998, Cambridge University Press.
+     *Two dimensional version
+    */
     long long currentVertex, previousVertex;
     Real x;
     long long rightRayCross = 0;
