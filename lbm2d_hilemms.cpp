@@ -1,6 +1,37 @@
 // Copyright 2017 the MPLB team. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+*/
 
 /** @brief Define the main iteration
  *  @author Jianping Meng
@@ -56,34 +87,7 @@ void simulate() {
     SetupScheme();
     SetupBoundary();
 
-    int blockNum{1};
-    std::vector<int> blockSize{51, 51};
-    Real meshSize{0.02};
-    std::vector<Real> startPos{0.0, 0.0};
-    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
-
-    int blockIndex{0};
-    SetupGeomPropAndNodeType(blockIndex, boundType);
-
-    int compoIdInitialCond{0};
-    std::vector<Real> initialMacroValues{1, 0, 0};
-    DefineIntialCond(blockIndex, compoIdInitialCond, initialMacroValues);
-    ops_printf("%s\n", "Flowfield is Initialised now!");
-
-    std::vector<Real> tauRef{0.001};
-    SetTauRef(tauRef);
-
-    SetTimeStep(meshSize / SoundSpeed());
-
-    HALODEPTH = HaloPtNum();
-    ops_printf("%s\n", "Starting to allocate...");
-    DefineHaloTransfer();
-    // above calls must be before the ops_partition call.
-    //ops_partition((char*)"LBM");
-    ops_printf("%s\n", "Flowfield is setup now!");
-    InitialiseSolution();
-
-    blockIndex = 0;
+    int blockIndex = 0;
     int componentId{0};
     std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,
                                              Variable_V};
@@ -102,11 +106,39 @@ void simulate() {
     std::vector<Real> bottomValMacroVarsComp{1, 0, 0};
     DefineBlockBoundary(blockIndex, componentId, surface[3], boundType[3],
                         MacroVarsComp, bottomValMacroVarsComp);
+    ops_printf("Block boundary defined!\n");
+
+    int blockNum{1};
+    std::vector<int> blockSize{51, 51};
+    Real meshSize{0.02};
+    std::vector<Real> startPos{0.0, 0.0};
+    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+
+    //int blockIndex{0};
+    //SetupGeomPropAndNodeType(blockIndex, boundType);
+
+    int compoIdInitialCond{0};
+    std::vector<Real> initialMacroValues{1, 0, 0};
+    DefineInitialCondition(blockIndex, compoIdInitialCond, initialMacroValues);
+    ops_printf("%s\n", "Flowfield is Initialised now!");
+
+    std::vector<Real> tauRef{0.001};
+    SetTauRef(tauRef);
+
+    SetTimeStep(meshSize / SoundSpeed());
+
+    // HALODEPTH = HaloPtNum();
+    // ops_printf("%s\n", "Starting to allocate...");
+    // DefineHaloTransfer();
+    // // above calls must be before the ops_partition call.
+    // //ops_partition((char*)"LBM");
+    // ops_printf("%s\n", "Flowfield is setup now!");
+    // InitialiseSolution();
 
 #if 0
     // currently this information is not playin major role in this
     // implementation.
-    SchemeType scheme{stStreamCollision};                                
+    SchemeType scheme{stStreamCollision};
     const int steps{5000};
     const int checkPeriod{500};
     Iterate(scheme, steps, checkPeriod);

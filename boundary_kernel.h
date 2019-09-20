@@ -1,25 +1,46 @@
-// Copyright 2017 the MPLB team. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 
-/*! @brief   Kernel functions for boundary conditions
+/*! @brief  Kernel functions for boundary conditions
  * @author  Jianping Meng
  * @details Defining kernel functions for various boundary conditions.
  */
 #ifndef BOUNDARY_KERNEL_H
 #define BOUNDARY_KERNEL_H
-#include <iostream>
 #include "boundary.h"
 // As we are using update-halo method for the discretisation,
 // we need to deal with halo points when treating boundary
-/*
- * TODO: for a corner point, there may be a issue for boundary conditions
- * including the free flux boundary since they also rely on the surface
- * direction. For example, the free flux boundary at a VG_IPJP_I point may not
- * know which direction to pose the zero gradient, although this may have
- * negligible effect.
- */
 
+// Boundary conditions for two-dimensional problems
 #ifdef OPS_2D
 void KerCutCellZeroFlux(const int *nodeType, const int *geometryProperty,
                         Real *f) {
@@ -52,64 +73,65 @@ void KerCutCellZeroFlux(const int *nodeType, const int *geometryProperty,
                         f[OPS_ACC_MD2(xiIndex, 0, -1)];
                 }
                 break;
-            case VG_IPJP_I:                          // inner corner point
-                if (vt == nodeType[OPS_ACC0(0, 1)])  // VG_IP
-                {
+
+            case VG_IPJP_I:
+                // VG_IP
+                if (vt == nodeType[OPS_ACC0(0, 1)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC0(1, 0)])  // VG_JP
-                {
+                // VG_JP
+                if (vt == nodeType[OPS_ACC0(1, 0)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 1)];
                     }
                 }
                 break;
-            case VG_IPJM_I:                           // inner corner point
-                if (vt == nodeType[OPS_ACC0(0, -1)])  // VG_IP
-                {
+            case VG_IPJM_I:
+                // VG_IP
+                if (vt == nodeType[OPS_ACC0(0, -1)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC0(1, 0)])  // VG_JM
-                {
+                // VG_JM
+                if (vt == nodeType[OPS_ACC0(1, 0)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, -1)];
                     }
                 }
                 break;
-            case VG_IMJP_I:                          // inner corner point
-                if (vt == nodeType[OPS_ACC0(0, 1)])  // VG_IM
-                {
+            case VG_IMJP_I:
+                // VG_IM
+                if (vt == nodeType[OPS_ACC0(0, 1)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, -1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC0(-1, 0)])  // VG_JP
-                {
+                // VG_JP
+                if (vt == nodeType[OPS_ACC0(-1, 0)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, 1)];
                     }
                 }
                 break;
-            case VG_IMJM_I:                           // inner corner point
-                if (vt == nodeType[OPS_ACC0(0, -1)])  // VG_IM
-                {
+            case VG_IMJM_I:
+                //  VG_IM
+                if (vt == nodeType[OPS_ACC0(0, -1)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, -1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC0(-1, 0)])  // VG_JM
-                {
+                // VG_JM
+                if (vt == nodeType[OPS_ACC0(-1, 0)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         f[OPS_ACC_MD2(xiIndex, 0, 0)] =
                             f[OPS_ACC_MD2(xiIndex, 0, -1)];
@@ -129,8 +151,8 @@ void KerCutCellZeroFlux(const int *nodeType, const int *geometryProperty,
     }
 }
 
-void KerCutCellEmbededBoundary(const int *nodeType, const int *geometryProperty,
-                               Real *f) {
+void KerCutCellEmbeddedBoundary(const int *nodeType,
+                                const int *geometryProperty, Real *f) {
     /*!
      For the bounce back scheme,We consider zero velocity boundary first.
      To make sure the velocity at boundary is zero, the implementation
@@ -228,7 +250,7 @@ void KerCutCellEmbededBoundary(const int *nodeType, const int *geometryProperty,
                         f[OPS_ACC_MD2(0, 0, 0)] =
                             2 * rhow * (2 - u * u - v * v) / 9;
                     } break;
-                    case VG_IPJP_I: {  // inner corner point
+                    case VG_IPJP_I: {
                         const Real f3 = f[OPS_ACC_MD2(3, 0, 0)];
                         const Real f7 = f[OPS_ACC_MD2(7, 0, 0)];
                         const Real f4 = f[OPS_ACC_MD2(4, 0, 0)];
@@ -253,7 +275,7 @@ void KerCutCellEmbededBoundary(const int *nodeType, const int *geometryProperty,
                              v * v) *
                             rhow / 36;
                     } break;
-                    case VG_IPJM_I: {  // inner corner point
+                    case VG_IPJM_I: {
                         const Real f2 = f[OPS_ACC_MD2(2, 0, 0)];
                         const Real f3 = f[OPS_ACC_MD2(3, 0, 0)];
                         const Real f6 = f[OPS_ACC_MD2(6, 0, 0)];
@@ -278,7 +300,7 @@ void KerCutCellEmbededBoundary(const int *nodeType, const int *geometryProperty,
                              v * v) *
                             rhow / 36;
                     } break;
-                    case VG_IMJP_I: {  // inner corner point
+                    case VG_IMJP_I: {
                         const Real f1 = f[OPS_ACC_MD2(1, 0, 0)];
                         const Real f4 = f[OPS_ACC_MD2(4, 0, 0)];
                         const Real f8 = f[OPS_ACC_MD2(8, 0, 0)];
@@ -303,7 +325,7 @@ void KerCutCellEmbededBoundary(const int *nodeType, const int *geometryProperty,
                              v * v) *
                             rhow / 36;
                     } break;
-                    case VG_IMJM_I: {  // inner corner point
+                    case VG_IMJM_I: {
                         const Real f1 = f[OPS_ACC_MD2(1, 0, 0)];
                         const Real f5 = f[OPS_ACC_MD2(5, 0, 0)];
                         const Real f2 = f[OPS_ACC_MD2(2, 0, 0)];
@@ -455,23 +477,19 @@ void KerCutCellEmbededBoundary(const int *nodeType, const int *geometryProperty,
                         wallNormalVector[0] = 0;
                         wallNormalVector[1] = -1;
                     } break;
-                    case VG_IPJP_I:  // inner corner point
-                    {
+                    case VG_IPJP_I: {
                         wallNormalVector[0] = sqrt2Inverse;
                         wallNormalVector[1] = sqrt2Inverse;
                     } break;
-                    case VG_IPJM_I:  // inner corner point
-                    {
+                    case VG_IPJM_I: {
                         wallNormalVector[0] = sqrt2Inverse;
                         wallNormalVector[1] = -sqrt2Inverse;
                     } break;
-                    case VG_IMJP_I:  // inner corner point
-                    {
+                    case VG_IMJP_I: {
                         wallNormalVector[0] = -sqrt2Inverse;
                         wallNormalVector[1] = sqrt2Inverse;
                     } break;
-                    case VG_IMJM_I:  // inner corner point
-                    {
+                    case VG_IMJM_I: {
                         wallNormalVector[0] = -sqrt2Inverse;
                         wallNormalVector[1] = -sqrt2Inverse;
                     } break;
@@ -579,32 +597,33 @@ void KerCutCellExtrapolPressure1ST(const Real *givenBoundaryVars,
                     }
 
                 } break;
-                case VG_IPJP_I: {                        // inner corner point
-                    if (vt == nodeType[OPS_ACC1(0, 1)])  // VG_IP
-                    {
+
+                case VG_IPJP_I: {
+                    // VG_IP
+                    if (vt == nodeType[OPS_ACC1(0, 1)]) {
                         if ((cx > 0 && cy >= 0) || (cx >= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 1, 0)];
                         }
                     }
-                    if (vt == nodeType[OPS_ACC1(1, 0)])  // VG_JP
-                    {
+                    // VG_JP
+                    if (vt == nodeType[OPS_ACC1(1, 0)]) {
                         if ((cx > 0 && cy >= 0) || (cx >= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 0, 1)];
                         }
                     }
                 } break;
-                case VG_IPJM_I: {                         // inner corner point
-                    if (vt == nodeType[OPS_ACC1(0, -1)])  // VG_IP
-                    {
+                case VG_IPJM_I: {
+                    // VG_IP
+                    if (vt == nodeType[OPS_ACC1(0, -1)]) {
                         if ((cx > 0 && cy <= 0) || (cx >= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 1, 0)];
                         }
                     }
-                    if (vt == nodeType[OPS_ACC1(1, 0)])  // VG_JM
-                    {
+                    // VG_JM
+                    if (vt == nodeType[OPS_ACC1(1, 0)]) {
                         if ((cx > 0 && cy <= 0) || (cx >= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 0, -1)];
@@ -612,32 +631,32 @@ void KerCutCellExtrapolPressure1ST(const Real *givenBoundaryVars,
                     }
                 } break;
 
-                case VG_IMJP_I: {                        // inner corner point
-                    if (vt == nodeType[OPS_ACC1(0, 1)])  // VG_IM
-                    {
+                case VG_IMJP_I: {
+                    // VG_IM
+                    if (vt == nodeType[OPS_ACC1(0, 1)]) {
                         if ((cx < 0 && cy >= 0) || (cx <= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, -1, 0)];
                         }
                     }
-                    if (vt == nodeType[OPS_ACC1(-1, 0)])  // VG_JP
-                    {
+                    // VG_JP
+                    if (vt == nodeType[OPS_ACC1(-1, 0)]) {
                         if ((cx < 0 && cy >= 0) || (cx <= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 0, 1)];
                         }
                     }
                 } break;
-                case VG_IMJM_I: {                         // inner corner point
-                    if (vt == nodeType[OPS_ACC1(0, -1)])  // VG_IM
-                    {
+                case VG_IMJM_I: {
+                    // VG_IM
+                    if (vt == nodeType[OPS_ACC1(0, -1)]) {
                         if ((cx < 0 && cy <= 0) || (cx <= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, -1, 0)];
                         }
                     }
-                    if (vt == nodeType[OPS_ACC1(-1, 0)])  // VG_JM
-                    {
+                    // VG_JM
+                    if (vt == nodeType[OPS_ACC1(-1, 0)]) {
                         if ((cx < 0 && cy <= 0) || (cx <= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 f[OPS_ACC_MD3(xiIndex, 0, -1)];
@@ -704,17 +723,18 @@ void KerCutCellExtrapolPressure2ND(const Real *givenBoundaryVars,
                             f[OPS_ACC_MD3(xiIndex, 0, -2)];
                     }
                 } break;
-                case VG_IPJP_I: {                        // inner corner point
-                    if (vt == nodeType[OPS_ACC1(0, 1)])  // VG_IP
-                    {
+                // inner corner point
+                case VG_IPJP_I: {
+                    // VG_IP
+                    if (vt == nodeType[OPS_ACC1(0, 1)]) {
                         if ((cx > 0 && cy >= 0) || (cx >= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 2 * f[OPS_ACC_MD3(xiIndex, 1, 0)] -
                                 f[OPS_ACC_MD3(xiIndex, 2, 0)];
                         }
                     }
-                    if (vt == nodeType[OPS_ACC1(1, 0)])  // VG_JP
-                    {
+                    // VG_JP
+                    if (vt == nodeType[OPS_ACC1(1, 0)]) {
                         if ((cx > 0 && cy >= 0) || (cx >= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 2 * f[OPS_ACC_MD3(xiIndex, 0, 1)] -
@@ -722,17 +742,17 @@ void KerCutCellExtrapolPressure2ND(const Real *givenBoundaryVars,
                         }
                     }
                 } break;
-                case VG_IPJM_I: {                         // inner corner point
-                    if (vt == nodeType[OPS_ACC1(0, -1)])  // VG_IP
-                    {
+                case VG_IPJM_I: {
+                    // VG_IP
+                    if (vt == nodeType[OPS_ACC1(0, -1)]) {
                         if ((cx > 0 && cy <= 0) || (cx >= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 2 * f[OPS_ACC_MD3(xiIndex, 1, 0)] -
                                 f[OPS_ACC_MD3(xiIndex, 2, 0)];
                         }
                     }
-                    if (vt == nodeType[OPS_ACC1(1, 0)])  // VG_JM
-                    {
+                    // VG_JM
+                    if (vt == nodeType[OPS_ACC1(1, 0)]) {
                         if ((cx > 0 && cy <= 0) || (cx >= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 2 * f[OPS_ACC_MD3(xiIndex, 0, -1)] -
@@ -740,17 +760,17 @@ void KerCutCellExtrapolPressure2ND(const Real *givenBoundaryVars,
                         }
                     }
                 } break;
-                case VG_IMJP_I: {                        // inner corner point
-                    if (vt == nodeType[OPS_ACC1(0, 1)])  // VG_IM
-                    {
+                case VG_IMJP_I: {
+                    // VG_IM
+                    if (vt == nodeType[OPS_ACC1(0, 1)]) {
                         if ((cx < 0 && cy >= 0) || (cx <= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 2 * f[OPS_ACC_MD3(xiIndex, -1, 0)] -
                                 f[OPS_ACC_MD3(xiIndex, -2, 0)];
                         }
                     }
-                    if (vt == nodeType[OPS_ACC1(-1, 0)])  // VG_JP
-                    {
+                    // VG_JP
+                    if (vt == nodeType[OPS_ACC1(-1, 0)]) {
                         if ((cx < 0 && cy >= 0) || (cx <= 0 && cy > 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 2 * f[OPS_ACC_MD3(xiIndex, 0, 1)] -
@@ -758,17 +778,17 @@ void KerCutCellExtrapolPressure2ND(const Real *givenBoundaryVars,
                         }
                     }
                 } break;
-                case VG_IMJM_I: {                         // inner corner point
-                    if (vt == nodeType[OPS_ACC1(0, -1)])  // VG_IM
-                    {
+                case VG_IMJM_I: {
+                    // VG_IM
+                    if (vt == nodeType[OPS_ACC1(0, -1)]) {
                         if ((cx < 0 && cy <= 0) || (cx <= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 2 * f[OPS_ACC_MD3(xiIndex, -1, 0)] -
                                 f[OPS_ACC_MD3(xiIndex, -2, 0)];
                         }
                     }
-                    if (vt == nodeType[OPS_ACC1(-1, 0)])  // VG_JM
-                    {
+                    // VG_JM
+                    if (vt == nodeType[OPS_ACC1(-1, 0)]) {
                         if ((cx < 0 && cy <= 0) || (cx <= 0 && cy < 0)) {
                             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
                                 2 * f[OPS_ACC_MD3(xiIndex, 0, -1)] -
@@ -794,137 +814,135 @@ void KerCutCellExtrapolPressure2ND(const Real *givenBoundaryVars,
     }
 }
 
-/*
-void KerCutCellKinetic(const Real *givenMacroVars, const int *nodeType,
-                       const int *geometryProperty, Real *f) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
-    if (vt == Vertex_KineticDiffuseWall) {
-        VertexGeometryTypes vg =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
-        Real u = givenMacroVars[1];
-        Real v = givenMacroVars[2];
-        Real T = givenMacroVars[3];
-        Real primaryVector[]{0, 0};
-        Real secondVector[]{0, 0};
-        int boundaryType{0};  // 0 normal boundary 1 inner corner 2 outter
-                              // corner
-        switch (vg) {
-            case VG_IP: {
-                boundaryType = 0;
-                primaryVector[0] = 1;
-                primaryVector[1] = 0;
-            } break;
-            case VG_IM: {
-                boundaryType = 0;
-                primaryVector[0] = -1;
-                primaryVector[1] = 0;
-            } break;
-            case VG_JP: {
-                boundaryType = 0;
-                primaryVector[0] = 0;
-                primaryVector[1] = 1;
-            } break;
-            case VG_JM: {
-                boundaryType = 0;
-                primaryVector[0] = 0;
-                primaryVector[1] = -1;
-            } break;
-            case VG_IPJP_I:  // inner corner point
-            {
-                boundaryType = 1;
-                primaryVector[0] = 1;
-                primaryVector[1] = 0;
-                secondVector[0] = 0;
-                secondVector[1] = 1;
-            } break;
-            case VG_IPJM_I:  // inner corner point
-            {
-                boundaryType = 1;
-                primaryVector[0] = 1;
-                primaryVector[1] = 0;
-                secondVector[0] = 0;
-                secondVector[1] = -1;
-            } break;
-            case VG_IMJP_I:  // inner corner point
-            {
-                boundaryType = 1;
-                primaryVector[0] = -1;
-                primaryVector[1] = 0;
-                secondVector[0] = 0;
-                secondVector[1] = 1;
-            } break;
-            case VG_IMJM_I:  // inner corner point
-            {
-                boundaryType = 1;
-                primaryVector[0] = -1;
-                primaryVector[1] = 0;
-                secondVector[0] = 0;
-                secondVector[1] = -1;
-            } break;
-            default:
-                break;
-        }
-        Real outFlux = 0;  // flow into wall
-        Real inFlux = 0;   // flow into fluid bulk
-        for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-            const Real relVeloX = CS * XI[xiIndex * LATTDIM] - u;
-            const Real relVeloY = CS * XI[xiIndex * LATTDIM + 1] - v;
-            const Real speed = relVeloX * relVeloX + relVeloY * relVeloY;
-            Real cDotPrimary =
-                relVeloX * primaryVector[0] + relVeloY * primaryVector[1];
-            bool isInflux = cDotPrimary > 0;
-            bool isOutFlux = cDotPrimary < 0;
-            //ops_printf("1 isIn=%i isOut= %i speed=
-%f\n",isInflux,isOutFlux,speed); if (1 == boundaryType) { Real cDotSecond =
-                    relVeloX * secondVector[0] + relVeloY * secondVector[1];
-                isInflux = isInflux && (cDotSecond > 0);
-                isOutFlux = isOutFlux && (cDotSecond < 0);
-                //ops_printf("2 isIn=%i isOut= %i\n",isInflux,isOutFlux);
-            }
-            if (2 == boundaryType) {
-                Real cDotSecond =
-                    relVeloX * secondVector[0] + relVeloY * secondVector[1];
-                isInflux = isInflux && (cDotSecond > 0);
-                isOutFlux = isOutFlux && (cDotSecond < 0);
-            }
 
-            if (isOutFlux) {
-                outFlux += (speed * f[OPS_ACC_MD3(xiIndex, 0, 0)]);
-            }
-            if (isInflux) {
-                inFlux += (speed*CalcBGKFeq(xiIndex, 1, u, v, T, FEQORDER));
-            }
-        }
-        Real rho = outFlux / inFlux;
-        //ops_printf("vg=%i rho=%f outflux=%f
-influx=%f\n",vg,rho,outFlux,inFlux); for (int xiIndex = 0; xiIndex < NUMXI;
-xiIndex++) { const Real relVeloX = CS * XI[xiIndex * LATTDIM] - u; const Real
-relVeloY = CS * XI[xiIndex * LATTDIM + 1] - v; Real cDotPrimary = relVeloX *
-primaryVector[0] + relVeloY * primaryVector[1]; bool isInflux = cDotPrimary >=
-0; if (0 == boundaryType) { Real cDotSecond = relVeloX * secondVector[0] +
-relVeloY * secondVector[1]; isInflux = isInflux && (cDotSecond >= 0);
-            }
-            if (1 == boundaryType) {
-                Real cDotSecond =
-                    relVeloX * secondVector[0] + relVeloY * secondVector[1];
-                isInflux = isInflux || (cDotSecond > 0);
-            }
-            if (isInflux) {
-                f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                    CalcBGKFeq(xiIndex, rho, u, v, T, FEQORDER);
-                ;
-            }
-        }
+// void KerCutCellKinetic(const Real *givenMacroVars, const int *nodeType,
+//                        const int *geometryProperty, Real *f) {
+//     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
+//     if (vt == Vertex_KineticDiffuseWall) {
+//         VertexGeometryTypes vg =
+//             (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
+//         Real u = givenMacroVars[1];
+//         Real v = givenMacroVars[2];
+//         Real T = givenMacroVars[3];
+//         Real primaryVector[]{0, 0};
+//         Real secondVector[]{0, 0};
+//         int boundaryType{0};  // 0 normal boundary 1 inner corner 2 outter
+//                               // corner
+//         switch (vg) {
+//             case VG_IP: {
+//                 boundaryType = 0;
+//                 primaryVector[0] = 1;
+//                 primaryVector[1] = 0;
+//             } break;
+//             case VG_IM: {
+//                 boundaryType = 0;
+//                 primaryVector[0] = -1;
+//                 primaryVector[1] = 0;
+//             } break;
+//             case VG_JP: {
+//                 boundaryType = 0;
+//                 primaryVector[0] = 0;
+//                 primaryVector[1] = 1;
+//             } break;
+//             case VG_JM: {
+//                 boundaryType = 0;
+//                 primaryVector[0] = 0;
+//                 primaryVector[1] = -1;
+//             } break;
+//             case VG_IPJP_I:  // inner corner point
+//             {
+//                 boundaryType = 1;
+//                 primaryVector[0] = 1;
+//                 primaryVector[1] = 0;
+//                 secondVector[0] = 0;
+//                 secondVector[1] = 1;
+//             } break;
+//             case VG_IPJM_I:  // inner corner point
+//             {
+//                 boundaryType = 1;
+//                 primaryVector[0] = 1;
+//                 primaryVector[1] = 0;
+//                 secondVector[0] = 0;
+//                 secondVector[1] = -1;
+//             } break;
+//             case VG_IMJP_I:  // inner corner point
+//             {
+//                 boundaryType = 1;
+//                 primaryVector[0] = -1;
+//                 primaryVector[1] = 0;
+//                 secondVector[0] = 0;
+//                 secondVector[1] = 1;
+//             } break;
+//             case VG_IMJM_I:  // inner corner point
+//             {
+//                 boundaryType = 1;
+//                 primaryVector[0] = -1;
+//                 primaryVector[1] = 0;
+//                 secondVector[0] = 0;
+//                 secondVector[1] = -1;
+//             } break;
+//             default:
+//                 break;
+//         }
+//         Real outFlux = 0;  // flow into wall
+//         Real inFlux = 0;   // flow into fluid bulk
+//         for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+//             const Real relVeloX = CS * XI[xiIndex * LATTDIM] - u;
+//             const Real relVeloY = CS * XI[xiIndex * LATTDIM + 1] - v;
+//             const Real speed = relVeloX * relVeloX + relVeloY * relVeloY;
+//             Real cDotPrimary =
+//                 relVeloX * primaryVector[0] + relVeloY * primaryVector[1];
+//             bool isInflux = cDotPrimary > 0;
+//             bool isOutFlux = cDotPrimary < 0;
+//         }
+//         if (2 == boundaryType) {
+//             Real cDotSecond =
+//                 relVeloX * secondVector[0] + relVeloY * secondVector[1];
+//             isInflux = isInflux && (cDotSecond > 0);
+//             isOutFlux = isOutFlux && (cDotSecond < 0);
+//         }
 
-    } else {
-#ifdef debug
-        ops_printf("%s\n",
-                   "Warning: this node is not a kinetic boundary "
-                   "point: KerCutCellKinetic");
-#endif
-    }
-}
-*/
+//         if (isOutFlux) {
+//             outFlux += (speed * f[OPS_ACC_MD3(xiIndex, 0, 0)]);
+//         }
+//         if (isInflux) {
+//             inFlux += (speed * CalcBGKFeq(xiIndex, 1, u, v, T, FEQORDER));
+//         }
+//     }
+//     Real rho = outFlux / inFlux;
+
+//     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
+//         const Real relVeloX = CS * XI[xiIndex * LATTDIM] - u;
+//         const Real relVeloY = CS * XI[xiIndex * LATTDIM + 1] - v;
+//         Real cDotPrimary =
+//             relVeloX * primaryVector[0] + relVeloY * primaryVector[1];
+//         bool isInflux = cDotPrimary >= 0;
+//         if (0 == boundaryType) {
+//             Real cDotSecond =
+//                 relVeloX * secondVector[0] + relVeloY * secondVector[1];
+//             isInflux = isInflux && (cDotSecond >= 0);
+//         }
+//         if (1 == boundaryType) {
+//             Real cDotSecond =
+//                 relVeloX * secondVector[0] + relVeloY * secondVector[1];
+//             isInflux = isInflux || (cDotSecond > 0);
+//         }
+//         if (isInflux) {
+//             f[OPS_ACC_MD3(xiIndex, 0, 0)] =
+//                 CalcBGKFeq(xiIndex, rho, u, v, T, FEQORDER);
+//         }
+//     }
+// }
+
+// else {
+// #ifdef debug
+//     ops_printf("%s\n",
+//                "Warning: this node is not a kinetic boundary "
+//                "point: KerCutCellKinetic");
+// #endif
+// }
+// }
+
 
 void KerCutCellCorrectedKinetic(const Real *givenMacroVars, const Real *dt,
                                 const int *nodeType,
@@ -936,8 +954,8 @@ void KerCutCellCorrectedKinetic(const Real *givenMacroVars, const Real *dt,
             (VertexGeometryTypes)geometryProperty[OPS_ACC3(0, 0)];
         const Real u = givenMacroVars[1];
         const Real v = givenMacroVars[2];
-        const Real kn =
-            tau[OPS_ACC_MD4(0, 0, 0)];  // only for single componment
+        // only for single component
+        const Real kn = tau[OPS_ACC_MD4(0, 0, 0)];
         Real wallNormalVector[]{0, 0};
         const Real sqrt2Inverse = 1 / sqrt(2);
         switch (vg) {
@@ -1027,11 +1045,6 @@ void KerCutCellCorrectedKinetic(const Real *givenMacroVars, const Real *dt,
 
 void KerCutCellBounceBack(const int *nodeType, const int *geometryProperty,
                           Real *f) {
-    /*!
-     We consider zero velocity boundary first
-     To make sure the velocity at boundary is zero, the implementation
-     is lattice specific.
-     */
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
     if (vt == Vertex_BounceBackWall) {
         VertexGeometryTypes vg =
@@ -1160,74 +1173,6 @@ void KerCutCellEQMDiffuseRefl(const Real *givenMacroVars, const int *nodeType,
     }
 }
 
-void KerCutCellBounceBackNew(const int *nodeType, const int *geometryProperty,
-                             Real *f) {
-    /*!
-     We consider zero velocity boundary first
-     To make sure the velocity at boundary is zero, the implementation
-     is lattice specific.
-     */
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
-    if (vt == Vertex_BounceBackWall) {
-        VertexGeometryTypes vg =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0)];
-        switch (vg) {
-            case VG_IP: {
-                f[OPS_ACC_MD2(5, 0, 0)] = f[OPS_ACC_MD2(7, 0, 0)];
-                f[OPS_ACC_MD2(1, 0, 0)] = f[OPS_ACC_MD2(3, 0, 0)];
-                f[OPS_ACC_MD2(8, 0, 0)] = f[OPS_ACC_MD2(6, 0, 0)];
-            } break;
-            case VG_IM: {
-                f[OPS_ACC_MD2(7, 0, 0)] = f[OPS_ACC_MD2(5, 0, 0)];
-                f[OPS_ACC_MD2(3, 0, 0)] = f[OPS_ACC_MD2(1, 0, 0)];
-                f[OPS_ACC_MD2(6, 0, 0)] = f[OPS_ACC_MD2(8, 0, 0)];
-            } break;
-            case VG_JP: {
-                f[OPS_ACC_MD2(2, 0, 0)] = f[OPS_ACC_MD2(4, 0, 0)];
-                f[OPS_ACC_MD2(6, 0, 0)] = f[OPS_ACC_MD2(8, 0, 0)];
-                f[OPS_ACC_MD2(5, 0, 0)] = f[OPS_ACC_MD2(7, 0, 0)];
-                const Real rhow =
-                    6 * (f[OPS_ACC_MD2(4, 0, 0)] + f[OPS_ACC_MD2(8, 0, 0)] +
-                         f[OPS_ACC_MD2(7, 0, 0)]);
-                f[OPS_ACC_MD2(1, 0, 0)] = rhow / 9;
-                f[OPS_ACC_MD2(3, 0, 0)] = rhow / 9;
-                f[OPS_ACC_MD2(0, 0, 0)] = 4 * rhow / 9;
-            } break;
-            case VG_JM: {
-                f[OPS_ACC_MD2(4, 0, 0)] = f[OPS_ACC_MD2(2, 0, 0)];
-                f[OPS_ACC_MD2(8, 0, 0)] = f[OPS_ACC_MD2(6, 0, 0)];
-                f[OPS_ACC_MD2(7, 0, 0)] = f[OPS_ACC_MD2(5, 0, 0)];
-                const Real rhow =
-                    6 * (f[OPS_ACC_MD2(2, 0, 0)] + f[OPS_ACC_MD2(6, 0, 0)] +
-                         f[OPS_ACC_MD2(5, 0, 0)]);
-                f[OPS_ACC_MD2(1, 0, 0)] = rhow / 9;
-                f[OPS_ACC_MD2(3, 0, 0)] = rhow / 9;
-                f[OPS_ACC_MD2(0, 0, 0)] = 4 * rhow / 9;
-            } break;
-            case VG_IPJP_I:  // inner corner point
-                f[OPS_ACC_MD2(5, 0, 0)] = f[OPS_ACC_MD2(7, 0, 0)];
-                break;
-            case VG_IPJM_I:  // inner corner point
-                f[OPS_ACC_MD2(8, 0, 0)] = f[OPS_ACC_MD2(6, 0, 0)];
-                break;
-            case VG_IMJP_I:  // inner corner point
-                f[OPS_ACC_MD2(6, 0, 0)] = f[OPS_ACC_MD2(8, 0, 0)];
-                break;
-            case VG_IMJM_I:  // inner corner point
-                f[OPS_ACC_MD2(7, 0, 0)] = f[OPS_ACC_MD2(5, 0, 0)];
-                break;
-            default:
-                break;
-        }
-    } else {
-#ifdef debug
-        ops_printf("%s\n",
-                   "Warning: this node is not a bounce-back boundary "
-                   "point: KerCutCellBounceBack");
-#endif
-    }
-}
-
 void KerCutCellPeriodic(const int *nodeType, const int *geometryProperty,
                         Real *f) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
@@ -1271,10 +1216,10 @@ void KerCutCellPeriodic(const int *nodeType, const int *geometryProperty,
                     }
                 }
                 break;
-            // as we are dealing with domain boundary, there can be only inner
-            // corner
-            case VG_IPJP_I: {                          // corner point
-                if (vt == nodeType[OPS_ACC0(0, 1)]) {  // VG_IP
+            // There are only inner corners for block boundaries
+            case VG_IPJP_I: {
+                // VG_IP
+                if (vt == nodeType[OPS_ACC0(0, 1)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         Real cx = XI[xiIndex * LATTDIM];
                         Real cy = XI[xiIndex * LATTDIM + 1];
@@ -1284,7 +1229,8 @@ void KerCutCellPeriodic(const int *nodeType, const int *geometryProperty,
                         }
                     }
                 }
-                if (vt == nodeType[OPS_ACC0(1, 0)]) {  // VG_JP
+                // VG_JP
+                if (vt == nodeType[OPS_ACC0(1, 0)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         Real cx = XI[xiIndex * LATTDIM];
                         Real cy = XI[xiIndex * LATTDIM + 1];
@@ -1295,8 +1241,9 @@ void KerCutCellPeriodic(const int *nodeType, const int *geometryProperty,
                     }
                 }
             } break;
-            case VG_IPJM_I: {                           // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, -1)]) {  // VG_IP
+            case VG_IPJM_I: {
+                // VG_IP
+                if (vt == nodeType[OPS_ACC1(0, -1)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         Real cx = XI[xiIndex * LATTDIM];
                         Real cy = XI[xiIndex * LATTDIM + 1];
@@ -1306,7 +1253,8 @@ void KerCutCellPeriodic(const int *nodeType, const int *geometryProperty,
                         }
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0)]) {  // VG_JM
+                // VG_JM
+                if (vt == nodeType[OPS_ACC1(1, 0)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         Real cx = XI[xiIndex * LATTDIM];
                         Real cy = XI[xiIndex * LATTDIM + 1];
@@ -1317,8 +1265,9 @@ void KerCutCellPeriodic(const int *nodeType, const int *geometryProperty,
                     }
                 }
             } break;
-            case VG_IMJP_I: {                          // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 1)]) {  // VG_IM
+            case VG_IMJP_I: {
+                // VG_IM
+                if (vt == nodeType[OPS_ACC1(0, 1)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         Real cx = XI[xiIndex * LATTDIM];
                         Real cy = XI[xiIndex * LATTDIM + 1];
@@ -1328,7 +1277,8 @@ void KerCutCellPeriodic(const int *nodeType, const int *geometryProperty,
                         }
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0)]) {  // VG_JP
+                // VG_JP
+                if (vt == nodeType[OPS_ACC1(-1, 0)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         Real cx = XI[xiIndex * LATTDIM];
                         Real cy = XI[xiIndex * LATTDIM + 1];
@@ -1340,8 +1290,8 @@ void KerCutCellPeriodic(const int *nodeType, const int *geometryProperty,
                 }
             } break;
             case VG_IMJM_I: {
-                // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, -1)]) {  // VG_IM
+                // VG_IM
+                if (vt == nodeType[OPS_ACC1(0, -1)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         Real cx = XI[xiIndex * LATTDIM];
                         Real cy = XI[xiIndex * LATTDIM + 1];
@@ -1351,7 +1301,8 @@ void KerCutCellPeriodic(const int *nodeType, const int *geometryProperty,
                         }
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0)]) {  // VG_JM
+                // VG_JM
+                if (vt == nodeType[OPS_ACC1(-1, 0)]) {
                     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
                         Real cx = XI[xiIndex * LATTDIM];
                         Real cy = XI[xiIndex * LATTDIM + 1];
@@ -1371,20 +1322,6 @@ void KerCutCellPeriodic(const int *nodeType, const int *geometryProperty,
                    "Warning: this node is not a periodic boundary "
                    "point: KerCutCellPeriodic");
 #endif
-    }
-}
-
-void KerEquibriumVelocity(const Real *givenMacroVars, Real *f) {
-    Real rho = 1;
-    Real u = givenMacroVars[1];
-    Real v = givenMacroVars[2];
-    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-        const int cx = (int)XI[xiIndex * LATTDIM];
-        const int cy = (int)XI[xiIndex * LATTDIM + 1];
-        const Real cu = (CS * cx * u + CS * cy * v);
-        f[OPS_ACC_MD1(xiIndex, 0, 0)] =
-            WEIGHTS[xiIndex] * rho *
-            (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
     }
 }
 
@@ -1580,558 +1517,8 @@ void KerCutCellZouHeVelocity(const Real *givenMacroVars, const int *nodeType,
     }
 }
 
-void KerCutCellNonEqExtrapol(const Real *givenMacroVars, const int *nodeType,
-                             const int *geometryProperty, const Real *macroVars,
-                             const Real *feq, Real *f, const int componentID) {
-    /*!
-     Note: Here we are implementing the version defined in the book "Lattice
-     Boltzmann Method and Its Applications in Engineering" by Guo and Shu.
-     This version is different from the original verion presented in their
-     paper. Note: The implementation can only be used for singe-speed lattice,
-     e.g., D2Q9
-     */
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
-    if (vt == Vertex_NoneqExtrapol) {
-        VertexGeometryTypes vg =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
-        const Real u{givenMacroVars[1]};
-        const Real v{givenMacroVars[2]};
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-            for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                 xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                int cx = (int)XI[xiIndex * LATTDIM];
-                int cy = (int)XI[xiIndex * LATTDIM + 1];
-                switch (vg) {
-                    case VG_IP: {
-                        if (cx > 0) {
-                            const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rho *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                    } break;
-                    case VG_IM: {
-                        if (cx < 0) {
-                            const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rho *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                    } break;
-                    case VG_JP: {
-                        if (cy > 0) {
-                            const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rho *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                        //                        if (cy==0) {
-                        //                            const Real
-                        //                            rho{macroVars[OPS_ACC_MD3(0,
-                        //                            0,
-                        //                            1)]/*-macroVars[OPS_ACC_MD3(0,
-                        //                            0, 2)]*/};
-                        //                            f[OPS_ACC_MD5(xiIndex, 0,
-                        //                            0)]=WEIGHTS[xiIndex] *
-                        //                            rho;
-                        //                        }
-                    } break;
-                    case VG_JM: {
-                        if (cy < 0) {
-                            const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rho *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                        //                        if (cy==0) {
-                        //                            const Real
-                        //                            rho{macroVars[OPS_ACC_MD3(0,
-                        //                            0,
-                        //                            -1)]/*-macroVars[OPS_ACC_MD3(0,
-                        //                            0, -2)]*/};
-                        //                            f[OPS_ACC_MD5(xiIndex, 0,
-                        //                            0)]=WEIGHTS[xiIndex] *
-                        //                            rho;
-                        //                        }
-
-                    } break;
-                    case VG_IPJP_I: {  // inner corner point
-                        if (cy >= 0 && cx >= 0 && (cx != 0 || cy != 0)) {
-                            const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            // const Real rho = 1.1;
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rho *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                        //                       Real rhotmp = (f[OPS_ACC_MD2(0,
-                        //                       0, 0)] +
-                        //                                      f[OPS_ACC_MD2(6,
-                        //                                      0, 0)] +
-                        //                                      f[OPS_ACC_MD2(8,
-                        //                                      0, 0)]);
-                        //                        const Real rho = 1.1;
-                        //                        f[OPS_ACC_MD2(0, 0, 0)] =
-                        //                        4*rho/9; f[OPS_ACC_MD2(6, 0,
-                        //                        0)] = rho/36; f[OPS_ACC_MD2(8,
-                        //                        0, 0)] = rho/36;
-                    } break;
-                    case VG_IPJM_I: {  // inner corner point·
-                        if (cy <= 0 && cx >= 0 && (cx != 0 || cy != 0)) {
-                            const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            // const Real rho = 1.1;
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rho *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                        //                       Real rhotmp = (f[OPS_ACC_MD2(0,
-                        //                       0, 0)] +
-                        //                                      f[OPS_ACC_MD2(5,
-                        //                                      0, 0)] +
-                        //                                      f[OPS_ACC_MD2(7,
-                        //                                      0, 0)]);
-                        //                        const Real rho = 1.1;
-                        //                        f[OPS_ACC_MD2(0, 0, 0)] =
-                        //                        4*rho/9; f[OPS_ACC_MD2(5, 0,
-                        //                        0)] = rho/36; f[OPS_ACC_MD2(7,
-                        //                        0, 0)] = rho/36;
-                    } break;
-                    case VG_IMJP_I: {  // inner corner point
-                        if (cy >= 0 && cx <= 0 && (cx != 0 || cy != 0)) {
-                            const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            // const Real rho = 1;
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rho *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                        //                       Real rhotmp = (f[OPS_ACC_MD2(0,
-                        //                       0, 0)] +
-                        //                                      f[OPS_ACC_MD2(5,
-                        //                                      0, 0)] +
-                        //                                      f[OPS_ACC_MD2(7,
-                        //                                      0, 0)]);
-                        //                        const Real rho = 1;
-                        //                        f[OPS_ACC_MD2(0, 0, 0)] =
-                        //                        4*rho/9; f[OPS_ACC_MD2(5, 0,
-                        //                        0)] = rho/36; f[OPS_ACC_MD2(7,
-                        //                        0, 0)] = rho/36;
-                    } break;
-                    case VG_IMJM_I: {  // inner corner point
-                        if (cy <= 0 && cx <= 0 && (cx != 0 || cy != 0)) {
-                            const Real rho{macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            // const Real rho = 1;
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rho *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                        //                       Real rhotmp = (f[OPS_ACC_MD2(0,
-                        //                       0, 0)] +
-                        //                                      f[OPS_ACC_MD2(6,
-                        //                                      0, 0)] +
-                        //                                      f[OPS_ACC_MD2(8,
-                        //                                      0, 0)]);
-                        //                        const Real rho=1;
-                        //                        f[OPS_ACC_MD2(0, 0, 0)] =
-                        //                        4*rho/9; f[OPS_ACC_MD2(6, 0,
-                        //                        0)] = rho/36; f[OPS_ACC_MD2(8,
-                        //                        0, 0)] = rho/36;
-                    } break;
-                    default:
-                        break;
-                }
-            }
-        }
-    } else {
-#ifdef debug
-        ops_printf("%s\n",
-                   "Warning: this node is not a non-equilibrium extraploation "
-                   "boundary "
-                   "point: KerCutCellNoneqExtrapol");
 #endif
-    }
-}
-
-void KerCutCellNonEqExtrapolPressure(const Real *givenMacroVars,
-                                     const int *nodeType,
-                                     const int *geometryProperty,
-                                     const Real *macroVars, const Real *feq,
-                                     Real *f) {
-    /*!
-     Note: Here we are implementing the version defined in the book "Lattice
-     Boltzmann Method and Its Applications in Engineering" by Guo and Shu.
-     Thie version is different from the original paper.
-     Note: The implementation can only be used for singe-speed lattice, e.g.,
-     D2Q9
-     */
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
-    if (vt == Vertex_NonEqExtrapolPressure) {
-        VertexGeometryTypes vg =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
-        const Real rhoGiven{givenMacroVars[0]};
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-            Real rhoLocal = 0;
-            for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                 xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                int cx = (int)XI[xiIndex * LATTDIM];
-                int cy = (int)XI[xiIndex * LATTDIM + 1];
-                switch (vg) {
-                    case VG_IP: {
-                        if (cx > 0) {
-                            const Real rhoNext{
-                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
-                                         rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
-                                         rhoNext};
-                            // const Real v =0;
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rhoGiven *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                            // printf("%s%f%s%f\n","u=",u," v=",v);
-                        }
-                        //                        if (cx == 0) {
-                        //                            const Real
-                        //                            rhoNext{2*macroVars[OPS_ACC_MD3(0,
-                        //                            1,
-                        //                            0)]-macroVars[OPS_ACC_MD3(0,
-                        //                            2, 0)]}; const Real
-                        //                            u=2*(macroVars[OPS_ACC_MD3(1,
-                        //                            1,
-                        //                            0)]/macroVars[OPS_ACC_MD3(0,
-                        //                            1, 0)])
-                        //                            -macroVars[OPS_ACC_MD3(1,
-                        //                            2,
-                        //                            0)]/macroVars[OPS_ACC_MD3(0,
-                        //                            2, 0)]; const Real v{0};
-                        //                            const Real cu = (CS * cx *
-                        //                            u + CS * cy * v); const
-                        //                            Real eqPart =
-                        //                            WEIGHTS[xiIndex] * rhoNext
-                        //                            * (1 + cu + 0.5 * (cu * cu
-                        //                            - (u * u + v * v)));
-                        //                            f[OPS_ACC_MD5(xiIndex, 0,
-                        //                            0)] = eqPart;
-                        //                            //printf("%s%f%s%f\n","u=",u,"
-                        //                            v=",v);
-                        //                        }
-                    } break;
-                    case VG_IM: {
-                        if (cx < 0) {
-                            const Real rhoNext{
-                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
-                                         rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
-                                         rhoNext};
-                            // const Real v =0;
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rhoGiven *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                        //                        if (cx == 0) {
-                        //                            const Real
-                        //                            rhoNext{2*macroVars[OPS_ACC_MD3(0,
-                        //                            -1,
-                        //                            0)]-macroVars[OPS_ACC_MD3(0,
-                        //                            -2, 0)]}; const Real
-                        //                            u=2*(macroVars[OPS_ACC_MD3(1,
-                        //                            -1,
-                        //                            0)]/macroVars[OPS_ACC_MD3(0,
-                        //                            -1, 0)])
-                        //                            -macroVars[OPS_ACC_MD3(1,
-                        //                            -2,
-                        //                            0)]/macroVars[OPS_ACC_MD3(0,
-                        //                            -2, 0)]; const Real v{0};
-                        //                            const Real cu = (CS * cx *
-                        //                            u + CS * cy * v); const
-                        //                            Real eqPart =
-                        //                            WEIGHTS[xiIndex] *
-                        //                            0.5*(rhoNext+rhoGiven) *
-                        //                            (1 + cu + 0.5 * (cu * cu -
-                        //                            (u * u + v * v)));
-                        //                            f[OPS_ACC_MD5(xiIndex, 0,
-                        //                            0)] = eqPart;
-                        //                            //printf("%s%f%s%f\n","u=",u,"
-                        //                            v=",v);
-                        //                        }
-                    } break;
-                    case VG_JP: {
-                        if (cy > 0) {
-                            const Real rhoNext{
-                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
-                                         rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
-                                         rhoNext};
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rhoGiven *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                    } break;
-                    case VG_JM: {
-                        if (cy < 0) {
-                            const Real rhoNext{
-                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
-                                         rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
-                                         rhoNext};
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rhoGiven *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                    } break;
-                    case VG_IPJP_I: {  // inner corner point
-                        if (cy >= 0 && cx >= 0 && (cx != 0 || cy != 0)) {
-                            const Real rhoNext{
-                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
-                                         rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
-                                         rhoNext};
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rhoGiven *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                        //                        if (
-                        //                            (cx == 0 && cy == 0) ||
-                        //                            (cx == 1 && cy == -1) ||
-                        //                            (cx == -1 && cy == 1)
-                        //                            ) {
-                        //                            const Real
-                        //                            rhoNext{2*macroVars[OPS_ACC_MD3(0,
-                        //                            1,
-                        //                            0)]-macroVars[OPS_ACC_MD3(0,
-                        //                            2, 0)]}; const Real
-                        //                            u{macroVars[OPS_ACC_MD3(1,
-                        //                            1, 0)] /
-                        //                                         rhoNext};
-                        //                            const Real v{0};
-                        //                            const Real cu = (CS * cx *
-                        //                            u + CS * cy * v); const
-                        //                            Real eqPart =
-                        //                                WEIGHTS[xiIndex] *
-                        //                                rhoGiven * (1 + cu +
-                        //                                0.5 * (cu * cu - (u *
-                        //                                u + v * v)));
-                        //                            f[OPS_ACC_MD5(xiIndex, 0,
-                        //                            0)] = eqPart;
-                        //                        }
-                        // printf("%s%f\n","f0=",f[OPS_ACC_MD5(0,0,0)]);
-                    } break;
-                    case VG_IPJM_I: {  // inner corner point·
-                        if (cy <= 0 && cx >= 0 && (cx != 0 || cy != 0)) {
-                            const Real rhoNext{
-                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
-                                         rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
-                                         rhoNext};
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rhoGiven *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                        //                        if (
-                        //                            (cx == 0 && cy == 0) ||
-                        //                            (cx == 1 && cy == 1) ||
-                        //                            (cx == -1 && cy == -1)
-                        //                            ) {
-                        //                            const Real
-                        //                            rhoNext{2*macroVars[OPS_ACC_MD3(0,
-                        //                            1,
-                        //                            0)]-macroVars[OPS_ACC_MD3(0,
-                        //                            2, 0)]}; const Real
-                        //                            u{macroVars[OPS_ACC_MD3(1,
-                        //                            1, 0)] /
-                        //                                         rhoNext};
-                        //                            const Real v{0};
-                        //                            const Real cu = (CS * cx *
-                        //                            u + CS * cy * v); const
-                        //                            Real eqPart =
-                        //                                WEIGHTS[xiIndex] *
-                        //                                rhoGiven * (1 + cu +
-                        //                                0.5 * (cu * cu - (u *
-                        //                                u + v * v)));
-                        //                            f[OPS_ACC_MD5(xiIndex, 0,
-                        //                            0)] = eqPart;
-                        //                        }
-
-                    } break;
-                    case VG_IMJP_I: {  // inner corner point
-                        if (cy >= 0 && cx <= 0 && (cx != 0 || cy != 0)) {
-                            const Real rhoNext{
-                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
-                                         rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
-                                         rhoNext};
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rhoGiven *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                        //                        if (
-                        //                            (cx == 0 && cy == 0) ||
-                        //                            (cx == 1 && cy == 1) ||
-                        //                            (cx == -1 && cy == -1)
-                        //                            ) {
-                        //                            const Real
-                        //                            rhoNext{2*macroVars[OPS_ACC_MD3(0,
-                        //                            -1,
-                        //                            0)]-macroVars[OPS_ACC_MD3(0,
-                        //                            -2, 0)]}; const Real
-                        //                            u{macroVars[OPS_ACC_MD3(1,
-                        //                            -1, 0)] /
-                        //                                         rhoNext};
-                        //                            const Real v{0};
-                        //                            const Real cu = (CS * cx *
-                        //                            u + CS * cy * v); const
-                        //                            Real eqPart =
-                        //                                WEIGHTS[xiIndex] *
-                        //                                rhoGiven * (1 + cu +
-                        //                                0.5 * (cu * cu - (u *
-                        //                                u + v * v)));
-                        //                            f[OPS_ACC_MD5(xiIndex, 0,
-                        //                            0)] = eqPart;
-                        //                        }
-                    } break;
-                    case VG_IMJM_I: {  // inner corner point
-                        if (cy <= 0 && cx <= 0 && (cx != 0 || cy != 0)) {
-                            const Real rhoNext{
-                                macroVars[OPS_ACC_MD3(0, cx, cy)]};
-                            const Real u{macroVars[OPS_ACC_MD3(1, cx, cy)] /
-                                         rhoNext};
-                            const Real v{macroVars[OPS_ACC_MD3(2, cx, cy)] /
-                                         rhoNext};
-                            const Real cu = (CS * cx * u + CS * cy * v);
-                            const Real eqPart =
-                                WEIGHTS[xiIndex] * rhoGiven *
-                                (1 + cu + 0.5 * (cu * cu - (u * u + v * v)));
-                            const Real noneqPart =
-                                (f[OPS_ACC_MD5(xiIndex, cx, cy)] -
-                                 feq[OPS_ACC_MD4(xiIndex, cx, cy)]);
-                            f[OPS_ACC_MD5(xiIndex, 0, 0)] = eqPart + noneqPart;
-                        }
-                        //                        if (
-                        //                            (cx == 0 && cy == 0) ||
-                        //                            (cx == 1 && cy == -1) ||
-                        //                            (cx == -1 && cy == 1)
-                        //                            ) {
-                        //                           const Real
-                        //                           rhoNext{2*macroVars[OPS_ACC_MD3(0,
-                        //                           -1,
-                        //                           0)]-macroVars[OPS_ACC_MD3(0,
-                        //                           -2, 0)]};
-                        //                            const Real
-                        //                            u{macroVars[OPS_ACC_MD3(1,
-                        //                            -1, 0)] /
-                        //                                         rhoNext};
-                        //                            const Real v{0};
-                        //                            const Real cu = (CS * cx *
-                        //                            u + CS * cy * v); const
-                        //                            Real eqPart =
-                        //                                WEIGHTS[xiIndex] *
-                        //                                rhoGiven * (1 + cu +
-                        //                                0.5 * (cu * cu - (u *
-                        //                                u + v * v)));
-                        //                            f[OPS_ACC_MD5(xiIndex, 0,
-                        //                            0)] = eqPart;
-                        //                        }
-                    } break;
-                    default:
-                        break;
-                }
-                rhoLocal += f[OPS_ACC_MD5(xiIndex, 0, 0)];
-            }
-            //            Real ratio = rhoGiven / rhoLocal;
-            // printf("%s%f\n","rhoLocal=",rhoLocal);
-            //    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-            //        f[OPS_ACC_MD5(xiIndex, 0, 0)] *= ratio;
-            //     }
-        }
-    } else {
-#ifdef debug
-        ops_printf("%s\n",
-                   "Warning: this node is not a non-equilibrium extraploation "
-                   "boundary "
-                   "point: KerCutCellNoneqExtrapol");
-#endif
-    }
-}
-#endif
+// Boundary conditions for three-dimensional problems
 #ifdef OPS_3D
 void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
                                      const int *nodeType,
@@ -2482,26 +1869,32 @@ void KerCutCellExtrapolPressure1ST3D(const Real *givenBoundaryVars,
     }
 }
 
-void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
-                                const int *geometryProperty, Real *f,
+void KerCutCellEQMDiffuseRefl3D(Real *f, const int *nodeType,
+                                const int *geometryProperty,
+                                const Real *givenMacroVars,
                                 const int *componentId) {
     // This kernel is suitable for any single-speed lattice
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
     const int equilibriumOrder{2};
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
+    const int compoIdx{*componentId};
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC_MD1(compoIdx, 0, 0, 0)];
     if (vt == Vertex_EQMDiffuseRefl) {
         VertexGeometryTypes vg =
             (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0, 0)];
         Real u = givenMacroVars[1];
         Real v = givenMacroVars[2];
         Real w = givenMacroVars[3];
-        // loop to classify types of discrete velocity i.e., incoming, outgoing
-        // and parallel
-        // for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
-        const int compoIdx{*componentId};
-        // compoIdx = *componentId;
-
+#ifdef CPU
+#if DebugLevel >= 2
+        ops_printf(
+            "KerCutCellEQMDiffuseRefl3D: We received the following "
+            "conditions for the surface %i:\n",
+            geometryProperty[OPS_ACC2(0, 0, 0)]);
+        ops_printf("U=%f, V=%f, W=%f for the component %i\n", u, v, w,
+                   compoIdx);
+#endif
+#endif
         int numOutgoing{0};
         int numIncoming{0};
         int numParallel{0};
@@ -2523,7 +1916,7 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
             switch (bdt) {
                 case BndryDv_Incoming: {
                     incoming[numIncoming] = xiIdx;
-                    rhoIncoming += f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
+                    rhoIncoming += f[OPS_ACC_MD0(xiIdx, 0, 0, 0)];
                     numIncoming++;
                 } break;
                 case BndryDv_Outgoing: {
@@ -2543,8 +1936,13 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
             }
         }
         Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
+#ifdef CPU
+#if DebugLevel >= 2
+        ops_printf("Calculated wall density =  %f\n", rhoWall);
+#endif
+#endif
         for (int idx = 0; idx < numParallel; idx++) {
-            f[OPS_ACC_MD3(parallel[idx], 0, 0, 0)] = CalcBGKFeq(
+            f[OPS_ACC_MD0(parallel[idx], 0, 0, 0)] = CalcBGKFeq(
                 parallel[idx], rhoWall, u, v, w, 1, equilibriumOrder);
         }
         for (int idx = 0; idx < numOutgoing; idx++) {
@@ -2552,486 +1950,632 @@ void KerCutCellEQMDiffuseRefl3D(const Real *givenMacroVars, const int *nodeType,
             Real cx{CS * XI[xiIdx * LATTDIM]};
             Real cy{CS * XI[xiIdx * LATTDIM + 1]};
             Real cz{CS * XI[xiIdx * LATTDIM + 2]};
-            f[OPS_ACC_MD3(xiIdx, 0, 0, 0)] =
-                f[OPS_ACC_MD3(OPP[xiIdx], 0, 0, 0)] +
+            f[OPS_ACC_MD0(xiIdx, 0, 0, 0)] =
+                f[OPS_ACC_MD0(OPP[xiIdx], 0, 0, 0)] +
                 2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+#ifdef CPU
+            const Real res{f[OPS_ACC_MD0(xiIdx, 0, 0, 0)]};
+            if (isnan(res) || res <= 0 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes "
+                    "invalid for the component %i at the lattice "
+                    "%i\n",
+                    res, compoIdx, xiIdx);
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
+            }
+#endif
         }
         delete[] outgoing;
         delete[] incoming;
         delete[] parallel;
         //}
     } else {
-#ifdef debug
+#ifdef CPU
+#if DebugLevel >= 2
         ops_printf("%s\n",
                    "Warning: this node is not a equilibrium diffuse reflection "
-                   "boundary condition point: KerCutCellEQMDiffuseRefl3D");
+                   "boundary condition point.");
+#endif
 #endif
     }
 }
 
 void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
-                           Real *f) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
+                           Real *f, const int *componentId) {
+    const int compoId{*componentId};
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC_MD1(compoId, 0, 0, 0)];
+
     if (vt == Vertex_NoslipEQN) {
         Real u = givenMacroVars[1];
         Real v = givenMacroVars[2];
         Real w = givenMacroVars[3];
+#ifdef CPU
+#if DebugLevel >= 2
+        ops_printf(
+            "KerCutCellNoslipEQN3D: We received the following "
+            "conditions:\n");
+        ops_printf("U=%f, V=%f, W=%f for the component %i\n", u, v, w, compoId);
+#endif
+#endif
         Real rhoIntermidate{0};
         Real uIntermidate{0};
         Real vIntermidate{0};
         Real wIntermidate{0};
-        // Only one-component at this moment.
-        for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
-            for (int xiIdx = COMPOINDEX[2 * compoIdx];
-                 xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
-                Real cx{CS * XI[xiIdx * LATTDIM]};
-                Real cy{CS * XI[xiIdx * LATTDIM + 1]};
-                Real cz{CS * XI[xiIdx * LATTDIM + 2]};
-                rhoIntermidate += f[OPS_ACC_MD2(xiIdx, 0, 0, 0)];
-                uIntermidate += (cx * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
-                vIntermidate += (cy * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
-                wIntermidate += (cz * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
+
+        for (int xiIdx = COMPOINDEX[2 * compoId];
+             xiIdx <= COMPOINDEX[2 * compoId + 1]; xiIdx++) {
+            Real cx{CS * XI[xiIdx * LATTDIM]};
+            Real cy{CS * XI[xiIdx * LATTDIM + 1]};
+            Real cz{CS * XI[xiIdx * LATTDIM + 2]};
+            rhoIntermidate += f[OPS_ACC_MD2(xiIdx, 0, 0, 0)];
+            uIntermidate += (cx * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
+            vIntermidate += (cy * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
+            wIntermidate += (cz * f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]);
+        }
+        uIntermidate /= rhoIntermidate;
+        vIntermidate /= rhoIntermidate;
+        wIntermidate /= rhoIntermidate;
+#ifdef CPU
+#if DebugLevel >= 2
+        ops_printf("Calculated intermidate density =  %f\n", rhoIntermidate);
+        ops_printf("Calculated intermidate U =  %f\n", uIntermidate);
+        ops_printf("Calculated intermidate V =  %f\n", vIntermidate);
+        ops_printf("Calculated intermidate W =  %f\n", wIntermidate);
+#endif
+#endif
+        for (int xiIdx = COMPOINDEX[2 * compoId];
+             xiIdx <= COMPOINDEX[2 * compoId + 1]; xiIdx++) {
+            f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] =
+                
+                       
+                                  
+                CalcBGKFeq(xiIdx, rhoIntermidate, u, v, w, 1, 2);
+#ifdef CPU
+            const Real res{f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]};
+            if (isnan(res) || res <= 0 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes "
+                    "invalid for the component %i at the lattice "
+                    "%i\n",
+                    res, compoId, xiIdx);
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
             }
+#endif
         }
 
-        for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
-            for (int xiIdx = COMPOINDEX[2 * compoIdx];
-                 xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
-                f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] =
-                    
-                           
-                                      
-                    CalcBGKFeq(xiIdx, rhoIntermidate, u, v, w, 1, 2);
-                if (f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] > 1 ||
-                    f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] < 0) {
-                    ops_printf("f=%f rhoInter=%f xiIdx=%i, u=%f\n",
-                               f[OPS_ACC_MD2(xiIdx, 0, 0, 0)], rhoIntermidate,
-                               xiIdx, u);
-                    Real tmp;
-                    std::cin >> tmp;
-                }
-            }
-        }
     } else {
-#ifdef debug
+#ifdef CPU
+#if DebugLevel >= 2
         ops_printf("%s\n",
-                   "Warning: this node is not a equilibrium diffuse reflection "
-                   "boundary condition point: KerCutCellEQMDiffuseRefl3D");
+                   "Warning: this node is not a Noslip EQN "
+                   "boundary condition point!");
+#endif
 #endif
     }
 }
 
-void KerCutCellPeriodic3D(const int *nodeType, const int *geometryProperty,
-                          Real *f) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
+void KerCutCellPeriodic3D(Real *f, const int *nodeType,
+                          const int *geometryProperty, const int *componentId) {
+    const int compoId{*componentId};
+    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC_MD1(compoId, 0, 0, 0)];
+    const int xiStartPos{COMPOINDEX[2 * compoId]};
+    const int xiEndPos{COMPOINDEX[2 * compoId + 1]};
     if (vt == Vertex_Periodic) {
         VertexGeometryTypes vg =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0, 0)];
+            (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0, 0)];
         switch (vg) {
             case VG_IP:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                 }
                 break;
             case VG_IM:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                 }
                 break;
             case VG_JP:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                 }
                 break;
             case VG_JM:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                 }
                 break;
             case VG_KP:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                 }
                 break;
             case VG_KM:
-                for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
+                    f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                 }
                 break;
-            // as we are dealing with domain boundary, there can be only inner
-            // corner
-            case VG_IPJP_I: {                             // corner point
-                if (vt == nodeType[OPS_ACC0(0, 1, 0)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                // There are only inner corners for block boundaries
+            case VG_IPJP_I: {
+                // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC0(1, 0, 0)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
-                    }
-                }
-            } break;
-            case VG_IPJM_I: {                              // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
-                    }
-                }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
             } break;
-            case VG_IMJP_I: {                             // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+            case VG_IPJM_I: {
+                // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
+                    }
+                }
+            } break;
+            case VG_IMJP_I: {
+                // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
+                    }
+                }
+                // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
             } break;
             case VG_IMJM_I: {
-                // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
             } break;
 
-            case VG_IPKP_I: {                             // corner point
-                if (vt == nodeType[OPS_ACC0(0, 0, 1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+            case VG_IPKP_I: {
+                // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC0(1, 0, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
-                    }
-                }
-            } break;
-            case VG_IPKM_I: {                              // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
-                    }
-                }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
-            case VG_IMKP_I: {                             // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+            case VG_IPKM_I: {
+                // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
+                    }
+                }
+            } break;
+            case VG_IMKP_I: {
+                // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
+                    }
+                }
+                // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
             case VG_IMKM_I: {
-                // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
-                    }
-                }
-            } break;
-            case VG_JPKP_I: {                             // corner point
-                if (vt == nodeType[OPS_ACC0(0, 0, 1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
-                    }
-                }
-                if (vt == nodeType[OPS_ACC0(0, 1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
-            case VG_JPKM_I: {                              // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+            case VG_JPKP_I: {
+                // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
-
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
-            case VG_JMKP_I: {                             // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+            case VG_JPKM_I: {
+                // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
+                    }
+                }
+            } break;
+            case VG_JMKP_I: {
+                // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
+                    }
+                }
+                // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
             case VG_JMKM_I: {
-                // inner corner point
-                if (vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
             case VG_IPJPKP_I: {
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
             case VG_IPJPKM_I: {
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
             case VG_IPJMKP_I: {
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
             case VG_IPJMKM_I: {
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, -1, 0, 0)];
+                // VG_IP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
             case VG_IMJPKP_I: {
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
             } break;
             case VG_IMJPKM_I: {
-                if (vt == nodeType[OPS_ACC1(0, 1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, -1, 0)];
+                // VG_JP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, -1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
             case VG_IMJMKP_I: {
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, 1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, 1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KP
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, -1)];
+                // VG_KP
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, -1)];
                     }
                 }
 
             } break;
             case VG_IMJMKM_I: {
-                if (vt == nodeType[OPS_ACC1(0, -1, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_IM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 1, 0, 0)];
+                // VG_IM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 1, 0, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, 0, -1)]) {  // VG_JM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 1, 0)];
+                // VG_JM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, 0, -1)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 1, 0)];
                     }
                 }
-                if (vt == nodeType[OPS_ACC1(-1, 0, 0)] &&
-                    vt == nodeType[OPS_ACC1(0, -1, 0)]) {  // VG_KM
-                    for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
-                        f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                            f[OPS_ACC_MD2(xiIndex, 0, 0, 1)];
+                // VG_KM
+                if (vt == nodeType[OPS_ACC_MD1(compoId, -1, 0, 0)] &&
+                    vt == nodeType[OPS_ACC_MD1(compoId, 0, -1, 0)]) {
+                    for (int xiIndex = xiStartPos; xiIndex <= xiEndPos;
+                         xiIndex++) {
+                        f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                            f[OPS_ACC_MD0(xiIndex, 0, 0, 1)];
                     }
                 }
             } break;
             default:
                 break;
         }
+#ifdef CPU
+        for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
+            f[OPS_ACC_MD0(xiIndex, 0, 0, 0)] =
+                f[OPS_ACC_MD0(xiIndex, -1, 0, 0)];
+            const Real res{f[OPS_ACC_MD0(xiIndex, 0, 0, 0)]};
+            if (isnan(res) || res <= 0 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes "
+                    "invalid for the component %i at the lattice "
+                    "%i\n at the surface %i\n",
+                    res, compoId, xiIndex, geometryProperty[OPS_ACC2(0, 0, 0)]);
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
+            }
+        }
+#endif
     } else {
-#ifdef debug
+#ifdef CPU
+#if DebugLevel >= 2
         ops_printf("%s\n",
                    "Warning: this node is not a periodic boundary "
-                   "point: KerCutCellPeriodic");
+                   "point.");
+#endif
 #endif
     }
 }

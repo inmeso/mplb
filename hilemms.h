@@ -1,3 +1,35 @@
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #ifndef Hilemms_H
 #define Hilemms_H
 
@@ -15,43 +47,25 @@
 #include "ops_seq.h"
 #include "scheme.h"
 #include "type.h"
-
-extern int SPACEDIM;
-
-void DefineCase(std::string caseName, const int spaceDim);
-// caseName: case name
-// spaceDim: 2D or 3D application
-
-void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
-                         const Real meshSize, const std::vector<Real> startPos);
 // blockNum: total number if blocks.
 // blockSize: array of integers specifying the block blocksize.
 // meshSize: The size of mesh i.e. dx (At present dx = dy = dz).
 // startPos: Starting position of each block.
+void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
+                         const Real meshSize, const std::vector<Real> startPos);
 
-/*
-void DefineForceTerm(std::vector<ForceType> types, std::vector<int> compoId);
-// types: which kind of force function to use.
-// compoID: which component to act on.
-*/
+// Iterator for transient simulations.
+void Iterate(const int steps, const int checkPointPeriod);
 
-void Iterate(SchemeType scheme, const int steps, const int checkPointPeriod);
-// scheme: which schemes to use for implementing such as finite difference
-// scheme. for steady state simulations.
+// Iterator for steady simulations.
+void Iterate(const Real convergenceCriteria, const int checkPointPeriod);
 
-void Iterate(SchemeType scheme, const Real convergenceCriteria,
-             const int checkPointPeriod);
-// Same as iterate but for transient simulations.
-
-void AddEmbededBody(int vertexNum, Real* vertexCoords);
 // Add 2D polygon.
 // vertexNum: total number of vertexes.
 // vertexCoords: Coordinates of each vertex.
+void AddEmbeddedBody(int vertexNum, Real* vertexCoords);
 
-void DefineBlockBoundary(int blockIndex, int componentID,
-                         BoundarySurface surface, BoundaryType type,
-                         std::vector<VariableTypes> MacorVarsComp,
-                         std::vector<Real> valuesMacroVarsComp);
+
 // blockIndex: block Index
 // compoId: component ID whose BC we want to set.
 // surface: which surface to set.
@@ -59,67 +73,75 @@ void DefineBlockBoundary(int blockIndex, int componentID,
 // MacroVarsComp: which all macrovars are to be used in specifying the BC.
 // valueMacroVarsComp: specified value for the boundary condition for the macro
 // vars which are defined using MacroVarsComp.
+void DefineBlockBoundary(int blockIndex, int componentID,
+                         BoundarySurface boundarySurface,
+                         BoundaryType boundaryType,
+                         const std::vector<VariableTypes>& macroVarTypes,
+                         const std::vector<Real>& macroVarValues);
 
-void CalBlockCoordinates(const int blockIndex, Real* blockStartPos,
-                         Real meshsize);
 // blockIndex: Block Index
 // blockStartPos: Starting position of the block in x, y, z directions to find
 // coordinates. meshSize: Size of mesh (Assuming a constant in all 3 directions
 // for stream collision scheme).
+void CalculateBlockCoordinates(const int blockIndex, Real* blockStartPos,
+                         Real meshsize);
+
 
 void KerSetCoordinates(const Real* coordX, const Real* coordY, const int* idx,
                        Real* coordinates);
 void KerSetCoordinates3D(const Real* coordX, const Real* coordY,
                          const Real* coordZ, const int* idx, Real* coordinates);
 
-void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
-                                   Real* macroVars, Real* macroVarsInitVal,
-                                   const int* componentId);
-// Interface for Setting the initial values.
-// coordinates: Coordinate array of nodes.
-// idx: An array used by OPS which gives the index of the current grid point.
-
-//void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]);
-void AssignCoordinates(int blockIndex, Real** coordinates);
+// Kernel which will call a user-defined function for inital conditions
+void KerSetInitialMacroVars(Real* macroVars, const Real* coordinates,
+                            const int* idx);
+void AssignCoordinates(int blockIndex,
+                       const std::vector<std::vector<Real>>& coordinates);
 // blockIndex: Block id.
 // Coordinates: Array to store coordinates of various points inside the domain.
 // This function was defined in setup_comput_domain and has been declared here
 // as we are not using the preprocessor code separately.
 
-void DefineIntialCond(int blockIndex, int componentId,
-                      std::vector<Real> initialMacroValues);
 // blockIndex: Block Id.
 // componentId: Id of the component.
 // initialMacroValues: Initial values of the macroscopic variables for a given
-// component in a particluar block.
+// component in a particular block.
+void DefineInitialCondition(int blockIndex, int componentId,
+                      std::vector<Real> initialMacroValues);
+
+//User-defined function for initialising macroscopic variables
+void InitialiseNodeMacroVars(Real* nodeMacroVars, const Real* nodeCoordinates);
+//Defining the initial conditions by using user-defined functions
+void DefineInitialCondition();
 
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType);
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType,
                               BoundaryType* edgeType, BoundaryType* cornerType);
-void SetupDomainGeometryProperty(int blockIndex);
-void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,VertexTypes* edgeType, VertexTypes* cornerType);
+void  SetBlockGeometryProperty(int blockIndex);
 
 void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
                       int Num_Bound_Halo_Points);
 // Functions to check for inclusion.
 
-void ImplementBoundaryConditions();
 // A wrapper Function which implements all the boundary conditions.
+void ImplementBoundaryConditions();
 
-void EmbeddedBody(SolidBodyType type, int blockIndex,
-                  std::vector<Real> centerPos, std::vector<Real> controlParas);
+
 // type: Circle/Sphere, Ellipse/Ellipsoid, superquadrics, ...
 // centerPos: the position vector of the center point.
 // controlParas: control parameters, e.g. radius for Circle/Sphere, ...
+void EmbeddedBody(SolidBodyType type, int blockIndex,
+                  std::vector<Real> centerPos, std::vector<Real> controlParas);
+
 
 /**********************************************************/
 /* Functions for embedded body.                           */
 /**********************************************************/
 
-void KerSetEmbededBodyBoundary(int* surfaceBoundary,
+void KerSetEmbeddedBodyBoundary(int* surfaceBoundary,
                                const int* geometryProperty, int* nodeType);
 
-void KerSetEmbededCircle(Real* diameter, Real* centerPos,
+void KerSetEmbeddedCircle(Real* diameter, Real* centerPos,
                          const Real* coordinates, int* nodeType,
                          int* geometryProperty);
 
@@ -131,8 +153,8 @@ void KerSweep(const int* geometryProperty, int* nodeType);
 
 void KerSyncGeometryProperty(const int* nodeType, int* geometryProperty);
 
-void KerSetEmbededBodyGeometry(const int* nodeType, int* geometryProperty);
+void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty);
 
-void HandleImmersedSoild();
+void HandleImmersedSolid();
 
 #endif  // Hilemms_H

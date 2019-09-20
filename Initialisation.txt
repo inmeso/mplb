@@ -1,0 +1,20 @@
+#Universal_constants
+    double Pi = atan(1.0);
+#End_Universal_constants
+
+
+#User_defined_constants
+    double U0 = 1.0;
+    double U1 = 2.0;
+#End_User_defined_constants
+
+#Enter the Number of spatial dimensional here.
+    SpaceDim = 3;
+
+
+#Insert the Function/Formula for initialisation here
+    Macro_rho = Coord_x^{2} + 1;
+    Macro_U = U0 * sin(2*Pi*Coord_x) * cos(2*Pi*Coord_y) * Coord_z;
+    Macro_V = U0 * cos(2*Pi*Coord_x) * Coord_y^{3.5};
+    Macro_W = U1 * sin(Coord_x+Coord_y);
+#End Function for initialistion

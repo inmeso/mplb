@@ -1,6 +1,34 @@
-// Copyright 2017 the MPLB team. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+*/
 
 /*! @brief   Define kernel functions related to discrete velocity model
  * @author  Jianping Meng
@@ -356,53 +384,74 @@ void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars) {
 #endif
 #ifdef OPS_3D
 void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
-    if (vt != Vertex_ImmersedSolid) {
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        VertexTypes vt =
+            (VertexTypes)nodeType[OPS_ACC_MD0(compoIndex, 0, 0, 0)];
+        if (vt != Vertex_ImmersedSolid) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-            if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
-                Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
-                Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
-                Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
-                Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
+            switch (equilibriumType) {
+                case Equilibrium_BGKIsothermal2nd: {
+                    Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
+                    Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
+                    Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
+                    Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
+                    const Real T{1};
+                    const int polyOrder{2};
+                    for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                        const Real res{
+                            CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
+                        feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] = res;
+#ifdef CPU
+                        if (isnan(res) || res <= 0 || isinf(res)) {
+                            ops_printf(
+                                "Error! Equilibrium function %f becomes "
+                                "invalid for the component %i at the lattice "
+                                "%i\n",
+                                res, compoIndex, xiIndex);
+                            assert(!(isnan(res) || res <= 0 || isinf(res)));
+                        }
+#endif
+                    }
+                } break;
+                case Equilibrium_BGKThermal4th: {
+                    Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
+                    Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
+                    Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
+                    Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
+                    Real T{macroVars[OPS_ACC_MD1(startPos + 4, 0, 0, 0)]};
+                    const int polyOrder{4};
+                    for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                        const Real res{
+                            CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
+                        feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] = res;
+#ifdef CPU
+                        if (isnan(res) || res <= 0 || isinf(res)) {
+                            ops_printf(
+                                "Error! Equilibrium function %f becomes "
+                                "invalid for the component %i at  the lattice "
+                                "%i\n",
+                                res, compoIndex, xiIndex);
+                            assert(!(isnan(res) || res <= 0 || isinf(res)));
+                        }
+#endif
+                    }
 
-                // ops_printf("\n w = %f", w);
-                // ops_printf("\n Xi index start = %i ", COMPOINDEX[2 *
-                // compoIndex]); ops_printf("\n Xi index end = %i ", COMPOINDEX[2
-                // * compoIndex+1]);
-
-                const Real T{1};
-                const int polyOrder{2};
-                for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                    feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder);
-                }
-                // ops_printf("\n We have calculated BGK Feq ");
+                } break;
+                default:
+#ifdef CPU
+                    ops_printf(
+                        "Error! We don't deal with the chosen type of "
+                        "equilibrium function at this moment!\n");
+                    assert(false);
+#endif
+                    break;
             }
-            if (Equilibrium_BGKThermal4th == equilibriumType) {
-                // ops_printf("\n This is 4th order if condition and I should
-                // not be here ");
-
-                Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
-                Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
-                Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
-                Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
-                Real T{macroVars[OPS_ACC_MD1(startPos + 4, 0, 0, 0)]};
-                const int polyOrder{4};
-                for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                    feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] =
-                        CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder);
-                }
-            }
-
-            // ops_printf("\n About to finish KerCalcFeq3D");
         }
     }
-    // ops_printf("\n Last stage to finish KerCalcFeq3D");
 }
 
 void KerCalcBodyForce3D(const Real* time, const int* nodeType,
@@ -411,25 +460,60 @@ void KerCalcBodyForce3D(const Real* time, const int* nodeType,
     // here we assume the force is constant
     // user may introduce a function of g(r,t) for the body force
     const Real g[]{0.0001, 0, 0};
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
-    if (vt != Vertex_ImmersedSolid) {
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+
+    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        VertexTypes vt =
+            (VertexTypes)nodeType[OPS_ACC_MD1(compoIndex, 0, 0, 0)];
+        if (vt != Vertex_ImmersedSolid) {
             BodyForceType forceType{(BodyForceType)FORCETYPE[compoIndex]};
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-            if (BodyForce_1st == forceType) {
-                Real rho{macroVars[OPS_ACC_MD3(startPos, 0, 0, 0)]};
-                // ops_printf("rho=%f g=%f\n",rho,g[0]);
-                for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                    bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)] =
-                        CalcBodyForce(xiIndex, rho, g);
-                }
-            }
-            if (BodyForce_None == forceType) {
-                for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                     xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                    bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)] = 0;
-                }
+            switch (forceType) {
+                case BodyForce_1st: {
+                    Real rho{macroVars[OPS_ACC_MD3(startPos, 0, 0, 0)]};
+                    for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                        bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)] =
+                            CalcBodyForce(xiIndex, rho, g);
+#ifdef CPU
+                        const Real res{
+                            bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)]};
+                        if (isnan(res) || isinf(res)) {
+                            ops_printf(
+                                "Error! Body force  %f becomes "
+                                "invalid for the component %i at  the lattice "
+                                "%i\n",
+                                res, compoIndex, xiIndex);
+                            assert(!(isnan(res) || res <= 0 || isinf(res)));
+                        }
+#endif
+                    }
+                } break;
+                case BodyForce_None: {
+                    for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                        bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)] = 0;
+#ifdef CPU
+                        const Real res{
+                            bodyForce[OPS_ACC_MD4(xiIndex, 0, 0, 0)]};
+                        if (isnan(res) || isinf(res)) {
+                            ops_printf(
+                                "Error! Body force %f becomes "
+                                "invalid for the component %i at  the lattice "
+                                "%i\n",
+                                res, compoIndex, xiIndex);
+                            assert(!(isnan(res) || res <= 0 || isinf(res)));
+                        }
+#endif
+                    }
+                } break;
+                default:
+#ifdef CPU
+                    ops_printf(
+                        "Error! We don't deal with the chosen type of "
+                        "force function at this moment!\n");
+                    assert(false);
+#endif
+                    break;
             }
         }
     }
@@ -440,23 +524,56 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
     /*
      *@note: multicomponent ready for incompressible flows.
      */
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0, 0)];
-    if (vt != Vertex_ImmersedSolid) {
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        VertexTypes vt =
+            (VertexTypes)nodeType[OPS_ACC_MD0(compoIndex, 0, 0, 0)];
+        if (vt != Vertex_ImmersedSolid) {
             EquilibriumType equilibriumType{
                 (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-            if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
-                Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
-                const Real T{1};
-                tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =
-                    tauRef[compoIndex] / (rho * sqrt(T));
-            }
-            if (Equilibrium_BGKThermal4th == equilibriumType) {
-                Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
-                Real T{macroVars[OPS_ACC_MD2(startPos + 3, 0, 0, 0)]};
-                tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =
-                    tauRef[compoIndex] / (rho * sqrt(T));
+            switch (equilibriumType) {
+                case Equilibrium_BGKIsothermal2nd: {
+                    Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
+                    const Real T{1};
+                    tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =
+                        tauRef[compoIndex] / (rho * sqrt(T));
+#ifdef CPU
+                const Real res{tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)]};
+                if (isnan(res) || res <= 0 || isinf(res)) {
+                    ops_printf(
+                        "Error! Relaxation time %f becomes "
+                        "invalid for the component %i\n",
+                        res, compoIndex);
+                    assert(!(isnan(res) || res <= 0 || isinf(res)));
+                }
+#endif
+
+                } break;
+                case Equilibrium_BGKThermal4th: {
+                    Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
+                    Real T{macroVars[OPS_ACC_MD2(startPos + 3, 0, 0, 0)]};
+                    tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =
+                        tauRef[compoIndex] / (rho * sqrt(T));
+#ifdef CPU
+                const Real res{tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)]};
+                if (isnan(res) || res <= 0 || isinf(res)) {
+                    ops_printf(
+                        "Error! Relaxation time %f becomes "
+                        "invalid for the component %i\n",
+                        res, compoIndex);
+                    assert(!(isnan(res) || res <= 0 || isinf(res)));
+                }
+#endif
+                } break;
+                default:
+#ifdef CPU
+                    ops_printf(
+                        "Error! We don't deal with the relaxation time for the "
+                        "chosen type of equilibrium function at this "
+                        "moment!\n");
+                    assert(false);
+#endif
+                    break;
             }
         }
     }
@@ -469,16 +586,22 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
 void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                         const Real* coordinates, const Real* f,
                         Real* macroVars) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0, 0)];
     Real* acceleration = new Real[LATTDIM * NUMCOMPONENTS];
+    const Real x{coordinates[OPS_ACC_MD2(0, 0, 0, 0)]};
+    const Real y{coordinates[OPS_ACC_MD2(1, 0, 0, 0)]};
+    const Real z{coordinates[OPS_ACC_MD2(2, 0, 0, 0)]};
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
         for (int i = 0; i < LATTDIM; i++) {
             acceleration[compoIndex + i] = 0;
         }
     }
     acceleration[0] = 0.0001;
-    if (vt != Vertex_ImmersedSolid) {
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+    //acceleration[0] = 0.0;
+
+    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        VertexTypes vt =
+            (VertexTypes)nodeType[OPS_ACC_MD1(compoIndex, 0, 0, 0)];
+        if (vt != Vertex_ImmersedSolid) {
             bool rhoCalculated{false};
             Real rho{0};
             bool* veloCalculated = new bool[LATTDIM];
@@ -500,14 +623,18 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                 f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                         }
                         rho = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-#ifdef debug
+#ifdef CPU
                         if (isnan(rho) || rho <= 0 || isinf(rho)) {
-                            ops_printf("%sDensity=%f\n",
-                                       "Density becomes invalid! Maybe "
-                                       "something wrong...",
-                                       rho);
+                            ops_printf(
+                                "Error! Density %f becomes invalid！Something "
+                                "wrong...",
+                                rho);
+                            ops_printf(
+                                "For the component %i at x=%f y=%f z=%f\n",
+                                compoIndex, x, y, z);
+                            assert(!(isnan(rho) || rho <= 0 || isinf(rho)));
                         }
-#endif
+ #endif
                     } break;
                     case Variable_U: {
                         if (rhoCalculated) {
@@ -519,21 +646,28 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             velo[0] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-#ifdef debug
+#ifdef CPU
                             if (isnan(velo[0]) || isinf(velo[0])) {
-                                ops_printf("%sU=%f\n",
-                                           "Velocity becomes invalid! Maybe "
-                                           "something wrong...",
-                                           u);
+                                ops_printf(
+                                    "Error! Velocity U=%f becomes invalid! "
+                                    "Maybe something wrong...\n",
+                                    velo[0]);
+                                ops_printf(
+                                    "For the component %i at x=%f y=%f z=%f\n",
+                                    compoIndex, x, y, z);
+                                assert(!(isnan(velo[0]) || isinf(velo[0])));
                             }
 #endif
                         } else {
-                            ops_printf("%s\n",
-                                       "Density has not been calculated before "
-                                       "calculating U!");
+#ifdef CPU
+                            ops_printf(
+                                "Error! Density has not be calculated before "
+                                "calculating U! Macroscopic variables shall be "
+                                "defined in the order of [rho,u,v,w,...]\n");
+                            assert(rhoCalculated);
+#endif
                         }
                     } break;
                     case Variable_V: {
@@ -546,21 +680,28 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM + 1] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             velo[1] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-#ifdef debug
+#ifdef CPU
                             if (isnan(velo[1]) || isinf(velo[1])) {
-                                ops_printf("%sV=%f\n",
-                                           "Velocity becomes invalid! Maybe "
-                                           "something wrong...",
-                                           v);
+                                ops_printf(
+                                    "Error! Velocity V=%f becomes invalid! "
+                                    "Maybe something wrong...\n",
+                                    velo[1]);
+                                ops_printf(
+                                    "For the component %i at x=%f y=%f z=%f\n",
+                                    compoIndex, x, y, z);
+                                assert(!(isnan(velo[1]) || isinf(velo[1])));
                             }
 #endif
                         } else {
-                            ops_printf("%s\n",
-                                       "Density has not been calculated before "
-                                       "calculating V!");
+#ifdef CPU
+                            ops_printf(
+                                "Error! Density has not be calculated before "
+                                "calculating V! Macroscopic variables shall be "
+                                "defined in the order of [rho,u,v,w,...]\n");
+                            assert(rhoCalculated);
+#endif
                         }
                     } break;
                     case Variable_W: {
@@ -573,21 +714,28 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM + 2] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             velo[2] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-#ifdef debug
+#ifdef CPU
                             if (isnan(velo[2]) || isinf(velo[2])) {
-                                ops_printf("%sW=%f\n",
-                                           "Velocity becomes invalid! Maybe "
-                                           "something wrong...",
-                                           w);
+                                ops_printf(
+                                    "Error! Velocity W=%f becomes invalid! "
+                                    "Maybe something wrong...\n",
+                                    velo[2]);
+                                ops_printf(
+                                    "For the component %i at x=%f y=%f z=%f\n",
+                                    compoIndex, x, y, z);
+                                assert(!(isnan(velo[2]) || isinf(velo[2])));
                             }
 #endif
                         } else {
-                            ops_printf("%s\n",
-                                       "Density has not been calculated before "
-                                       "calculating W!");
+#ifdef CPU
+                           ops_printf(
+                                "Error! Density has not be calculated before "
+                                "calculating W! Macroscopic variables shall be "
+                                "defined in the order of [rho,u,v,w,...]\n");
+                            assert(rhoCalculated);
+#endif
                         }
                     } break;
                     case Variable_Qx: {
@@ -611,21 +759,28 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     (0.5 *
                                      (CS * XI[xiIdx * LATTDIM] - velo[0]) * T);
                             }
-#ifdef debug
+#ifdef CPU
                             Real qx{macroVars[OPS_ACC_MD4(m, 0, 0, 0)]};
                             if (isnan(qx) || isinf(qx)) {
-                                ops_printf("%sQx=%f\n",
-                                           "Heatflux becomes invalid! Maybe "
-                                           "something wrong...",
-                                           qx);
+                                ops_printf(
+                                    "Error!Heat flux  qx=%f becomes invalid! "
+                                    "Maybe something wrong...\n",
+                                    qx);
+                                ops_printf(
+                                    "For the component %i at x=%f y=%f z=%f\n",
+                                    compoIndex, x, y, z);
+                                assert(!(isnan(qx) || isinf(qx)));
                             }
 #endif
                         } else {
+#ifdef CPU
                             ops_printf(
-                                "%s\n",
-                                "The macroscopic velocity have "
-                                "not been calculated before calculating the "
-                                "temperature!");
+                                "Error! The density and macroscopic velocity "
+                                "have not been calculated! Macroscopic "
+                                "variables shall be defined in the order of "
+                                "[rho,u,v,w,T,Qx,Qy...]\n");
+                            assert(ifCalc);
+#endif
                         }
                     } break;
                     case Variable_Qy: {
@@ -650,21 +805,28 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                      (CS * XI[xiIdx * LATTDIM + 1] - velo[1]) *
                                      T);
                             }
-#ifdef debug
+#ifdef CPU
                             Real qy{macroVars[OPS_ACC_MD4(m, 0, 0, 0)]};
                             if (isnan(qy) || isinf(qy)) {
-                                ops_printf("%sQx=%f\n",
-                                           "Heatflux becomes invalid! Maybe "
-                                           "something wrong...",
-                                           qy);
+                                ops_printf(
+                                    "Error! Heat flux  qy=%f becomes invalid! "
+                                    "Maybe something wrong...\n",
+                                    qy);
+                                ops_printf(
+                                    "For the component %i at x=%f y=%f z=%f\n",
+                                    compoIndex, x, y, z);
+                                assert(!(isnan(qy) || isinf(qy)));
                             }
 #endif
                         } else {
-                            ops_printf(
-                                "%s\n",
-                                "The density and macroscopic velocity have "
-                                "not been calculated before calculating the "
-                                "temperature!");
+#ifdef CPU
+                             ops_printf(
+                                "Error! The density and macroscopic velocity "
+                                "have not been calculated! Macroscopic "
+                                "variables shall be defined in the order of "
+                                "[rho,u,v,w,T,Qx,Qy...]\n");
+                            assert(ifCalc);
+#endif
                         }
                     } break;
                     case Variable_Qz: {
@@ -689,21 +851,28 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                      (CS * XI[xiIdx * LATTDIM + 2] - velo[2]) *
                                      T);
                             }
-#ifdef debug
+#ifdef CPU
                             Real qz{macroVars[OPS_ACC_MD4(m, 0, 0, 0)]};
                             if (isnan(qz) || isinf(qz)) {
-                                ops_printf("%sQx=%f\n",
-                                           "Heatflux becomes invalid! Maybe "
-                                           "something wrong...",
-                                           qz);
+                                ops_printf(
+                                    "Error! Heat flux qz=%f becomes invalid! "
+                                    "Maybe something wrong...\n",
+                                    qz);
+                                ops_printf(
+                                    "For the component %i at x=%f y=%f z=%f\n",
+                                    compoIndex, x, y, z);
+                                assert(!(isnan(qz) || isinf(qz)));
                             }
 #endif
                         } else {
+#ifdef CPU
                             ops_printf(
-                                "%s\n",
-                                "The density and macroscopic velocity have "
-                                "not been calculated before calculating the "
-                                "temperature!");
+                                "Error! The density and macroscopic velocity "
+                                "have not been calculated! Macroscopic "
+                                "variables shall be defined in the order of "
+                                "[rho,u,v,w,T,Qx,Qy...]\n");
+                            assert(ifCalc);
+#endif
                         }
                     } break;
                     case Variable_T: {
@@ -726,21 +895,28 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                             }
                             macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
                                 (rho * LATTDIM);
-#ifdef debug
+#ifdef CPU
                             Real T{macroVars[OPS_ACC_MD4(m, 0, 0, 0)]};
                             if (isnan(T) || isinf(T)) {
-                                ops_printf("%sW=%f\n",
-                                           "Temperature becomes invalid! Maybe "
-                                           "something wrong...",
-                                           T);
+                                ops_printf(
+                                    "Error! Temperature T=%f becomes invalid! "
+                                    "Maybe something wrong...\n",
+                                    T);
+                                ops_printf(
+                                    "For the component %i at x=%f y=%f z=%f\n",
+                                    compoIndex, x, y, z);
+                                assert(!(isnan(T) || isinf(T)));
                             }
 #endif
                         } else {
+#ifdef CPU
                             ops_printf(
-                                "%s\n",
-                                "The density and macroscopic velocity have "
-                                "not been calculated before calculating the "
-                                "temperature!");
+                                "Error! The density and macroscopic velocity "
+                                "have not been calculated! Macroscopic "
+                                "variables shall be defined in the order of "
+                                "[rho,u,v,w,T,Qx,Qy...]\n");
+                            assert(ifCalc);
+#endif
                         }
                     } break;
                     case Variable_U_Force: {
@@ -753,26 +929,36 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             if (Vertex_Fluid == vt) {
                                 macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     ((*dt) *
                                      acceleration[compoIndex * LATTDIM] / 2);
                             }
                             velo[0] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-#ifdef debug
+#ifdef CPU
                             if (isnan(velo[0]) || isinf(velo[0])) {
-                                ops_printf("%sU=%f\n",
-                                           "Velocity becomes invalid! Maybe "
-                                           "something wrong...",
-                                           u);
+                                ops_printf(
+                                    "Error! Velocity U=%f becomes invalid! "
+                                    "Maybe something wrong...\n",
+                                    velo[0]);
+                                ops_printf(
+                                    "For the component %i at x=%f y=%f z=%f\n",
+                                    compoIndex, x, y, z);
+                                assert(!(isnan(velo[0]) || isinf(velo[0])));
                             }
 #endif
                         } else {
-                            ops_printf("%s\n",
-                                       "Density has not been calculated before "
-                                       "calculating U!");
+#ifdef CPU
+                            ops_printf(
+                                "Error! Density has not be calculated "
+                                "before "
+                                "calculating U! Macroscopic variables "
+                                "shall be "
+                                "defined in the order of "
+                                "[rho,u,v,w,...]\n");
+                            assert(rhoCalculated);
+#endif
                         }
                     } break;
                     case Variable_V_Force: {
@@ -785,8 +971,7 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM + 1] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             if (Vertex_Fluid == vt) {
                                 macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     ((*dt) *
@@ -794,18 +979,26 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                      2);
                             }
                             velo[1] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-#ifdef debug
+#ifdef CPU
                             if (isnan(velo[1]) || isinf(velo[1])) {
                                 ops_printf("%sV=%f\n",
                                            "Velocity becomes invalid! Maybe "
                                            "something wrong...",
-                                           v);
+                                           velo[1]);
+                                ops_printf(
+                                    "For the component %i at x=%f y=%f z=%f\n",
+                                    compoIndex, x, y, z);
+                                assert(!(isnan(velo[1]) || isinf(velo[1])));
                             }
 #endif
                         } else {
-                            ops_printf("%s\n",
-                                       "Density has not been calculated before "
-                                       "calculating V!");
+#ifdef CPU
+                            ops_printf(
+                                "Error! Density has not be calculated before "
+                                "calculating V! Macroscopic variables shall be "
+                                "defined in the order of [rho,u,v,w,...]\n");
+                            assert(rhoCalculated);
+#endif
                         }
                     } break;
                     case Variable_W_Force: {
@@ -818,8 +1011,7 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                     CS * XI[xiIdx * LATTDIM + 2] *
                                     f[OPS_ACC_MD3(xiIdx, 0, 0, 0)];
                             }
-                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /=
-                                macroVars[OPS_ACC_MD4(0, 0, 0, 0)];
+                            macroVars[OPS_ACC_MD4(m, 0, 0, 0)] /= rho;
                             if (Vertex_Fluid == vt) {
                                 macroVars[OPS_ACC_MD4(m, 0, 0, 0)] +=
                                     ((*dt) *
@@ -827,18 +1019,26 @@ void KerCalcMacroVars3D(const Real* dt, const int* nodeType,
                                      2);
                             }
                             velo[2] = macroVars[OPS_ACC_MD4(m, 0, 0, 0)];
-#ifdef debug
+#ifdef CPU
                             if (isnan(velo[2]) || isinf(velo[2])) {
-                                ops_printf("%sW=%f\n",
-                                           "Velocity becomes invalid! Maybe "
-                                           "something wrong...",
-                                           w);
+                                ops_printf(
+                                    "Error! Velocity W=%f becomes invalid! "
+                                    "Maybe something wrong...\n",
+                                    velo[2]);
+                                ops_printf(
+                                    "For the component %i at x=%f y=%f z=%f\n",
+                                    compoIndex, x, y, z);
+                                assert(!(isnan(velo[2]) || isinf(velo[2])));
                             }
 #endif
                         } else {
-                            ops_printf("%s\n",
-                                       "Density has not been calculated before "
-                                       "calculating W!");
+#ifdef CPU
+                            ops_printf(
+                                "Error! Density has not be calculated before "
+                                "calculating W! Macroscopic variables shall be "
+                                "defined in the order of [rho,u,v,w,...]\n");
+                            assert(rhoCalculated);
+#endif
                         }
                     } break;
                     default:

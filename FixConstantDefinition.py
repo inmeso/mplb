@@ -1,17 +1,46 @@
-# Copyright 2017 the MPLB team. All rights reserved.
-# Use of this source code is governed by a BSD-style
-# license that can be found in the LICENSE file.
+#
+ # Copyright 2019 United Kingdom Research and Innovation
+ #
+ # Authors: See AUTHORS
+ #
+ # Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ #
+ # Redistribution and use in source and binary forms, with or without
+ # modification, are permitted provided that the #following conditions are met:
+ #
+ # 1. Redistributions of source code must retain the above copyright notice,    #    this list of conditions and the following disclaimer.
+ # 2. Redistributions in binary form must reproduce the above copyright notice
+ #    this list of conditions and the following disclaimer in the documentation
+ #    and or other materials provided with the distribution.
+ # 3. Neither the name of the copyright holder nor the names of its contributors
+ #    may be used to endorse or promote products derived from this software
+ #    without specific prior written permission.
+ #
+ # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ # ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ # LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ # CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ # SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ # POSSIBILITY OF SUCH DAMAGE.
+#
+
 """
     @brief   Fix the constant definition
     @author  Jianping Meng
     @details Help the OPS library to recognize the constant definition
-    usage: python FixConstantDefinition.py variableName
+    usage: python FixConstantDefinition.py variableName newValue
     The current OPS python translator assumes some function arguments as literal numbers,i.e., not a variable. To fix this, this script can be used before invoking OPS to change all constant variables defined in the "h" files to to its actual value in "CPP" files.
 """
-
+from __future__ import print_function
 import glob
 import re
 import sys
+
 
 def ReadFiles(fileNames):
     texts = []
@@ -33,7 +62,7 @@ def GetValueofConstant(variableName, texts):
             numMatched += 1
             value = match.group(9)
     if numMatched > 1:
-        print 'Warning: find multipile definitions for ' + variableName
+        print('Warning: find multipile definitions for ',variableName)
     if numMatched == 1:
         return value
     if numMatched == 0:
@@ -61,21 +90,21 @@ def ReplaceVariable(variableName, value, text):
             startPos.append(indStart)
             endPos.append(indStart + len(variableName))
     if (numMatched >= 1):
-        print "Found ", numMatched, " ops_par_loop calls"
+        print("Found ", numMatched, " ops_par_loop calls")
         res = text[:startPos[0]] + value
         for ind in range(1, len(startPos)):
             res += (text[endPos[ind - 1]:startPos[ind]] + value)
         res += text[endPos[-1]:]
         return res
     if numMatched == 0:
-        print "Found zero matched"
+        print("Found zero matched")
         return None
 
 
-if len(sys.argv) > 1:
+if len(sys.argv) > 2:
     VariableName = sys.argv[1]
-    print "We will search the definition of " + VariableName
-    print "and change all its occurrence to the corresponding number"
+    Value = sys.argv[2]
+    print("We will change all its occurrence of ",VariableName, " to ", Value)
 else:
     sys.exit("Please enter a variable name!")
 HeadFiles = glob.glob("*.h")
@@ -83,10 +112,9 @@ CppFiles = glob.glob("*.cpp")
 
 HeadTexts = ReadFiles(HeadFiles)
 CppTexts = ReadFiles(CppFiles)
-Value = GetValueofConstant(VariableName, HeadTexts)
-print "Value =", Value
+#Value = GetValueofConstant(VariableName, HeadTexts)
 for ind in range(len(CppFiles)):
-    print "Working on ", CppFiles[ind], " ..."
+    print("Working on ", CppFiles[ind], " ...")
     text = ReplaceVariable(VariableName, Value, CppTexts[ind])
     if (text != None):
         WriteToFile(text, CppFiles[ind])

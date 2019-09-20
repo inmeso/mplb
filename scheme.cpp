@@ -1,6 +1,35 @@
-// Copyright 2017 the MPLB team. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+*/
 
 /*! @brief Define functions for numerical schemes.
  *  @author Jianping Meng
@@ -23,8 +52,9 @@ ops_stencil TWOPTREGULARSTENCIL;
  * conditions, for a second order scheme, 1 needs two halo points but 2 only
  * need one. We will use the larger one here.
  */
-int schemeHaloPt = 1;
-
+int schemeHaloPt{1};
+SchemeType schemeType{Scheme_StreamCollision};
+const SchemeType Scheme() { return schemeType; }
 void SetupCommonStencils() {
 #ifdef OPS_2D
     int currentNode[] = {0, 0};
@@ -63,9 +93,18 @@ void SetupCommonStencils() {
     ONEPTLATTICESTENCIL = ops_decl_stencil(3, 28, d3q27, "D3Q27");
 #endif /* OPS_3D */
 }
-void SetupScheme() {
-    schemeHaloPt = 1;  // a stream-collision scheme needs no halo point
+
+void DefineScheme(const SchemeType scheme) {
+    schemeType = scheme;
     SetupCommonStencils();
+    switch (schemeType) {
+        case Scheme_StreamCollision: {
+            SetSchemeHaloNum(1);
+            ops_printf("The stream-collision scheme is chosen!\n");
+        } break;
+        default:
+            break;
+    }
 }
 const int SchemeHaloNum() { return schemeHaloPt; }
 void SetSchemeHaloNum(const int schemeHaloNum) { schemeHaloPt = schemeHaloNum; }

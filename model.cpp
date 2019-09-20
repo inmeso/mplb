@@ -1,6 +1,34 @@
-// Copyright 2017 the MPLB team. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+*/
 
 /*! @brief Define discrete model
  *  @author Jianping Meng
@@ -49,15 +77,15 @@ lattice d2q36{2, 36, 1};
 std::map<std::string, lattice> latticeSet{
     {"d2q9", d2q9}, {"d3q19", d3q19}, {"d3q15", d3q15}, {"d2q36", d2q36}};
 
-// Find the particles with opposite directions, for the bounce-back boundary
+// Find particles with opposite directions, for bounce-back type boundary
 // Brute-force method, could be slow for large lattice
 void FindReverseXi(const int startPos, const int latticeSize) {
     for (int i = 0; i < latticeSize; i++) {
         for (int j = 0; j < latticeSize; j++) {
             bool isReverse{true};
             for (int k = 0; k < LATTDIM; k++) {
-                Real sum{XI[startPos + i * LATTDIM + k] +
-                         XI[startPos + j * LATTDIM + k]};
+                Real sum{XI[(startPos + i) * LATTDIM + k] +
+                         XI[(startPos + j) * LATTDIM + k]};
                 isReverse = isReverse && EssentiallyEqual(&sum, &ZERO, EPS);
             }
             if (isReverse) {
@@ -68,7 +96,7 @@ void FindReverseXi(const int startPos, const int latticeSize) {
     }
 }
 
-void SetupD2Q9Latt(const int startPos) { 
+void SetupD2Q9Latt(const int startPos) {
     const int nc9{9};
     Real t00 = 4.0 / 9.0, t01 = 1.0 / 9.0, t11 = 1.0 / 36.0;
     Real t[nc9] = {t00, t01, t01, t01, t01, t11, t11, t11, t11};
@@ -76,8 +104,8 @@ void SetupD2Q9Latt(const int startPos) {
     int cyi[nc9] = {0, 0, 1, 0, -1, 1, 1, -1, -1};
     int op9[nc9] = {0, 3, 4, 1, 2, 7, 8, 5, 6};
     for (int l = 0; l < nc9; l++) {
-        XI[startPos + l * LATTDIM] = cxi[l];
-        XI[startPos + l * LATTDIM + 1] = cyi[l];
+        XI[(startPos + l) * LATTDIM] = cxi[l];
+        XI[(startPos + l) * LATTDIM + 1] = cyi[l];
         WEIGHTS[startPos + l] = t[l];
         OPP[startPos + l] = op9[l];
     }
@@ -97,9 +125,9 @@ void SetupD3Q19Latt(const int startPos) {
     int czi[nc19] = {0,  0, 0,  0, 0, 1,  -1, 0,  0, 1,
                      -1, 1, -1, 0, 0, -1, 1,  -1, 1};
     for (int l = 0; l < nc19; l++) {
-        XI[startPos + l * LATTDIM] = cxi[l];
-        XI[startPos + l * LATTDIM + 1] = cyi[l];
-        XI[startPos + l * LATTDIM + 2] = czi[l];
+        XI[(startPos + l) * LATTDIM] = cxi[l];
+        XI[(startPos + l) * LATTDIM + 1] = cyi[l];
+        XI[(startPos + l) * LATTDIM + 2] = czi[l];
         WEIGHTS[startPos + l] = t[l];
     }
     FindReverseXi(startPos, nc19);
@@ -116,15 +144,16 @@ void SetupD3Q15Latt(const int startPos) {
     int cyi[nc15] = {0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, -1, 1, 1, -1};
     int czi[nc15] = {0, 0, 0, 0, 0, 1, -1, 1, -1, -1, 1, 1, -1, 1, -1};
     for (int l = 0; l < nc15; l++) {
-        XI[startPos + l * LATTDIM] = cxi[l];
-        XI[startPos + l * LATTDIM + 1] = cyi[l];
-        XI[startPos + l * LATTDIM + 2] = czi[l];
+        XI[(startPos + l) * LATTDIM] = cxi[l];
+        XI[(startPos + l) * LATTDIM + 1] = cyi[l];
+        XI[(startPos + l) * LATTDIM + 2] = czi[l];
         WEIGHTS[startPos + l] = t[l];
     }
     FindReverseXi(startPos, nc15);
 }
 
 void SetupD2Q16Latt(const int startPos) {
+    //Gauss-Hermite quadrature from the fourth order polynomial
     const int nc16{16};
     const int nc1d{4};
     const Real roots[nc1d] = {-2.3344142183389773, -0.7419637843027259,
@@ -134,8 +163,8 @@ void SetupD2Q16Latt(const int startPos) {
     int l{0};
     for (int i = 0; i < nc1d; i++) {
         for (int j = 0; j < nc1d; j++) {
-            XI[startPos + l * LATTDIM] = roots[i];
-            XI[startPos + l * LATTDIM + 1] = roots[j];
+            XI[(startPos + l) * LATTDIM] = roots[i];
+            XI[(startPos + l) * LATTDIM + 1] = roots[j];
             WEIGHTS[startPos + l] = coeff[i] * coeff[j];
             l++;
         }
@@ -144,6 +173,7 @@ void SetupD2Q16Latt(const int startPos) {
 }
 
 void SetupD2Q36Latt(const int startPos) {
+    //Gauss-Hermite quadrature from the sixth order polynomial
     const int nc36{36};
     const int nc1d{6};
     const Real roots[nc1d] = {-0.3324257433552119e1, -0.1889175877753711e1,
@@ -155,8 +185,8 @@ void SetupD2Q36Latt(const int startPos) {
     int l{0};
     for (int i = 0; i < nc1d; i++) {
         for (int j = 0; j < nc1d; j++) {
-            XI[startPos + l * LATTDIM] = roots[i];
-            XI[startPos + l * LATTDIM + 1] = roots[j];
+            XI[(startPos + l) * LATTDIM] = roots[i];
+            XI[(startPos + l) * LATTDIM + 1] = roots[j];
             WEIGHTS[startPos + l] = coeff[i] * coeff[j];
             l++;
         }
@@ -164,39 +194,6 @@ void SetupD2Q36Latt(const int startPos) {
     FindReverseXi(startPos, nc36);
 }
 
-/*!
- * Example for 2D isothermal flows
- * Note:
- * This can become automatic by using an input file
- */
-void SetupMacroVars() {
-    // rho,u,v,w,T m, macroscopic  variables must be stored in a specific order
-    NUMMACROVAR = 3;
-    VARIABLETYPE = new int[NUMMACROVAR];
-    VARIABLETYPE[0] = (int)Variable_Rho;
-    VARIABLETYPE[1] = (int)Variable_U;
-    VARIABLETYPE[2] = (int)Variable_V;
-    // VARIABLETYPE[3] = (int)Variable_W;
-    // VARIABLETYPE[3] = (int)Variable_T;
-    // VARIABLETYPE[4] = (int)Variable_Qx;
-    // VARIABLETYPE[5] = (int)Variable_Qy;
-    VARIABLECOMPINDEX = new int[NUMMACROVAR];
-    VARIABLECOMPINDEX[0] = 0;
-    VARIABLECOMPINDEX[1] = 0;
-    VARIABLECOMPINDEX[2] = 0;
-    // VARIABLECOMPINDEX[3] = 0;
-    // VARIABLECOMPINDEX[3] = 0;
-    // VARIABLECOMPINDEX[4] = 0;
-    // VARIABLECOMPINDEX[5] = 0;
-    MACROVARNAME.reserve(NUMMACROVAR);
-    MACROVARNAME.push_back("h");
-    MACROVARNAME.push_back("u");
-    MACROVARNAME.push_back("v");
-    // MACROVARNAME.push_back("w");
-    // MACROVARNAME.push_back("T");
-    // MACROVARNAME.push_back("qx");
-    // MACROVARNAME.push_back("qy");
-}
 
 void AllocateComponentIndex(const int compoNum) {
     if (compoNum == NUMCOMPONENTS) {
@@ -212,7 +209,6 @@ void AllocateComponentIndex(const int compoNum) {
 void AllocateXi(const int length) {
     if (length == NUMXI) {
         if (nullptr == XI) {
-            ops_printf("LATTDIM in All XI=%i\n", LATTDIM);
             XI = new Real[length * LATTDIM];
         }
         if (nullptr == WEIGHTS) {
@@ -229,15 +225,18 @@ void AllocateMacroVarProperty(const int macroVarNum) {
         if (nullptr == VARIABLETYPE) {
             VARIABLETYPE = new int[NUMMACROVAR];
         } else {
-            ops_printf("%s\n", "VARIABLETYPE has been allocated!");
+            ops_printf("%s\n", "Warning! VARIABLETYPE has been allocated!");
         }
         if (nullptr == VARIABLECOMPINDEX) {
             VARIABLECOMPINDEX = new int[NUMMACROVAR];
         } else {
-            ops_printf("%s\n", "VARIABLECOMPINDEX has been allocated!");
+            ops_printf("%s\n",
+                       "Warning! VARIABLECOMPINDEX has been allocated!");
         }
     } else {
-        ops_printf("%s\n", "The macroVarNum must be equal to NUMMACROVAR");
+        ops_printf("%s\n",
+                   "Error! The macroVarNum must be equal to NUMMACROVAR");
+        assert(macroVarNum == NUMMACROVAR);
     }
 }
 
@@ -247,9 +246,12 @@ void DefineComponents(std::vector<std::string> compoNames,
     NUMCOMPONENTS = compoNames.size();
     if (NUMCOMPONENTS > 0) {
         AllocateComponentIndex(NUMCOMPONENTS);
+        ops_printf("There are %i components defined.\n", NUMCOMPONENTS);
     } else {
-        ops_printf("There muse be at least one component but we get:%i\n",
-                   NUMCOMPONENTS);
+        ops_printf(
+            "Error! There muse be at least one component but we get:%i\n",
+            NUMCOMPONENTS);
+        assert(NUMCOMPONENTS > 0);
     }
     bool isLattDimSame{true};
     bool isCsSame{true};
@@ -260,23 +262,25 @@ void DefineComponents(std::vector<std::string> compoNames,
     for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
         if (latticeSet.find(lattNames[idx]) != latticeSet.end()) {
             lattice currentLattice{latticeSet[lattNames[idx]]};
+            COMPOINDEX[posCompo] = totalSize;
+            COMPOINDEX[posCompo + 1] = totalSize + currentLattice.length - 1;
             totalSize += currentLattice.length;
-            COMPOINDEX[posCompo] = 0;
-            COMPOINDEX[posCompo + 1] = currentLattice.length - 1;
             posCompo += 2;
             isLattDimSame =
                 isLattDimSame && (latticeDimension == currentLattice.lattDim);
             isCsSame = isCsSame && (currentCs == currentLattice.cs);
         } else {
-            ops_printf("There is no predefined lattice:%s\n",
+            ops_printf("Error! There is no predefined lattice:%s\n",
                        lattNames[idx].c_str());
+            assert(latticeSet.find(lattNames[idx]) != latticeSet.end());
         }
     }
     if (!isLattDimSame) {
-        ops_printf("%s\n", "The lattice dimension is inconsistent!");
+        ops_printf("%s\n", "Error! The lattice dimension is inconsistent!");
+        assert(isLattDimSame);
     }
     if (!isCsSame) {
-        ops_printf("%s\n", "The lattice sound speed is inconsistent!");
+        ops_printf("%s\n", "Warning: The lattice sound speed is inconsistent!");
     }
     if (isLattDimSame && isCsSame) {
         NUMXI = totalSize;
@@ -296,6 +300,8 @@ void DefineComponents(std::vector<std::string> compoNames,
                 SetupD2Q9Latt(startPos);
             }
             startPos += latticeSet[lattNames[idx]].length;
+            ops_printf("The %s lattice is employed for Component %i.\n",
+                       lattNames[idx].c_str(), idx);
         }
         Real maxValue{0};
         for (int l = 0; l < totalSize * LATTDIM; l++) {
@@ -319,12 +325,22 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     // It seems varId is not necessary at this moment
     NUMMACROVAR = names.size();
     MACROVARNAME = names;
-    AllocateMacroVarProperty(NUMMACROVAR);
+    if (NUMMACROVAR > 0) {
+        AllocateMacroVarProperty(NUMMACROVAR);
+        ops_printf("There are %i macroscopic variables defined.\n",
+                   NUMMACROVAR);
+    } else {
+        ops_printf(
+            "Warning! There seems no macroscopic variables defined!\n");
+    }
+
     for (int idx = 0; idx < NUMMACROVAR; idx++) {
         VARIABLETYPE[idx] = (int)types[idx];
         VARIABLECOMPINDEX[idx] = (int)compoId[idx];
+        ops_printf("The macroscopic variable %s defined for Component %i.\n",
+                   names[idx].c_str(), compoId[idx]);
     }
-
+    //TODO one bug needes fix here
     /*
     if (nullptr != VARIABLECOMPPOS) {
         int startPos{0};
@@ -348,9 +364,11 @@ void DefineMacroVars(std::vector<VariableTypes> types,
         }
 
     } else {
-        ops_printf("%s\n",
-                   "It appears that the DefineComponents routine has not been "
-                   "callsed!");
+        ops_printf(
+            "%s\n",
+            "Error! It appears that the DefineComponents routine has not been "
+            "called!");
+        assert(nullptr != VARIABLECOMPPOS);
     }
 
     ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
@@ -367,15 +385,20 @@ void DefineEquilibrium(std::vector<EquilibriumType> types,
             EQUILIBRIUMTYPE = new int[typeNum];
             for (int idx = 0; idx < typeNum; idx++) {
                 EQUILIBRIUMTYPE[idx] = types[idx];
+                ops_printf(
+                    "The equilibrium function type %i is chosen for Component "
+                    "%i\n",
+                    EQUILIBRIUMTYPE[idx], compoId[idx]);
             }
         } else {
-            ops_printf("%s\n", "EQUILIBRIUMTYPE has been allocated!");
+            ops_printf("%s\n", "Warning! EQUILIBRIUMTYPE has been allocated!");
         }
     } else {
         ops_printf(
-            "There are %i equilibrium types defined but we have %i "
+            "Error! There are %i equilibrium types defined but we have %i "
             "components\n",
             typeNum, NUMCOMPONENTS);
+            assert(typeNum == NUMCOMPONENTS);
     }
     ops_decl_const("EQUILIBRIUMTYPE", NUMCOMPONENTS, "int", EQUILIBRIUMTYPE);
 }
@@ -388,15 +411,20 @@ void DefineBodyForce(std::vector<BodyForceType> types,
             FORCETYPE = new int[typeNum];
             for (int idx = 0; idx < typeNum; idx++) {
                 FORCETYPE[idx] = types[idx];
+                ops_printf(
+                    "The body force function type %i is chosen for Component "
+                    "%i\n",
+                    FORCETYPE[idx], compoId[idx]);
             }
         } else {
-            ops_printf("%s\n", "BODYFORCE has been allocated!");
+            ops_printf("%s\n", "Warning! BODYFORCE has been allocated!");
         }
     } else {
         ops_printf(
             "There are %i force types defined but we have %i "
             "components\n",
             typeNum, NUMCOMPONENTS);
+            assert(typeNum == NUMCOMPONENTS);
     }
     ops_decl_const("FORCETYPE", NUMCOMPONENTS, "int", FORCETYPE);
 }
@@ -477,6 +505,9 @@ Real CalcBGKFeq(const int l, const Real rho, const Real u, const Real v,
 
 Real CalcSWEFeq(const int l, const Real h, const Real u, const Real v,
                 const int polyOrder) {
+    // Implementing the model derived in Please refer to Meng, Gu Emerson, Peng
+    // and Zhang, IJMPC 2018(29):1850080
+
     Real cu{(CS * XI[l * LATTDIM] * u + CS * XI[l * LATTDIM + 1] * v)};
     Real c2{(CS * XI[l * LATTDIM] * CS * XI[l * LATTDIM] +
              CS * XI[l * LATTDIM + 1] * CS * XI[l * LATTDIM + 1])};
@@ -499,7 +530,7 @@ Real CalcSWEFeq(const int l, const Real h, const Real u, const Real v,
     return WEIGHTS[l] * h * res;
 }
 
-void SetLatticeName(const std::vector<std::string> latticeName) {
+void SetLatticeName(const std::vector<std::string> &latticeName) {
     LATTICENAME = latticeName;
 }
 const std::vector<std::string> LatticeName() { return LATTICENAME; }

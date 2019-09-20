@@ -1,6 +1,34 @@
-// Copyright 2017 the MPLB team. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+*/
 
 /*! @brief   Implementing functions related to the flow field
  * @author  Jianping Meng
@@ -76,6 +104,11 @@ int* BlockIterRngBulk{nullptr};
 int* BLOCKSIZE{nullptr};
 
 const int HaloPtNum() { return std::max(SchemeHaloNum(), BoundaryHaloNum()); }
+
+void DefineCase(std::string caseName, const int spaceDim) {
+    SetCaseName(caseName);
+    SPACEDIM = spaceDim;
+}
 /*!
  * Manually setting up all the variables necessary for the simulation
  * This function has not been updated for 3D problems.
@@ -238,8 +271,9 @@ void DefineVariables() {
     g_ResidualError = new Real[2 * MacroVarsNum()];
     // end if steady flow
 
-    // int haloDepth = HaloDepth();  // zero for the current case
-    int haloDepth{std::max(SchemeHaloNum(), BoundaryHaloNum())};
+
+    int haloDepth{HaloPtNum()};
+    HALODEPTH = HaloPtNum();
 
 #ifdef debug
     ops_printf("%s%i\n", "DefineVariable: haloDepth=", haloDepth);
@@ -376,8 +410,8 @@ void DefineVariables() {
         dataName = "Nodetype_" + label;
         // problem specific -- cut cell method
         g_NodeType[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], 1, size, base, d_m, d_p,
-                         (int*)temp, "int", dataName.c_str());
+            ops_decl_dat(g_Block[blockIndex], NUMCOMPONENTS, size, base, d_m,
+                         d_p, (int*)temp, "int", dataName.c_str());
         dataName = "GeometryProperty_" + label;
         g_GeometryProperty[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], 1, size, base, d_m, d_p,
@@ -546,7 +580,7 @@ void DefineVariablesFromHDF5() {
         dataName = "Nodetype_" + label;
         // problem specific -- cut cell method
         g_NodeType[blockIndex] = ops_decl_dat_hdf5(
-            g_Block[blockIndex], 1, "int", dataName.c_str(), fileName.c_str());
+            g_Block[blockIndex], NUMCOMPONENTS, "int", dataName.c_str(), fileName.c_str());
         dataName = "GeometryProperty_" + label;
         g_GeometryProperty[blockIndex] = ops_decl_dat_hdf5(
             g_Block[blockIndex], 1, "int", dataName.c_str(), fileName.c_str());
@@ -698,17 +732,17 @@ void DefineHaloTransfer() {
 void DefineHaloTransfer3D() {
     // This is a hard coded version
     // could be used as an example for user-defined routines.
-    HaloRelationNum = 2;
-    HaloRelations = new ops_halo[HaloRelationNum];
-    int haloDepth = HaloDepth();
+    // HaloRelationNum = 6;
+    // HaloRelations = new ops_halo[HaloRelationNum];
+    // int haloDepth = HaloDepth();
     // max halo depths for the dat in the positive direction
-    int d_p[3] = {haloDepth, haloDepth, haloDepth};
-    // max halo depths for the dat in the negative direction
-    int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
+    // int d_p[3] = {haloDepth, haloDepth, haloDepth};
+    // // max halo depths for the dat in the negative direction
+    // int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
     // The domain size in the Block 0
-    int nx = BlockSize(0)[0];
-    int ny = BlockSize(0)[1];
-    int nz = BlockSize(0)[2];
+    // int nx = BlockSize(0)[0];
+    // int ny = BlockSize(0)[1];
+    // int nz = BlockSize(0)[2];
     // {
     //     // Template for the periodic pair (front-back)
     //     int dir[] = {1, 2, 3};
@@ -723,21 +757,35 @@ void DefineHaloTransfer3D() {
     //                                      base_to, dir, dir);
     // }
 
-    {
-        // Template for the periodic pair (left-right)
-        int dir[] = {1, 2, 3};
-        int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
-        int base_from[] = {0, d_m[0], d_m[0]};
-        int base_to[] = {nx, d_m[0], d_m[0]};
-        HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-        base_from[0] = nx - 1;  // need to be changed
-        base_to[0] = d_m[1];
-        HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-    }
+    // {
+    //     // Template for the periodic pair (left-right)
+    //     int dir[] = {1, 2, 3};
+    //     int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
+    //     int base_from[] = {0, d_m[0], d_m[0]};
+    //     int base_to[] = {nx, d_m[0], d_m[0]};
+    //     HaloRelations[2] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    //     base_from[0] = nx - 1;  // need to be changed
+    //     base_to[0] = d_m[1];
+    //     HaloRelations[3] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    // }
 
-    HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
+    // {
+    //     // Template for the periodic pair (top-bottom)
+    //     int dir[] = {1, 2, 3};
+    //     int halo_iter[] = {nx + d_p[0] - d_m[0], 1 , nz + d_p[0] - d_m[0]};
+    //     int base_from[] = {d_m[0], 0, d_m[0]};
+    //     int base_to[] = {d_m[0], ny, d_m[0]};
+    //     HaloRelations[4] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    //     base_from[1] = ny - 1;  // need to be changed
+    //     base_to[1] = d_m[1];
+    //     HaloRelations[5] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    // }
+
+    // HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
 }
 /*
  * We need a name to specify which file to input
@@ -836,32 +884,32 @@ void SetHaloRelationNum(const int haloRelationNum) {
 }
 
 void DestroyFlowfield() {
-    delete[] g_f;
-    delete[] g_fStage;
-    delete[] g_feq;
-    delete[] g_Bodyforce;
-    delete[] g_Block;
-    delete[] g_MacroVars;
-    delete[] g_Tau;
-    delete[] TAUREF;
-    delete[] g_CoordinateXYZ;
-    if (HaloRelationNum > 0) delete[] HaloRelations;
-    delete[] g_NodeType;
-    delete[] g_GeometryProperty;
-    delete[] BlockIterRngWhole;
-    delete[] BlockIterRngBulk;
-    delete[] BlockIterRngImax;
-    delete[] BlockIterRngImin;
-    delete[] BlockIterRngJmax;
-    delete[] BlockIterRngJmin;
-    delete[] BLOCKSIZE;
+    FreeArrayMemory(g_f);
+    FreeArrayMemory(g_fStage);
+    FreeArrayMemory(g_feq);
+    FreeArrayMemory(g_Bodyforce);
+    FreeArrayMemory(g_Block);
+    FreeArrayMemory(g_MacroVars);
+    FreeArrayMemory(g_Tau);
+    FreeArrayMemory(TAUREF);
+    FreeArrayMemory(g_CoordinateXYZ);
+    if (HaloRelationNum > 0) FreeArrayMemory(HaloRelations);
+    FreeArrayMemory(g_NodeType);
+    FreeArrayMemory(g_GeometryProperty);
+    FreeArrayMemory(BlockIterRngWhole);
+    FreeArrayMemory(BlockIterRngBulk);
+    FreeArrayMemory(BlockIterRngImax);
+    FreeArrayMemory(BlockIterRngImin);
+    FreeArrayMemory(BlockIterRngJmax);
+    FreeArrayMemory(BlockIterRngJmin);
+    FreeArrayMemory(BLOCKSIZE);
     // if steady flow
-    delete[] g_MacroVarsCopy;
-    delete[] g_ResidualErrorHandle;
-    delete[] g_ResidualError;
+    FreeArrayMemory(g_MacroVarsCopy);
+    FreeArrayMemory(g_ResidualErrorHandle);
+    FreeArrayMemory(g_ResidualError);
     if (3 == SPACEDIM) {
-        delete[] BlockIterRngKmax;
-        delete[] BlockIterRngKmin;
+        FreeArrayMemory(BlockIterRngKmax);
+        FreeArrayMemory(BlockIterRngKmin);
     }
     // end if steady flow
     // delete[] halos;
@@ -908,8 +956,9 @@ void SetTauRef(const std::vector<Real> tauRef) {
             // ops_printf("\n tau is %f \n",TAUREF[idx]);
         }
     } else {
-        ops_printf("%i taus are requried but there are %i!\n", tauNum,
+        ops_printf("Error! %i taus are required but there are %i!\n", tauNum,
                    tauRef.size());
+        assert(tauRef.size() == tauNum);
     }
 }
 
@@ -927,8 +976,9 @@ void SetBlockSize(const std::vector<int> blockSize) {
 
     } else {
         ops_printf(
-            "%i numbers are required for specifying the size of %i blocks!\n",
+            "Error! %i numbers are required for specifying the size of %i blocks!\n",
             dim, BLOCKNUM);
+            assert(blockSize.size() == dim);
     }
 }
 
@@ -936,8 +986,10 @@ void SetBlockNum(const int blockNum) {
     if (blockNum > 0) {
         BLOCKNUM = blockNum;
     } else {
-        ops_printf("%s\n", "There must be at least one block");
+        ops_printf("%s\n", "Error! There must be at least one block");
+        assert(blockNum > 0);
     }
 }
+
 
 // const int* GetBlockNum() { return &BLOCKNUM; }

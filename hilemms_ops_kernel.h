@@ -1,8 +1,38 @@
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #ifndef HILEMMS_OPS_KERNEL
 #define HILEMMS_OPS_KERNEL
 #include "hilemms.h"
-
-using namespace std;
 
 #ifdef OPS_2D
 void KerSetCoordinates(const Real* coordX, const Real* coordY, const int* idx,
@@ -23,34 +53,32 @@ void KerSetCoordinates3D(const Real* coordX, const Real* coordY,
 #endif  // OPS_3D
 
 // Kernel to set initial value for a particlaur component.
-// This kernel is multicomponent ready.
-void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
-                                   Real* macroVars, Real* macroVarsInitVal,
-                                   const int* componentId) {
+void KerSetInitialMacroVars(Real* macroVars, const Real* coordinates,
+                            const int* idx) {
+    Real* initiaNodeMacroVars = new Real[NUMMACROVAR];
+    Real* nodeCoordinates = new Real[SPACEDIM];
+    for (int i = 0; i < SPACEDIM; i++) {
 #ifdef OPS_2D
-
-    int compoIndex{*componentId};
-    for (int m = VARIABLECOMPPOS[2 * compoIndex], i = 0;
-         m <= VARIABLECOMPPOS[2 * compoIndex + 1]; m++, i++) {
-        macroVars[OPS_ACC_MD2(m, 0, 0)] =
-            macroVarsInitVal[OPS_ACC_MD3(i, 0, 0)];
-    }
+        nodeCoordinates[i] = coordinates[OPS_ACC_MD1(i, 0, 0)];
 #endif
-
 #ifdef OPS_3D
-
-    int compoIndex{*componentId};
-
-    for (int m = VARIABLECOMPPOS[2 * compoIndex], i = 0;
-         m <= VARIABLECOMPPOS[2 * compoIndex + 1]; m++, i++) {
-        macroVars[OPS_ACC_MD2(m, 0, 0, 0)] =
-            macroVarsInitVal[OPS_ACC_MD3(i, 0, 0, 0)];
-    }
+        nodeCoordinates[i] = coordinates[OPS_ACC_MD1(i, 0, 0, 0)];
 #endif
-}
-
+    }
+    InitialiseNodeMacroVars(initiaNodeMacroVars, nodeCoordinates);
+    for (int i = 0; i < NUMMACROVAR; i++) {
 #ifdef OPS_2D
-void KerSetEmbededBodyBoundary(int* surfaceBoundary,
+        macroVars[OPS_ACC_MD0(i, 0, 0)] = initiaNodeMacroVars[i];
+#endif
+#ifdef OPS_3D
+        macroVars[OPS_ACC_MD0(i, 0, 0, 0)] = initiaNodeMacroVars[i];
+#endif
+    }
+    delete[] initiaNodeMacroVars;
+    delete[] nodeCoordinates;
+}
+#ifdef OPS_2D
+void KerSetEmbeddedBodyBoundary(int* surfaceBoundary,
                                const int* geometryProperty, int* nodeType) {
     VertexGeometryTypes gp =
         (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0)];
@@ -60,7 +88,7 @@ void KerSetEmbededBodyBoundary(int* surfaceBoundary,
     }
 }
 
-void KerSetEmbededCircle(Real* diameter, Real* centerPos,
+void KerSetEmbeddedCircle(Real* diameter, Real* centerPos,
                          const Real* coordinates, int* nodeType,
                          int* geometryProperty) {
     if ((coordinates[OPS_ACC_MD3(0, 0, 0)] - centerPos[0]) *
@@ -142,7 +170,7 @@ void KerSyncGeometryProperty(const int* nodeType, int* geometryProperty) {
     }
 }
 
-void KerSetEmbededBodyGeometry(const int* nodeType, int* geometryProperty) {
+void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
     if (Vertex_ImmersedSolid == vt) {
         VertexTypes neiborVertexType[8];
