@@ -37,14 +37,6 @@
 Real* VERTEXCOORDINATES{nullptr};
 int NUMVERTICES{0};
 
-// Structure to hold the values whenever user specifies a boundary condition.
-struct BlockBoundary {
-    int blockIndex;
-    int componentID;
-    std::vector<Real> givenVars;
-    BoundarySurface boundarySurface;
-    VertexTypes boundaryType;
-};
 
 // Vector to assemble all boundary conditions so as to use
 // in TreatDomainBoundary().
@@ -325,7 +317,7 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
 #endif
 
     ops_partition((char*)"LBM Solver");
-    ops_printf("%i blocks are parted and all field variabls allocated!\n",
+    ops_printf("%i blocks are parted and all field variable allocated!\n",
                BlockNum());
     int numBlockStartPos;
     numBlockStartPos = startPos.size();
@@ -543,7 +535,7 @@ void DefineBlockBoundary(int blockIndex, int componentID,
     // If necessary, uncomment the sentence below and give a corret number
     // SetBoundaryHaloNum(1);
 
-    // Here we adopt the assumtion that a boundary is defined by [\rho,u,v,w,T]
+    // Here we adopt the assumption that a boundary is defined by [\rho,u,v,w,T]
     // in 3D or  [\rho,u,v,T] in 2D. For a kernel function for dealing with
     // a boundary condition, these parameters shall be passed in a fixed order
     // as shown.
@@ -551,12 +543,10 @@ void DefineBlockBoundary(int blockIndex, int componentID,
     const int numMacroVarValues{(int)macroVarValues.size()};
     // TODO The logic may need rethink
     std::vector<Real> macroVarsAtBoundary;
-    if (2 == SPACEDIM) {
-        macroVarsAtBoundary.resize(4);
-    }
-    if (3 == SPACEDIM) {
-        macroVarsAtBoundary.resize(5);
-    }
+    const int macroVarNumOfCurrentComponent{
+        VARIABLECOMPPOS[2 * componentID + 1] -
+        VARIABLECOMPPOS[2 * componentID] + 1};
+    macroVarsAtBoundary.resize(macroVarNumOfCurrentComponent);
 
     if (numMacroVarTypes == numMacroVarValues) {
         for (int i = 0; i < numMacroVarValues; i++) {
@@ -668,7 +658,7 @@ void ImplementBoundaryConditions() {
 }
 
 void InitialiseNodeMacroVars(Real* nodeMacroVars, const Real* nodeCoordinates) {
-    // 3D exmaple
+    // 3D example
     Real x{nodeCoordinates[0]};
     Real y{nodeCoordinates[1]};
     Real z{nodeCoordinates[2]};  // for 3D problems
