@@ -37,7 +37,14 @@
 Real* VERTEXCOORDINATES{nullptr};
 int NUMVERTICES{0};
 
-
+// Structure to hold the values whenever user specifies a boundary condition.
+struct BlockBoundary {
+    int blockIndex;
+    int componentID;
+    std::vector<Real> givenVars;
+    BoundarySurface boundarySurface;
+    VertexTypes boundaryType;
+};
 // Vector to assemble all boundary conditions so as to use
 // in TreatDomainBoundary().
 std::vector<BlockBoundary> blockBoundaryConditions;
@@ -388,7 +395,7 @@ Real GetMaximumResidualError(const Real checkPeriod) {
     return maxResError;
 }
 
-void Iterate(const int steps, const int checkPointPeriod) {
+void Iterate(const SizeType steps, const SizeType checkPointPeriod) {
     const SchemeType scheme = Scheme();
     ops_printf("Starting the iteration...\n");
     switch (scheme) {
@@ -428,7 +435,7 @@ void Iterate(const int steps, const int checkPointPeriod) {
     DestroyFlowfield();
 }
 
-void Iterate(const Real convergenceCriteria, const int checkPointPeriod) {
+void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod) {
     const SchemeType scheme = Scheme();
     ops_printf("Starting the iteration...\n");
     switch (scheme) {
@@ -541,7 +548,7 @@ void DefineBlockBoundary(int blockIndex, int componentID,
     // as shown.
     const int numMacroVarTypes{(int)macroVarTypes.size()};
     const int numMacroVarValues{(int)macroVarValues.size()};
-    // TODO The logic may need rethink
+
     std::vector<Real> macroVarsAtBoundary;
     const int macroVarNumOfCurrentComponent{
         VARIABLECOMPPOS[2 * componentID + 1] -
