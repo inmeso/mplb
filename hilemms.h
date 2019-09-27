@@ -55,10 +55,10 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
                          const Real meshSize, const std::vector<Real> startPos);
 
 // Iterator for transient simulations.
-void Iterate(const int steps, const int checkPointPeriod);
+void Iterate(const SizeType steps, const SizeType checkPointPeriod);
 
 // Iterator for steady simulations.
-void Iterate(const Real convergenceCriteria, const int checkPointPeriod);
+void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod);
 
 // Add 2D polygon.
 // vertexNum: total number of vertexes.
