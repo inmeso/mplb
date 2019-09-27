@@ -56,8 +56,10 @@ const int yaxis = 2;
 const int zaxis = 3;
 // ZERO is the zero constant with the desired precision, i.e., float or double
 const Real ZERO{(Real)((int)0)};
+typedef std::size_t SizeType;
 //#define debug
 #include "assert.h"
+#include <vector>
 #include "ops_seq.h"
 // It looks that OPS always fills the uninitialised storage with 0 so
 // we try to avoid 0 value for these types
@@ -73,6 +75,7 @@ enum PointPosition {
     RelativelyInteriorToEdge = 4,
     RelativelyInteriorToFace = 5
 };
+
 enum VertexTypes {
     // vtfluid is the general type of node
     // All specific fluid types should be started as vtft
@@ -271,11 +274,11 @@ typedef enum {
     sbpke = 5,
 } StructuredBoundaryPosition;
 
-typedef enum {
+enum SchemeType {
     Scheme_E1st2nd = 1,
     Scheme_I1st2nd = -1,
     Scheme_StreamCollision = 10,
-} SchemeType;
+} ;
 
 inline bool EssentiallyEqual(const Real* a, const Real* b, const Real epsilon) {
     return fabs(*a - *b) <=
