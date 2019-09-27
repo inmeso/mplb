@@ -44,7 +44,7 @@ int BLOCKNUM{1};
  * SPACEDIM=2 for 2D 3 for three 3D
  */
 int SPACEDIM{2};
-/*!
+/**
  * Layers of halos
  */
 int HALODEPTH{0};
@@ -57,11 +57,11 @@ ops_dat* g_MacroVarsCopy{nullptr};
 Real* g_ResidualError{nullptr};
 ops_reduction* g_ResidualErrorHandle{nullptr};
 ops_dat* g_Bodyforce{nullptr};
-/*!
+/**
  * DT: time step
  */
 Real DT{1};
-/*!
+/**
  * TAUREF: the reference relaxation time
  * In appropriate non-dimensional system, it is the Knudsen number
  * It must be a constant during the run time
@@ -732,17 +732,17 @@ void DefineHaloTransfer() {
 void DefineHaloTransfer3D() {
     // This is a hard coded version
     // could be used as an example for user-defined routines.
-    // HaloRelationNum = 6;
-    // HaloRelations = new ops_halo[HaloRelationNum];
-    // int haloDepth = HaloDepth();
+    HaloRelationNum = 2;
+    HaloRelations = new ops_halo[HaloRelationNum];
+    int haloDepth = HaloDepth();
     // max halo depths for the dat in the positive direction
-    // int d_p[3] = {haloDepth, haloDepth, haloDepth};
-    // // max halo depths for the dat in the negative direction
-    // int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
-    // The domain size in the Block 0
-    // int nx = BlockSize(0)[0];
-    // int ny = BlockSize(0)[1];
-    // int nz = BlockSize(0)[2];
+    int d_p[3] = {haloDepth, haloDepth, haloDepth};
+    // max halo depths for the dat in the negative direction
+    int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
+    //The domain size in the Block 0
+    int nx = BlockSize(0)[0];
+    int ny = BlockSize(0)[1];
+    int nz = BlockSize(0)[2];
     // {
     //     // Template for the periodic pair (front-back)
     //     int dir[] = {1, 2, 3};
@@ -757,19 +757,19 @@ void DefineHaloTransfer3D() {
     //                                      base_to, dir, dir);
     // }
 
-    // {
-    //     // Template for the periodic pair (left-right)
-    //     int dir[] = {1, 2, 3};
-    //     int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
-    //     int base_from[] = {0, d_m[0], d_m[0]};
-    //     int base_to[] = {nx, d_m[0], d_m[0]};
-    //     HaloRelations[2] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    //     base_from[0] = nx - 1;  // need to be changed
-    //     base_to[0] = d_m[1];
-    //     HaloRelations[3] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    // }
+    {
+        // Template for the periodic pair (left-right)
+        int dir[] = {1, 2, 3};
+        int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
+        int base_from[] = {0, d_m[0], d_m[0]};
+        int base_to[] = {nx, d_m[0], d_m[0]};
+        HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+                                         base_to, dir, dir);
+        base_from[0] = nx - 1;  // need to be changed
+        base_to[0] = d_m[1];
+        HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+                                         base_to, dir, dir);
+    }
 
     // {
     //     // Template for the periodic pair (top-bottom)
@@ -785,7 +785,7 @@ void DefineHaloTransfer3D() {
     //                                      base_to, dir, dir);
     // }
 
-    // HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
+    HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
 }
 /*
  * We need a name to specify which file to input

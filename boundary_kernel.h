@@ -1512,7 +1512,7 @@ void KerCutCellZouHeVelocity(const Real *givenMacroVars, const int *nodeType,
 #ifdef debug
         ops_printf("%s\n",
                    "Warning: this node is not a Zou-He velocity boundary "
-                   "point: KerCutCellZhouHeVelocity");
+                   "point: KerCutCellZouHeVelocity");
 #endif
     }
 }
