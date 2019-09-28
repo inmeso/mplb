@@ -46,6 +46,7 @@
 #include "ops_seq.h"
 #include "scheme.h"
 #include "type.h"
+#include "configuration.h"
 
 void simulate() {
 
@@ -125,15 +126,50 @@ void simulate() {
     Iterate(convergenceCriteria, checkPeriod);
 }
 
-int main(int argc, char** argv) {
+void simulate(const Configuration & config) {
+    DefineCase(config.caseName, config.spaceDim);
+    DefineComponents(config.compoNames, config.compoIds, config.lattNames);
+    DefineMacroVars(config.macroVarTypes, config.macroVarNames,
+                    config.macroVarIds, config.macroCompoIds);
+    DefineEquilibrium(config.equilibriumTypes, config.equilibriumCompoIds);
+    DefineBodyForce(config.bodyForceTypes, config.bodyForceCompoIds);
+    DefineScheme(config.schemeType);
+
+    for (auto& bcConfig : config.blockBoundaryConditions) {
+        DefineBlockBoundary(bcConfig.blockIndex, bcConfig.componentID,
+                            bcConfig.boundarySurface, bcConfig.boundaryType,
+                            bcConfig.macroVarTypesatBoundary,
+                            bcConfig.givenVars);
+    }
+    DefineProblemDomain(config.blockNum, config.blockSize, config.meshSize,
+                        config.startPos);
+    DefineInitialCondition();
+
+    SetTauRef(config.tauRef);
+    SetTimeStep(config.meshSize / SoundSpeed());
+    if (config.transient){
+        Iterate(config.timeSteps, config.checkPeriod);
+    } else{
+        Iterate(config.convergenceCriteria, config.checkPeriod);
+    }
+}
+
+int main(int argc, const char** argv) {
     // OPS initialisation
     ops_init(argc, argv, 1);
     double ct0, ct1, et0, et1;
     ops_timers(&ct0, &et0);
-    simulate();
+    if (argc <= 1) {
+        simulate();
+    } else {
+        std::string configFileName(argv[1]);
+        ReadConfiguration(configFileName);
+        simulate(Config());
+    }
+
     ops_timers(&ct1, &et1);
-    ops_printf("\nTotal Wall time %lf\n", et1 - et0);
+    //ops_printf("\nTotal Wall time %lf\n", et1 - et0);
     // Print OPS performance details to output stream
-    ops_timing_output(stdout);
+    //ops_timing_output(stdout);
     ops_exit();
 }

@@ -330,8 +330,7 @@ void DefineMacroVars(std::vector<VariableTypes> types,
         ops_printf("There are %i macroscopic variables defined.\n",
                    NUMMACROVAR);
     } else {
-        ops_printf(
-            "Warning! There seems no macroscopic variables defined!\n");
+        ops_printf("Warning! There seems no macroscopic variables defined!\n");
     }
 
     for (int idx = 0; idx < NUMMACROVAR; idx++) {
@@ -339,42 +338,40 @@ void DefineMacroVars(std::vector<VariableTypes> types,
         VARIABLECOMPINDEX[idx] = (int)compoId[idx];
         ops_printf("The macroscopic variable %s defined for Component %i.\n",
                    names[idx].c_str(), compoId[idx]);
-    }
-    //TODO one bug needes fix here
-    /*
-    if (nullptr != VARIABLECOMPPOS) {
-        int startPos{0};
-        for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
-            VARIABLECOMPPOS[2 * idx] = startPos;
-            while (idx == compoId[startPos]) {
-                startPos++;
+
+        if (nullptr != VARIABLECOMPPOS) {
+            int startPos{0};
+            for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
+                if (startPos >= NUMMACROVAR) {
+                    ops_printf(
+                        "Error! There are something wrong in specifying IDs of "
+                        "macroscopic variables!");
+                    assert(startPos >= NUMMACROVAR);
+                }
+                VARIABLECOMPPOS[2 * idx] = startPos;
+                while (idx == compoId.at(startPos)) {
+                    startPos++;
+                    if (startPos >= NUMMACROVAR) {
+                        break;
+                    }
+                }
+                VARIABLECOMPPOS[2 * idx + 1] = startPos - 1;
             }
-            VARIABLECOMPPOS[2 * idx + 1] = startPos - 1;
-        }
-    */
-
-    if (nullptr != VARIABLECOMPPOS) {
-        int startPos{0};
-        for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
-            VARIABLECOMPPOS[2 * idx] = startPos;
-            while (idx == compoId[startPos] && startPos < compoId.size()) {
-                startPos++;
-            }
-            VARIABLECOMPPOS[2 * idx + 1] = startPos - 1;
+        } else {
+            ops_printf(
+                "Error! It appears that the DefineComponents routine has not "
+                "been "
+                "called!\n");
+            assert(nullptr != VARIABLECOMPPOS);
         }
 
-    } else {
-        ops_printf(
-            "%s\n",
-            "Error! It appears that the DefineComponents routine has not been "
-            "called!");
-        assert(nullptr != VARIABLECOMPPOS);
+        ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
+        ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);
+        ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int",
+                       VARIABLECOMPINDEX);
+        ops_decl_const("VARIABLECOMPPOS", NUMCOMPONENTS, "int",
+                       VARIABLECOMPPOS);
     }
-
-    ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
-    ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);
-    ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int", VARIABLECOMPINDEX);
-    ops_decl_const("VARIABLECOMPPOS", NUMCOMPONENTS, "int", VARIABLECOMPPOS);
 }
 
 void DefineEquilibrium(std::vector<EquilibriumType> types,
@@ -386,7 +383,8 @@ void DefineEquilibrium(std::vector<EquilibriumType> types,
             for (int idx = 0; idx < typeNum; idx++) {
                 EQUILIBRIUMTYPE[idx] = types[idx];
                 ops_printf(
-                    "The equilibrium function type %i is chosen for Component "
+                    "The equilibrium function type %i is chosen for "
+                    "Component "
                     "%i\n",
                     EQUILIBRIUMTYPE[idx], compoId[idx]);
             }
@@ -398,7 +396,7 @@ void DefineEquilibrium(std::vector<EquilibriumType> types,
             "Error! There are %i equilibrium types defined but we have %i "
             "components\n",
             typeNum, NUMCOMPONENTS);
-            assert(typeNum == NUMCOMPONENTS);
+        assert(typeNum == NUMCOMPONENTS);
     }
     ops_decl_const("EQUILIBRIUMTYPE", NUMCOMPONENTS, "int", EQUILIBRIUMTYPE);
 }

@@ -27,7 +27,7 @@
  # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  # POSSIBILITY OF SUCH DAMAGE.
- 
+
  @brief   Post-processing utilities
  @author  Jianping Meng
  @details Providing post-processing utilities including data format transformation, basic visualisation facilities.
@@ -405,4 +405,4 @@ def FaceValue(res, varName, face):
         if ('back' == face):
             return var[:, :, 0]
         if ('front' == face):
-            return var[:, :, -1]
+            return var[:,:, -1]

@@ -45,7 +45,6 @@ struct BlockBoundary {
     BoundarySurface boundarySurface;
     VertexTypes boundaryType;
 };
-
 // Vector to assemble all boundary conditions so as to use
 // in TreatDomainBoundary().
 std::vector<BlockBoundary> blockBoundaryConditions;
@@ -325,7 +324,7 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
 #endif
 
     ops_partition((char*)"LBM Solver");
-    ops_printf("%i blocks are parted and all field variabls allocated!\n",
+    ops_printf("%i blocks are parted and all field variable allocated!\n",
                BlockNum());
     int numBlockStartPos;
     numBlockStartPos = startPos.size();
@@ -396,7 +395,7 @@ Real GetMaximumResidualError(const Real checkPeriod) {
     return maxResError;
 }
 
-void Iterate(const int steps, const int checkPointPeriod) {
+void Iterate(const SizeType steps, const SizeType checkPointPeriod) {
     const SchemeType scheme = Scheme();
     ops_printf("Starting the iteration...\n");
     switch (scheme) {
@@ -436,7 +435,7 @@ void Iterate(const int steps, const int checkPointPeriod) {
     DestroyFlowfield();
 }
 
-void Iterate(const Real convergenceCriteria, const int checkPointPeriod) {
+void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod) {
     const SchemeType scheme = Scheme();
     ops_printf("Starting the iteration...\n");
     switch (scheme) {
@@ -543,20 +542,18 @@ void DefineBlockBoundary(int blockIndex, int componentID,
     // If necessary, uncomment the sentence below and give a corret number
     // SetBoundaryHaloNum(1);
 
-    // Here we adopt the assumtion that a boundary is defined by [\rho,u,v,w,T]
+    // Here we adopt the assumption that a boundary is defined by [\rho,u,v,w,T]
     // in 3D or  [\rho,u,v,T] in 2D. For a kernel function for dealing with
     // a boundary condition, these parameters shall be passed in a fixed order
     // as shown.
     const int numMacroVarTypes{(int)macroVarTypes.size()};
     const int numMacroVarValues{(int)macroVarValues.size()};
-    // TODO The logic may need rethink
+
     std::vector<Real> macroVarsAtBoundary;
-    if (2 == SPACEDIM) {
-        macroVarsAtBoundary.resize(4);
-    }
-    if (3 == SPACEDIM) {
-        macroVarsAtBoundary.resize(5);
-    }
+    const int macroVarNumOfCurrentComponent{
+        VARIABLECOMPPOS[2 * componentID + 1] -
+        VARIABLECOMPPOS[2 * componentID] + 1};
+    macroVarsAtBoundary.resize(macroVarNumOfCurrentComponent);
 
     if (numMacroVarTypes == numMacroVarValues) {
         for (int i = 0; i < numMacroVarValues; i++) {
@@ -668,7 +665,7 @@ void ImplementBoundaryConditions() {
 }
 
 void InitialiseNodeMacroVars(Real* nodeMacroVars, const Real* nodeCoordinates) {
-    // 3D exmaple
+    // 3D example
     Real x{nodeCoordinates[0]};
     Real y{nodeCoordinates[1]};
     Real z{nodeCoordinates[2]};  // for 3D problems
