@@ -154,7 +154,7 @@ void simulate(const Configuration & config) {
     }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, const char** argv) {
     // OPS initialisation
     ops_init(argc, argv, 1);
     double ct0, ct1, et0, et1;
