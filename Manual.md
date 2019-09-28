@@ -94,13 +94,14 @@ For convenience, we provide a bash script to automatize the process. The script 
 There is a simple post-processor written in Python, which can display contour plot and vector plot in both 2D (using matplotlib) and 3D (using mayavi) for checking results. The post-processor can also convert the output to the format friendly to other visualisation software, e.g., plain HDF5 format (readable by Matlab/Octave etc.) and  TecPlot HDF5 format.
 
 These functionalities reply on a complete Python installation，which may be configured by using the [Canopy suite](https://store.enthought.com/downloads/) or the [Anaconda distribution](https://www.anaconda.com/download/). In general either Python 3 or Python 2 will work.
-
+#### Input parmaters from a Json file
+The MPBL code accepts a Json file for user input. To enable this, we need provide a filename when calling the program, see the [lid-driven cavity flow example](#lid-driven-cavity-flow-3d).
 ## Examples
 At this moment, the MPLB code features a set of HiLeMMS interface, which allows users to assemble application at the source code level i.e., the main source file enclosing the main() function. For convenience, an environment variable, MAINCPP, is reserved for instructing the main source file.
 
 ### Lid-driven cavity flow (3D)
-In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source is set to be `lbm3d_hilemms.cpp`. In this file, the user is responsible for defining all the necessary simulation parameters such as number of spatial dimensions, lattice type for the simulation, number of components, number of macroscopic variables etc. For the purpose of code readability, all the setup routines can be called in a separate function say `void simulate()` and then it can be called in the main function. A complete description of the setup is given below.
-
+In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source is set to be `lbm3d_cavity.cpp`. In this file, the user is responsible for defining all the necessary simulation parameters such as number of spatial dimensions, lattice type for the simulation, number of components, number of macroscopic variables etc. For the purpose of code readability, all the setup routines can be called in a separate function say `void simulate()` and then it can be called in the main function. A complete description of the setup is given below.
+#### Hard-coding way
 1. Define the case name (any user defined string) and the number of spatial dimensions (2 or 3 for 2D and 3D respectively).
    ```c++
    std::string caseName{"3D_lid_Driven_cavity"};
@@ -313,6 +314,100 @@ In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source i
     ```
 
 Save the code and from the terminal, compile and execute the code as defined in section "Compiling the MPLB code".
+#### Using Json configuration file
+We need to create a Json configuration Cavity.cfg as
+```json
+{
+
+  "CaseName": "Cavity",
+  "SpaceDim": 3,
+  "CompoNames": ["Fluid"],
+  "CompoIds": [0],
+  "LatticeName":["d3q19"],
+  "MacroVarNames":["rho","u","v","w"],
+  "MacroVarIds":[0,1,2,3],
+  "MacroCompoIds":[0,0,0,0],
+  "MacroVarTypes":["Variable_Rho","Variable_U","Variable_V","Variable_W"],
+  "EquilibriumType":["Equilibrium_BGKIsothermal2nd"],
+  "EquilibriumCompoIds":[0],
+  "BodyForceType":["BodyForce_None"],
+  "BodyForceCompoId":[0],
+  "SchemeType":"Scheme_StreamCollision",
+   "BoundaryCondition0":{
+     "BlockIndex": 0,
+	 "ComponentId": 0,
+	 "GivenVars":[0,0,0],
+	 "BoundarySurface":"Left",
+	 "BoundaryType": "Boundary_Periodic",
+	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
+
+  },
+
+  "BoundaryCondition1":{
+     "BlockIndex": 0,
+	 "ComponentId": 0,
+	 "GivenVars":[0,0,0],
+	 "BoundarySurface":"Right",
+	 "BoundaryType": "Boundary_Periodic",
+	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
+
+  },
+
+  "BoundaryCondition2":{
+     "BlockIndex": 0,
+	 "ComponentId": 0,
+	 "GivenVars":[0,0,0.01],
+	 "BoundarySurface":"Top",
+	 "BoundaryType": "Boundary_EQMDiffuseREfl",
+	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
+
+  },
+
+  "BoundaryCondition3":{
+     "BlockIndex": 0,
+	 "ComponentId": 0,
+	 "GivenVars":[0,0,0],
+	 "BoundarySurface":"Bottom",
+	 "BoundaryType": "Boundary_EQMDiffuseREfl",
+	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
+
+  },
+
+  "BoundaryCondition4":{
+     "BlockIndex": 0,
+	 "ComponentId": 0,
+	 "GivenVars":[0,0,0],
+	 "BoundarySurface":"Front",
+	 "BoundaryType": "Boundary_EQMDiffuseREfl",
+	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
+
+  },
+
+   "BoundaryCondition5":{
+     "BlockIndex": 0,
+	 "ComponentId": 0,
+	 "GivenVars":[0,0,0],
+	 "BoundarySurface":"Back",
+	 "BoundaryType": "Boundary_EQMDiffuseREfl",
+	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
+
+  },
+
+  "BlockNum": 1,
+  "BlockSize":[3,101,101],
+  "MeshSize":0.01,
+  "StartPos":[0,0,0],
+  "TauRef": [0.01],
+  "Transient": false,
+  "TimeSteps": 3,
+  "ConvergenceCriteria":1e-8,
+  "CheckPeriod":1
+}
+```
+and then run the program using
+```bash
+./lbm3d_dev_seq Cavity.cfg
+```
 
 ### Taylor-Green Vortex Flow
 
