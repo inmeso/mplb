@@ -37,7 +37,7 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
                 for (int xiIndex = COMPOINDEX[2 * compoIndex];
                      xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
                     feq[OPS_ACC_MD2(xiIndex, 0, 0)] =
-                        CalcBGKFeq(xiIndex, rho, u, v, T, polyOrder);
+                        CalcUDFFeqNew(xiIndex, macroVars,  polyOrder);
                 }
             }
             if (Equilibrium_BGKThermal4th == equilibriumType) {
@@ -49,7 +49,7 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
                 for (int xiIndex = COMPOINDEX[2 * compoIndex];
                      xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
                     feq[OPS_ACC_MD2(xiIndex, 0, 0)] =
-                        CalcBGKFeq(xiIndex, rho, u, v, T, polyOrder);
+                        CalcUDFFeqNew(xiIndex, macroVars,  polyOrder);
                 }
             }
             if (Equilibrium_BGKSWE4th == equilibriumType) {
@@ -373,8 +373,10 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
                     const int polyOrder{2};
                     for (int xiIndex = COMPOINDEX[2 * compoIndex];
                          xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                        //const Real res{
+                        //    CalcUDFFeqNew(xiIndex, macroVars,  polyOrder)};
                         const Real res{
-                            CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
+                            CalcUDFFeqNew(xiIndex, macroVars, polyOrder)};
                         feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] = res;
 #ifdef CPU
                         if (isnan(res) || res <= 0 || isinf(res)) {
@@ -398,7 +400,7 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
                     for (int xiIndex = COMPOINDEX[2 * compoIndex];
                          xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
                         const Real res{
-                            CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
+                            CalcUDFFeqNew(xiIndex, macroVars,  polyOrder)};
                         feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] = res;
 #ifdef CPU
                         if (isnan(res) || res <= 0 || isinf(res)) {

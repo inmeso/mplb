@@ -165,4 +165,5 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq);
 void KerCalcTau3D(const int* nodeType, const Real* tauRef,
                   const Real* macroVars, Real* tau);
 void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordinates, const Real* f, Real* macroVars);
+Real CalcUDFFeqNew(const int l, const Real* macroVars, const int polyOrder = 2);
 #endif

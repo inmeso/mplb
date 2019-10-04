@@ -111,8 +111,8 @@ def InsertInitCodeHilemms(File, TextToInsert, NumberSpaceDim):
 
 
 #----------------------------------------------------------
-# Routine to check number of arguements suuplied to routines 
-# such as CompiVeloIdx, SpaIdx etc. 
+# Routine to check number of arguments supplied to routines 
+# such as CompoVeloIdx, SpaIdx etc. 
 #----------------------------------------------------------
 
 def CheckNumArgs(FunctionName, ArgsGiven):
@@ -571,6 +571,125 @@ def Parse_Base_Exponents(Text):
 
 
 
+#----------------------------------------------------------------------
+# 1. Function to Replace CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)
+# with the user defined function.
+#
+# 2. Not accepting new function as its parameters may change (see code).
+#
+# 3. Filename is used to change insert appropriate code in different file
+# and may be removed later.
+#---------------------------------------------------------------------- 
+def ReplaceDistFunNewUdf(oldDistFunction, text, fileName):
+
+    regexExpr = r'' + oldDistFunction
+    pattern = re.compile(regexExpr)
+
+    startPosOldDistFun = []
+    endPosOldDistFun = []
+
+    listFirstArgBGKFeq = []
+    listLastArgBGKFeq = []
+
+    numMatched = 0
+
+    for match in pattern.finditer(text):
+        if match != None:
+            numMatched = numMatched + 1
+            startPosFun = match.start(0)
+            endPosFun = text.find(')', startPosFun)
+
+            ParanthesisStart = text.find('(', startPosFun)
+            ParanthesisEnd = endPosFun
+
+            ArgsBGKFeq = text[ParanthesisStart + 1 :ParanthesisEnd].strip()
+            ArgsBGKFeq = ArgsBGKFeq.split(',')
+            
+            FirstArgBGKFeq = ArgsBGKFeq[0]
+            LastArgBGKFeq = ArgsBGKFeq[len(ArgsBGKFeq)-1]
+            listFirstArgBGKFeq.append(FirstArgBGKFeq)
+            listLastArgBGKFeq.append(LastArgBGKFeq)
+
+            startPosOldDistFun.append(startPosFun)
+            endPosOldDistFun.append(endPosFun + 1)
+            
+    if (numMatched >= 1):
+
+        if (fileName == 'boundary_kernel.h'):
+            print 'I am in if'
+            userDefinedFunction = 'CalcUDFFeqNew(' + listFirstArgBGKFeq[0] + ', givenMacroVars, ' + listLastArgBGKFeq[0] + ')'
+        else:
+            userDefinedFunction = 'CalcUDFFeqNew(' + listFirstArgBGKFeq[0] + ', macroVars, ' + listLastArgBGKFeq[0] + ')'
+
+        newText = text[:startPosOldDistFun[0]] + userDefinedFunction
+
+
+
+        for ind in range(1, len(startPosOldDistFun)):
+                 
+            if (fileName == 'boundary_kernel.h'):
+                userDefinedFunction = 'CalcUDFFeqNew(' + listFirstArgBGKFeq[ind] + ', givenMacroVars, ' + listLastArgBGKFeq[ind] + ')'
+            else:
+                userDefinedFunction = 'CalcUDFFeqNew(' + listFirstArgBGKFeq[ind] + ', macroVars, ' + listLastArgBGKFeq[ind] + ')'
+            newText += (text[endPosOldDistFun[ind - 1]:startPosOldDistFun[ind]] + userDefinedFunction)
+
+        newText += text[endPosOldDistFun[-1]:]
+        return newText
+
+
+    else:
+        print 'No match found'
+        return None
+
+# End of function to replace old distribution function with 
+# the user defined function.
+#-----------------------------------------------------------
+
+
+# Read and store all the data from cpp files.
+CppFiles = glob.glob("*kernel.h")
+#CppFiles = ["text1.cpp", "text2.cpp"]
+CppTexts = []
+for File in CppFiles:
+    CppTexts.append(ReadFile(File))
+
+# Global variable to store and replace the original CalcBGKFeq call.
+# First and last arg of CalcBGKFeq() needs to be separated.
+# First arg eg. = XiIdx, Last arg eg. =  polyOrder  
+userDefinedFunction = ''
+
+
+# #Before text replace.
+# for i in range(len(CppTexts)):
+#     TextRead = CppTexts[i]
+#     print '****************************************'
+#     print ' File = ', CppFiles[i]
+#     print '****************************************'
+#     for line in TextRead:
+#         print line
+
+
+for index in range(len(CppTexts)):
+
+    print '--------------------------------------------------'
+    print ' Working on File = ', CppFiles[index]
+    print '--------------------------------------------------'
+
+    oldFunctionCall = "CalcBGKFeq"
+    #udfFunctionCall = "CalcUDFFeqNew(xiIndex, macroVars, polyOrder)"
+    #udfCallInsertedText = ReplaceOldDistNewUdf(oldFunctionCall, udfFunctionCall, CppTexts[index][0])
+    udfCallInsertedText = ReplaceDistFunNewUdf(oldFunctionCall, CppTexts[index][0], CppFiles[index])
+
+    if(udfCallInsertedText != None):
+        WriteToFile(udfCallInsertedText, CppFiles[index])
+    #print udfCallInsertedText
+
+
+
+"""
+# This code in triple comma is checked code and will be used later after
+# testing BGK search and replace functionality.
+
 FileName = 'Dist_func_eqn.txt'
 Text = ReadFile(FileName)[0]
 
@@ -671,150 +790,4 @@ for i in range(0, len(Parsed_Text_Sorted)):
 FileToWrite = 'UDF_Translated.cpp'
 WriteToFile(Translated_Text, FileToWrite)  
 
-"""
-#Read the Universal constants.
-StartPosition = FindPositionStringText('#Universal_constants', Text[0])
-EndPosition = FindPositionStringText('#End_Universal_constants', Text[0])
-Translated_Text = Comment('', Translated_Text)
-Translated_Text = Comment('Universal_constants',Translated_Text)
-Translated_Text = Translated_Text + Text[0][StartPosition[0]+len('#Universal_constants'):EndPosition[0]] + '\n'
-Translated_Text = Comment('End_Universal_constants',Translated_Text)
-
-#Insert Blank Lines for Readability.
-Translated_Text = Comment('',Translated_Text)
-Translated_Text = Comment('',Translated_Text)
-
-#Read the User Defined Constants.
-StartPosition = FindPositionStringText('#User_defined_constants', Text[0])
-EndPosition = FindPositionStringText('#End_User_defined_constants', Text[0])
-#print StartPosition, EndPosition
-Translated_Text = Comment('User_defined_constants',Translated_Text)
-Translated_Text = Translated_Text + Text[0][StartPosition[0]+len('#User_defined_constants'):EndPosition[0]] + '\n'
-Translated_Text = Comment('End_User_defined_constants',Translated_Text)
-
-#Read the value of number of spacial dimensions.
-NumberSpaceDim = GetValueofVariable('SpaceDim', Text[0])
-#print 'The Current case has',NumberSpaceDim,' number of spatial dimensions '
-
-
-#---------------------------------------------------------------------------------------
-#Write the coordinates information that has to be inserted into the HiLeMMS code.
-#---------------------------------------------------------------------------------------
-Translated_Text = Comment('',Translated_Text)
-Translated_Text = Comment('',Translated_Text)
-
-Translated_Text = Code('Real X;',Translated_Text)
-Translated_Text = Code('Real Y;',Translated_Text)
-if NumberSpaceDim == '3':
-    Translated_Text = Code('Real Z;',Translated_Text)
-
-Translated_Text = Code('X = coordinates[OPS_ACC_MD0(0, 0, 0, 0)];',Translated_Text)
-Translated_Text = Code('Y = coordinates[OPS_ACC_MD0(1, 0, 0, 0)];',Translated_Text)
-if NumberSpaceDim == '3':
-    Translated_Text = Code('Z = coordinates[OPS_ACC_MD0(2, 0, 0, 0)];',Translated_Text)
-#-----------------------------------------------------------------------------------------
-
-
-#Replace all Coord_x or Coord_X by X.
-Coordinates = ['x', 'X', 'y', 'Y', 'z', 'Z']
-for i in range(len(Coordinates)):
-    VariabletoReplace = 'Coord_' + Coordinates[i]
-    if i<=1:
-        Text[0] = Text[0].replace(VariabletoReplace, 'X')
-    elif i==2 or i==3:
-        Text[0] = Text[0].replace(VariabletoReplace, 'Y')
-    else:
-        Text[0] = Text[0].replace(VariabletoReplace, 'Z')
-#print Text[0]
-
-
-#Parse Coord_X^{m}---->X^{m} and insert pow(x,m)
-regExpr = r'([X-Z])\^{'
-pattern = re.compile(regExpr)
-StartPosExpr = []
-EndPosExpr = []
-
-Base = []
-Exponent = []
-
-itr = 0     #Loop iterator.
-
-#Loop to search base and exponent in user defined dunctions.
-for match in pattern.finditer(Text[0]):
-    
-    StartIndex = match.start(0)
-    EndIndex = Text[0].find('}',StartIndex)
-
-    #print Text[0][StartIndex]
-    #print Text[0][EndIndex]
-
-    StartPosExpr.append(StartIndex)
-    EndPosExpr.append(EndIndex)
-
-    Base.append(Text[0][match.start(0)])
-    Exponent.append(Text[0][StartIndex+3:EndIndex])
-
-#print StartPosExpr, EndPosExpr, Base, Exponent
-
-#Loop to insert pow(base, exponent) at appropriate places.
-Temp = Text[0][:StartPosExpr[0]]
-Temp += 'pow(' + Base[0] + ',' + Exponent[0] + ')'
-
-for i in range(1,len(Base)):
-    Temp += Text[0][EndPosExpr[i-1]+1:StartPosExpr[i]]
-    Temp += 'pow(' + Base[i] + ',' + Exponent[i] + ')'
-
-Temp += Text[0][EndPosExpr[-1]+1:]
-Text[0] = Temp
-#print Temp
-
-
-#-------------------------------------------------------------------------------
-#Insert the macroscopic variable code on LHS of user written expression.
-#Eg. Macro_rho will be replaced by macroVars[OPS_ACC_MD2(0, 0, 0, 0)].
-#-------------------------------------------------------------------------------
-
-regExpr = r'Macro_'
-pattern = re.compile(regExpr)
-StartPosExpr = []
-EndPosExpr = []
-
-for match in pattern.finditer(Text[0]):
-    
-    StartIndex = match.start(0)
-    EndIndex = Text[0].find('=',StartIndex)
-
-    StartPosExpr.append(StartIndex)
-    EndPosExpr.append(EndIndex)
-
-Temp = Text[0][:StartPosExpr[0]] + 'macroVars[OPS_ACC_MD2(0, 0, 0, 0)]'
-for i in range(1,len(StartPosExpr)):
-    Temp += Text[0][EndPosExpr[i-1]:StartPosExpr[i]]
-    Temp += 'macroVars[OPS_ACC_MD2(' + str(i) + ', 0, 0, 0)]'
-
-Temp += Text[0][EndPosExpr[-1]:]
-Text[0] = Temp
-#print Text[0]
-#-------------------------------------------------------------------------------
-
-
-#Insert Blank Lines for Readability.
-Translated_Text = Comment('',Translated_Text)
-Translated_Text = Comment('',Translated_Text)
-
-
-#Read and Insert the modified function lines.
-StartPosition = FindPositionStringText('#Insert the Function/Formula for initialisation here', Text[0])
-EndPosition = FindPositionStringText('#End Function for initialistion', Text[0])
-Translated_Text = Comment('User Defined Function for Initialisation',Translated_Text)
-Translated_Text = Comment('',Translated_Text)
-Translated_Text = Translated_Text + Text[0][StartPosition[0]+len('#Insert the Function/Formula for initialisation here.'):EndPosition[0]] + '\n'
-Translated_Text = Comment('End Function for initialistion',Translated_Text)
-
-FileToWrite = 'Translated_Initialisation.cpp'
-WriteToFile(Translated_Text, FileToWrite)  #Text is a list where first value is the entite text to be written.
-
-
-FileName = 'hilemms_ops_kernel.h'
-InsertInitCodeHilemms(FileName, Translated_Text, NumberSpaceDim)
 """

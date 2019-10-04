@@ -93,8 +93,8 @@ void simulate() {
     DefineBlockBoundary(blockIndex, componentId, surface[5], boundType[5],
                         MacroVarsComp, backValMacroVarsComp);
     int blockNum{1};
-    std::vector<int> blockSize{33, 33, 33};
-    Real meshSize{1. / 32};
+    std::vector<int> blockSize{11, 11, 11};
+    Real meshSize{1. / 10};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
     DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
 
@@ -152,8 +152,8 @@ void simulate() {
     // currently this information is not playing major role in this
     // implementation.
 
-    const int steps{10000};
-    const int checkPeriod{1000};
+    const int steps{2};
+    const int checkPeriod{1};
     Iterate(steps, checkPeriod);
 
     // currently this information is not playing major role in this
