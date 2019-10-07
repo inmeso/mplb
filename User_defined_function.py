@@ -79,6 +79,12 @@ def Code(Line, Translated_Text):
 #End of function code defintion. 
 
 
+def InsertForLoop(i, start, finish, Text):
+    Text = Text + '\n'
+    Line = 'for ( int '+i+'='+start+'; '+i+'<'+finish+'; '+i+'++ ){'
+    return(Code(Line, Text))
+    
+
 
 def InsertInitCodeHilemms(File, TextToInsert, NumberSpaceDim):
     
@@ -646,6 +652,8 @@ def ReplaceDistFunNewUdf(oldDistFunction, text, fileName):
 #-----------------------------------------------------------
 
 
+
+"""
 # Read and store all the data from cpp files.
 CppFiles = glob.glob("*kernel.h")
 #CppFiles = ["text1.cpp", "text2.cpp"]
@@ -683,7 +691,7 @@ for index in range(len(CppTexts)):
     if(udfCallInsertedText != None):
         WriteToFile(udfCallInsertedText, CppFiles[index])
     #print udfCallInsertedText
-
+"""
 
 
 """
