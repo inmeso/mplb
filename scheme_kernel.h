@@ -1,6 +1,35 @@
-// Copyright 2017 the MPLB team. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+*/
+
 /*！ @brief Define kernels for numerical schemes.
  *  @author Jianping Meng
  *  @details Including various space and time scheme.
@@ -20,12 +49,11 @@ void KerCollide(const Real* dt, const int* nodeType, const Real* f,
     // collisionRequired: means if collision is required at boundary
     // e.g., the ZouHe boundary condition explicitly requires collision
     bool collisionRequired =
-        (vt == Vertex_Fluid || vt == Vertex_NoneqExtrapol ||
+        (vt == Vertex_Fluid ||
          vt == Vertex_ZouHeVelocity ||
          // vt == Vertex_KineticDiffuseWall ||
          vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
-         vt == Vertex_ExtrapolPressure2ND ||
-         vt == Vertex_NonEqExtrapolPressure || vt == Vertex_NoslipEQN);
+         vt == Vertex_ExtrapolPressure2ND || vt == Vertex_NoslipEQN);
     if (collisionRequired) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             Real tau = relaxationTime[OPS_ACC_MD4(compoIndex, 0, 0)];
@@ -61,12 +89,11 @@ void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
                 // streamRequired: means if the particles with velocity parallel
                 // needs to be streamed at the boundary
                 bool streamRequired =
-                    (vt == Vertex_ZouHeVelocity || vt == Vertex_NoneqExtrapol ||
+                    (vt == Vertex_ZouHeVelocity ||
                      // vt == Vertex_KineticDiffuseWall ||
                      vt == Vertex_EQMDiffuseRefl ||
                      vt == Vertex_ExtrapolPressure1ST ||
                      vt == Vertex_ExtrapolPressure2ND ||
-                     vt == Vertex_NonEqExtrapolPressure ||
                      vt == Vertex_NoslipEQN);
                 if (streamRequired) {
                     if ((cx == 0) && (cy == 0)) {
@@ -1182,12 +1209,12 @@ void KerCollide3D(const Real* dt, const int* nodeType, const Real* f,
         VertexTypes vt =
             (VertexTypes)nodeType[OPS_ACC_MD1(compoIndex, 0, 0, 0)];
         bool collisionRequired =
-            (vt == Vertex_Fluid || vt == Vertex_NoneqExtrapol ||
+            (vt == Vertex_Fluid  ||
              vt == Vertex_ZouHeVelocity ||
              // vt == Vertex_KineticDiffuseWall ||
              vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
              vt == Vertex_ExtrapolPressure2ND || vt == Vertex_Periodic ||
-             vt == Vertex_NoslipEQN || vt == Vertex_NonEqExtrapolPressure);
+             vt == Vertex_NoslipEQN );
         if (collisionRequired) {
             Real tau = relaxationTime[OPS_ACC_MD4(compoIndex, 0, 0, 0)];
             Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
@@ -1233,13 +1260,12 @@ void KerStream3D(const int* nodeType, const int* geometry, const Real* fStage,
                 // streamRequired: means if the particles with velocity parallel
                 // needs to be streamed at the boundary
                 bool streamRequired =
-                    (vt == Vertex_ZouHeVelocity || vt == Vertex_NoneqExtrapol ||
+                    (vt == Vertex_ZouHeVelocity ||
                      // vt == Vertex_KineticDiffuseWall ||
                      vt == Vertex_EQMDiffuseRefl ||
                      vt == Vertex_ExtrapolPressure1ST ||
                      vt == Vertex_ExtrapolPressure2ND ||
                      vt == Vertex_Periodic ||
-                     vt == Vertex_NonEqExtrapolPressure ||
                      vt == Vertex_NoslipEQN);
                 if (streamRequired) {
                     if ((cx == 0) && (cy == 0) && (cz == 0)) {

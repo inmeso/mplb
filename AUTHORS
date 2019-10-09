@@ -1,10 +1,11 @@
-This file lists the contributors to MPLB. If their contributions are
-owned by their institution(s), this is listed in parentheses after
-their name. The details of authorship can also be viewed in each source
-code file.
+This file lists the contributors to MPLB.
+The details of authorship can also be viewed in each source code file and/or function.
 
 DL = STFC Daresbury Laboratory, UK
 
-Jianping Meng (DL)
+Jianping Meng (DL): Lead developer
+Lokesh Ragta (DL): Implementing the HiLeMMS interface for the MPLB code
+Chrysovalantis Tsinginos (DL): Implementing the LBM-DEM coupling code
+
 
 

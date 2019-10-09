@@ -1,6 +1,34 @@
-// Copyright 2017 the MPLB team. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+*/
 
 /*! @brief   Implementing functions related to the flow field
  * @author  Jianping Meng
@@ -243,8 +271,8 @@ void DefineVariables() {
     g_ResidualError = new Real[2 * MacroVarsNum()];
     // end if steady flow
 
-    // int haloDepth = HaloDepth();  // zero for the current case
-    int haloDepth{std::max(SchemeHaloNum(), BoundaryHaloNum())};
+
+    int haloDepth{HaloPtNum()};
     HALODEPTH = HaloPtNum();
 
 #ifdef debug
@@ -704,60 +732,60 @@ void DefineHaloTransfer() {
 void DefineHaloTransfer3D() {
     // This is a hard coded version
     // could be used as an example for user-defined routines.
-    HaloRelationNum = 6;
-    HaloRelations = new ops_halo[HaloRelationNum];
-    int haloDepth = HaloDepth();
+    // HaloRelationNum = 6;
+    // HaloRelations = new ops_halo[HaloRelationNum];
+    // int haloDepth = HaloDepth();
     // max halo depths for the dat in the positive direction
-    int d_p[3] = {haloDepth, haloDepth, haloDepth};
-    // max halo depths for the dat in the negative direction
-    int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
+    // int d_p[3] = {haloDepth, haloDepth, haloDepth};
+    // // max halo depths for the dat in the negative direction
+    // int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
     // The domain size in the Block 0
-    int nx = BlockSize(0)[0];
-    int ny = BlockSize(0)[1];
-    int nz = BlockSize(0)[2];
-    {
-        // Template for the periodic pair (front-back)
-        int dir[] = {1, 2, 3};
-        int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
-        int base_from[] = {d_m[0], d_m[0], 0};
-        int base_to[] = {d_m[0], d_m[0], nz};
-        HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-        base_from[2] = nz - 1;
-        base_to[2] = d_m[1];
-        HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-    }
+    // int nx = BlockSize(0)[0];
+    // int ny = BlockSize(0)[1];
+    // int nz = BlockSize(0)[2];
+    // {
+    //     // Template for the periodic pair (front-back)
+    //     int dir[] = {1, 2, 3};
+    //     int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
+    //     int base_from[] = {d_m[0], d_m[0], 0};
+    //     int base_to[] = {d_m[0], d_m[0], nz};
+    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    //     base_from[2] = nz - 1;
+    //     base_to[2] = d_m[1];
+    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    // }
 
-    {
-        // Template for the periodic pair (left-right)
-        int dir[] = {1, 2, 3};
-        int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
-        int base_from[] = {0, d_m[0], d_m[0]};
-        int base_to[] = {nx, d_m[0], d_m[0]};
-        HaloRelations[2] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-        base_from[0] = nx - 1;  // need to be changed
-        base_to[0] = d_m[1];
-        HaloRelations[3] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-    }
+    // {
+    //     // Template for the periodic pair (left-right)
+    //     int dir[] = {1, 2, 3};
+    //     int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
+    //     int base_from[] = {0, d_m[0], d_m[0]};
+    //     int base_to[] = {nx, d_m[0], d_m[0]};
+    //     HaloRelations[2] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    //     base_from[0] = nx - 1;  // need to be changed
+    //     base_to[0] = d_m[1];
+    //     HaloRelations[3] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    // }
 
-    {
-        // Template for the periodic pair (top-bottom)
-        int dir[] = {1, 2, 3};
-        int halo_iter[] = {nx + d_p[0] - d_m[0], 1 , nz + d_p[0] - d_m[0]};
-        int base_from[] = {d_m[0], 0, d_m[0]};
-        int base_to[] = {d_m[0], ny, d_m[0]};
-        HaloRelations[4] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-        base_from[1] = ny - 1;  // need to be changed
-        base_to[1] = d_m[1];
-        HaloRelations[5] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-    }
+    // {
+    //     // Template for the periodic pair (top-bottom)
+    //     int dir[] = {1, 2, 3};
+    //     int halo_iter[] = {nx + d_p[0] - d_m[0], 1 , nz + d_p[0] - d_m[0]};
+    //     int base_from[] = {d_m[0], 0, d_m[0]};
+    //     int base_to[] = {d_m[0], ny, d_m[0]};
+    //     HaloRelations[4] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    //     base_from[1] = ny - 1;  // need to be changed
+    //     base_to[1] = d_m[1];
+    //     HaloRelations[5] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    // }
 
-    HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
+    // HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
 }
 /*
  * We need a name to specify which file to input

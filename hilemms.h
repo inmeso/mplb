@@ -1,3 +1,35 @@
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+*/
+
 #ifndef Hilemms_H
 #define Hilemms_H
 
@@ -51,7 +83,7 @@ void DefineBlockBoundary(int blockIndex, int componentID,
 // blockStartPos: Starting position of the block in x, y, z directions to find
 // coordinates. meshSize: Size of mesh (Assuming a constant in all 3 directions
 // for stream collision scheme).
-void CalBlockCoordinates(const int blockIndex, Real* blockStartPos,
+void CalculateBlockCoordinates(const int blockIndex, Real* blockStartPos,
                          Real meshsize);
 
 
@@ -60,17 +92,11 @@ void KerSetCoordinates(const Real* coordX, const Real* coordY, const int* idx,
 void KerSetCoordinates3D(const Real* coordX, const Real* coordY,
                          const Real* coordZ, const int* idx, Real* coordinates);
 
-// Interface for Setting the initial values.
-// coordinates: Coordinate array of nodes.
-// idx: An array used by OPS which gives the index of the current grid point.
-void KerSetInitialMacroVarsHilemms(const Real* coordinates, const int* idx,
-                                   Real* macroVars, Real* macroVarsInitVal,
-                                   const int* componentId);
 // Kernel which will call a user-defined function for inital conditions
 void KerSetInitialMacroVars(Real* macroVars, const Real* coordinates,
                             const int* idx);
-//void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]);
-void AssignCoordinates(int blockIndex, Real** coordinates);
+void AssignCoordinates(int blockIndex,
+                       const std::vector<std::vector<Real>>& coordinates);
 // blockIndex: Block id.
 // Coordinates: Array to store coordinates of various points inside the domain.
 // This function was defined in setup_comput_domain and has been declared here
@@ -91,7 +117,7 @@ void DefineInitialCondition();
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType);
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType,
                               BoundaryType* edgeType, BoundaryType* cornerType);
-void SetupDomainGeometryProperty(int blockIndex);
+void  SetBlockGeometryProperty(int blockIndex);
 
 void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
                       int Num_Bound_Halo_Points);
