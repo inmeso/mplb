@@ -909,7 +909,6 @@ def ReplaceDistFunNewUdf(oldDistFunction, text, fileName):
     if (numMatched >= 1):
 
         if (fileName == 'boundary_kernel.h'):
-            print 'I am in if'
             userDefinedFunction = 'CalcUDFFeqNew(' + listFirstArgBGKFeq[0] + ', givenMacroVars, ' + listLastArgBGKFeq[0] + ')'
         else:
             userDefinedFunction = 'CalcUDFFeqNew(' + listFirstArgBGKFeq[0] + ', macroVars, ' + listLastArgBGKFeq[0] + ')'
@@ -957,23 +956,60 @@ def CreateUDF(Text):
 #--------------------------------------------------------
 
 
+
 #-------------------------------------------------------------------------
-# Function to insert the UDF created into model.h.
+# Function to insert the text before a string in a file.
+# String acts a reference to find the correct pos for insertion. 
 #-------------------------------------------------------------------------
 
-def InsertUDF(FileName, FunDefUDF):
+def InsertTxtBeforeStringFile(FileName, TextToInsert, RefString):
     ReadText = ReadFile(FileName)[0]
-    StringToSearch = '#include "model_kernel.h"'  #UDF will be inserted before this string.
-    PosString = FindPositionStringText(StringToSearch, ReadText)
+    PosString = FindPositionStringText(RefString, ReadText)
     TextToWrite = ReadText[0:PosString[0]]
     TextToWrite += '\n\n' 
-    TextToWrite += FunDefUDF
+    TextToWrite += TextToInsert
     TextToWrite += '\n'
     TextToWrite += ReadText[PosString[0]:]
     WriteToFile(TextToWrite, FileName)
 
 # End of function to insert UDF into model.h
 #-------------------------------------------------------------------------
+
+
+#-------------------------------------------------------------
+# Warpper Function to insert UDF function call at 
+# appropriate places in all kernel files.
+#-------------------------------------------------------------
+
+def InsertUDFFunctionCall():
+
+    # Read and store all the data from cpp files.
+    CppFiles = glob.glob("*kernel.h")
+
+    CppTexts = []
+    for File in CppFiles:
+        CppTexts.append(ReadFile(File))
+
+    # Global variable to store and replace the original CalcBGKFeq call.
+    # First and last arg of CalcBGKFeq() needs to be separated.
+    # First arg eg. = XiIdx, Last arg eg. =  polyOrder  
+    #userDefinedFunction = ''
+
+    for index in range(len(CppTexts)):
+
+        print '--------------------------------------------------'
+        print ' Working on File = ', CppFiles[index]
+        print '--------------------------------------------------'
+
+        oldFunctionCall = "CalcBGKFeq"
+        udfCallInsertedText = ReplaceDistFunNewUdf(oldFunctionCall, CppTexts[index][0], CppFiles[index])
+
+        if(udfCallInsertedText != None):
+            WriteToFile(udfCallInsertedText, CppFiles[index])
+    
+# End of function to insert UDF function call.
+#----------------------------------------------------------------------------------
+
 
 
 FileName = 'Dist_fun_eqn_2.txt'
@@ -987,7 +1023,7 @@ Parsed_Text = []
 UserVarsCpp = {}
 
 # Translated text would be the one where we will use
-# Parsed text date and genarate the code that has to be inserted.
+# Parsed text data and genarate the code that has to be inserted.
 Translated_Text = ''
 
 # Convert user written code for exponents into C++ format (i.e. insert pow(Variable, m) into code).
@@ -996,8 +1032,7 @@ Text = Parse_Base_Exponents(Text)
 #print 'Starting to Parse information from User written file'
 #PlaceHolder = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars', 'Coord_']
 PlaceHolder = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars']
-#PlaceHolder = ['Coord_','Dist_', 'Weights','Micro_Vel_']
-#PlaceHolder = ['Dist_','Micro_Vel_']
+
 
 for String in PlaceHolder:
     Positions = FindPositionStringText(String, Text)
@@ -1054,7 +1089,6 @@ GenCodeWeightsRange(Parsed_Text)
 GenCodeXiRange(Parsed_Text)
 GenCodeMacroVarsRange(Parsed_Text)
 
-# print '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
 # for Val in Parsed_Text:
 #     print Val
 
@@ -1080,8 +1114,22 @@ UDFFunction = CreateUDF(Translated_Text)
 FileToWrite = 'UDF_Function.cpp'
 WriteToFile(UDFFunction, FileToWrite)
 
-FileToWriteUDF = 'model.cpp'
-InsertUDF(FileToWriteUDF, UDFFunction)
+#UDF DECLRATION
+FiletoInserDeclUDF = 'model.h'
+UDFDecl = 'Real CalcUDFFeqNew(const int l, const Real* macroVars, const int polyOrder = 2);'
+UDFDeclInsertBeforeText = '#endif' 
+InsertTxtBeforeStringFile(FiletoInserDeclUDF, UDFDecl, UDFDeclInsertBeforeText)
+
+#UDF DEFINITION
+FileToWriteUDFDefinition = 'model.cpp'
+UDFDefInsertBeforeText = '#include "model_kernel.h"'
+InsertTxtBeforeStringFile(FileToWriteUDFDefinition, UDFFunction, UDFDefInsertBeforeText)
+#InsertUDF(FileToWriteUDFDefinition, UDFFunction)
+
+# UDF CALL
+InsertUDFFunctionCall()
+
+
 
 """
 text = 'spacedim = 3;'

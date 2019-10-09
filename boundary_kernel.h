@@ -892,7 +892,7 @@ void KerCutCellKinetic(const Real *givenMacroVars, const int *nodeType,
                 outFlux += (speed * f[OPS_ACC_MD3(xiIndex, 0, 0)]);
             }
             if (isInflux) {
-                inFlux += (speed*CalcUDFFeqNew(xiIndex, givenMacroVars,  FEQORDER));
+                inFlux += (speed*CalcBGKFeq(xiIndex, 1, u, v, T, FEQORDER));
             }
         }
         Real rho = outFlux / inFlux;
@@ -911,7 +911,7 @@ relVeloY * secondVector[1]; isInflux = isInflux && (cDotSecond >= 0);
             }
             if (isInflux) {
                 f[OPS_ACC_MD3(xiIndex, 0, 0)] =
-                    CalcUDFFeqNew(xiIndex, givenMacroVars,  FEQORDER);
+                    CalcBGKFeq(xiIndex, rho, u, v, T, FEQORDER);
                 ;
             }
         }
@@ -1127,7 +1127,7 @@ void KerCutCellEQMDiffuseRefl(const Real *givenMacroVars, const int *nodeType,
                 case BndryDv_Parallel: {
                     parallel[numParallel] = xiIdx;
                     rhoParallel +=
-                        CalcUDFFeqNew(xiIdx, givenMacroVars,  equilibriumOrder);
+                        CalcBGKFeq(xiIdx, 1, u, v, 1, equilibriumOrder);
                     numParallel++;
                 } break;
                 default:
@@ -1137,7 +1137,7 @@ void KerCutCellEQMDiffuseRefl(const Real *givenMacroVars, const int *nodeType,
         Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
         for (int idx = 0; idx < numParallel; idx++) {
             f[OPS_ACC_MD3(parallel[idx], 0, 0)] =
-                CalcUDFFeqNew(parallel[idx], givenMacroVars,  equilibriumOrder);
+                CalcBGKFeq(parallel[idx], rhoWall, u, v, 1, equilibriumOrder);
         }
         for (int idx = 0; idx < numOutgoing; idx++) {
             int xiIdx = outgoing[idx];
@@ -2547,7 +2547,7 @@ void KerCutCellEQMDiffuseRefl3D(Real *f, const int *nodeType,
                 case BndryDv_Parallel: {
                     parallel[numParallel] = xiIdx;
                     rhoParallel +=
-                        CalcUDFFeqNew(xiIdx, givenMacroVars,  equilibriumOrder);
+                        CalcBGKFeq(xiIdx, 1, u, v, w, 1, equilibriumOrder);
                     numParallel++;
                 } break;
                 default:
@@ -2561,7 +2561,8 @@ void KerCutCellEQMDiffuseRefl3D(Real *f, const int *nodeType,
 #endif
 #endif
         for (int idx = 0; idx < numParallel; idx++) {
-            f[OPS_ACC_MD0(parallel[idx], 0, 0, 0)] = CalcUDFFeqNew(parallel[idx], givenMacroVars,  equilibriumOrder);
+            f[OPS_ACC_MD0(parallel[idx], 0, 0, 0)] = CalcBGKFeq(
+                parallel[idx], rhoWall, u, v, w, 1, equilibriumOrder);
         }
         for (int idx = 0; idx < numOutgoing; idx++) {
             int xiIdx = outgoing[idx];
@@ -2646,8 +2647,9 @@ void KerCutCellNoslipEQN3D(const Real *givenMacroVars, const int *nodeType,
              xiIdx <= COMPOINDEX[2 * compoId + 1]; xiIdx++) {
             f[OPS_ACC_MD2(xiIdx, 0, 0, 0)] =
                 
-                       CalcUDFFeqNew(xiIdx, givenMacroVars,  2)) +
-                CalcUDFFeqNew(xiIdx, givenMacroVars,  2);
+                       
+                                  
+                CalcBGKFeq(xiIdx, rhoIntermidate, u, v, w, 1, 2);
 #ifdef CPU
             const Real res{f[OPS_ACC_MD2(xiIdx, 0, 0, 0)]};
             if (isnan(res) || res <= 0 || isinf(res)) {
