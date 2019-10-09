@@ -152,7 +152,7 @@ void simulate() {
     // currently this information is not playing major role in this
     // implementation.
 
-    const int steps{2};
+    const int steps{20};
     const int checkPeriod{1};
     Iterate(steps, checkPeriod);
 

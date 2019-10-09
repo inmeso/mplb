@@ -506,7 +506,7 @@ Real CalcBGKFeq(const int l, const Real rho, const Real u, const Real v,
     return WEIGHTS[l] * rho * res;
 }
 
-Real CalcUDFFeqNew (const int l, const Real* macroVars, const int polyOrder){
+Real CalcUDFFeqNew_old (const int l, const Real* macroVars, const int polyOrder){
     
     const Real T{1};
     int startPos = 0;
@@ -544,7 +544,36 @@ Real CalcUDFFeqNew (const int l, const Real* macroVars, const int polyOrder){
 }
 
 
-//*************************************************************************************************************
+Real CalcSWEFeq(const int l, const Real h, const Real u, const Real v,
+                const int polyOrder) {
+    Real cu{(CS * XI[l * LATTDIM] * u + CS * XI[l * LATTDIM + 1] * v)};
+    Real c2{(CS * XI[l * LATTDIM] * CS * XI[l * LATTDIM] +
+             CS * XI[l * LATTDIM + 1] * CS * XI[l * LATTDIM + 1])};
+    Real cu2{cu * cu};
+    Real u2{u * u + v * v};
+    Real res = 1.0 + cu + 0.5 * (cu2 - u2 + (h - 1.0) * (c2 - LATTDIM));
+    if (polyOrder >= 3) {
+        res = res +
+              cu * (cu2 - 3.0 * u2 + 3.0 * (h - 1.0) * (c2 - LATTDIM - 2.0)) /
+                  6.0;
+    }
+    if (polyOrder >= 4) {
+        res =
+            res + (cu2 * cu2 - 6.0 * cu2 * u2 + 3.0 * u2 * u2) / 24.0 +
+            (h - 1.0) * ((c2 - (LATTDIM + 2)) * (cu2 - u2) - 2.0 * cu2) / 4.0 +
+            (h - 1.0) * (h - 1.0) *
+                (c2 * c2 - 2.0 * (LATTDIM + 2) * c2 + LATTDIM * (LATTDIM + 2)) /
+                8.0;
+    }
+    return WEIGHTS[l] * h * res;
+}
+
+void SetLatticeName(const std::vector<std::string> latticeName) {
+    LATTICENAME = latticeName;
+}
+const std::vector<std::string> LatticeName() { return LATTICENAME; }
+const std::vector<std::string> MacroVarName() { return MACROVARNAME; }
+
 
 Real CalcUDFFeqNew (const int XiIdx, const Real* macroVars, const int polyOrder)
 {
@@ -593,47 +622,12 @@ if(XiIdx >= 0 && XiIdx <= 18)
                         macroVars[OPS_ACC_MD1(2,0,0,0)] * macroVars[OPS_ACC_MD1(2,0,0,0)] +
 
                         macroVars[OPS_ACC_MD1(3,0,0,0)] * macroVars[OPS_ACC_MD1(3,0,0,0)]
-                    ) +
+                    ) 
 
 
     );
 }
-return result
+return result;
 
 }
-
-//*************************************************************************************************************
-
-
-
-
-Real CalcSWEFeq(const int l, const Real h, const Real u, const Real v,
-                const int polyOrder) {
-    Real cu{(CS * XI[l * LATTDIM] * u + CS * XI[l * LATTDIM + 1] * v)};
-    Real c2{(CS * XI[l * LATTDIM] * CS * XI[l * LATTDIM] +
-             CS * XI[l * LATTDIM + 1] * CS * XI[l * LATTDIM + 1])};
-    Real cu2{cu * cu};
-    Real u2{u * u + v * v};
-    Real res = 1.0 + cu + 0.5 * (cu2 - u2 + (h - 1.0) * (c2 - LATTDIM));
-    if (polyOrder >= 3) {
-        res = res +
-              cu * (cu2 - 3.0 * u2 + 3.0 * (h - 1.0) * (c2 - LATTDIM - 2.0)) /
-                  6.0;
-    }
-    if (polyOrder >= 4) {
-        res =
-            res + (cu2 * cu2 - 6.0 * cu2 * u2 + 3.0 * u2 * u2) / 24.0 +
-            (h - 1.0) * ((c2 - (LATTDIM + 2)) * (cu2 - u2) - 2.0 * cu2) / 4.0 +
-            (h - 1.0) * (h - 1.0) *
-                (c2 * c2 - 2.0 * (LATTDIM + 2) * c2 + LATTDIM * (LATTDIM + 2)) /
-                8.0;
-    }
-    return WEIGHTS[l] * h * res;
-}
-
-void SetLatticeName(const std::vector<std::string> latticeName) {
-    LATTICENAME = latticeName;
-}
-const std::vector<std::string> LatticeName() { return LATTICENAME; }
-const std::vector<std::string> MacroVarName() { return MACROVARNAME; }
 #include "model_kernel.h"

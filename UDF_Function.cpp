@@ -45,11 +45,11 @@ if(XiIdx >= 0 && XiIdx <= 18)
                         macroVars[OPS_ACC_MD1(2,0,0,0)] * macroVars[OPS_ACC_MD1(2,0,0,0)] +
 
                         macroVars[OPS_ACC_MD1(3,0,0,0)] * macroVars[OPS_ACC_MD1(3,0,0,0)]
-                    ) +
+                    ) 
 
 
     );
 }
-return result
+return result;
 
 }

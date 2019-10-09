@@ -41,7 +41,7 @@ Dist_f[CompoVeloSpaIdx({0:0}~{}, {0:18}~{}, 0,0,0)] =
                         Macro_Vars[CompoMacroSpaIdx(, v, 0,0,0)] * Macro_Vars[CompoMacroSpaIdx(, v, 0,0,0)] +
 
                         Macro_Vars[CompoMacroSpaIdx(, w, 0,0,0)] * Macro_Vars[CompoMacroSpaIdx(, w, 0,0,0)]
-                    ) +
+                    ) 
 
 
     );

@@ -949,12 +949,31 @@ def CreateUDF(Text):
     UDFFunction = 'Real CalcUDFFeqNew (const int XiIdx, const Real* macroVars, const int polyOrder)'
     UDFFunction += '\n{\n'
     UDFFunction += Text
-    UDFFunction += '\nreturn result\n' 
+    UDFFunction += '\nreturn result;\n' 
     UDFFunction += '\n}'  #End of function definition.  
     return (UDFFunction)
 
 #End of CreateUDF function 
 #--------------------------------------------------------
+
+
+#-------------------------------------------------------------------------
+# Function to insert the UDF created into model.h.
+#-------------------------------------------------------------------------
+
+def InsertUDF(FileName, FunDefUDF):
+    ReadText = ReadFile(FileName)[0]
+    StringToSearch = '#include "model_kernel.h"'  #UDF will be inserted before this string.
+    PosString = FindPositionStringText(StringToSearch, ReadText)
+    TextToWrite = ReadText[0:PosString[0]]
+    TextToWrite += '\n\n' 
+    TextToWrite += FunDefUDF
+    TextToWrite += '\n'
+    TextToWrite += ReadText[PosString[0]:]
+    WriteToFile(TextToWrite, FileName)
+
+# End of function to insert UDF into model.h
+#-------------------------------------------------------------------------
 
 
 FileName = 'Dist_fun_eqn_2.txt'
@@ -1055,11 +1074,14 @@ for i in range(0, len(Parsed_Text_Sorted)):
 Translated_Text += '\n}' 
 UDFFunction = CreateUDF(Translated_Text)
 
-FileToWrite = 'UDF_Translated.cpp'
-WriteToFile(Translated_Text, FileToWrite)
+# FileToWrite = 'UDF_Translated.cpp'
+# WriteToFile(Translated_Text, FileToWrite)
 
 FileToWrite = 'UDF_Function.cpp'
 WriteToFile(UDFFunction, FileToWrite)
+
+FileToWriteUDF = 'model.cpp'
+InsertUDF(FileToWriteUDF, UDFFunction)
 
 """
 text = 'spacedim = 3;'
