@@ -8,9 +8,13 @@ number of equation is just one and only alpha varies.
 
 import re
 import glob
-import User_defined_function as Udf
+import sys
+#from User_defined_function import *
+#import User_defined_function as Udf
 
 
+
+#------------------------------------------------------------------
 def GetValVariableUsingRegexPassed(PassedVarName, Text, Regex):
 
     regexExpr = Regex.replace('VariableName', PassedVarName)
@@ -29,8 +33,10 @@ def GetValVariableUsingRegexPassed(PassedVarName, Text, Regex):
     if NumMatchFound <= 0:
         print 'Warning! Cannot find the value of',PassedVarName
 #End of function definition GetValueofVariable
+#------------------------------------------------------------------
 
 
+#------------------------------------------------------------------
 def ParseRangeVariable(text):
     
     FirstCurlyBracePos = text.find('{')
@@ -63,14 +69,999 @@ def ParseRangeVariable(text):
     # If there is no element to be excluded, then list is given value as 'None' 
     # and this is used later to generate code. This will also act as Safety check. 
     if (ListValNotIncluded == ['']):
-        ListValNotIncluded = 'None'
+        ListValNotIncluded = None
 
     return MinRange, MaxRange, ListValNotIncluded
 
+#------------------------------------------------------------------
+
+
+
+#-----------------------------------------------------------------
+# Function to read the contents of a file.
+#-----------------------------------------------------------------
+def ReadFile(fileName):
+    text = []
+    try:
+        file = open(fileName, 'r')
+    except IOError:
+        print ('File ' + fileName + ' not Found')
+        sys.exit()
+
+    with file:
+        text.append(file.read())
+        file.close()
+        return text
+#-----------------------------------------------------------------
+
+
+
+def WriteToFile(text, fileName):
+    file = open(fileName, 'w')
+    file.write(text)
+    file.close()
+
+
+def FindPositionStringText(String, Text):
+
+    position = []
+    regexExpr = r''+String
+    #print regexExpr
+    pattern = re.compile(regexExpr)
+    numMatched = 0
+
+    for match in pattern.finditer(Text):
+        pos = match.start()
+        position.append(pos)
+        numMatched = numMatched + 1
+  
+    if(numMatched >= 1):
+        #print 'Multiple ',String,' found in the text at positions',position
+        return position
+
+    #elif(numMatched==1):
+        #print String,' found in the text at position',position
+    #    return position
+#End of FindPositionStringText
+
+
+def Comment(line,Translated_Text):
+    if len(line)==0:
+        Translated_Text = Translated_Text + '\n'
+    else:
+        Translated_Text += '//' + line + '\n'
+    return Translated_Text
+#End of Function Comment.
+    
+
+def GetValueofVariable(VariableName, Text):
+    regexExpr = r'( |\t|\n)*(\b'
+    regexExpr = regexExpr + VariableName
+    regexExpr = regexExpr + r'\b)( |\t|\n)*(=)( |\t|\n)*(\w+\.\w+)(;)' 
+    pattern = re.compile(regexExpr)
+    NumMatchFound = 0
+
+    for match in pattern.finditer(Text):
+        NumMatchFound += 1
+        value = match.group(6)
+
+    if NumMatchFound > 1:
+        print 'Warning! Multiple value of ',VariableName,' found'
+    if NumMatchFound == 1:
+        return value
+    if NumMatchFound <= 0:
+        print 'Warning! Cannot find the value of',VariableName
+#End of function definition GetValueofVariable
+ 
+
+def Code(Line, Translated_Text):
+    Translated_Text += Line + '\n'
+    return Translated_Text
+#End of function code defintion. 
+
+
+def InsertForLoop(i, start, finish, Text):
+    Text = Text + '\n'
+    Line = 'for ( int '+i+'='+start+'; '+i+'<'+finish+'; '+i+'++ ){'
+    return(Code(Line, Text))
+    
+
+
+def InsertInitCodeHilemms(File, TextToInsert, NumberSpaceDim):
+    
+    Text = ReadFile(FileName)
+
+    #StartPosInitFunction: will be used at starting position to search for OPS 3D and insert
+    #the parsed text.
+    StartPosInitFunction = FindPositionStringText('KerSetInitialMacroVarsHilemms', Text[0]) 
+
+
+    #To Do :- We can limit the search to KerSetInitialMacroVarsHilemms as a safeguard 
+    #against destroying the original code.
+
+    if NumberSpaceDim == '2':
+        StartPosition = Text[0].find('#ifdef OPS_2D', StartPosInitFunction[0])
+
+    elif NumberSpaceDim == '3':
+        StartPosition = Text[0].find('#ifdef OPS_3D', StartPosInitFunction[0])
+
+    EndPosition = Text[0].find('#endif', StartPosition)
+    #print StartPosition, EndPosition
+
+    Temp = Text[0]
+    Text[0] = Temp[0:StartPosition+len('#ifdef OPS_3D')]
+    Text[0] += TextToInsert
+    Text[0] += Temp[EndPosition:]
+
+    WriteToFile(Text[0], File)
+#End of routine Insert Initialisation code for Hilemms.
+
+
+#----------------------------------------------------------
+# Routine to check number of arguments supplied to routines 
+# such as CompoVeloIdx, SpaIdx etc. 
+#----------------------------------------------------------
+
+def CheckNumArgs(FunctionName, ArgsGiven):
+
+    # To Do:- Modify this for 2D code. 
+    # USe spacedim and subtract one number of arguements.
+    if FunctionName == 'CompoVeloSpaIdx' and ArgsGiven!=5:
+        print 'CompoVeloSpaIdx expects 5 Arguements but supplied =', ArgsGiven 
+
+    if FunctionName == 'CompoVeloIdx' and ArgsGiven!=2:
+        print 'CompoVeloIdx expects 2 Arguements but supplied =', ArgsGiven 
+
+    if FunctionName == 'CompoMacroSpaIdx' and ArgsGiven!=5:
+        print 'CompoMacroSpaIdx expects 5 Arguements but supplied =', ArgsGiven 
+
+    if FunctionName == 'SpaIdx' and ArgsGiven!=3:
+        print 'SpaIdx expects 3 Arguements but supplied =', ArgsGiven 
+
+# End of routine to check number of arguements.
+
+
+#----------------------------------------------------------
+# Fucntion to parse arguements of Functions
+# such as CompiVeloIdx, SpaIdx etc.
+#----------------------------------------------------------
+
+def ParseArguements(FunName, Args):
+    
+    ArgDic = {}
+    if FunName == 'CompoVeloSpaIdx':
+        ArgDic['CompoId'] = Args[0]
+        ArgDic['VeloId'] = Args[1]
+        ArgDic['RelSpaIdx_X'] = Args[2]
+        ArgDic['RelSpaIdx_Y'] = Args[3]
+        ArgDic['RelSpaIdx_Z'] = Args[4]
+
+    if FunName == 'CompoMacroSpaIdx':
+        ArgDic['CompoId'] = Args[0]
+        ArgDic['MacroVarId'] = Args[1]
+        ArgDic['RelSpaIdx_X'] = Args[2]
+        ArgDic['RelSpaIdx_Y'] = Args[3]
+        ArgDic['RelSpaIdx_Z'] = Args[4]
+    
+    if FunName == 'SpaIndex':
+        ArgDic['RelSpaIdx_X'] = Args[0]
+        ArgDic['RelSpaIdx_Y'] = Args[1]
+        ArgDic['RelSpaIdx_Z'] = Args[2]
+
+    if FunName == 'CompoVeloIdx':
+        ArgDic['CompoId'] = Args[0]
+        ArgDic['VeloId'] = Args[1]
+
+    return ArgDic
+#End of function to parse arguements.
+
+
+#----------------------------------------------------------
+# Routine to get variable name. 
+# This information might be needed in the final code. 
+#----------------------------------------------------------
+
+def ParseText(Text, Positions, TypeVar, TextAfterParsing): 
+    for pos in Positions:
+        Item = {}
+
+        #Which type of variable to search for such as 
+        #Dist_f, Weights, Micro_Vel_, Macro_Vars.
+        VarNameStartPos = pos + len(TypeVar)
+        VarNameEndPos = Text.find('[', VarNameStartPos)
+        VarName  = Text[VarNameStartPos:VarNameEndPos].strip()
+        Item['VarName'] = VarName
+        
+        #Everything inside a square bracket from which information
+        #has to be extracted.
+        ArgStartPos = VarNameEndPos+1
+        ArgEndPos = Text.find(']', VarNameStartPos)
+        Arguement =  Text[ArgStartPos:ArgEndPos].strip()
+        Item['Arguement'] = Arguement
+
+        #The following two positions will be used to insert the 
+        #genrated code at the write place in the translated text.
+        Item['StartPosTextInsert'] = pos
+        Item['EndPosTextInsert'] = ArgEndPos+1
+
+        #print Text[pos:ArgEndPos+1]
+
+        #Getting Routine name such as CompoVeloIdx, CompoMacroSpaIdx etc.
+        FunStartPos = ArgStartPos
+        FunEndPos = Text.find('(', FunStartPos)
+        FunName = Text[FunStartPos: FunEndPos].strip()
+        Item['Function'] = FunName
+
+
+        #Getting Function Arguments which will help in generating code in HiLeMMs.
+        FunArgsStart = FunEndPos + 1
+        FunArgsEnd = Text.find(')',FunArgsStart)
+        FunArgs = Text[FunArgsStart:FunArgsEnd].strip()
+        Item['FunArgs'] = FunArgs
+        #Parsed_Text.append([Item])
+        
+
+        FunArgs = FunArgs.split(',')
+        NumArgsFun = len(FunArgs)
+        CheckNumArgs(FunName, NumArgsFun)
+        
+        for i in range(NumArgsFun):
+            FunArgs[i] = FunArgs[i].strip()
+
+        Item['ParsedArgs'] = ParseArguements(FunName, FunArgs)
+        #print Item
+        #Parsed_Text.append(Item)
+        TextAfterParsing.append(Item)
+        #Parsed_Text.append(ParseArguements(FunName, FunArgs))
+        #print Parsed_Text
+        #print TextAfterParsing
+
+# End of Routine to parse Text.
+
+
+#----------------------------------------------
+# Function to merge two dictionaries.
+#----------------------------------------------
+def merge_two_dicts(x, y):
+    """Given two dicts, merge them into a new dict as a shallow copy."""
+    z = x.copy()
+    z.update(y)
+    return z
+
+# End of merge function.
+#-----------------------------------------------
+
+
+#----------------------------------------------------
+# Function to generate code for the coordinates in 
+# the user defined function.
+#----------------------------------------------------
+
+def GenCodeCoordinates(Parsed_Text):
+
+    for i in range(0,len(Parsed_Text)):
+        
+        CodeCoord = {}
+        FunName = Parsed_Text[i]['Function']
+        
+        if FunName == 'SpaIndex':
+            
+            VariableName = Parsed_Text[i]['VarName']
+            RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
+            RelPos_Y = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Y']
+            RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
+
+            if VariableName == 'X':
+                CodeCoord['GenCode'] = 'coordinates[OPS_ACC_MD0(0,' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
+
+            elif VariableName == 'Y':
+                CodeCoord['GenCode'] = 'coordinates[OPS_ACC_MD0(1,' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
+
+            elif VariableName == 'Z':
+                CodeCoord['GenCode'] = 'coordinates[OPS_ACC_MD0(2,' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
+
+            else:
+                print 'Variable Name for Spatial Coordinates could only be X, Y or Z'
+
+        Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeCoord)
+
+# End of function to gen coordinate code.
+#----------------------------------------------------
+
+
+#-------------------------------------------------------------------------------------------------
+# Function to get the correct index of macro vars to be 
+# used in generating code.
+# MacroVarNames :- List of all macro vars parsed from User written Cpp file.
+# CompoIdMacroVars :- List of Id's all macro vars spec. which component macro vars belongs to.
+# MacroVarSearch :- For Which macro var, we are genrating the index.
+# CompoIdSearch :- The component ID of macro var being searched.   
+#--------------------------------------------------------------------------------------------------
+
+def GetIndexMacroVarsforCodeGen(MacroVarNames, CompoIdMacroVars, MacroVarSearch, CompIdSearch):
+    #print MacroVarNames,CompoIdMacroVars, MacroVarSearch, CompIdSearch, type(CompIdSearch), type(CompoIdMacroVars[0])
+
+    Index = 0
+    Found = 'False'
+    for i in range(0, len(MacroVarNames)):
+        if MacroVarSearch == MacroVarNames[i] and CompIdSearch == CompoIdMacroVars[i]:
+            Found = 'True'
+            Index = i
+            break
+    if Found == 'False':
+        print 'Could not find the macroscopic variable ', MacroVarSearch, 'for component ', CompIdSearch
+    else:
+        return Index
+            
+#End of function to generate the correct index.
+#--------------------------------------------------------
+
+
+
+#----------------------------------------------------
+# Function to generate code for the Macroscopic 
+# Variables in the user defined function.
+#----------------------------------------------------
+
+def GenCodeMacroVars(Parsed_Text):
+    
+    for i in range(0,len(Parsed_Text)):
+        
+        CodeMacroVars = {}
+        FunName = Parsed_Text[i]['Function']
+        
+        if FunName == 'CompoMacroSpaIdx':
+            
+            MacroVarName = Parsed_Text[i]['ParsedArgs']['MacroVarId']
+            ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
+            RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
+            RelPos_Y = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Y']
+            RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
+
+            Index = GetIndexMacroVarsforCodeGen(MacroVarNames, CompoIdMacroVars, MacroVarName, ComponentId)
+            CodeMacroVars['GenCode'] = 'macroVars[OPS_ACC_MD1(' + str(Index) + ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
+
+        Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeMacroVars)
+
+# End of function to gen code for macro vars.
+#----------------------------------------------------
+
+
+
+#----------------------------------------------------
+# Function to generate code for the Macroscopic 
+# Variables in the user defined function.
+#
+# HARD CODED COMPONENT ID TO ZERO (CHECKING PURPOSE). 
+# WILL REMOVE IT LATER.
+#----------------------------------------------------
+
+def GenCodeMacroVarsRange(Parsed_Text):
+    
+    for i in range(0,len(Parsed_Text)):
+        
+        CodeMacroVars = {}
+        FunName = Parsed_Text[i]['Function']
+        
+        if FunName == 'CompoMacroSpaIdx':
+            
+            MacroVarName = Parsed_Text[i]['ParsedArgs']['MacroVarId']
+            #ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
+            ComponentId = '0'
+            RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
+            RelPos_Y = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Y']
+            RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
+
+            Index = GetIndexMacroVarsforCodeGen(MacroVarNames, CompoIdMacroVars, MacroVarName, ComponentId)
+            CodeMacroVars['GenCode'] = 'macroVars[OPS_ACC_MD1(' + str(Index) + ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
+
+        Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeMacroVars)
+
+# End of function to gen code for macro vars.
+#----------------------------------------------------
+
+
+
+#----------------------------------------------------
+# Function to generate code for the Microscopic Dist
+# Fun in the user defined function.
+#----------------------------------------------------
+
+def GenCodeDistFun(Parsed_Text):
+
+    for i in range(0,len(Parsed_Text)):
+        
+        CodeDistFun = {}
+        FunName = Parsed_Text[i]['Function']
+        
+        if FunName == 'CompoVeloSpaIdx':
+            
+            ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
+            VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
+            RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
+            RelPos_Y = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Y']
+            RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
+
+            ComponentNumber = 'Component' + ComponentId
+            
+            if int(VeloId) >= 0 and int(VeloId) <= UserVarsCpp[ComponentNumber]['LattSize']:
+                Index = UserVarsCpp[ComponentNumber]['XiStart'] + int(VeloId)
+                CodeDistFun['GenCode'] = 'f[OPS_ACC_MD2(' + str(Index) + ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
+            else:
+                print '*************************************************************************'
+                print 'Xi index for component ', ComponentId, ' should be between 0 and ',UserVarsCpp[ComponentNumber]['LattSize']-1
+                print 'Cannot generate code for distribution function'
+                print '*************************************************************************'
+
+        Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeDistFun)
+
+# End of function to gen code for distribution fun.
+#--------------------------------------------------------------
+
+
+#-------------------------------------------------------------------
+# Function to generate code for the Microscopic Dist Fun in the 
+# user defined function when user mentions range of component 
+# id and velocity id in the text file.
+#-------------------------------------------------------------------
+def GenCodeDistFunRange(Parsed_Text):
+
+    for i in range(0,len(Parsed_Text)):
+        
+        CodeDistFun = {}
+        FunName = Parsed_Text[i]['Function']
+        
+        if FunName == 'CompoVeloSpaIdx':
+            
+            ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
+            VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
+            RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
+            RelPos_Y = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Y']
+            RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
+
+            MinCompIdRangeSpecified, MaxCompIdRangeSpecified, ListCompIdExcluded = ParseRangeVariable(ComponentId)
+            MinVelIdRangeSpecified, MaxVelIdRangeSpecified, ListVelIdExcluded = ParseRangeVariable(VeloId)
+
+            #print MinCompIdRangeSpecified, MaxCompIdRangeSpecified, ListCompIdExcluded
+            # print MinVelIdRangeSpecified, MaxVelIdRangeSpecified, ListVelIdExcluded
+
+            Text = ''
+            Text += 'Real result;'  #Variable result will be used to store the calculated value and returned from C++ function.
+            Text += '\n'
+
+            if (ListCompIdExcluded == None):
+                Text += 'std::vector<int> CompIdsExcluded;'
+            else:
+                Text += 'std::vector<int> CompIdsExcluded{'
+                for itr in range(0, len(ListCompIdExcluded)):
+                    if(itr < len(ListCompIdExcluded)-1 ):
+                        Text = Text + ListCompIdExcluded[itr] + ','
+                    else:
+                        Text = Text + ListCompIdExcluded[itr] + '};'    
+
+            Text += '\n'
+
+            if (ListVelIdExcluded == None):
+               Text = Text + 'std::vector<int> VelIdsExcluded;' 
+            else:
+                Text = Text + 'std::vector<int> VelIdsExcluded{'
+                for itr in range(0, len(ListVelIdExcluded)):
+                    if(itr < len(ListVelIdExcluded)-1 ):
+                        Text = Text + ListVelIdExcluded[itr] + ','
+                    else:
+                        Text = Text + ListVelIdExcluded[itr] + '};' 
+
+            Text += '\n'
+
+            # For all cases we will receive Component ID and Velocity Id.
+            #Case 1: When there is one single component MinCompIdRangeSpecified = MaxCompIdRangeSpecified.
+            if (MinCompIdRangeSpecified == MaxCompIdRangeSpecified):
+                if (ListCompIdExcluded != None):
+                    print 'Since there is one single component, exclusions cannot be specified in component ID.'
+                    print 'Aborting code generation'
+                    sys.exit()
+                else:
+                    if (ListVelIdExcluded == None):
+                        Text += 'if(XiIdx >= ' + str(MinVelIdRangeSpecified) + ' && XiIdx <= ' + str(MaxVelIdRangeSpecified) + ')'
+                        Text += '\n{' #Curly brace for if starts (It will end after equation is generated).
+                        Text += '\n\tresult '
+                    else:
+                        Text += 'if(XiIdx >= ' + str(MinVelIdRangeSpecified) + ' && XiIdx <= ' + str(MaxVelIdRangeSpecified) + ')'
+                        Text += '\n{'
+                        Text += '\n\tif( find(VelIdsExcluded.begin(), VelIdsExcluded.end(), XiIdx ) == VelIdsExcluded.end() )'
+                        Text += '\n\t//Above if condition means element is  not in the list.'
+                        Text += '\n\t{'
+                        Text += '\n\t\tresult'   
+
+            #print Text
+            CodeDistFun['GenCode'] = Text
+            Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeDistFun)
+
+        #print 'For combining i used is = ',i
+        #Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeDistFun)
+
+
+# End of function to gen code for distribution fun.
+#--------------------------------------------------------------
+
+
+#----------------------------------------------------
+# Function to generate code for the Weights
+#----------------------------------------------------
+
+def GenCodeWeights(Parsed_Text):
+    
+    for i in range(0, len(Parsed_Text)):
+        
+        CodeWeights = {}
+        FunName = Parsed_Text[i]['Function']
+        VariableName = Parsed_Text[i]['VarName']
+
+        if FunName == 'CompoVeloIdx' and VariableName=='':
+
+            #print 'Running code gen for weights'
+            
+            ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
+            VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
+
+            ComponentNumber = 'Component' + ComponentId
+            
+            if int(VeloId) >= 0 and int(VeloId) <= UserVarsCpp[ComponentNumber]['LattSize']:
+                Index = UserVarsCpp[ComponentNumber]['XiStart'] + int(VeloId)
+                CodeWeights['GenCode'] = 'WEIGHTS[' + str(Index) + ']'
+            else:
+                print '*************************************************************************'
+                print 'Xi index for component ', ComponentId, ' should be between 0 and ',UserVarsCpp[ComponentNumber]['LattSize']-1
+                print 'Cannot generate code for the Weights'
+                print '*************************************************************************'
+
+        #print CodeWeights
+        Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeWeights)
+
+# End of function to gen code for Weights.
+#--------------------------------------------------------------
 
 
 
 
+#----------------------------------------------------
+# Function to generate code for the Weights
+#----------------------------------------------------
+
+def GenCodeWeightsRange(Parsed_Text):
+    
+    for i in range(0, len(Parsed_Text)):
+        
+        CodeWeights = {}
+        FunName = Parsed_Text[i]['Function']
+        VariableName = Parsed_Text[i]['VarName']
+
+        if FunName == 'CompoVeloIdx' and VariableName=='':
+
+            #print 'Running code gen for weights'
+            
+            ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
+            VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
+
+            ComponentNumber = 'Component' + ComponentId
+            
+            CodeWeights['GenCode'] = 'WEIGHTS[XiIdx]'
+
+        #print CodeWeights
+        Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeWeights)
+
+# End of function to gen code for Weights.
+#--------------------------------------------------------------
+
+
+
+#----------------------------------------------------
+# Function to generate code for the Microscopic 
+# velocity i.e. XI.
+#----------------------------------------------------
+
+def GenCodeXi(Parsed_Text):
+
+    for i in range(0, len(Parsed_Text)):
+        
+        CodeXi = {}
+        FunName = Parsed_Text[i]['Function']
+        SpaceDim = int(UserVarsCpp['SpaceDim'])
+        VariableName = Parsed_Text[i]['VarName']
+
+        #print VariableName==''
+        if FunName == 'CompoVeloIdx' and VariableName != '':
+
+            #print FunName, VariableName
+            
+            ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
+            VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
+            
+            ComponentNumber = 'Component' + ComponentId
+            
+            if int(VeloId) >= 0 and int(VeloId) <= UserVarsCpp[ComponentNumber]['LattSize']:
+                Index = UserVarsCpp[ComponentNumber]['XiStart'] + int(VeloId)
+
+                if VariableName == 'Cx':    
+                    CodeXi['GenCode'] = 'XI[' + str(Index * SpaceDim) + ']'
+                    
+                elif VariableName == 'Cy':    
+                    CodeXi['GenCode'] = 'XI[' + str(Index * SpaceDim + 1) + ']'
+
+                elif VariableName == 'Cz':    
+                    CodeXi['GenCode'] = 'XI[' + str(Index * SpaceDim + 2) + ']'
+
+                else:
+                    print 'Micro Velocity Variable Name should be Cx, Cy or Cz.'
+
+            else:
+                print '*************************************************************************'
+                print 'Xi index for component ', ComponentId, ' should be between 0 and ',UserVarsCpp[ComponentNumber]['LattSize']-1
+                print 'Cannot generate code for the Weights'
+                print '*************************************************************************'
+
+        #print 'Hi',CodeXi
+        Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeXi)
+
+# End of function to gen code for Xi.
+#--------------------------------------------------------------
+
+
+
+#----------------------------------------------------
+# Function to generate code for the Microscopic 
+# velocity i.e. XI.
+#----------------------------------------------------
+
+def GenCodeXiRange(Parsed_Text):
+
+    for i in range(0, len(Parsed_Text)):
+        
+        CodeXi = {}
+        FunName = Parsed_Text[i]['Function']
+        SpaceDim = int(UserVarsCpp['SpaceDim'])
+        VariableName = Parsed_Text[i]['VarName']
+
+        #print VariableName==''
+        if FunName == 'CompoVeloIdx' and VariableName != '':
+
+            #print FunName, VariableName
+            
+            ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
+            VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
+            
+            ComponentNumber = 'Component' + ComponentId
+            
+            if VariableName == 'Cx':    
+                CodeXi['GenCode'] = 'XI[XiIdx * LATTDIM]'
+                    
+            elif VariableName == 'Cy':    
+                CodeXi['GenCode'] = 'XI[XiIdx * LATTDIM + 1]'
+
+            elif VariableName == 'Cz':    
+                CodeXi['GenCode'] = 'XI[XiIdx * LATTDIM + 2]'
+
+            else:
+                print 'Micro Velocity Variable Name should be Cx, Cy or Cz.'
+
+        #print 'Hi',CodeXi
+        Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeXi)
+        #print Parsed_Text[i],'\n'
+
+# End of function to gen code for Xi.
+#--------------------------------------------------------------
+
+
+#-----------------------------------------------------------------------------
+# Function to extract values from the user written 
+# CPP file (Eg.- lbm3d_hilemms 
+
+# FunName: function name which is constant as defined  by the iinterface.
+# ArgNum : Number of arguement whose value is to be found. Note: Argname 
+# might change and cannot be used directly. 
+#------------------------------------------------------------------------------
+def ParseCppFile(FileName, FunName, ArgNum):
+    ArgValue = []
+    CppText = ReadFile(FileName)[0]
+
+    FunCallStartPos =  FindPositionStringText(FunName, CppText)[0]
+   
+    FunParanthesisStart = CppText.find('(', FunCallStartPos)
+
+    FunParanthesisEnd = CppText.find(')', FunParanthesisStart)
+    FunArgs = CppText[FunParanthesisStart+1:FunParanthesisEnd].strip()
+
+    FunArgs = FunArgs.split(',')
+    NumArgsFun = len(FunArgs)
+        
+    for i in range(NumArgsFun):
+        FunArgs[i] = FunArgs[i].strip()
+
+    ArgNameFindValue = FunArgs[ArgNum]
+    ArgPosCppFile = FindPositionStringText(ArgNameFindValue, CppText)[0]
+    ArgValStart = CppText.find('{', ArgPosCppFile)
+    ArgValEnd = CppText.find('}', ArgValStart)
+    
+    if FunName == 'DefineComponents':
+        String = CppText[ArgValStart+1:ArgValEnd].replace('"','')
+        String = String.split(',')
+        for i in range(0,len(String)):
+            String[i] = String[i].strip()
+        ArgValue.append(String)
+
+    elif FunName == 'DefineMacroVars':
+        String = CppText[ArgValStart+1:ArgValEnd].replace('"','')
+        String = String.split(',')
+        for i in range(0,len(String)):
+            String[i] = String[i].strip()
+        ArgValue.append(String)
+
+    else:
+        ArgValue.append(CppText[ArgValStart+1:ArgValEnd])
+    #ArgValue[ArgNameFindValue] = CppText[ArgValStart+1:ArgValEnd]
+    
+    return ArgValue
+
+# End of function to parse cpp file.
+# ---------------------------------------------------
+
+
+
+#------------------------------------------------------------------
+# Function to parse information {x}^{m} to pow(x,m).
+#------------------------------------------------------------------
+
+def Parse_Base_Exponents(Text):
+    regExpr= r'(\{)( )*([a-zA-Z0-9_\-,\[\]\(\) ]+)(\})( )*(\^)( )*(\{)( )*([0-9.]+)( )*(\})'
+    pattern = re.compile(regExpr)
+    StartPosExpr = []
+    EndPosExpr = []
+
+    Base = []
+    Exponent = []
+    
+    #Loop to search base and exponent in user defined functions.
+    for match in pattern.finditer(Text):
+
+        #Base_Text saves the combination of matched groups in above
+        #Re to get the exact base.
+        Base_Text = ''
+        for i in range(2, 4):
+            if match.group(i) == None:
+                Base_Text += ''
+            else:
+                Base_Text += match.group(i)
+        
+        StartIndex = match.start(0)
+        EndIndex = match.end(0)
+        #print Text[StartIndex:EndIndex]
+
+        StartPosExpr.append(StartIndex)
+        EndPosExpr.append(EndIndex)
+
+        Base.append(Base_Text)
+        Exponent.append(match.group(10))
+
+    #print StartPosExpr
+    # Insert new text pow(x,m) only if the pattern match was successfull. 
+    if (StartPosExpr != []):
+
+        #Loop to insert pow(base, exponent) at appropriate places.
+        Temp = Text[:StartPosExpr[0]]
+        Temp += 'pow(' + Base[0] + ',' + Exponent[0] + ')'
+
+        for i in range(1,len(Base)):
+            Temp += Text[EndPosExpr[i-1]+1:StartPosExpr[i]]
+            Temp += 'pow(' + Base[i] + ',' + Exponent[i] + ')'
+
+        Temp += Text[EndPosExpr[-1]+1:]
+        Text = Temp
+
+    #print Text
+    return Text
+# End of function to parse base and exponents.
+#------------------------------------------------------------------
+
+
+
+#----------------------------------------------------------------------
+# 1. Function to Replace CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)
+# with the user defined function.
+#
+# 2. Not accepting new function as its parameters may change (see code).
+#
+# 3. Filename is used to change and insert appropriate code in different file
+# and may be removed later.
+#---------------------------------------------------------------------- 
+def ReplaceDistFunNewUdf(oldDistFunction, text, fileName):
+
+    regexExpr = r'' + oldDistFunction
+    pattern = re.compile(regexExpr)
+
+    startPosOldDistFun = []
+    endPosOldDistFun = []
+
+    listFirstArgBGKFeq = []
+    listLastArgBGKFeq = []
+
+    numMatched = 0
+
+    for match in pattern.finditer(text):
+        if match != None:
+            numMatched = numMatched + 1
+            startPosFun = match.start(0)
+            endPosFun = text.find(')', startPosFun)
+
+            ParanthesisStart = text.find('(', startPosFun)
+            ParanthesisEnd = endPosFun
+
+            ArgsBGKFeq = text[ParanthesisStart + 1 :ParanthesisEnd].strip()
+            ArgsBGKFeq = ArgsBGKFeq.split(',')
+            
+            FirstArgBGKFeq = ArgsBGKFeq[0]
+            LastArgBGKFeq = ArgsBGKFeq[len(ArgsBGKFeq)-1]
+            listFirstArgBGKFeq.append(FirstArgBGKFeq)
+            listLastArgBGKFeq.append(LastArgBGKFeq)
+
+            startPosOldDistFun.append(startPosFun)
+            endPosOldDistFun.append(endPosFun + 1)
+            
+    if (numMatched >= 1):
+
+        if (fileName == 'boundary_kernel.h'):
+            print 'I am in if'
+            userDefinedFunction = 'CalcUDFFeqNew(' + listFirstArgBGKFeq[0] + ', givenMacroVars, ' + listLastArgBGKFeq[0] + ')'
+        else:
+            userDefinedFunction = 'CalcUDFFeqNew(' + listFirstArgBGKFeq[0] + ', macroVars, ' + listLastArgBGKFeq[0] + ')'
+
+        newText = text[:startPosOldDistFun[0]] + userDefinedFunction
+
+
+
+        for ind in range(1, len(startPosOldDistFun)):
+                 
+            if (fileName == 'boundary_kernel.h'):
+                userDefinedFunction = 'CalcUDFFeqNew(' + listFirstArgBGKFeq[ind] + ', givenMacroVars, ' + listLastArgBGKFeq[ind] + ')'
+            else:
+                userDefinedFunction = 'CalcUDFFeqNew(' + listFirstArgBGKFeq[ind] + ', macroVars, ' + listLastArgBGKFeq[ind] + ')'
+            newText += (text[endPosOldDistFun[ind - 1]:startPosOldDistFun[ind]] + userDefinedFunction)
+
+        newText += text[endPosOldDistFun[-1]:]
+        return newText
+
+
+    else:
+        print 'No match found'
+        return None
+
+# End of function to replace old distribution function with 
+# the user defined function.
+#-----------------------------------------------------------
+
+
+
+#-------------------------------------------------------------------------
+# Function that will create UDF using text that has been translated.
+# This function is just to complete the UDF function definition for C++. 
+#-------------------------------------------------------------------------
+
+def CreateUDF(Text):
+    UDFFunction = 'Real CalcUDFFeqNew (const int XiIdx, const Real* macroVars, const int polyOrder)'
+    UDFFunction += '\n{\n'
+    UDFFunction += Text
+    UDFFunction += '\nreturn result\n' 
+    UDFFunction += '\n}'  #End of function definition.  
+    return (UDFFunction)
+
+#End of CreateUDF function 
+#--------------------------------------------------------
+
+
+FileName = 'Dist_fun_eqn_2.txt'
+#FileName = 'equation3.txt'
+Text = ReadFile(FileName)[0]
+
+#Parsed Text is the one where we are collecting information from user written file.
+Parsed_Text = []
+
+#This dictionary will hold values of variables like SpaceDim, Number of Components etc.
+UserVarsCpp = {}
+
+# Translated text would be the one where we will use
+# Parsed text date and genarate the code that has to be inserted.
+Translated_Text = ''
+
+# Convert user written code for exponents into C++ format (i.e. insert pow(Variable, m) into code).
+Text = Parse_Base_Exponents(Text)
+
+#print 'Starting to Parse information from User written file'
+#PlaceHolder = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars', 'Coord_']
+PlaceHolder = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars']
+#PlaceHolder = ['Coord_','Dist_', 'Weights','Micro_Vel_']
+#PlaceHolder = ['Dist_','Micro_Vel_']
+
+for String in PlaceHolder:
+    Positions = FindPositionStringText(String, Text)
+    ParseText(Text, Positions, String, Parsed_Text)
+#print 'File parsing complete'
+
+CppFileName = GetValueofVariable('CppFileName', Text)
+UserVarsCpp['SpaceDim'] = ParseCppFile(CppFileName, 'DefineCase', 1)[0]
+
+LatticeNames = ParseCppFile(CppFileName, 'DefineComponents', 2)[0]
+#print LatticeNames
+
+#Creating a dictionary of type C1:{LatNam:Val, Lattsize:Val}
+#Need this info to generate code.
+XiStart = 0
+for i in range(0,len(LatticeNames)):
+    CompDetails = {}
+    CompNum = 'Component' + str(i)
+    CompDetails['LattName'] = LatticeNames[i]
+    CompDetails['LattSize'] = int(LatticeNames[i][3:])
+    CompDetails['XiStart'] = XiStart
+    CompDetails['XiEnd'] = XiStart + int(CompDetails['LattSize']) - 1
+    XiStart = XiStart + int(CompDetails['LattSize'])
+    UserVarsCpp[CompNum] = CompDetails
+
+
+CompoIdMacroVars = ParseCppFile(CppFileName, 'DefineMacroVars', 3)[0]
+NumComponents = len(LatticeNames)
+
+MacroVarNames = ParseCppFile(CppFileName, 'DefineMacroVars', 1)[0]
+#print MacroVarNames, CompoIdMacroVars
+
+# Counting the starting and ending position of macroscopic variable of 
+# each component. 
+MacroVarStartPos = 0
+for i in range(0, NumComponents):
+    NumMacroVarsComp = 0
+
+    for idx in range(0, len(CompoIdMacroVars)):
+        if i == int(CompoIdMacroVars[idx]):
+            NumMacroVarsComp += 1
+
+    MacroVarEndPos = MacroVarStartPos + NumMacroVarsComp -1
+    CompNum = 'Component' + str(i)
+    UserVarsCpp[CompNum]['MacroStartPos'] = MacroVarStartPos
+    UserVarsCpp[CompNum]['MacroEndPos'] = MacroVarEndPos
+    MacroVarStartPos = MacroVarEndPos + 1
+
+
+
+GenCodeCoordinates(Parsed_Text)
+GenCodeDistFunRange(Parsed_Text)
+GenCodeWeightsRange(Parsed_Text)
+GenCodeXiRange(Parsed_Text)
+GenCodeMacroVarsRange(Parsed_Text)
+
+# print '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$'
+# for Val in Parsed_Text:
+#     print Val
+
+#Sorting the list according to the insertion position.
+Parsed_Text_Sorted = sorted(Parsed_Text, key=lambda k: k['StartPosTextInsert'])
+
+for i in range(0, len(Parsed_Text_Sorted)):
+    Translated_Text = Translated_Text + Parsed_Text_Sorted[i]['GenCode']
+    Start_Pos_Copy_Text = Parsed_Text_Sorted[i]['EndPosTextInsert']
+    
+    if i < len(Parsed_Text_Sorted)-1:
+        End_Pos_Copy_Text = Parsed_Text_Sorted[i + 1]['StartPosTextInsert']
+        Translated_Text += Text[Start_Pos_Copy_Text:End_Pos_Copy_Text]
+    else:
+        Translated_Text += Text[Start_Pos_Copy_Text :]
+
+Translated_Text += '\n}' 
+UDFFunction = CreateUDF(Translated_Text)
+
+FileToWrite = 'UDF_Translated.cpp'
+WriteToFile(Translated_Text, FileToWrite)
+
+FileToWrite = 'UDF_Function.cpp'
+WriteToFile(UDFFunction, FileToWrite)
+
+"""
 text = 'spacedim = 3;'
 userRegex = r'( |\t|\n)*(\bVariableName\b)( |\t|\n)*(=)( |\t|\n)*([\w\.]+)(;)'
 value = GetValVariableUsingRegexPassed('spacedim', text, userRegex)
@@ -84,3 +1075,4 @@ if(ParseRangeVariable(text)):
     print MinRange, MaxRange, ListValNotIncluded
 
 # text  = Udf.InsertForLoop('i', '1', '10', text)
+"""

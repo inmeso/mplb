@@ -1,7 +1,7 @@
 #Please enter the CPP file with main() function here.
     CppFileName = lbm3d_hilemms.cpp;
 
-Dist_f[CompoVeloSpaIdx({0:3}~{2}, {0:18}~{1|2}, 0,0,0)] =
+Dist_f[CompoVeloSpaIdx({0:0}~{}, {0:18}~{}, 0,0,0)] =
 
         Weights[CompoVeloIdx(,)] * Macro_Vars[CompoMacroSpaIdx(,rho, 0,0,0)]*
     (
@@ -43,13 +43,5 @@ Dist_f[CompoVeloSpaIdx({0:3}~{2}, {0:18}~{1|2}, 0,0,0)] =
                         Macro_Vars[CompoMacroSpaIdx(, w, 0,0,0)] * Macro_Vars[CompoMacroSpaIdx(, w, 0,0,0)]
                     ) +
 
-        Macro_Vars[CompoMacroSpaIdx(,v,0,0,0)] +
-
-        { Macro_Vars[CompoMacroSpaIdx(,v,0,0,0)] } ^ {3} +
-
-        {Micro_Vel_Cy[CompoVeloIdx(,)]}^{4} +
-
-        ( Macro_Vars[CompoMacroSpaIdx(, u, 0,0,0)] - Macro_Vars[CompoMacroSpaIdx(, u, -1,0,0)] ) /
-        ( Coord_X[SpaIndex(0,0,0)] - Coord_X[SpaIndex(-1,0,0)])
 
     );
