@@ -106,8 +106,8 @@ void AssignCoordinates(int blockIndex,
 // componentId: Id of the component.
 // initialMacroValues: Initial values of the macroscopic variables for a given
 // component in a particular block.
-void DefineInitialCondition(int blockIndex, int componentId,
-                      std::vector<Real> initialMacroValues);
+// void DefineInitialCondition(int blockIndex, int componentId,
+//                       std::vector<Real> initialMacroValues);
 
 //User-defined function for initialising macroscopic variables
 void InitialiseNodeMacroVars(Real* nodeMacroVars, const Real* nodeCoordinates);

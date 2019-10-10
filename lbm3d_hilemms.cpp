@@ -136,7 +136,8 @@ void simulate() {
     //                               rightTopBackBcType,    rightTopFrontBcType}
 
     std::vector<Real> initialMacroValues{1, 0, 0, 0};
-    DefineInitialCondition(blockIndex, componentId, initialMacroValues);
+    //DefineInitialCondition(blockIndex, componentId, initialMacroValues);
+    DefineInitialCondition();
 
     // WriteFlowfieldToHdf5(100000);
     // WriteDistributionsToHdf5(100000);
