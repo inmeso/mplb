@@ -36,46 +36,6 @@ def GetValVariableUsingRegexPassed(PassedVarName, Text, Regex):
 #------------------------------------------------------------------
 
 
-#------------------------------------------------------------------
-def ParseRangeVariable(text):
-    
-    FirstCurlyBracePos = text.find('{')
-    SecondCurlyBracePos = text.find('}', FirstCurlyBracePos)
-
-    RangeVariable = text[FirstCurlyBracePos + 1:SecondCurlyBracePos]
-    RangeVariable = RangeVariable.split(':')
-
-    for i in range(0, len(RangeVariable)):
-        RangeVariable[i] = RangeVariable[i].strip()
-    
-    MinRange = RangeVariable[0]
-    MaxRange = RangeVariable[1]
-
-    NegationSymbol = text.find('~', SecondCurlyBracePos)
-    if (NegationSymbol == -1):
-        print 'Please insert the ~ symbol between two pairs of {} and {}'
-        print 'Aborting code execution'
-        return None 
-
-    ThirdCurlyBracePos = text.find('{', SecondCurlyBracePos)
-    FourthCurlyBracePos = text.find('}', ThirdCurlyBracePos)
-
-    ListValNotIncluded = text[ThirdCurlyBracePos + 1:FourthCurlyBracePos]
-    ListValNotIncluded = ListValNotIncluded.split('|')
-    
-    for i in range(0, len(ListValNotIncluded)):
-        ListValNotIncluded[i] =ListValNotIncluded[i].strip()
-    
-    # If there is no element to be excluded, then list is given value as 'None' 
-    # and this is used later to generate code. This will also act as Safety check. 
-    if (ListValNotIncluded == ['']):
-        ListValNotIncluded = None
-
-    return MinRange, MaxRange, ListValNotIncluded
-
-#------------------------------------------------------------------
-
-
 
 #-----------------------------------------------------------------
 # Function to read the contents of a file.
@@ -165,36 +125,6 @@ def InsertForLoop(i, start, finish, Text):
     Line = 'for ( int '+i+'='+start+'; '+i+'<'+finish+'; '+i+'++ ){'
     return(Code(Line, Text))
     
-
-
-def InsertInitCodeHilemms(File, TextToInsert, NumberSpaceDim):
-    
-    Text = ReadFile(FileName)
-
-    #StartPosInitFunction: will be used at starting position to search for OPS 3D and insert
-    #the parsed text.
-    StartPosInitFunction = FindPositionStringText('KerSetInitialMacroVarsHilemms', Text[0]) 
-
-
-    #To Do :- We can limit the search to KerSetInitialMacroVarsHilemms as a safeguard 
-    #against destroying the original code.
-
-    if NumberSpaceDim == '2':
-        StartPosition = Text[0].find('#ifdef OPS_2D', StartPosInitFunction[0])
-
-    elif NumberSpaceDim == '3':
-        StartPosition = Text[0].find('#ifdef OPS_3D', StartPosInitFunction[0])
-
-    EndPosition = Text[0].find('#endif', StartPosition)
-    #print StartPosition, EndPosition
-
-    Temp = Text[0]
-    Text[0] = Temp[0:StartPosition+len('#ifdef OPS_3D')]
-    Text[0] += TextToInsert
-    Text[0] += Temp[EndPosition:]
-
-    WriteToFile(Text[0], File)
-#End of routine Insert Initialisation code for Hilemms.
 
 
 #----------------------------------------------------------
@@ -317,6 +247,7 @@ def ParseText(Text, Positions, TypeVar, TextAfterParsing):
         #print TextAfterParsing
 
 # End of Routine to parse Text.
+#---------------------------------------------------------------------
 
 
 #----------------------------------------------
@@ -369,34 +300,6 @@ def GenCodeCoordinates(Parsed_Text):
 #----------------------------------------------------
 
 
-#-------------------------------------------------------------------------------------------------
-# Function to get the correct index of macro vars to be 
-# used in generating code.
-# MacroVarNames :- List of all macro vars parsed from User written Cpp file.
-# CompoIdMacroVars :- List of Id's all macro vars spec. which component macro vars belongs to.
-# MacroVarSearch :- For Which macro var, we are genrating the index.
-# CompoIdSearch :- The component ID of macro var being searched.   
-#--------------------------------------------------------------------------------------------------
-
-def GetIndexMacroVarsforCodeGen(MacroVarNames, CompoIdMacroVars, MacroVarSearch, CompIdSearch):
-    #print MacroVarNames,CompoIdMacroVars, MacroVarSearch, CompIdSearch, type(CompIdSearch), type(CompoIdMacroVars[0])
-
-    Index = 0
-    Found = 'False'
-    for i in range(0, len(MacroVarNames)):
-        if MacroVarSearch == MacroVarNames[i] and CompIdSearch == CompoIdMacroVars[i]:
-            Found = 'True'
-            Index = i
-            break
-    if Found == 'False':
-        print 'Could not find the macroscopic variable ', MacroVarSearch, 'for component ', CompIdSearch
-    else:
-        return Index
-            
-#End of function to generate the correct index.
-#--------------------------------------------------------
-
-
 
 #----------------------------------------------------
 # Function to generate code for the Macroscopic 
@@ -412,48 +315,14 @@ def GenCodeMacroVars(Parsed_Text):
         
         if FunName == 'CompoMacroSpaIdx':
             
-            MacroVarName = Parsed_Text[i]['ParsedArgs']['MacroVarId']
+            MacroVarId = Parsed_Text[i]['ParsedArgs']['MacroVarId']
             ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
             RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
             RelPos_Y = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Y']
             RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
 
-            Index = GetIndexMacroVarsforCodeGen(MacroVarNames, CompoIdMacroVars, MacroVarName, ComponentId)
-            CodeMacroVars['GenCode'] = 'macroVars[OPS_ACC_MD1(' + str(Index) + ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
-
-        Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeMacroVars)
-
-# End of function to gen code for macro vars.
-#----------------------------------------------------
-
-
-
-#----------------------------------------------------
-# Function to generate code for the Macroscopic 
-# Variables in the user defined function.
-#
-# HARD CODED COMPONENT ID TO ZERO (CHECKING PURPOSE). 
-# WILL REMOVE IT LATER.
-#----------------------------------------------------
-
-def GenCodeMacroVarsRange(Parsed_Text):
-    
-    for i in range(0,len(Parsed_Text)):
-        
-        CodeMacroVars = {}
-        FunName = Parsed_Text[i]['Function']
-        
-        if FunName == 'CompoMacroSpaIdx':
-            
-            MacroVarName = Parsed_Text[i]['ParsedArgs']['MacroVarId']
-            #ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
-            ComponentId = '0'
-            RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
-            RelPos_Y = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Y']
-            RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
-
-            Index = GetIndexMacroVarsforCodeGen(MacroVarNames, CompoIdMacroVars, MacroVarName, ComponentId)
-            CodeMacroVars['GenCode'] = 'macroVars[OPS_ACC_MD1(' + str(Index) + ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
+            Index = 'VARIABLECOMPPOS[2 * ' +ComponentId+ '] + ' +MacroVarId
+            CodeMacroVars['GenCode'] = 'macroVars[OPS_ACC_MD1(' + Index + ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
 
         Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeMacroVars)
 
@@ -482,107 +351,15 @@ def GenCodeDistFun(Parsed_Text):
             RelPos_Y = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Y']
             RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
 
-            ComponentNumber = 'Component' + ComponentId
+            #ComponentNumber = 'Component' + ComponentId
+            Index = 'COMPOINDEX[2 *' + ComponentId + '] + ' + VeloId
+            CodeDistFun['GenCode'] = 'f[OPS_ACC_MD2(' +Index+ ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
             
-            if int(VeloId) >= 0 and int(VeloId) <= UserVarsCpp[ComponentNumber]['LattSize']:
-                Index = UserVarsCpp[ComponentNumber]['XiStart'] + int(VeloId)
-                CodeDistFun['GenCode'] = 'f[OPS_ACC_MD2(' + str(Index) + ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
-            else:
-                print '*************************************************************************'
-                print 'Xi index for component ', ComponentId, ' should be between 0 and ',UserVarsCpp[ComponentNumber]['LattSize']-1
-                print 'Cannot generate code for distribution function'
-                print '*************************************************************************'
-
         Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeDistFun)
 
 # End of function to gen code for distribution fun.
 #--------------------------------------------------------------
 
-
-#-------------------------------------------------------------------
-# Function to generate code for the Microscopic Dist Fun in the 
-# user defined function when user mentions range of component 
-# id and velocity id in the text file.
-#-------------------------------------------------------------------
-def GenCodeDistFunRange(Parsed_Text):
-
-    for i in range(0,len(Parsed_Text)):
-        
-        CodeDistFun = {}
-        FunName = Parsed_Text[i]['Function']
-        
-        if FunName == 'CompoVeloSpaIdx':
-            
-            ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
-            VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
-            RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
-            RelPos_Y = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Y']
-            RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
-
-            MinCompIdRangeSpecified, MaxCompIdRangeSpecified, ListCompIdExcluded = ParseRangeVariable(ComponentId)
-            MinVelIdRangeSpecified, MaxVelIdRangeSpecified, ListVelIdExcluded = ParseRangeVariable(VeloId)
-
-            #print MinCompIdRangeSpecified, MaxCompIdRangeSpecified, ListCompIdExcluded
-            # print MinVelIdRangeSpecified, MaxVelIdRangeSpecified, ListVelIdExcluded
-
-            Text = ''
-            Text += 'Real result;'  #Variable result will be used to store the calculated value and returned from C++ function.
-            Text += '\n'
-
-            if (ListCompIdExcluded == None):
-                Text += 'std::vector<int> CompIdsExcluded;'
-            else:
-                Text += 'std::vector<int> CompIdsExcluded{'
-                for itr in range(0, len(ListCompIdExcluded)):
-                    if(itr < len(ListCompIdExcluded)-1 ):
-                        Text = Text + ListCompIdExcluded[itr] + ','
-                    else:
-                        Text = Text + ListCompIdExcluded[itr] + '};'    
-
-            Text += '\n'
-
-            if (ListVelIdExcluded == None):
-               Text = Text + 'std::vector<int> VelIdsExcluded;' 
-            else:
-                Text = Text + 'std::vector<int> VelIdsExcluded{'
-                for itr in range(0, len(ListVelIdExcluded)):
-                    if(itr < len(ListVelIdExcluded)-1 ):
-                        Text = Text + ListVelIdExcluded[itr] + ','
-                    else:
-                        Text = Text + ListVelIdExcluded[itr] + '};' 
-
-            Text += '\n'
-
-            # For all cases we will receive Component ID and Velocity Id.
-            #Case 1: When there is one single component MinCompIdRangeSpecified = MaxCompIdRangeSpecified.
-            if (MinCompIdRangeSpecified == MaxCompIdRangeSpecified):
-                if (ListCompIdExcluded != None):
-                    print 'Since there is one single component, exclusions cannot be specified in component ID.'
-                    print 'Aborting code generation'
-                    sys.exit()
-                else:
-                    if (ListVelIdExcluded == None):
-                        Text += 'if(XiIdx >= ' + str(MinVelIdRangeSpecified) + ' && XiIdx <= ' + str(MaxVelIdRangeSpecified) + ')'
-                        Text += '\n{' #Curly brace for if starts (It will end after equation is generated).
-                        Text += '\n\tresult '
-                    else:
-                        Text += 'if(XiIdx >= ' + str(MinVelIdRangeSpecified) + ' && XiIdx <= ' + str(MaxVelIdRangeSpecified) + ')'
-                        Text += '\n{'
-                        Text += '\n\tif( find(VelIdsExcluded.begin(), VelIdsExcluded.end(), XiIdx ) == VelIdsExcluded.end() )'
-                        Text += '\n\t//Above if condition means element is  not in the list.'
-                        Text += '\n\t{'
-                        Text += '\n\t\tresult'   
-
-            #print Text
-            CodeDistFun['GenCode'] = Text
-            Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeDistFun)
-
-        #print 'For combining i used is = ',i
-        #Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeDistFun)
-
-
-# End of function to gen code for distribution fun.
-#--------------------------------------------------------------
 
 
 #----------------------------------------------------
@@ -604,55 +381,14 @@ def GenCodeWeights(Parsed_Text):
             ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
             VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
 
-            ComponentNumber = 'Component' + ComponentId
-            
-            if int(VeloId) >= 0 and int(VeloId) <= UserVarsCpp[ComponentNumber]['LattSize']:
-                Index = UserVarsCpp[ComponentNumber]['XiStart'] + int(VeloId)
-                CodeWeights['GenCode'] = 'WEIGHTS[' + str(Index) + ']'
-            else:
-                print '*************************************************************************'
-                print 'Xi index for component ', ComponentId, ' should be between 0 and ',UserVarsCpp[ComponentNumber]['LattSize']-1
-                print 'Cannot generate code for the Weights'
-                print '*************************************************************************'
+            Index = 'COMPOINDEX[2 *' + ComponentId + '] + ' + VeloId
+            CodeWeights['GenCode'] = 'WEIGHTS[' + Index+ ']'
 
         #print CodeWeights
         Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeWeights)
 
 # End of function to gen code for Weights.
 #--------------------------------------------------------------
-
-
-
-
-#----------------------------------------------------
-# Function to generate code for the Weights
-#----------------------------------------------------
-
-def GenCodeWeightsRange(Parsed_Text):
-    
-    for i in range(0, len(Parsed_Text)):
-        
-        CodeWeights = {}
-        FunName = Parsed_Text[i]['Function']
-        VariableName = Parsed_Text[i]['VarName']
-
-        if FunName == 'CompoVeloIdx' and VariableName=='':
-
-            #print 'Running code gen for weights'
-            
-            ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
-            VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
-
-            ComponentNumber = 'Component' + ComponentId
-            
-            CodeWeights['GenCode'] = 'WEIGHTS[XiIdx]'
-
-        #print CodeWeights
-        Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeWeights)
-
-# End of function to gen code for Weights.
-#--------------------------------------------------------------
-
 
 
 #----------------------------------------------------
@@ -677,28 +413,20 @@ def GenCodeXi(Parsed_Text):
             ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
             VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
             
-            ComponentNumber = 'Component' + ComponentId
-            
-            if int(VeloId) >= 0 and int(VeloId) <= UserVarsCpp[ComponentNumber]['LattSize']:
-                Index = UserVarsCpp[ComponentNumber]['XiStart'] + int(VeloId)
+            #ComponentNumber = 'Component' + ComponentId
+            Index = 'COMPOINDEX[2 *' + ComponentId + '] + ' + VeloId
 
-                if VariableName == 'Cx':    
-                    CodeXi['GenCode'] = 'XI[' + str(Index * SpaceDim) + ']'
+            if VariableName == 'Cx':    
+                CodeXi['GenCode'] = 'XI[ (' +Index+ ') * LATTDIM]'
                     
-                elif VariableName == 'Cy':    
-                    CodeXi['GenCode'] = 'XI[' + str(Index * SpaceDim + 1) + ']'
+            elif VariableName == 'Cy': 
+                CodeXi['GenCode'] = 'XI[ (' +Index+ ') * LATTDIM +1]'
 
-                elif VariableName == 'Cz':    
-                    CodeXi['GenCode'] = 'XI[' + str(Index * SpaceDim + 2) + ']'
-
-                else:
-                    print 'Micro Velocity Variable Name should be Cx, Cy or Cz.'
+            elif VariableName == 'Cz':    
+                CodeXi['GenCode'] = 'XI[ (' +Index+ ') * LATTDIM +2]'
 
             else:
-                print '*************************************************************************'
-                print 'Xi index for component ', ComponentId, ' should be between 0 and ',UserVarsCpp[ComponentNumber]['LattSize']-1
-                print 'Cannot generate code for the Weights'
-                print '*************************************************************************'
+                print 'Micro Velocity Variable Name should be Cx, Cy or Cz.'
 
         #print 'Hi',CodeXi
         Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeXi)
@@ -1012,7 +740,7 @@ def InsertUDFFunctionCall():
 
 
 
-FileName = 'Dist_fun_eqn_2.txt'
+FileName = 'Dist_eqn_3.txt'
 #FileName = 'equation3.txt'
 Text = ReadFile(FileName)[0]
 
@@ -1031,8 +759,8 @@ Text = Parse_Base_Exponents(Text)
 
 #print 'Starting to Parse information from User written file'
 #PlaceHolder = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars', 'Coord_']
-PlaceHolder = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars']
-
+#PlaceHolder = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars']
+PlaceHolder = ['Macro_Vars', 'Weights', 'Micro_Vel_', 'Dist']
 
 for String in PlaceHolder:
     Positions = FindPositionStringText(String, Text)
@@ -1084,10 +812,10 @@ for i in range(0, NumComponents):
 
 
 GenCodeCoordinates(Parsed_Text)
-GenCodeDistFunRange(Parsed_Text)
-GenCodeWeightsRange(Parsed_Text)
-GenCodeXiRange(Parsed_Text)
-GenCodeMacroVarsRange(Parsed_Text)
+GenCodeDistFun(Parsed_Text)
+GenCodeWeights(Parsed_Text)
+GenCodeXi(Parsed_Text)
+GenCodeMacroVars(Parsed_Text)
 
 # for Val in Parsed_Text:
 #     print Val
