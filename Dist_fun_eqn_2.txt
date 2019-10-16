@@ -1,5 +1,5 @@
-#Please enter the CPP file with main() function here.
-    CppFileName = lbm3d_hilemms.cpp;
+//Please enter the CPP file with main() function here.
+//    CppFileName = lbm3d_hilemms.cpp;
 
 Dist_f[CompoVeloSpaIdx({0:0}~{}, {0:18}~{}, 0,0,0)] =
 

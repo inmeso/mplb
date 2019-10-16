@@ -1094,6 +1094,7 @@ GenCodeMacroVarsRange(Parsed_Text)
 
 #Sorting the list according to the insertion position.
 Parsed_Text_Sorted = sorted(Parsed_Text, key=lambda k: k['StartPosTextInsert'])
+Translated_Text += Text[0:Parsed_Text_Sorted[0]['StartPosTextInsert']]
 
 for i in range(0, len(Parsed_Text_Sorted)):
     Translated_Text = Translated_Text + Parsed_Text_Sorted[i]['GenCode']
@@ -1114,6 +1115,7 @@ UDFFunction = CreateUDF(Translated_Text)
 FileToWrite = 'UDF_Function.cpp'
 WriteToFile(UDFFunction, FileToWrite)
 
+"""
 #UDF DECLRATION
 FiletoInserDeclUDF = 'model.h'
 UDFDecl = 'Real CalcUDFFeqNew(const int l, const Real* macroVars, const int polyOrder = 2);'
@@ -1128,7 +1130,7 @@ InsertTxtBeforeStringFile(FileToWriteUDFDefinition, UDFFunction, UDFDefInsertBef
 
 # UDF CALL
 InsertUDFFunctionCall()
-
+"""
 
 
 """

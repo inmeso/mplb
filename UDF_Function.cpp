@@ -1,5 +1,8 @@
 Real CalcUDFFeqNew (const int XiIdx, const Real* macroVars, const int polyOrder)
 {
+//Please enter the CPP file with main() function here.
+//    CppFileName = lbm3d_hilemms.cpp;
+
 Real result;
 std::vector<int> CompIdsExcluded;
 std::vector<int> VelIdsExcluded;
