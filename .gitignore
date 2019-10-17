@@ -16,6 +16,7 @@ lbm3d_dev_mpi
 3D_post_process.py
 plot.py
 mayavi_3D_post_process.py
+UDF_Function.cpp
 
 # Exlude eclipse files.
 /.cproject

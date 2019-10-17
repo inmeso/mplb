@@ -402,7 +402,6 @@ def GenCodeXi(Parsed_Text):
         
         CodeXi = {}
         FunName = Parsed_Text[i]['Function']
-        SpaceDim = int(UserVarsCpp['SpaceDim'])
         VariableName = Parsed_Text[i]['VarName']
 
         #print VariableName==''
@@ -478,61 +477,6 @@ def GenCodeXiRange(Parsed_Text):
 
 # End of function to gen code for Xi.
 #--------------------------------------------------------------
-
-
-#-----------------------------------------------------------------------------
-# Function to extract values from the user written 
-# CPP file (Eg.- lbm3d_hilemms 
-
-# FunName: function name which is constant as defined  by the iinterface.
-# ArgNum : Number of arguement whose value is to be found. Note: Argname 
-# might change and cannot be used directly. 
-#------------------------------------------------------------------------------
-def ParseCppFile(FileName, FunName, ArgNum):
-    ArgValue = []
-    CppText = ReadFile(FileName)[0]
-
-    FunCallStartPos =  FindPositionStringText(FunName, CppText)[0]
-   
-    FunParanthesisStart = CppText.find('(', FunCallStartPos)
-
-    FunParanthesisEnd = CppText.find(')', FunParanthesisStart)
-    FunArgs = CppText[FunParanthesisStart+1:FunParanthesisEnd].strip()
-
-    FunArgs = FunArgs.split(',')
-    NumArgsFun = len(FunArgs)
-        
-    for i in range(NumArgsFun):
-        FunArgs[i] = FunArgs[i].strip()
-
-    ArgNameFindValue = FunArgs[ArgNum]
-    ArgPosCppFile = FindPositionStringText(ArgNameFindValue, CppText)[0]
-    ArgValStart = CppText.find('{', ArgPosCppFile)
-    ArgValEnd = CppText.find('}', ArgValStart)
-    
-    if FunName == 'DefineComponents':
-        String = CppText[ArgValStart+1:ArgValEnd].replace('"','')
-        String = String.split(',')
-        for i in range(0,len(String)):
-            String[i] = String[i].strip()
-        ArgValue.append(String)
-
-    elif FunName == 'DefineMacroVars':
-        String = CppText[ArgValStart+1:ArgValEnd].replace('"','')
-        String = String.split(',')
-        for i in range(0,len(String)):
-            String[i] = String[i].strip()
-        ArgValue.append(String)
-
-    else:
-        ArgValue.append(CppText[ArgValStart+1:ArgValEnd])
-    #ArgValue[ArgNameFindValue] = CppText[ArgValStart+1:ArgValEnd]
-    
-    return ArgValue
-
-# End of function to parse cpp file.
-# ---------------------------------------------------
-
 
 
 #------------------------------------------------------------------
@@ -740,6 +684,9 @@ def InsertUDFFunctionCall():
 
 
 
+
+
+
 FileName = 'Dist_eqn_3.txt'
 #FileName = 'equation3.txt'
 Text = ReadFile(FileName)[0]
@@ -767,49 +714,6 @@ for String in PlaceHolder:
     ParseText(Text, Positions, String, Parsed_Text)
 #print 'File parsing complete'
 
-CppFileName = GetValueofVariable('CppFileName', Text)
-UserVarsCpp['SpaceDim'] = ParseCppFile(CppFileName, 'DefineCase', 1)[0]
-
-LatticeNames = ParseCppFile(CppFileName, 'DefineComponents', 2)[0]
-#print LatticeNames
-
-#Creating a dictionary of type C1:{LatNam:Val, Lattsize:Val}
-#Need this info to generate code.
-XiStart = 0
-for i in range(0,len(LatticeNames)):
-    CompDetails = {}
-    CompNum = 'Component' + str(i)
-    CompDetails['LattName'] = LatticeNames[i]
-    CompDetails['LattSize'] = int(LatticeNames[i][3:])
-    CompDetails['XiStart'] = XiStart
-    CompDetails['XiEnd'] = XiStart + int(CompDetails['LattSize']) - 1
-    XiStart = XiStart + int(CompDetails['LattSize'])
-    UserVarsCpp[CompNum] = CompDetails
-
-
-CompoIdMacroVars = ParseCppFile(CppFileName, 'DefineMacroVars', 3)[0]
-NumComponents = len(LatticeNames)
-
-MacroVarNames = ParseCppFile(CppFileName, 'DefineMacroVars', 1)[0]
-#print MacroVarNames, CompoIdMacroVars
-
-# Counting the starting and ending position of macroscopic variable of 
-# each component. 
-MacroVarStartPos = 0
-for i in range(0, NumComponents):
-    NumMacroVarsComp = 0
-
-    for idx in range(0, len(CompoIdMacroVars)):
-        if i == int(CompoIdMacroVars[idx]):
-            NumMacroVarsComp += 1
-
-    MacroVarEndPos = MacroVarStartPos + NumMacroVarsComp -1
-    CompNum = 'Component' + str(i)
-    UserVarsCpp[CompNum]['MacroStartPos'] = MacroVarStartPos
-    UserVarsCpp[CompNum]['MacroEndPos'] = MacroVarEndPos
-    MacroVarStartPos = MacroVarEndPos + 1
-
-
 
 GenCodeCoordinates(Parsed_Text)
 GenCodeDistFun(Parsed_Text)
@@ -834,7 +738,7 @@ for i in range(0, len(Parsed_Text_Sorted)):
     else:
         Translated_Text += Text[Start_Pos_Copy_Text :]
 
-Translated_Text += '\n}' 
+#Translated_Text += '\n}' 
 UDFFunction = CreateUDF(Translated_Text)
 
 # FileToWrite = 'UDF_Translated.cpp'

@@ -1,40 +1,40 @@
 //Please enter the CPP file with main() function here.
 //    CppFileName = lbm3d_hilemms.cpp;
 
-for(XiIdx =0; XiIdx<=18; XiIdx++ )
+for(int XiIndex =0; XiIndex<=18; XiIndex++ )
 {
 
-Dist_f[CompoVeloSpaIdx(0,XiIdx,0,0,0)] =
+Dist_f[CompoVeloSpaIdx(0,XiIndex,0,0,0)] =
 
-        Weights[CompoVeloIdx(0,XiIdx)] * Macro_Vars[CompoMacroSpaIdx(0,0, 0,0,0)]*
+        Weights[CompoVeloIdx(0,XiIndex)] * Macro_Vars[CompoMacroSpaIdx(0,0, 0,0,0)]*
     (
         1.0 +
 
         {3}^{0.5} * 
                     ( 
-                        Micro_Vel_Cx[CompoVeloIdx(0,XiIdx)] * Macro_Vars[CompoMacroSpaIdx(0, 1, 0,0,0)] +
+                        Micro_Vel_Cx[CompoVeloIdx(0,XiIndex)] * Macro_Vars[CompoMacroSpaIdx(0, 1, 0,0,0)] +
 
-                        Micro_Vel_Cy[CompoVeloIdx(0,XiIdx)] * Macro_Vars[CompoMacroSpaIdx(0, 2, 0,0,0)] +
+                        Micro_Vel_Cy[CompoVeloIdx(0,XiIndex)] * Macro_Vars[CompoMacroSpaIdx(0, 2, 0,0,0)] +
 
-                        Micro_Vel_Cz[CompoVeloIdx(0,XiIdx)] * Macro_Vars[CompoMacroSpaIdx(0, 3, 0,0,0)]
+                        Micro_Vel_Cz[CompoVeloIdx(0,XiIndex)] * Macro_Vars[CompoMacroSpaIdx(0, 3, 0,0,0)]
 
                     ) +
 
         1.5 *
                     (
-                        Micro_Vel_Cx[CompoVeloIdx(0,XiIdx)] * Macro_Vars[CompoMacroSpaIdx(0, 1, 0,0,0)] +
+                        Micro_Vel_Cx[CompoVeloIdx(0,XiIndex)] * Macro_Vars[CompoMacroSpaIdx(0, 1, 0,0,0)] +
 
-                        Micro_Vel_Cy[CompoVeloIdx(0,XiIdx)] * Macro_Vars[CompoMacroSpaIdx(0, 2, 0,0,0)] +
+                        Micro_Vel_Cy[CompoVeloIdx(0,XiIndex)] * Macro_Vars[CompoMacroSpaIdx(0, 2, 0,0,0)] +
 
-                        Micro_Vel_Cz[CompoVeloIdx(0,XiIdx)] * Macro_Vars[CompoMacroSpaIdx(0, 3, 0,0,0)]
+                        Micro_Vel_Cz[CompoVeloIdx(0,XiIndex)] * Macro_Vars[CompoMacroSpaIdx(0, 3, 0,0,0)]
                     ) *
 
                     (
-                        Micro_Vel_Cx[CompoVeloIdx(0,XiIdx)] * Macro_Vars[CompoMacroSpaIdx(0, 1, 0,0,0)] +
+                        Micro_Vel_Cx[CompoVeloIdx(0,XiIndex)] * Macro_Vars[CompoMacroSpaIdx(0, 1, 0,0,0)] +
 
-                        Micro_Vel_Cy[CompoVeloIdx(0,XiIdx)] * Macro_Vars[CompoMacroSpaIdx(0, 2, 0,0,0)] +
+                        Micro_Vel_Cy[CompoVeloIdx(0,XiIndex)] * Macro_Vars[CompoMacroSpaIdx(0, 2, 0,0,0)] +
 
-                        Micro_Vel_Cz[CompoVeloIdx(0,XiIdx)] * Macro_Vars[CompoMacroSpaIdx(0, 3, 0,0,0)]
+                        Micro_Vel_Cz[CompoVeloIdx(0,XiIndex)] * Macro_Vars[CompoMacroSpaIdx(0, 3, 0,0,0)]
                     ) -
 
         0.5 *
