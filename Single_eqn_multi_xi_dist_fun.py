@@ -9,9 +9,6 @@ number of equation is just one and only alpha varies.
 import re
 import glob
 import sys
-#from User_defined_function import *
-#import User_defined_function as Udf
-
 
 
 #------------------------------------------------------------------
@@ -56,12 +53,20 @@ def ReadFile(fileName):
 
 
 
+#-----------------------------------------------------------------
+# Function to write the contents to a file.
+#-----------------------------------------------------------------
 def WriteToFile(text, fileName):
     file = open(fileName, 'w')
     file.write(text)
     file.close()
+#-----------------------------------------------------------------
 
 
+
+#-----------------------------------------------------------------
+# Function to find the position of string in the text.
+#-----------------------------------------------------------------
 def FindPositionStringText(String, Text):
 
     position = []
@@ -79,10 +84,12 @@ def FindPositionStringText(String, Text):
         #print 'Multiple ',String,' found in the text at positions',position
         return position
 
-    #elif(numMatched==1):
-        #print String,' found in the text at position',position
-    #    return position
+    elif (numMatched == 0):
+        position = None
+        
+
 #End of FindPositionStringText
+#-----------------------------------------------------------------
 
 
 def Comment(line,Translated_Text):
@@ -149,6 +156,8 @@ def CheckNumArgs(FunctionName, ArgsGiven):
         print 'SpaIdx expects 3 Arguements but supplied =', ArgsGiven 
 
 # End of routine to check number of arguements.
+#----------------------------------------------------------
+
 
 
 #----------------------------------------------------------
@@ -184,6 +193,7 @@ def ParseArguements(FunName, Args):
 
     return ArgDic
 #End of function to parse arguements.
+#----------------------------------------------------------
 
 
 #----------------------------------------------------------
@@ -688,7 +698,6 @@ def InsertUDFFunctionCall():
 
 
 FileName = 'Dist_eqn_3.txt'
-#FileName = 'equation3.txt'
 Text = ReadFile(FileName)[0]
 
 #Parsed Text is the one where we are collecting information from user written file.
@@ -705,13 +714,14 @@ Translated_Text = ''
 Text = Parse_Base_Exponents(Text)
 
 #print 'Starting to Parse information from User written file'
-#PlaceHolder = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars', 'Coord_']
-#PlaceHolder = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars']
-PlaceHolder = ['Macro_Vars', 'Weights', 'Micro_Vel_', 'Dist']
+AllVariableTypesEqn = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars', 'Coord_']
 
-for String in PlaceHolder:
-    Positions = FindPositionStringText(String, Text)
-    ParseText(Text, Positions, String, Parsed_Text)
+for VariableType in AllVariableTypesEqn:
+    Positions = FindPositionStringText(VariableType, Text)
+
+    #Parse code only if a particular variable type is found in the text.
+    if Positions != None:
+        ParseText(Text, Positions, VariableType, Parsed_Text)
 #print 'File parsing complete'
 
 
