@@ -365,24 +365,110 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
             switch (equilibriumType) {
                 case Equilibrium_BGKIsothermal2nd: {
-                    Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
-                    Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
-                    Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
-                    Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
-                    const Real T{1};
-                    const int polyOrder{2};
-                    for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                        const Real res{
-                           CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
-                        feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] = res;
+                    // Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
+                    // Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
+                    // Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
+                    // Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
+                    // const Real T{1};
+                    // const int polyOrder{2};
+                    // for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                    //      xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                    //     const Real res{
+                    //        CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
+                    //     feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] = res;
+                    //printf("\n Hello");
+                    Real res;
+                    for (int XiIndex = 0; XiIndex <= 18; XiIndex++) {
+                        feq[OPS_ACC_MD2(COMPOINDEX[2 * 0] + XiIndex, 0, 0, 0)] =
+
+                            WEIGHTS[COMPOINDEX[2 * 0] + XiIndex] *
+                            macroVars[OPS_ACC_MD1(VARIABLECOMPPOS[2 * 0] + 0, 0,
+                                                  0, 0)] *
+                            (1.0 +
+
+                             pow(3, 0.5) *
+                                 (XI[(COMPOINDEX[2 * 0] + XiIndex) * LATTDIM] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 1, 0, 0,
+                                          0)] +
+
+                                  XI[(COMPOINDEX[2 * 0] + XiIndex) * LATTDIM +
+                                     1] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 2, 0, 0,
+                                          0)] +
+
+                                  XI[(COMPOINDEX[2 * 0] + XiIndex) * LATTDIM +
+                                     2] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 3, 0, 0, 0)]
+
+                                  ) +
+
+                             1.5 *
+                                 (XI[(COMPOINDEX[2 * 0] + XiIndex) * LATTDIM] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 1, 0, 0,
+                                          0)] +
+
+                                  XI[(COMPOINDEX[2 * 0] + XiIndex) * LATTDIM +
+                                     1] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 2, 0, 0,
+                                          0)] +
+
+                                  XI[(COMPOINDEX[2 * 0] + XiIndex) * LATTDIM +
+                                     2] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 3, 0, 0,
+                                          0)]) *
+
+                                 (XI[(COMPOINDEX[2 * 0] + XiIndex) * LATTDIM] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 1, 0, 0,
+                                          0)] +
+
+                                  XI[(COMPOINDEX[2 * 0] + XiIndex) * LATTDIM +
+                                     1] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 2, 0, 0,
+                                          0)] +
+
+                                  XI[(COMPOINDEX[2 * 0] + XiIndex) * LATTDIM +
+                                     2] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 3, 0, 0,
+                                          0)]) -
+
+                             0.5 *
+                                 (macroVars[OPS_ACC_MD1(
+                                      VARIABLECOMPPOS[2 * 0] + 1, 0, 0, 0)] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 1, 0, 0,
+                                          0)] +
+
+                                  macroVars[OPS_ACC_MD1(
+                                      VARIABLECOMPPOS[2 * 0] + 2, 0, 0, 0)] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 2, 0, 0,
+                                          0)] +
+
+                                  macroVars[OPS_ACC_MD1(
+                                      VARIABLECOMPPOS[2 * 0] + 3, 0, 0, 0)] *
+                                      macroVars[OPS_ACC_MD1(
+                                          VARIABLECOMPPOS[2 * 0] + 3, 0, 0, 0)])
+
+                            );
+
+                        res = feq[OPS_ACC_MD2(COMPOINDEX[2 * 0] + XiIndex, 0, 0,
+                                              0)];
 #ifdef CPU
                         if (isnan(res) || res <= 0 || isinf(res)) {
                             ops_printf(
                                 "Error! Equilibrium function %f becomes "
                                 "invalid for the component %i at the lattice "
                                 "%i\n",
-                                res, compoIndex, xiIndex);
+                                res, compoIndex, XiIndex);
                             assert(!(isnan(res) || res <= 0 || isinf(res)));
                         }
 #endif
@@ -412,7 +498,7 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
 #endif
                     }
 
-                } break;
+                } break; 
                 default:
 #ifdef CPU
                     ops_printf(
