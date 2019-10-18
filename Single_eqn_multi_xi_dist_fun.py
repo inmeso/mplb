@@ -205,6 +205,10 @@ def ParseText(Text, Positions, TypeVar, TextAfterParsing):
     for pos in Positions:
         Item = {}
 
+        #Storing the type of variables.
+        # Used to distinguish Force_ type and Dist_ type. 
+        Item['VarType'] = TypeVar
+
         #Which type of variable to search for such as 
         #Dist_f, Weights, Micro_Vel_, Macro_Vars.
         VarNameStartPos = pos + len(TypeVar)
@@ -352,8 +356,9 @@ def GenCodeDistFun(Parsed_Text):
         
         CodeDistFun = {}
         FunName = Parsed_Text[i]['Function']
+        VariableType = Parsed_Text[i]['VarType']
         
-        if FunName == 'CompoVeloSpaIdx':
+        if FunName == 'CompoVeloSpaIdx' and VariableType =='Dist_':
             
             ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
             VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
@@ -368,6 +373,38 @@ def GenCodeDistFun(Parsed_Text):
         Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeDistFun)
 
 # End of function to gen code for distribution fun.
+#--------------------------------------------------------------
+
+
+
+#----------------------------------------------------
+# Function to generate code for the Force type 
+# Variable in the user defined function.
+#----------------------------------------------------
+
+def GenCodeForce(Parsed_Text):
+
+    for i in range(0,len(Parsed_Text)):
+        
+        CodeDistFun = {}
+        FunName = Parsed_Text[i]['Function']
+        VariableType = Parsed_Text[i]['VarType']
+        
+        if FunName == 'CompoVeloSpaIdx' and VariableType =='Force_':
+            
+            ComponentId = Parsed_Text[i]['ParsedArgs']['CompoId']
+            VeloId = Parsed_Text[i]['ParsedArgs']['VeloId']
+            RelPos_X = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_X']
+            RelPos_Y = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Y']
+            RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
+
+            #ComponentNumber = 'Component' + ComponentId
+            Index = 'COMPOINDEX[2 *' + ComponentId + '] + ' + VeloId
+            CodeDistFun['GenCode'] = 'bodyForce[OPS_ACC_MD4(' +Index+ ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
+            
+        Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeDistFun)
+
+# End of function to gen code for the Force type variable.
 #--------------------------------------------------------------
 
 
@@ -697,7 +734,8 @@ def InsertUDFFunctionCall():
 
 
 
-FileName = 'Dist_eqn_3.txt'
+#FileName = 'Dist_eqn_3.txt'
+FileName = 'Body_force.txt'
 Text = ReadFile(FileName)[0]
 
 #Parsed Text is the one where we are collecting information from user written file.
@@ -714,7 +752,7 @@ Translated_Text = ''
 Text = Parse_Base_Exponents(Text)
 
 #print 'Starting to Parse information from User written file'
-AllVariableTypesEqn = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars', 'Coord_']
+AllVariableTypesEqn = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars', 'Coord_', 'Force_']
 
 for VariableType in AllVariableTypesEqn:
     Positions = FindPositionStringText(VariableType, Text)
@@ -730,6 +768,7 @@ GenCodeDistFun(Parsed_Text)
 GenCodeWeights(Parsed_Text)
 GenCodeXi(Parsed_Text)
 GenCodeMacroVars(Parsed_Text)
+GenCodeForce(Parsed_Text)
 
 # for Val in Parsed_Text:
 #     print Val
