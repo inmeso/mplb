@@ -34,5 +34,8 @@ lbm2d_hilemms_solid_body_dev_seq
 lbm2d_hilemms_solid_body_dev_mpi
 __pycache__/
 
-
-
+Input_eqns/
+Body_force.txt
+Dist_eqn_3.txt
+Dist_fun_eqn_2.txt
+Dist_func_eqn.txt

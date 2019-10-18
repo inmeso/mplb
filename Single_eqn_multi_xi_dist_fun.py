@@ -831,7 +831,7 @@ FileToWrite = 'UDF_Function.cpp'
 WriteToFile(UDFFunction, FileToWrite)
 
 #print UDFFunction
-#InsertTranslatedBodyForceEqn(UDFFunction)
+InsertTranslatedBodyForceEqn(UDFFunction)
 
 """
 #UDF DECLRATION

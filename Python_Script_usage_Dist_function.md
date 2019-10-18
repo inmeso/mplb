@@ -542,3 +542,65 @@ To Do: Task to insert the code at appropriate place by python code has to be don
 
 
 # 4. Body Force 1st Order (Code Generation and Insertion)
+
+Consider an example where a user gives an equation to calculate the first order body force term. Our aim is to translate and insert the equation into the MPLB code. 
+
+As an example, consider that the user gives the following equation.
+
+####  INPUT
+
+```C++
+Real acceleration[]{0.0001, 0, 0};
+
+Real g_dot_c{0.0};
+
+for(int XiIndex =0; XiIndex<=18; XiIndex++ )
+{
+    g_dot_c = acceleration[0] * Micro_Vel_Cx[CompoVeloIdx(0,XiIndex)] +
+
+              acceleration[1] * Micro_Vel_Cy[CompoVeloIdx(0,XiIndex)] +
+
+              acceleration[2] * Micro_Vel_Cz[CompoVeloIdx(0,XiIndex)];
+
+
+Force_BodyForce[CompoVeloSpaIdx(0,XiIndex,0,0,0)] =  
+			                Weights[CompoVeloIdx(0,XiIndex)] * 
+                            Macro_Vars[CompoMacroSpaIdx(0,0, 0,0,0)] *
+                            g_dot_c; 
+
+            
+}
+```
+
+
+
+After running the python script, we get the following output.
+
+#### OUTPUT
+
+```C++
+{
+ Real acceleration[]{0.0001, 0, 0};
+
+ Real g_dot_c{0.0};
+
+ for(int XiIndex =0; XiIndex<=18; XiIndex++ )
+ {
+    g_dot_c = acceleration[0] * XI[ (COMPOINDEX[2 *0] + XiIndex) * LATTDIM] * CS +
+
+              acceleration[1] * XI[ (COMPOINDEX[2 *0] + XiIndex) * LATTDIM +1] * CS +
+
+              acceleration[2] * XI[ (COMPOINDEX[2 *0] + XiIndex) * LATTDIM +2] * CS;
+
+
+	bodyForce[OPS_ACC_MD4(COMPOINDEX[2 *0] + XiIndex,0,0,0)] =  
+    						WEIGHTS[COMPOINDEX[2 *0] + XiIndex] * 
+                            macroVars[OPS_ACC_MD3(VARIABLECOMPPOS[2 * 0] + 0,0,0,0)] *
+                            g_dot_c; 
+          
+ }
+}
+```
+
+
+
