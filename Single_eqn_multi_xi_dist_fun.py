@@ -336,7 +336,7 @@ def GenCodeMacroVars(Parsed_Text):
             RelPos_Z = Parsed_Text[i]['ParsedArgs']['RelSpaIdx_Z']
 
             Index = 'VARIABLECOMPPOS[2 * ' +ComponentId+ '] + ' +MacroVarId
-            CodeMacroVars['GenCode'] = 'macroVars[OPS_ACC_MD1(' + Index + ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
+            CodeMacroVars['GenCode'] = 'macroVars[OPS_ACC_MD3(' + Index + ',' + RelPos_X + ',' + RelPos_Y + ',' + RelPos_Z + ')]'
 
         Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeMacroVars)
 
@@ -664,10 +664,11 @@ def ReplaceDistFunNewUdf(oldDistFunction, text, fileName):
 #-------------------------------------------------------------------------
 
 def CreateUDF(Text):
-    UDFFunction = 'Real CalcUDFFeqNew (const int XiIdx, const Real* macroVars, const int polyOrder)'
+    UDFFunction = ''
+    #UDFFunction = 'Real CalcUDFFeqNew (const int XiIdx, const Real* macroVars, const int polyOrder)'
     UDFFunction += '\n{\n'
     UDFFunction += Text
-    UDFFunction += '\nreturn result;\n' 
+    #UDFFunction += '\nreturn result;\n' 
     UDFFunction += '\n}'  #End of function definition.  
     return (UDFFunction)
 
@@ -696,7 +697,7 @@ def InsertTxtBeforeStringFile(FileName, TextToInsert, RefString):
 
 
 #-------------------------------------------------------------
-# Warpper Function to insert UDF function call at 
+# Wrapper Function to insert UDF function call at 
 # appropriate places in all kernel files.
 #-------------------------------------------------------------
 
@@ -731,7 +732,30 @@ def InsertUDFFunctionCall():
 
 
 
+#-------------------------------------------------------------
+# Function to insert body force translated equation into 
+# model_kernel.h.
+#-------------------------------------------------------------
 
+def InsertTranslatedBodyForceEqn(TranslatedEqn):
+    FileToInsert = 'model_kernel.h'
+    Text = ReadFile(FileToInsert)[0]
+
+    StringPos = FindPositionStringText('BodyForce_1st', Text)[0]
+    
+    StartPosTextInsert = Text.find(':', StringPos)
+    StartPosTextInsert += 1
+    EndPosTextInsert = Text.find('break', StartPosTextInsert)    
+
+    #print Text[StartPosTextInsert:EndPosTextInsert]
+    TextToWrite = Text[0:StartPosTextInsert]
+    TextToWrite += TranslatedEqn
+    TextToWrite += Text[EndPosTextInsert:]
+
+    WriteToFile(TextToWrite,'Temp.cpp')
+
+# End of function to insert body force equation.
+#----------------------------------------------------------------------------------
 
 
 #FileName = 'Dist_eqn_3.txt'
@@ -795,6 +819,9 @@ UDFFunction = CreateUDF(Translated_Text)
 
 FileToWrite = 'UDF_Function.cpp'
 WriteToFile(UDFFunction, FileToWrite)
+
+#print UDFFunction
+InsertTranslatedBodyForceEqn(UDFFunction)
 
 """
 #UDF DECLRATION
