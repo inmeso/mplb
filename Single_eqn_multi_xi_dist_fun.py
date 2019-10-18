@@ -474,6 +474,9 @@ def GenCodeXi(Parsed_Text):
             else:
                 print 'Micro Velocity Variable Name should be Cx, Cy or Cz.'
 
+            if ForceTypeVarExists == True:
+                CodeXi['GenCode'] += ' * CS'
+            
         #print 'Hi',CodeXi
         Parsed_Text[i] = merge_two_dicts(Parsed_Text[i], CodeXi)
 
@@ -752,7 +755,7 @@ def InsertTranslatedBodyForceEqn(TranslatedEqn):
     TextToWrite += TranslatedEqn
     TextToWrite += Text[EndPosTextInsert:]
 
-    WriteToFile(TextToWrite,'Temp.cpp')
+    WriteToFile(TextToWrite,FileToInsert)
 
 # End of function to insert body force equation.
 #----------------------------------------------------------------------------------
@@ -778,8 +781,15 @@ Text = Parse_Base_Exponents(Text)
 #print 'Starting to Parse information from User written file'
 AllVariableTypesEqn = ['Dist_', 'Micro_Vel_', 'Weights', 'Macro_Vars', 'Coord_', 'Force_']
 
+#This boolean value will be used to insert sound speed into the equation 
+# Now the code generated for Xi will lool like : CS * XI[alpha].
+ForceTypeVarExists = False
+
 for VariableType in AllVariableTypesEqn:
     Positions = FindPositionStringText(VariableType, Text)
+
+    if VariableType == 'Force_' and Positions != None:
+        ForceTypeVarExists = True
 
     #Parse code only if a particular variable type is found in the text.
     if Positions != None:
@@ -821,7 +831,7 @@ FileToWrite = 'UDF_Function.cpp'
 WriteToFile(UDFFunction, FileToWrite)
 
 #print UDFFunction
-InsertTranslatedBodyForceEqn(UDFFunction)
+#InsertTranslatedBodyForceEqn(UDFFunction)
 
 """
 #UDF DECLRATION

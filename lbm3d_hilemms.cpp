@@ -48,7 +48,7 @@ void simulate() {
     std::vector<int> equCompoId{0};
     DefineEquilibrium(equTypes, equCompoId);
 
-    std::vector<BodyForceType> bodyForceTypes{BodyForce_None};
+    std::vector<BodyForceType> bodyForceTypes{BodyForce_1st};
     std::vector<int> bodyForceCompoId{0};
     DefineBodyForce(bodyForceTypes, bodyForceCompoId);
 
