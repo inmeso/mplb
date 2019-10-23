@@ -181,16 +181,16 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
                             "double", OPS_RW));
         } break;
         case Vertex_KineticDiffuseWall: {
-            ops_par_loop(
-                KerCutCellKinetic, "KerCutCellKinetic", g_Block[blockIndex],
-                SPACEDIM, range,
-                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                            OPS_READ),
-                ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
-                            "int", OPS_READ),
-                ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
-                            OPS_RW));
+            // ops_par_loop(
+            //     KerCutCellKinetic, "KerCutCellKinetic", g_Block[blockIndex],
+            //     SPACEDIM, range,
+            //     ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
+            //     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+            //                 OPS_READ),
+            //     ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+            //                 "int", OPS_READ),
+            //     ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
+            //                 OPS_RW));
         }
         case Vertex_EQMDiffuseRefl: {
             ops_par_loop(
@@ -400,13 +400,14 @@ void StreamCollision() {
     ImplementBoundaryConditions();
 }
 
-void TimeMarching() {
-    UpdateMacroVars();
-    UpdateFeqandBodyforce();
-    UpdateTau();
-    ForwardEuler();
-    //ops_halo_transfer(HaloGroups);
-    ImplementBoundary();
-}
+// TODO Will implememt later.
+// void TimeMarching() {
+//     UpdateMacroVars();
+//     UpdateFeqandBodyforce();
+//     UpdateTau();
+//     ForwardEuler();
+//     //ops_halo_transfer(HaloGroups);
+//     ImplementBoundary();
+// }
 
 #endif /* OPS_2D */

@@ -1,6 +1,34 @@
-// Copyright 2017 the MPLB team. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
+ *
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+*/
 
 /*! @brief Define discrete model
  *  @author Jianping Meng
@@ -49,7 +77,7 @@ lattice d2q36{2, 36, 1};
 std::map<std::string, lattice> latticeSet{
     {"d2q9", d2q9}, {"d3q19", d3q19}, {"d3q15", d3q15}, {"d2q36", d2q36}};
 
-// Find the particles with opposite directions, for the bounce-back boundary
+// Find particles with opposite directions, for bounce-back type boundary
 // Brute-force method, could be slow for large lattice
 void FindReverseXi(const int startPos, const int latticeSize) {
     for (int i = 0; i < latticeSize; i++) {
@@ -125,6 +153,7 @@ void SetupD3Q15Latt(const int startPos) {
 }
 
 void SetupD2Q16Latt(const int startPos) {
+    //Gauss-Hermite quadrature from the fourth order polynomial
     const int nc16{16};
     const int nc1d{4};
     const Real roots[nc1d] = {-2.3344142183389773, -0.7419637843027259,
@@ -144,6 +173,7 @@ void SetupD2Q16Latt(const int startPos) {
 }
 
 void SetupD2Q36Latt(const int startPos) {
+    //Gauss-Hermite quadrature from the sixth order polynomial
     const int nc36{36};
     const int nc1d{6};
     const Real roots[nc1d] = {-0.3324257433552119e1, -0.1889175877753711e1,
@@ -164,39 +194,6 @@ void SetupD2Q36Latt(const int startPos) {
     FindReverseXi(startPos, nc36);
 }
 
-/*!
- * Example for 2D isothermal flows
- * Note:
- * This can become automatic by using an input file
- */
-void SetupMacroVars() {
-    // rho,u,v,w,T m, macroscopic  variables must be stored in a specific order
-    NUMMACROVAR = 3;
-    VARIABLETYPE = new int[NUMMACROVAR];
-    VARIABLETYPE[0] = (int)Variable_Rho;
-    VARIABLETYPE[1] = (int)Variable_U;
-    VARIABLETYPE[2] = (int)Variable_V;
-    // VARIABLETYPE[3] = (int)Variable_W;
-    // VARIABLETYPE[3] = (int)Variable_T;
-    // VARIABLETYPE[4] = (int)Variable_Qx;
-    // VARIABLETYPE[5] = (int)Variable_Qy;
-    VARIABLECOMPINDEX = new int[NUMMACROVAR];
-    VARIABLECOMPINDEX[0] = 0;
-    VARIABLECOMPINDEX[1] = 0;
-    VARIABLECOMPINDEX[2] = 0;
-    // VARIABLECOMPINDEX[3] = 0;
-    // VARIABLECOMPINDEX[3] = 0;
-    // VARIABLECOMPINDEX[4] = 0;
-    // VARIABLECOMPINDEX[5] = 0;
-    MACROVARNAME.reserve(NUMMACROVAR);
-    MACROVARNAME.push_back("h");
-    MACROVARNAME.push_back("u");
-    MACROVARNAME.push_back("v");
-    // MACROVARNAME.push_back("w");
-    // MACROVARNAME.push_back("T");
-    // MACROVARNAME.push_back("qx");
-    // MACROVARNAME.push_back("qy");
-}
 
 void AllocateComponentIndex(const int compoNum) {
     if (compoNum == NUMCOMPONENTS) {
@@ -511,6 +508,9 @@ Real CalcBGKFeq(const int l, const Real rho, const Real u, const Real v,
 
 Real CalcSWEFeq(const int l, const Real h, const Real u, const Real v,
                 const int polyOrder) {
+    // Implementing the model derived in Please refer to Meng, Gu Emerson, Peng
+    // and Zhang, IJMPC 2018(29):1850080
+
     Real cu{(CS * XI[l * LATTDIM] * u + CS * XI[l * LATTDIM + 1] * v)};
     Real c2{(CS * XI[l * LATTDIM] * CS * XI[l * LATTDIM] +
              CS * XI[l * LATTDIM + 1] * CS * XI[l * LATTDIM + 1])};
@@ -533,7 +533,7 @@ Real CalcSWEFeq(const int l, const Real h, const Real u, const Real v,
     return WEIGHTS[l] * h * res;
 }
 
-void SetLatticeName(const std::vector<std::string> latticeName) {
+void SetLatticeName(const std::vector<std::string> &latticeName) {
     LATTICENAME = latticeName;
 }
 const std::vector<std::string> LatticeName() { return LATTICENAME; }

@@ -69,7 +69,7 @@ void simulate() {
     std::vector<int> equCompoId{0};
     DefineEquilibrium(equTypes, equCompoId);
 
-    std::vector<BodyForceType> bodyForceTypes{BodyForce_None};
+    std::vector<BodyForceType> bodyForceTypes{BodyForce_1st};
     std::vector<int> bodyForceCompoId{0};
     DefineBodyForce(bodyForceTypes, bodyForceCompoId);
 
@@ -109,8 +109,8 @@ void simulate() {
                         noSlipStationaryWall);
 
     int blockNum{1};
-    std::vector<int> blockSize{33, 33, 33};
-    Real meshSize{1. / 32};
+    std::vector<int> blockSize{11, 11, 11};
+    Real meshSize{1. / 10};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
     DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
 

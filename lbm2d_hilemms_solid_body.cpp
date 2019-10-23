@@ -48,18 +48,6 @@
 #include "setup_comput_domain.h"
 #include "type.h"
 
-// Code_modification needed
-// Currently defining OPS 3d here. We need some mechanism to generate this
-// automatically.
-extern int HALODEPTH;
-
-BoundarySurface surface[4] = {BoundarySurface_Left, BoundarySurface_Right, BoundarySurface_Top,
-                              BoundarySurface_Bottom};
-
-BoundaryType boundType[4] = {
-    BoundaryType_EQMDiffuseRefl, BoundaryType_ExtrapolPressure1ST,
-    BoundaryType_EQMDiffuseRefl, BoundaryType_EQMDiffuseRefl};
-
 void simulate() {
     std::string caseName{"Flow_past_2_cylinders_and_ellipse"};
     int spaceDim{2};
@@ -81,27 +69,30 @@ void simulate() {
     std::vector<int> equCompoId{0};
     DefineEquilibrium(equTypes, equCompoId);
 
-    SetupScheme();
-    SetupBoundary();
+    SchemeType scheme{Scheme_StreamCollision};
+    DefineScheme(scheme);
+    
+    //SetupScheme();
+    //SetupBoundary();
 
     int blockIndex{0};
     int componentId{0};
     std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,
                                              Variable_V};
     std::vector<Real> inletValMacroVarsComp{1, 0.05, 0};
-    DefineBlockBoundary(blockIndex, componentId, surface[0], boundType[0],
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Left, BoundaryType_EQMDiffuseRefl,
                         MacroVarsComp, inletValMacroVarsComp);
 
     std::vector<Real> outletValMacroVarsComp{1, 0, 0};
-    DefineBlockBoundary(blockIndex, componentId, surface[1], boundType[1],
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Right, BoundaryType_EQMDiffuseRefl,
                         MacroVarsComp, outletValMacroVarsComp);
 
     std::vector<Real> topValMacroVarsComp{1, 0.01, 0};
-    DefineBlockBoundary(blockIndex, componentId, surface[2], boundType[2],
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Top, BoundaryType_EQMDiffuseRefl,
                         MacroVarsComp, topValMacroVarsComp);
 
     std::vector<Real> bottomValMacroVarsComp{1, 0, 0};
-    DefineBlockBoundary(blockIndex, componentId, surface[3], boundType[3],
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Bottom, BoundaryType_EQMDiffuseRefl,
                         MacroVarsComp, bottomValMacroVarsComp);
     ops_printf("Block boundary defined!\n");
 
@@ -114,56 +105,50 @@ void simulate() {
     //int blockIndex{0};
     //SetupGeomPropAndNodeType(blockIndex, boundType);
 
-    int compoIdInitialCond{0};
-    std::vector<Real> initialMacroValues{1, 0, 0};
-    DefineInitialCondition(blockIndex, compoIdInitialCond, initialMacroValues);
-    ops_printf("%s\n", "Flowfield is Initialised now!");
+    // int compoIdInitialCond{0};
+    // std::vector<Real> initialMacroValues{1, 0, 0};
+    // DefineInitialCondition(blockIndex, compoIdInitialCond, initialMacroValues);
 
-    std::vector<Real> tauRef{0.001};
+    DefineInitialCondition();
+    ops_printf("%s\n", "Flowfield is Initialised now!");
+    
+
+    // std::vector<Real> tauRef{0.001};
+    // SetTauRef(tauRef);
+    // SetTimeStep(meshSize / SoundSpeed());
+
+    std::vector<Real> tauRef{0.01};
     SetTauRef(tauRef);
 
     SetTimeStep(meshSize / SoundSpeed());
 
-    // HALODEPTH = HaloPtNum();
-    // ops_printf("%s\n", "Starting to allocate...");
-    // DefineHaloTransfer();
-    // // above calls must be before the ops_partition call.
-    // //ops_partition((char*)"LBM");
-    // ops_printf("%s\n", "Flowfield is setup now!");
-    // InitialiseSolution();
 
-    std::vector<Real> controlParas{
-        1};  // The first value is for Diameter in case of Circle.
-    blockIndex = 0;
-    std::vector<Real> circlePos{2.0, 2.0};
-    SolidBodyType solidBody{SolidBody_circle};
-    EmbeddedBody(solidBody, blockIndex, circlePos, controlParas);
+    // std::vector<Real> controlParas{
+    //     1};  // The first value is for Diameter in case of Circle.
+    // blockIndex = 0;
+    // std::vector<Real> circlePos{2.0, 2.0};
+    // SolidBodyType solidBody{SolidBody_circle};
+    // EmbeddedBody(solidBody, blockIndex, circlePos, controlParas);
 
-    circlePos[0] = 5.0;
-    circlePos[1] = 3.0;
-    EmbeddedBody(solidBody, blockIndex, circlePos, controlParas);
+    // circlePos[0] = 5.0;
+    // circlePos[1] = 3.0;
+    // EmbeddedBody(solidBody, blockIndex, circlePos, controlParas);
 
-    std::vector<Real> ellipseCenterPos{8.0, 2.0};
-    controlParas[0] = 0.2;        // Semi major axis
-    controlParas.push_back(1.5);  // Semi minor axis.
-    solidBody = SolidBody_ellipse;
-    EmbeddedBody(solidBody, blockIndex, ellipseCenterPos, controlParas);
+    // std::vector<Real> ellipseCenterPos{8.0, 2.0};
+    // controlParas[0] = 0.2;        // Semi major axis
+    // controlParas.push_back(1.5);  // Semi minor axis.
+    // solidBody = SolidBody_ellipse;
+    // EmbeddedBody(solidBody, blockIndex, ellipseCenterPos, controlParas);
 
-    HandleImmersedSolid();
+    // HandleImmersedSolid();
 
-    // currently this information is not playing major role in this
-    // implementation.
-    SchemeType scheme{stStreamCollision};
     const int steps{201};
     const int checkPeriod{100};
-    Iterate(scheme, steps, checkPeriod);
+    Iterate(steps, checkPeriod);
 
-    // currently this information is not playing major role in this
-    // implementation.
-    // SchemeType scheme{stStreamCollision};
     // const Real convergenceCriteria{5E-1};
     // const int checkPeriod{200};
-    // Iterate(scheme, convergenceCriteria, checkPeriod);
+    // Iterate(convergenceCriteria, checkPeriod);
 
 }
 

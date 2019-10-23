@@ -671,11 +671,11 @@ void InitialiseNodeMacroVars(Real* nodeMacroVars, const Real* nodeCoordinates) {
     // 3D exmaple
     Real x{nodeCoordinates[0]};
     Real y{nodeCoordinates[1]};
-    Real z{nodeCoordinates[2]};  // for 3D problems
+    //Real z{nodeCoordinates[2]};  // for 3D problems
     nodeMacroVars[0] = 1;        // rho
     nodeMacroVars[1] = 0;        // u
     nodeMacroVars[2] = 0;        // v
-    nodeMacroVars[3] = 0;        // w
+    //nodeMacroVars[3] = 0;        // w
 }
 
 void DefineInitialCondition() {
