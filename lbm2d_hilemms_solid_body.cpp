@@ -72,9 +72,6 @@ void simulate() {
     SchemeType scheme{Scheme_StreamCollision};
     DefineScheme(scheme);
     
-    //SetupScheme();
-    //SetupBoundary();
-
     int blockIndex{0};
     int componentId{0};
     std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,
@@ -102,45 +99,32 @@ void simulate() {
     std::vector<Real> startPos{0.0, 0.0};
     DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
 
-    //int blockIndex{0};
-    //SetupGeomPropAndNodeType(blockIndex, boundType);
-
-    // int compoIdInitialCond{0};
-    // std::vector<Real> initialMacroValues{1, 0, 0};
-    // DefineInitialCondition(blockIndex, compoIdInitialCond, initialMacroValues);
-
     DefineInitialCondition();
     ops_printf("%s\n", "Flowfield is Initialised now!");
     
 
-    // std::vector<Real> tauRef{0.001};
-    // SetTauRef(tauRef);
-    // SetTimeStep(meshSize / SoundSpeed());
-
-    std::vector<Real> tauRef{0.01};
+    std::vector<Real> tauRef{0.001};
     SetTauRef(tauRef);
 
     SetTimeStep(meshSize / SoundSpeed());
 
 
-    // std::vector<Real> controlParas{
-    //     1};  // The first value is for Diameter in case of Circle.
-    // blockIndex = 0;
-    // std::vector<Real> circlePos{2.0, 2.0};
-    // SolidBodyType solidBody{SolidBody_circle};
-    // EmbeddedBody(solidBody, blockIndex, circlePos, controlParas);
+    std::vector<Real> controlParas{
+        1};  // The first value is for Diameter in case of Circle.
+    blockIndex = 0;
+    std::vector<Real> circlePos{2.0, 2.0};
+    AddEmbeddedBody(SolidBody_circle, blockIndex, circlePos, controlParas);
 
-    // circlePos[0] = 5.0;
-    // circlePos[1] = 3.0;
-    // EmbeddedBody(solidBody, blockIndex, circlePos, controlParas);
+    circlePos[0] = 5.0;
+    circlePos[1] = 3.0;
+    AddEmbeddedBody(SolidBody_circle, blockIndex, circlePos, controlParas);
 
-    // std::vector<Real> ellipseCenterPos{8.0, 2.0};
-    // controlParas[0] = 0.2;        // Semi major axis
-    // controlParas.push_back(1.5);  // Semi minor axis.
-    // solidBody = SolidBody_ellipse;
-    // EmbeddedBody(solidBody, blockIndex, ellipseCenterPos, controlParas);
+    std::vector<Real> ellipseCenterPos{8.0, 2.0};
+    controlParas[0] = 0.2;        // Semi major axis
+    controlParas.push_back(1.5);  // Semi minor axis.
+    AddEmbeddedBody(SolidBody_ellipse, blockIndex, ellipseCenterPos, controlParas);
 
-    // HandleImmersedSolid();
+    HandleImmersedSolid();
 
     const int steps{201};
     const int checkPeriod{100};

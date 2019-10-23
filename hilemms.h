@@ -130,7 +130,7 @@ void ImplementBoundaryConditions();
 // type: Circle/Sphere, Ellipse/Ellipsoid, superquadrics, ...
 // centerPos: the position vector of the center point.
 // controlParas: control parameters, e.g. radius for Circle/Sphere, ...
-void EmbeddedBody(SolidBodyType type, int blockIndex,
+void AddEmbeddedBody(SolidBodyType type, int blockIndex,
                   std::vector<Real> centerPos, std::vector<Real> controlParas);
 
 

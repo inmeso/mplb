@@ -668,14 +668,23 @@ void ImplementBoundaryConditions() {
 }
 
 void InitialiseNodeMacroVars(Real* nodeMacroVars, const Real* nodeCoordinates) {
-    // 3D exmaple
+#ifdef OPS_2D
     Real x{nodeCoordinates[0]};
     Real y{nodeCoordinates[1]};
-    //Real z{nodeCoordinates[2]};  // for 3D problems
     nodeMacroVars[0] = 1;        // rho
     nodeMacroVars[1] = 0;        // u
     nodeMacroVars[2] = 0;        // v
-    //nodeMacroVars[3] = 0;        // w
+#endif
+
+#ifdef OPS_3D
+    Real x{nodeCoordinates[0]};
+    Real y{nodeCoordinates[1]};
+    Real z{nodeCoordinates[2]};  // for 3D problems
+    nodeMacroVars[0] = 1;        // rho
+    nodeMacroVars[1] = 0;        // u
+    nodeMacroVars[2] = 0;        // v
+    nodeMacroVars[3] = 0;        // w
+#endif
 }
 
 void DefineInitialCondition() {
@@ -1043,7 +1052,7 @@ void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
 
 #ifdef OPS_2D
 // mark all solid points inside the circle to be ImmersedSolid
-void SolidPointsInsideCircle(int blockIndex, Real diameter,
+void MarkPtsInsideCircleAsSolid(int blockIndex, Real diameter,
                              std::vector<Real> circlePos) {
     int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
     Real* circlePosition = &circlePos[0];
@@ -1059,7 +1068,7 @@ void SolidPointsInsideCircle(int blockIndex, Real diameter,
                              "int", OPS_WRITE));
 }
 
-void SolidPointsInsideEllipse(int blockIndex, Real semiMajorAxes,
+void MarkPtsInsideEllipseAsSolid(int blockIndex, Real semiMajorAxes,
                               Real semiMinorAxes, std::vector<Real> centerPos) {
     int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
     Real* centerPosition = &centerPos[0];
@@ -1079,7 +1088,7 @@ void SolidPointsInsideEllipse(int blockIndex, Real semiMajorAxes,
 void HandleImmersedSolid() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
-        // wipe off some solid points that cannot be consideres
+        // wipe off some solid points that cannot be considered
         // as a good surface point
         ops_par_loop(KerSweep, "KerSweep", g_Block[blockIndex], SPACEDIM,
                      bulkRng,
@@ -1119,7 +1128,7 @@ void HandleImmersedSolid() {
 }
 
 // Function to provide details of embedded solid body into the fluid.
-void EmbeddedBody(SolidBodyType type, int blockIndex,
+void AddEmbeddedBody(SolidBodyType type, int blockIndex,
                   std::vector<Real> centerPos, std::vector<Real> controlParas) {
     int numCoordCenterPos;
     numCoordCenterPos = centerPos.size();
@@ -1127,14 +1136,14 @@ void EmbeddedBody(SolidBodyType type, int blockIndex,
     if (numCoordCenterPos == SPACEDIM) {
         switch (type) {
             case SolidBody_circle: {
-                SolidPointsInsideCircle(blockIndex, controlParas[0], centerPos);
+                MarkPtsInsideCircleAsSolid(blockIndex, controlParas[0], centerPos);
                 break;
             }
 
             case SolidBody_ellipse: {
                 Real semiMajorAxes{controlParas[0]};
                 Real semiMinorAxes{controlParas[1]};
-                SolidPointsInsideEllipse(blockIndex, semiMajorAxes,
+                MarkPtsInsideEllipseAsSolid(blockIndex, semiMajorAxes,
                                          semiMinorAxes, centerPos);
                 break;
             }

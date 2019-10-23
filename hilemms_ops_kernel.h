@@ -138,25 +138,25 @@ void KerSweep(const int* geometryProperty, int* nodeType) {
             (VertexGeometryTypes)geometryProperty[OPS_ACC0(-1, 1)];
         neiborVertexType[7] =
             (VertexGeometryTypes)geometryProperty[OPS_ACC0(1, -1)];
-        int fluidNeiborNum = 0;
+        int fluidNeighborNum = 0;
         for (int i = 0; i < 8; i++) {
             if (VG_ImmersedSolid != neiborVertexType[i]) {
-                fluidNeiborNum++;
+                fluidNeighborNum++;
             }
         }
 
-        int solidNeiborNumatCoord{0};
+        int solidNeighborNumatCoord{0};
         for (int i = 0; i < 4; i++) {
             if (VG_ImmersedSolid == neiborVertexType[i]) {
-                solidNeiborNumatCoord++;
+                solidNeighborNumatCoord++;
             }
         }
-        if (fluidNeiborNum > 0 && solidNeiborNumatCoord <= 1) {
+        if (fluidNeighborNum > 0 && solidNeighborNumatCoord <= 1) {
             nodeType[OPS_ACC1(0, 0)] = Vertex_Fluid;
             ops_printf(
                 "A solid point is wiped off due to there are %d fluid points "
                 "surrounded and only %d solid points at x and y coordinates\n ",
-                fluidNeiborNum, solidNeiborNumatCoord);
+                fluidNeighborNum, solidNeighborNumatCoord);
         }
     }
 }
