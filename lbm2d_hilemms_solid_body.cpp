@@ -124,7 +124,11 @@ void simulate() {
     controlParas.push_back(1.5);  // Semi minor axis.
     AddEmbeddedBody(SolidBody_ellipse, blockIndex, ellipseCenterPos, controlParas);
 
-    HandleImmersedSolid();
+    //HandleImmersedSolid();
+    WipeSolidPtsBasedNeigbours();
+    UpdateGeometryAfterWiping();
+    MarkSurfacePoints();
+    SetBoundaryTypeofImmersedBody();
 
     const int steps{201};
     const int checkPeriod{100};

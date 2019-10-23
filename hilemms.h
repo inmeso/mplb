@@ -155,6 +155,9 @@ void KerSyncGeometryProperty(const int* nodeType, int* geometryProperty);
 
 void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty);
 
-void HandleImmersedSolid();
+void WipeSolidPtsBasedNeigbours();
+void UpdateGeometryAfterWiping();
+void MarkSurfacePoints();
+void SetBoundaryTypeofImmersedBody();
 
 #endif  // Hilemms_H

@@ -1084,38 +1084,58 @@ void MarkPtsInsideEllipseAsSolid(int blockIndex, Real semiMajorAxes,
                     OPS_WRITE));
 }
 
-// Wrapper function for embedded body.
-void HandleImmersedSolid() {
+// Function to wipe off some solid points that cannot be considered as a good surface point.
+void WipeSolidPtsBasedNeigbours()
+{
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
-        // wipe off some solid points that cannot be considered
-        // as a good surface point
         ops_par_loop(KerSweep, "KerSweep", g_Block[blockIndex], SPACEDIM,
                      bulkRng,
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                                  LOCALSTENCIL, "int", OPS_WRITE));
+    }
+}
 
-        // sync the Geometry property to reflect the modifed solid property
+// Function to sync the Geometry property to reflect the modifed solid property
+void UpdateGeometryAfterWiping()
+{
+for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
+        int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
+        
         ops_par_loop(KerSyncGeometryProperty, "KerSyncGeometryProperty",
                      g_Block[blockIndex], SPACEDIM, bulkRng,
                      ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                                  LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_RW));
+    }
+}
 
-        // set the correct  geometry property e.g., corner types
-        // i.e., mark out the surface points
+
+// set the correct  geometry property e.g., corner types i.e., mark out the surface points
+void MarkSurfacePoints()
+{
+   for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
+        int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
+       
         ops_par_loop(KerSetEmbeddedBodyGeometry, "KerSetEmbeddedBodyGeometry",
                      g_Block[blockIndex], SPACEDIM, bulkRng,
                      ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                                  ONEPTLATTICESTENCIL, "int", OPS_RW),
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
+                                 LOCALSTENCIL, "int", OPS_WRITE)); 
+   }
+}
 
-        // set the boundary type
-        // int nodeType{ surface };
+// set the boundary type
+// int nodeType{ surface };
+void SetBoundaryTypeofImmersedBody()
+{
+    for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
+        int* bulkRng = BlockIterRng(blockIndex, IterRngBulk());
+       
         int nodeType{Vertex_EQMDiffuseRefl};
         ops_par_loop(KerSetEmbeddedBodyBoundary, "KerSetEmbeddedBodyBoundary",
                      g_Block[blockIndex], SPACEDIM, bulkRng,
@@ -1124,8 +1144,9 @@ void HandleImmersedSolid() {
                                  LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                                  LOCALSTENCIL, "int", OPS_RW));
-    }
+    }   
 }
+
 
 // Function to provide details of embedded solid body into the fluid.
 void AddEmbeddedBody(SolidBodyType type, int blockIndex,
