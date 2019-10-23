@@ -34,23 +34,25 @@
 #define HILEMMS_OPS_KERNEL
 #include "hilemms.h"
 
-#ifdef OPS_2D
 void KerSetCoordinates(const Real* coordX, const Real* coordY, const int* idx,
                        Real* coordinates) {
+#ifdef OPS_2D
     coordinates[OPS_ACC_MD3(0, 0, 0)] = coordX[idx[0]];
     coordinates[OPS_ACC_MD3(1, 0, 0)] = coordY[idx[1]];
+#endif
 }
-#endif  // OPS_2D
 
-#ifdef OPS_3D
+
 void KerSetCoordinates3D(const Real* coordX, const Real* coordY,
                          const Real* coordZ, const int* idx,
                          Real* coordinates) {
+#ifdef OPS_3D
     coordinates[OPS_ACC_MD4(0, 0, 0, 0)] = coordX[idx[0]];
     coordinates[OPS_ACC_MD4(1, 0, 0, 0)] = coordY[idx[1]];
     coordinates[OPS_ACC_MD4(2, 0, 0, 0)] = coordZ[idx[2]];
+#endif 
 }
-#endif  // OPS_3D
+
 
 // Kernel to set initial value for a particlaur component.
 void KerSetInitialMacroVars(Real* macroVars, const Real* coordinates,
@@ -77,20 +79,23 @@ void KerSetInitialMacroVars(Real* macroVars, const Real* coordinates,
     delete[] initiaNodeMacroVars;
     delete[] nodeCoordinates;
 }
-#ifdef OPS_2D
+
 void KerSetEmbeddedBodyBoundary(int* surfaceBoundary,
-                               const int* geometryProperty, int* nodeType) {
+                                const int* geometryProperty, int* nodeType) {
+#ifdef OPS_2D
     VertexGeometryTypes gp =
         (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0)];
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC2(0, 0)];
     if (gp != VG_Fluid && gp != VG_ImmersedSolid && Vertex_Fluid != vt) {
         nodeType[OPS_ACC2(0, 0)] = *surfaceBoundary;
     }
+#endif
 }
 
 void KerSetEmbeddedCircle(Real* diameter, Real* centerPos,
                          const Real* coordinates, int* nodeType,
                          int* geometryProperty) {
+#ifdef OPS_2D
     if ((coordinates[OPS_ACC_MD3(0, 0, 0)] - centerPos[0]) *
                 (coordinates[OPS_ACC_MD3(0, 0, 0)] - centerPos[0]) +
             (coordinates[OPS_ACC_MD3(1, 0, 0)] - centerPos[1]) *
@@ -99,11 +104,13 @@ void KerSetEmbeddedCircle(Real* diameter, Real* centerPos,
         nodeType[OPS_ACC4(0, 0)] = (int)Vertex_ImmersedSolid;
         geometryProperty[OPS_ACC5(0, 0)] = (int)VG_ImmersedSolid;
     }
+#endif
 }
 
 void KerSetEmbeddedEllipse(Real* semiMajorAxes, Real* semiMinorAxis,
                            Real* centerPos, const Real* coordinates,
                            int* nodeType, int* geometryProperty) {
+#ifdef OPS_2D
     if ((coordinates[OPS_ACC_MD3(0, 0, 0)] - centerPos[0]) / (*semiMajorAxes) *
                 (coordinates[OPS_ACC_MD3(0, 0, 0)] - centerPos[0]) /
                 (*semiMajorAxes) +
@@ -115,9 +122,11 @@ void KerSetEmbeddedEllipse(Real* semiMajorAxes, Real* semiMinorAxis,
         nodeType[OPS_ACC4(0, 0)] = (int)Vertex_ImmersedSolid;
         geometryProperty[OPS_ACC5(0, 0)] = (int)VG_ImmersedSolid;
     }
+#endif
 }
 
 void KerSweep(const int* geometryProperty, int* nodeType) {
+#ifdef OPS_2D
     VertexGeometryTypes vg =
         (VertexGeometryTypes)geometryProperty[OPS_ACC0(0, 0)];
     if (VG_ImmersedSolid == vg) {
@@ -159,18 +168,22 @@ void KerSweep(const int* geometryProperty, int* nodeType) {
                 fluidNeighborNum, solidNeighborNumatCoord);
         }
     }
+#endif
 }
 
 void KerSyncGeometryProperty(const int* nodeType, int* geometryProperty) {
+#ifdef OPS_2D
     VertexGeometryTypes gp =
         (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0)];
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
     if (Vertex_Fluid == vt && gp != VG_Fluid) {
         geometryProperty[OPS_ACC1(0, 0)] = (int)VG_Fluid;
     }
+#endif
 }
 
 void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
+#ifdef OPS_2D
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
     if (Vertex_ImmersedSolid == vt) {
         VertexTypes neiborVertexType[8];
@@ -290,7 +303,8 @@ void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
             }
         }
     }
+#endif
 }
-#endif  // End of OPS_2D
+
 
 #endif  // HILEMMS_OPS_KERNEL
