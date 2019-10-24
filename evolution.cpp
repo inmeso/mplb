@@ -391,12 +391,43 @@ void DispResidualError(const int iter, const Real checkPeriod) {
 
 //TODO Shall we introduce debug information mechanism similar to 3D version?
 void StreamCollision() {
+
+#if DebugLevel >= 1
+    ops_printf("Calculating the macroscopic variables...\n");
+#endif
     UpdateMacroVars();
     CopyDistribution(g_f, g_fStage);
+
+#if DebugLevel >= 1
+    ops_printf("Calculating the equilibrium function and the body force term...\n");
+#endif    
     UpdateFeqandBodyforce();
+
+#if DebugLevel >= 1
+    ops_printf("Calculating the relaxation time...\n");
+#endif
     UpdateTau();
+
+#if DebugLevel >= 1
+    ops_printf("Colliding...\n");
+#endif
     Collision();
+
+#if DebugLevel >= 1
+    ops_printf("Streaming...\n");
+#endif
     Stream();
+
+#if DebugLevel >= 1
+    ops_printf("Updating the halos...\n");
+#endif
+    if (nullptr != HaloGroup()) {
+        ops_halo_transfer(HaloGroup());
+    }
+    
+#if DebugLevel >= 1
+    ops_printf("Implementing the boundary conditions...\n");
+#endif
     ImplementBoundaryConditions();
 }
 
