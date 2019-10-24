@@ -130,8 +130,8 @@ void simulate() {
     MarkSurfacePoints();
     SetBoundaryTypeofImmersedBody();
 
-    const int steps{201};
-    const int checkPeriod{100};
+    const int steps{2};
+    const int checkPeriod{1};
     Iterate(steps, checkPeriod);
 
     // const Real convergenceCriteria{5E-1};
