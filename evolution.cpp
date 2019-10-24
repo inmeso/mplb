@@ -123,6 +123,20 @@ void UpdateFeqandBodyforce() {
                      ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_RW));
         // force term to be added
+
+        // time is not used in the current force
+        Real* timeF{0};
+        ops_par_loop(KerCalcBodyForce, "KerCalcBodyForce",
+                     g_Block[blockIndex], SPACEDIM, iterRng,
+                     ops_arg_gbl(&timeF, 1, "double", OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
+                     ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
+                                 LOCALSTENCIL, "double", OPS_READ),
+                     ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
+                                 LOCALSTENCIL, "double", OPS_READ),
+                     ops_arg_dat(g_Bodyforce[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_RW));
     }
 }
 

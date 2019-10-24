@@ -188,6 +188,9 @@ void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
 void KerCalcBodyForce3D(const Real* time, const int* nodeType,
                         const Real* coordinates, const Real* macroVars,
                         Real* bodyForce);
+void KerCalcBodyForce(const Real* time, const int* nodeType,
+                      const Real* coordinates, const Real* macroVars,
+                      Real* bodyForce);
 void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq);
 void KerCalcTau3D(const int* nodeType, const Real* tauRef,
                   const Real* macroVars, Real* tau);

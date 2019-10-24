@@ -381,7 +381,76 @@ void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars) {
         }      // m
     }          // isVertex
 }
+
+
+void KerCalcBodyForce(const Real* time, const int* nodeType,
+                        const Real* coordinates, const Real* macroVars,
+                        Real* bodyForce) {
+    // here we assume the force is constant
+    // user may introduce a function of g(r,t) for the body force
+    const Real g[]{0.0001, 0};
+
+    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+        VertexTypes vt =
+            (VertexTypes)nodeType[OPS_ACC_MD1(compoIndex, 0, 0)];
+        if (vt != Vertex_ImmersedSolid) {
+            BodyForceType forceType{(BodyForceType)FORCETYPE[compoIndex]};
+            const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
+            switch (forceType) {
+                case BodyForce_1st: {
+                    Real rho{macroVars[OPS_ACC_MD3(startPos, 0, 0)]};
+                    for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                        bodyForce[OPS_ACC_MD4(xiIndex, 0, 0)] =
+                            CalcBodyForce(xiIndex, rho, g);
+#ifdef CPU
+                        const Real res{
+                            bodyForce[OPS_ACC_MD4(xiIndex, 0, 0)]};
+                        if (isnan(res) || isinf(res)) {
+                            ops_printf(
+                                "Error! Body force  %f becomes "
+                                "invalid for the component %i at  the lattice "
+                                "%i\n",
+                                res, compoIndex, xiIndex);
+                            assert(!(isnan(res) || res <= 0 || isinf(res)));
+                        }
 #endif
+                    }
+                } break;
+                case BodyForce_None: {
+                    for (int xiIndex = COMPOINDEX[2 * compoIndex];
+                         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+                        bodyForce[OPS_ACC_MD4(xiIndex, 0, 0)] = 0;
+#ifdef CPU
+                        const Real res{
+                            bodyForce[OPS_ACC_MD4(xiIndex, 0, 0)]};
+                        if (isnan(res) || isinf(res)) {
+                            ops_printf(
+                                "Error! Body force %f becomes "
+                                "invalid for the component %i at  the lattice "
+                                "%i\n",
+                                res, compoIndex, xiIndex);
+                            assert(!(isnan(res) || res <= 0 || isinf(res)));
+                        }
+#endif
+                    }
+                } break;
+                default:
+#ifdef CPU
+                    ops_printf(
+                        "Error! We don't deal with the chosen type of "
+                        "force function at this moment!\n");
+                    assert(false);
+#endif
+                    break;
+            }
+        }
+    }
+}
+
+#endif
+
+
 #ifdef OPS_3D
 void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {

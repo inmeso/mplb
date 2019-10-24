@@ -69,6 +69,10 @@ void simulate() {
     std::vector<int> equCompoId{0};
     DefineEquilibrium(equTypes, equCompoId);
 
+    std::vector<BodyForceType> bodyForceTypes{BodyForce_1st};
+    std::vector<int> bodyForceCompoId{0};
+    DefineBodyForce(bodyForceTypes, bodyForceCompoId);
+
     SchemeType scheme{Scheme_StreamCollision};
     DefineScheme(scheme);
     
@@ -130,8 +134,8 @@ void simulate() {
     MarkSurfacePoints();
     SetBoundaryTypeofImmersedBody();
 
-    const int steps{2};
-    const int checkPeriod{1};
+    const int steps{201};
+    const int checkPeriod{100};
     Iterate(steps, checkPeriod);
 
     // const Real convergenceCriteria{5E-1};
