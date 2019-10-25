@@ -744,7 +744,10 @@ def InsertTranslatedBodyForceEqn(TranslatedEqn):
     FileToInsert = 'model_kernel.h'
     Text = ReadFile(FileToInsert)[0]
 
-    StringPos = FindPositionStringText('BodyForce_1st', Text)[0]
+    #First find OPS_3D and then find the case of 1st order 
+    #body force term.
+    StartingPosOPS3D = FindPositionStringText('OPS_3D', Text)[0]
+    StringPos = Text.find('BodyForce_1st', StartingPosOPS3D)
     
     StartPosTextInsert = Text.find(':', StringPos)
     StartPosTextInsert += 1
