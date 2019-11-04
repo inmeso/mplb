@@ -973,3 +973,32 @@ LD_couette
 -0.315
 ```
 Before mergining with HiLemms, to run DEM-LBM coupled simulations, it is required to create an h5 file. An h5 file can be created by running the grid generator geom2d_dev_seq.
+
+#### Part III: Generating a h5 file
+
+To generate an h5 file for two dimensional coupled simulations, the grid generator geom2d_dev_seq was developed. The grid generatator acceepts as inputs the name of the block, the grid size, the number of segments and the position of the upper right corner of the rectangle (The lower left corner point is by default set at (0,0)), the boundary conditions and the initial conditions. 
+
+#### Part IV: Implementation of boundary conditions
+
+The use of the right boundary condition at the current 2d version requires a modification to the code and the generation of a new h5 file. The boundary conditions in the h5 file correspond to a given code. The most commonly boundary conditions that used in DEM/LBM simulations are 
+- **Equilibrium Diffuse Reflection BC** : Enforces a user defined velocity at the fluid boundary. **Code** 1014, **TypeNum**  Vertex_EQMDiffuseRefl
+- **1st oder Density Extrapolation** : Used in the outlet to set the density to 1. **Code** 1006, **TypeNum** Vertex_ExtrapolPressure1ST
+- **Far field BC**: Mimicks far field behavior **Code** 1016, **TypeNum** Vertex_FarField
+
+The implementation of a given boundary condition, requires from the user  to modify the function ImplementBoundary (in evolution.cpp) and modify the BC in the required wall. The user can alter prescribed velocity and the type of BC. The  function looks like this 
+``` c++
+    int* inletRng = BlockIterRng(0, g_BlockIterRngImin);
+    //Input params: {Density, velocity in the x-direction, velocity in y direction, Temperature}
+    Real givenInletVars[]{1, ux, 0 ,1}; // Input Parameters of inlet "wall" 
+    TreatDomainBoundary(givenInletVars,inletRng,Vertex_EQMDiffuseRefl);
+    int* outletRng = BlockIterRng(0, g_BlockIterRngImax);
+    Real givenOutletVars[]{1, ux, 0, 1};// Input Parameters of outlet "Wall"
+    TreatDomainBoundary(givenOutletVars,outletRng,Vertex_ExtrapolPressure1ST);
+    int* topRng = BlockIterRng(0, g_BlockIterRngJmax);
+    //Real givenTopWallBoundaryVars[]{1, 0, 0};
+    Real givenTopWallBoundaryVars[]{1,0.0, 0.0, 1};  // Input Parameters for top wall
+    TreatDomainBoundary(givenTopWallBoundaryVars, topRng,Vertex_EQMDiffuseRefl);
+    int* bottomRng = BlockIterRng(0, g_BlockIterRngJmin);
+    Real givenBotWallBoundaryVars[]{1, 0.0, 0.0, 1};  // Input Parameters
+    TreatDomainBoundary(givenBotWallBoundaryVars,bottomRng,Vertex_EQMDiffuseRefl);
+```
