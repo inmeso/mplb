@@ -503,9 +503,6 @@ Real CalcBGKFeq(const int l, const Real rho, const Real u, const Real v,
     return WEIGHTS[l] * rho * res;
 }
 
-
-
-
 Real CalcSWEFeq(const int l, const Real h, const Real u, const Real v,
                 const int polyOrder) {
     // Implementing the model derived in Please refer to Meng, Gu Emerson, Peng
