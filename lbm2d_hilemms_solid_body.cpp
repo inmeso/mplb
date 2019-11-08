@@ -75,7 +75,7 @@ void simulate() {
 
     SchemeType scheme{Scheme_StreamCollision};
     DefineScheme(scheme);
-    
+
     int blockIndex{0};
     int componentId{0};
     std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,
@@ -105,7 +105,7 @@ void simulate() {
 
     DefineInitialCondition();
     ops_printf("%s\n", "Flowfield is Initialised now!");
-    
+
 
     std::vector<Real> tauRef{0.001};
     SetTauRef(tauRef);
@@ -134,8 +134,8 @@ void simulate() {
     MarkSurfacePoints();
     SetBoundaryTypeofImmersedBody();
 
-    const int steps{201};
-    const int checkPeriod{100};
+    const SizeType steps{201};
+    const SizeType checkPeriod{100};
     Iterate(steps, checkPeriod);
 
     // const Real convergenceCriteria{5E-1};
@@ -144,7 +144,7 @@ void simulate() {
 
 }
 
-int main(int argc, char** argv) {
+int main(int argc, const char** argv) {
     // OPS initialisation
     ops_init(argc, argv, 1);
     double ct0, ct1, et0, et1;
