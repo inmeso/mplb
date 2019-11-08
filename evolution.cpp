@@ -123,6 +123,20 @@ void UpdateFeqandBodyforce() {
                      ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_RW));
         // force term to be added
+
+        // time is not used in the current force
+        Real* timeF{0};
+        ops_par_loop(KerCalcBodyForce, "KerCalcBodyForce",
+                     g_Block[blockIndex], SPACEDIM, iterRng,
+                     ops_arg_gbl(&timeF, 1, "double", OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_READ),
+                     ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
+                                 LOCALSTENCIL, "double", OPS_READ),
+                     ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
+                                 LOCALSTENCIL, "double", OPS_READ),
+                     ops_arg_dat(g_Bodyforce[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_RW));
     }
 }
 
@@ -181,16 +195,16 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
                             "double", OPS_RW));
         } break;
         case Vertex_KineticDiffuseWall: {
-            ops_par_loop(
-                KerCutCellKinetic, "KerCutCellKinetic", g_Block[blockIndex],
-                SPACEDIM, range,
-                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
-                            OPS_READ),
-                ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
-                            "int", OPS_READ),
-                ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
-                            OPS_RW));
+            // ops_par_loop(
+            //     KerCutCellKinetic, "KerCutCellKinetic", g_Block[blockIndex],
+            //     SPACEDIM, range,
+            //     ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
+            //     ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int",
+            //                 OPS_READ),
+            //     ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+            //                 "int", OPS_READ),
+            //     ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
+            //                 OPS_RW));
         }
         case Vertex_EQMDiffuseRefl: {
             ops_par_loop(
@@ -391,22 +405,54 @@ void DispResidualError(const int iter, const Real checkPeriod) {
 
 //TODO Shall we introduce debug information mechanism similar to 3D version?
 void StreamCollision() {
+
+#if DebugLevel >= 1
+    ops_printf("Calculating the macroscopic variables...\n");
+#endif
     UpdateMacroVars();
     CopyDistribution(g_f, g_fStage);
+
+#if DebugLevel >= 1
+    ops_printf("Calculating the equilibrium function and the body force term...\n");
+#endif    
     UpdateFeqandBodyforce();
+
+#if DebugLevel >= 1
+    ops_printf("Calculating the relaxation time...\n");
+#endif
     UpdateTau();
+
+#if DebugLevel >= 1
+    ops_printf("Colliding...\n");
+#endif
     Collision();
+
+#if DebugLevel >= 1
+    ops_printf("Streaming...\n");
+#endif
     Stream();
+
+#if DebugLevel >= 1
+    ops_printf("Updating the halos...\n");
+#endif
+    if (nullptr != HaloGroup()) {
+        ops_halo_transfer(HaloGroup());
+    }
+    
+#if DebugLevel >= 1
+    ops_printf("Implementing the boundary conditions...\n");
+#endif
     ImplementBoundaryConditions();
 }
 
-void TimeMarching() {
-    UpdateMacroVars();
-    UpdateFeqandBodyforce();
-    UpdateTau();
-    ForwardEuler();
-    //ops_halo_transfer(HaloGroups);
-    ImplementBoundary();
-}
+// TODO Will implememt later.
+// void TimeMarching() {
+//     UpdateMacroVars();
+//     UpdateFeqandBodyforce();
+//     UpdateTau();
+//     ForwardEuler();
+//     //ops_halo_transfer(HaloGroups);
+//     ImplementBoundary();
+// }
 
 #endif /* OPS_2D */

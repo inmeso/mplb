@@ -167,7 +167,7 @@ setupdomain3D: Makefile setup_comput_domain.cpp scheme.cpp model.cpp boundary.cp
 	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_3D type.cpp boundary.cpp setup_comput_domain.cpp scheme.cpp model.cpp -lops_seq -lops_hdf5_seq $(HDF5_LIB) -o setup_comput_domain
 
 lbm2d_dev_seq: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution.cpp $(MAINCPP) hilemms_ops.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
-	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_2D  type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution.cpp $(MAINCPP) hilemms_ops.cpp -lops_seq  -lops_hdf5_seq $(HDF5_LIB) -o lbm2d_dev_seq
+	$(CPP) $(CPPFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -DOPS_2D -DCPU -D$(LEVEL) type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution.cpp $(MAINCPP) hilemms_ops.cpp -lops_seq  -lops_hdf5_seq $(HDF5_LIB) -o lbm2d_dev_seq
 
 lbm2d_dev_mpi: Makefile type.cpp boundary.cpp scheme.cpp flowfield.cpp model.cpp evolution.cpp $(MAINCPP) hilemms_ops.cpp $(OPS_INSTALL_PATH)/lib/libops_mpi.a
 	$(MPICPP) $(MPIFLAGS) -DOPS_MPI $(OPS_INC) $(OPS_LIB) $(HDF5_INC) -DOPS_2D type.cpp boundary.cpp scheme.cpp flowfield.cpp  model.cpp evolution.cpp $(MAINCPP) hilemms_ops.cpp -lops_mpi -lops_hdf5_mpi  $(HDF5_LIB) -o lbm2d_dev_mpi

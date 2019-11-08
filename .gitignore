@@ -16,6 +16,7 @@ lbm3d_dev_mpi
 3D_post_process.py
 plot.py
 mayavi_3D_post_process.py
+UDF_Function.cpp
 
 # Exlude eclipse files.
 /.cproject
@@ -33,5 +34,10 @@ lbm2d_hilemms_solid_body_dev_seq
 lbm2d_hilemms_solid_body_dev_mpi
 __pycache__/
 
-
-
+Input_eqns/
+Body_force.txt
+Dist_eqn_3.txt
+Dist_fun_eqn_2.txt
+Dist_func_eqn.txt
+BGK_translator.md
+UDF_Function.cpp

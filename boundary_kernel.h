@@ -1107,6 +1107,18 @@ void KerCutCellEQMDiffuseRefl(const Real *givenMacroVars, const int *nodeType,
             (VertexGeometryTypes)geometryProperty[OPS_ACC2(0, 0)];
         Real u = givenMacroVars[1];
         Real v = givenMacroVars[2];
+
+#ifdef CPU
+#if DebugLevel >= 2
+        ops_printf(
+            "KerCutCellEQMDiffuseRefl: We received the following "
+            "conditions for the surface %i:\n",
+            geometryProperty[OPS_ACC2(0, 0)]);
+        ops_printf("U=%f, V=%f, for the component %i\n", u, v,
+                   *componentId);
+#endif
+#endif
+
         // for (int compoIdx = 0; compoIdx < NUMCOMPONENTS; compoIdx++) {
         const int compoIdx{*componentId};
         int numOutgoing{0};
@@ -1148,6 +1160,13 @@ void KerCutCellEQMDiffuseRefl(const Real *givenMacroVars, const int *nodeType,
             }
         }
         Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
+
+#ifdef CPU
+#if DebugLevel >= 2
+        ops_printf("Calculated wall density =  %f\n", rhoWall);
+#endif
+#endif
+
         for (int idx = 0; idx < numParallel; idx++) {
             f[OPS_ACC_MD3(parallel[idx], 0, 0)] =
                 CalcBGKFeq(parallel[idx], rhoWall, u, v, 1, equilibriumOrder);
@@ -1165,10 +1184,12 @@ void KerCutCellEQMDiffuseRefl(const Real *givenMacroVars, const int *nodeType,
         delete[] parallel;
         //}
     } else {
-#ifdef debug
+#ifdef CPU
+#if DebugLevel >= 2
         ops_printf("%s\n",
                    "Warning: this node is not a equilibrium diffuse reflection "
                    "boundary condition point: KerCutCellEQMDiffuseRefl");
+#endif
 #endif
     }
 }
@@ -1317,10 +1338,12 @@ void KerCutCellPeriodic(const int *nodeType, const int *geometryProperty,
                 break;
         }
     } else {
-#ifdef debug
+#ifdef CPU
+#if DebugLevel >= 2
         ops_printf("%s\n",
                    "Warning: this node is not a periodic boundary "
                    "point: KerCutCellPeriodic");
+#endif
 #endif
     }
 }
