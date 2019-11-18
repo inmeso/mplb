@@ -96,6 +96,10 @@ There is a simple post-processor written in Python, which can display contour pl
 These functionalities reply on a complete Python installation，which may be configured by using the [Canopy suite](https://store.enthought.com/downloads/) or the [Anaconda distribution](https://www.anaconda.com/download/). In general either Python 3 or Python 2 will work.
 #### Input parmaters from a Json file
 The MPBL code accepts a Json file for user input. To enable this, we need provide a filename when calling the program, see the [lid-driven cavity flow example](#lid-driven-cavity-flow-3d).
+
+
+
+
 ## Examples
 At this moment, the MPLB code features a set of HiLeMMS interface, which allows users to assemble application at the source code level i.e., the main source file enclosing the main() function. For convenience, an environment variable, MAINCPP, is reserved for instructing the main source file.
 
@@ -787,11 +791,214 @@ res=ReadOPSDataHDF53D(nx,ny,nz,BlockIndex,HaloNum,SPACEDIM,MacroVarNum,MacroVarN
 WriteMacroVarsTecplotHDF5(fileName='Re10Kn0.001.h5',res=res)
 ```
 In the Tecplot, following the steps below:
-1. use File->Load Data..., choose the HDF5 loader
-2. after selecting the 'Re10Kn0.001.h5', uncheck "Create Implicit Grid..." as shown below.
-![Uncheck](./UnCheck.gif)
-3. Select the reference grid vetors as shown below.
-![DataGrid](./DataGrid.gif)
-4.Choose the data needed by the visualisation. As shown below, we choose rho, u, v, w.
-![ChooseData](./ChooseData.gif)
-5.Click Ok, and we can conduct the visualisation.
+    1. use File->Load Data..., choose the HDF5 loader
+    2. after selecting the 'Re10Kn0.001.h5', uncheck "Create Implicit Grid..." as shown below.
+        ![Uncheck](./UnCheck.gif)
+    3. Select the reference grid vetors as shown below.
+    ![DataGrid](./DataGrid.gif)
+    4.Choose the data needed by the visualisation. As shown below, we choose rho, u, v, w.
+    ![ChooseData](./ChooseData.gif)
+    5.Click Ok, and we can conduct the visualisation.
+
+## Coupling MPLB with LIGGGHTS
+
+The MPLB is coupled with LIGGGHTS with the use of the MUI library. With the MUI, each code is compiled and linked seperately but invoked simultaneously as a single job. Thr MUI uses MPI as the communication mechanism of the codes. In practice, the MUI is an inter-solver communicator that makes use of the MPI predefined world communicator MPI_COMM_WORLD and each code must have its private communication world. Unfortunately, both LIGGGHTS (in reality LAMMPS) and  OPS library make use of the MPI_COMM_WORLD as their primary communication world. 
+
+### Modification of LIGGGHTS and OPS library
+
+Based on the above each code must use its own communication world that is the offspring of the MPI_COMM_WORLD. In this section, the required modifications of the OPS library and LIGGGHTS are presented. 
+
+#### Modification of the OPS library
+
+The first step is the introduction of communication world that is only accessible from the OPS library. The OPS communication world, **OPS_MPI_GLOBAL** must be declared in the file "ops_mpi_core.h" 
+
+``` c++
+extern MPI_Comm OPS_MPI_GLOBAL;
+
+```
+and defined in the file "ops_mpi_partition.cpp"
+
+```  c++
+
+MPI_Comm OPS_MPI_GLOBAL;
+
+```
+ The next task is to seperate the communication world of the OPS library from the global one. For that, the following code must be added  in all the function **ops_init**.  These functions can be found in the files **"ops_mpi_decl.cpp"**, **"ops_mpi_decl_cuda.cpp"**,**"ops_mpi_decl_opencl.cpp"**. 
+ 
+
+ ``` c++
+    void *v;
+    int flag1; 
+
+    MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &v, &flag1);
+
+    if (!flag1) {//Only one OPS based code is executed
+        MPI_Comm_dup(MPI_COMM_WORLD, &OPS_MPI_GLOBAL);
+    }
+    else { //Split the worlds based on application
+        int appnum = *(int *) v;
+        int rank;
+	    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	    MPI_Comm_split(MPI_COMM_WORLD,appnum,rank,&OPS_MPI_GLOBAL);
+    }
+
+    MPI_Comm_rank(OPS_MPI_GLOBAL, &ops_my_global_rank); //MPI_COMM_WORLD replaced by OPS_MPI_GLOBAL
+    MPI_Comm_size(OPS_MPI_GLOBAL, &ops_comm_global_size); // MPI_COMM_WORLD replaced by OPS_MPI_GLOBAL
+
+ ````
+The rest of the required modifications are to replace any call to MPI_COMM_WORLD with the OPS_MPI_GLOBAL. In practice, it requires all the matches with the MPI_COMM_WORLD to be replaced with the OPS_MPI_GLOBAL. In particular the MPI_COMM_WORLD must be replaced from additional 43 locations in the files "ops_mpi_core.cpp", "ops_mpi_hdf5.cpp" and "ops_mpi_rt_support.cpp"
+
+#### Modification in LIGGGHTS
+
+LIGGGHTS requires much less modifications than the OPS library. The only modification in LIGGGHTS is at the **main()** function, found at the file "main.cpp". Herein, the user has to create and assign a unique communication world at the LAMMPS object lammps. The new main file must be:
+
+``` c++
+int main(int argc, char **argv)
+{
+  int flag = 0;
+  MPI_Initialized(&flag);
+  if (!flag)
+	  MPI_Init(&argc,&argv);
+
+  //We will pass a different communicator world herein-split by mui
+
+  MPI_Comm worldLammps;
+  void *v;
+  int flag1;
+
+  //Create a unique communication world for LAMMPS
+  MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &v, &flag1);
+
+  if (!flag1) //Only LIGGGHTS run 
+	  MPI_Comm_dup( MPI_COMM_WORLD, &worldLammps);
+  else {
+	  int appnum = *(int *) v;
+	  int rank;
+	  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	  MPI_Comm_split(MPI_COMM_WORLD, appnum, rank, &worldLammps);
+  }
+
+  LAMMPS *lammps = new LAMMPS(argc,argv,worldLammps);
+  lammps->input->file();
+  delete lammps;
+
+  MPI_Finalize();
+}
+```
+
+### Compiling MPLBM for coupled simulations with LIGGGHTS
+
+After the performed modification, the OPS libraries **libops_hdf5_mpi.a**, **libops_mpi.a** have to be recompliled. Afterwards, the executable lbm2d_cfd_dem_mpi_mui has to be compiled and linked. For LIGGGHTS, the executable that has to be build for Ubuntu is the fedora. The user inside the src file of LIGGGHTS must type (version LIGGGHTS 2.3.8) must type
+
+```bash
+make fedora
+```
+### Running coupled simulations 
+
+To run DNS simulations with the MPLBM and LIGGGHTS, the following command must be used
+``` bash
+
+mpirun -np n lmp_fedora<in.inputfile : -np m lbm2d_cfd_dem_mpi_mui
+
+```
+where in.inputfile is the input file of LIGGGHTS, n the number of processes assigned to LIGGGHTS and m the number of processes assigned to MPLBM. 
+
+#### LIGGGGHTS input file for coupled simulations
+
+Currently only two dimensional coupled simulations can be run. To set up two dimensional simulations in LIGGGHTS the following lines should be added in LIGGGHTS input files 
+``` bash
+dimension 2
+```
+This command sets a two dimensional simulation. The second requirement is to set the z axis as periodic. This can be done as following
+```bash
+boundary f f p
+```
+where f stands for fixed size in the other two directions, which is a recommended option for DEM-LBM simulations. The center of the particles must be found at the same plane that is parallel to the x-y plane. 
+
+To perform data transfer between LIGGGHTS and MPLBM, the following fix must be included in the in file.
+```bash
+fix     NAME all lbm/mui dtLBM timestepOfLBM
+```
+
+- NAME: name of the particular fix defined 
+- lbm/mui: style of fix
+-dtLBM (must be included) Timestep of the LBM 
+- timestepOfLBM: The timestep of LBM in numbers
+
+Requirements for the lbm/mui fix
+- The simulation must contain spheres
+- The nve/sphere fix must be included in the simulation
+- DEM timestep must be defined
+- LBM timestep must be larger than zero
+
+For finalizing the 2d simulations, the forces and moments at the z-direction must be set to zero. The fix enforce2d sets the forces and moments in the z-direction to zero. The syntax for the freeze fix is
+``` bash
+fix			nameofFix	group enforce2d 
+```
+where nameofFix is user defined, the group of particles that the fix will operate, in our case group must be set to all. 
+
+#### Part II: MPLBM input files for running coupled simulations
+
+For two dimensional DEM-LBM coupled simulations, input parameters are parsed from the file "input_params.txt". This file must include the following
+- **Name of the conducted simulation** A hdf5 file of similar name must be also created
+- **Number of blocks**: The number of blocks 
+- **Number of nodes in the x direction**
+- **Number of nodes in the y direction**
+- **x coordinate of the last node in the x-direction**
+- **Fluid/Structure Interaction flag** 1: EQN scheme is on 2: Classical LBM code
+- **Fluid viscocity**
+- **Inlet velocity**
+- **Number of Iterations for simulation relating to moving particles**: It does not used in DEM/LBM coupling through MUI. The DEM code sets the number of cycles
+- **Number of increments** that will pass before exporting the flow field
+- **Number of Gauss integration** that are used in the calculation of the solid fraction in the EQN scheme
+- **Number of iterations** of the fluid code in the initialization phase of DEM/LBM simulations. Particles are stationary in this stage
+- **Body force in the x-direction**
+- **Body force in the y-direction**
+
+An "input_params.txt" will look like this
+``` bash
+LD_couette
+1
+241
+121
+20.0
+1
+0.001
+0.01
+100000
+10000
+5
+1
+0.0
+-0.315
+```
+Before mergining with HiLemms, to run DEM-LBM coupled simulations, it is required to create an h5 file. An h5 file can be created by running the grid generator geom2d_dev_seq.
+
+#### Part III: Generating a h5 file
+
+To generate an h5 file for two dimensional coupled simulations, the grid generator geom2d_dev_seq was developed. The grid generatator acceepts as inputs the name of the block, the grid size, the number of segments and the position of the upper right corner of the rectangle (The lower left corner point is by default set at (0,0)), the boundary conditions and the initial conditions. 
+
+#### Part IV: Implementation of boundary conditions
+
+The use of the right boundary condition at the current 2d version requires a modification to the code and the generation of a new h5 file. The boundary conditions in the h5 file correspond to a given code. The most commonly boundary conditions that used in DEM/LBM simulations are 
+- **Equilibrium Diffuse Reflection BC** : Enforces a user defined velocity at the fluid boundary. **Code** 1014, **TypeNum**  Vertex_EQMDiffuseRefl
+- **1st oder Density Extrapolation** : Used in the outlet to set the density to 1. **Code** 1006, **TypeNum** Vertex_ExtrapolPressure1ST
+- **Far field BC**: Mimicks far field behavior **Code** 1016, **TypeNum** Vertex_FarField
+
+The implementation of a given boundary condition, requires from the user  to modify the function ImplementBoundary (in evolution.cpp) and modify the BC in the required wall. The user can alter prescribed velocity and the type of BC. The  function looks like this 
+``` c++
+    int* inletRng = BlockIterRng(0, g_BlockIterRngImin);
+    //Input params: {Density, velocity in the x-direction, velocity in y direction, Temperature}
+    Real givenInletVars[]{1, ux, 0 ,1}; // Input Parameters of inlet "wall" 
+    TreatDomainBoundary(givenInletVars,inletRng,Vertex_EQMDiffuseRefl);
+    int* outletRng = BlockIterRng(0, g_BlockIterRngImax);
+    Real givenOutletVars[]{1, ux, 0, 1};// Input Parameters of outlet "Wall"
+    TreatDomainBoundary(givenOutletVars,outletRng,Vertex_ExtrapolPressure1ST);
+    int* topRng = BlockIterRng(0, g_BlockIterRngJmax);
+    //Real givenTopWallBoundaryVars[]{1, 0, 0};
+    Real givenTopWallBoundaryVars[]{1,0.0, 0.0, 1};  // Input Parameters for top wall
+    TreatDomainBoundary(givenTopWallBoundaryVars, topRng,Vertex_EQMDiffuseRefl);
+    int* bottomRng = BlockIterRng(0, g_BlockIterRngJmin);
+    Real givenBotWallBoundaryVars[]{1, 0.0, 0.0, 1};  // Input Parameters
+    TreatDomainBoundary(givenBotWallBoundaryVars,bottomRng,Vertex_EQMDiffuseRefl);
+```
