@@ -5,6 +5,8 @@ opsversion
 *.eps
 *.pdf
 *.png
+*.o
+*.a
 lbm2d_dev_seq
 lbm2d_dev_mpi
 setup_comput_domain
