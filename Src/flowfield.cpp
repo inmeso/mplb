@@ -67,7 +67,6 @@ Real DT{1};
  * It must be a constant during the run time
  */
 Real* TAUREF{nullptr};
-ops_dat* g_Tau{nullptr};
 ops_dat* g_DiscreteConvectionTerm{nullptr};
 ops_dat* g_CoordinateXYZ{nullptr};
 /*!
@@ -122,7 +121,6 @@ void DefineVariables() {
     g_fStage = new ops_dat[BLOCKNUM];
     g_feq = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
-    g_Tau = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
     BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
     BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
@@ -212,10 +210,6 @@ void DefineVariables() {
         g_MacroVars[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "Tau_" + label;
-        g_Tau[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMCOMPONENTS, size, base, d_m,
-                         d_p, (Real*)temp, RealC, dataName.c_str());
         dataName = "Nodetype_" + label;
         // problem specific -- cut cell method
         g_NodeType[blockIndex] =
@@ -253,7 +247,6 @@ void DefineVariables() {
     g_fStage = new ops_dat[BLOCKNUM];
     g_feq = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
-    g_Tau = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
     BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
     BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
@@ -403,10 +396,6 @@ void DefineVariables() {
         g_MacroVars[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "Tau_" + label;
-        g_Tau[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMCOMPONENTS, size, base, d_m,
-                         d_p, (Real*)temp, RealC, dataName.c_str());
         dataName = "Nodetype_" + label;
         // problem specific -- cut cell method
         g_NodeType[blockIndex] =
@@ -451,7 +440,6 @@ void DefineVariablesFromHDF5() {
     g_fStage = new ops_dat[BLOCKNUM];
     g_feq = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
-    g_Tau = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
     BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
     BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
@@ -573,10 +561,6 @@ void DefineVariablesFromHDF5() {
         g_MacroVars[blockIndex] =
             ops_decl_dat_hdf5(g_Block[blockIndex], NUMMACROVAR, "double",
                               dataName.c_str(), fileName.c_str());
-        dataName = "Tau_" + label;
-        g_Tau[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMCOMPONENTS, size, base, d_m,
-                         d_p, (Real*)temp, RealC, dataName.c_str());
         dataName = "Nodetype_" + label;
         // problem specific -- cut cell method
         g_NodeType[blockIndex] = ops_decl_dat_hdf5(
@@ -801,7 +785,6 @@ void WriteFlowfieldToHdf5(const long timeStep) {
         std::string fileName = CASENAME + "_" + blockName + ".h5";
         ops_fetch_block_hdf5_file(g_Block[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_MacroVars[blockIndex], fileName.c_str());
-        ops_fetch_dat_hdf5_file(g_Tau[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_CoordinateXYZ[blockIndex], fileName.c_str());
     }
 }
@@ -890,7 +873,6 @@ void DestroyFlowfield() {
     FreeArrayMemory(g_Bodyforce);
     FreeArrayMemory(g_Block);
     FreeArrayMemory(g_MacroVars);
-    FreeArrayMemory(g_Tau);
     FreeArrayMemory(TAUREF);
     FreeArrayMemory(g_CoordinateXYZ);
     if (HaloRelationNum > 0) FreeArrayMemory(HaloRelations);

@@ -96,39 +96,6 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
 }
 
 /*!
- * For most of cases, in particular, tau may not change actually
- * But for compressible flows, it will change
- * Due to the property of LBM, even modelling a liquid,there will be a
- * 'Knudsen' number
- */
-void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
-                Real* tau) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
-    if (vt != Vertex_ImmersedSolid) {
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-            CollisionType CollisionType{
-                (CollisionType)CollisionType[compoIndex]};
-            const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-            if (Equilibrium_BGKIsothermal2nd == CollisionType) {
-                Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};
-                const Real T{1};
-                tau[OPS_ACC_MD3(compoIndex, 0, 0)] =
-                    tauRef[compoIndex] / (rho * sqrt(T));
-            }
-            if (Collision_BGKThermal4th == CollisionType) {
-                Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};
-                Real T{macroVars[OPS_ACC_MD2(startPos + 3, 0, 0)]};
-                tau[OPS_ACC_MD3(compoIndex, 0, 0)] =
-                    tauRef[compoIndex] / (rho * sqrt(T));
-            }
-            if (Collision_BGKSWE4th == CollisionType) {
-                Real h{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};
-                tau[OPS_ACC_MD3(compoIndex, 0, 0)] = tauRef[compoIndex] / h;
-            }
-        }
-    }
-}
-/*!
  * If a Newton-Cotes quadrature is used, it can be converted to the way
  * similar to the Gauss-Hermite quadrature *
  */
@@ -588,65 +555,6 @@ void KerCalcBodyForce3D(const Real* time, const int* nodeType,
     }
 }
 
-void KerCalcTau3D(const int* nodeType, const Real* tauRef,
-                  const Real* macroVars, Real* tau) {
-    /*
-     *@note: multicomponent ready for incompressible flows.
-     */
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        VertexTypes vt =
-            (VertexTypes)nodeType[OPS_ACC_MD0(compoIndex, 0, 0, 0)];
-        if (vt != Vertex_ImmersedSolid) {
-            CollisionType equilibriumType{
-                (CollisionType)EQUILIBRIUMTYPE[compoIndex]};
-            const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-            switch (equilibriumType) {
-                case Collision_BGKIsothermal2nd: {
-                    Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
-                    const Real T{1};
-                    tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =
-                        tauRef[compoIndex] / (rho * sqrt(T));
-#ifdef CPU
-                const Real res{tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)]};
-                if (isnan(res) || res <= 0 || isinf(res)) {
-                    ops_printf(
-                        "Error! Relaxation time %f becomes "
-                        "invalid for the component %i\n",
-                        res, compoIndex);
-                    assert(!(isnan(res) || res <= 0 || isinf(res)));
-                }
-#endif
-
-                } break;
-                case Collision_BGKThermal4th: {
-                    Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
-                    Real T{macroVars[OPS_ACC_MD2(startPos + 3, 0, 0, 0)]};
-                    tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =
-                        tauRef[compoIndex] / (rho * sqrt(T));
-#ifdef CPU
-                const Real res{tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)]};
-                if (isnan(res) || res <= 0 || isinf(res)) {
-                    ops_printf(
-                        "Error! Relaxation time %f becomes "
-                        "invalid for the component %i\n",
-                        res, compoIndex);
-                    assert(!(isnan(res) || res <= 0 || isinf(res)));
-                }
-#endif
-                } break;
-                default:
-#ifdef CPU
-                    ops_printf(
-                        "Error! We don't deal with the relaxation time for the "
-                        "chosen type of equilibrium function at this "
-                        "moment!\n");
-                    assert(false);
-#endif
-                    break;
-            }
-        }
-    }
-}
 /*!
  * If a Newton-Cotes quadrature is used, it can be converted to the way
  * similar to the Gauss-Hermite quadrature

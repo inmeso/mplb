@@ -46,20 +46,6 @@
  */
 
 #ifdef OPS_2D
-void UpdateTau() {
-    for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        ops_par_loop(KerCalcTau, "KerCalcTau", g_Block[blockIndex], SPACEDIM,
-                     iterRng,
-                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                                 LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_gbl(TauRef(), NUMCOMPONENTS, "double", OPS_READ),
-                     ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
-                                 LOCALSTENCIL, "double", OPS_READ),
-                     ops_arg_dat(g_Tau[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
-                                 "double", OPS_RW));
-    }
-}
 
 void Collision() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
@@ -414,13 +400,8 @@ void StreamCollision() {
 
 #if DebugLevel >= 1
     ops_printf("Calculating the equilibrium function and the body force term...\n");
-#endif    
-    UpdateFeqandBodyforce();
-
-#if DebugLevel >= 1
-    ops_printf("Calculating the relaxation time...\n");
 #endif
-    UpdateTau();
+    UpdateFeqandBodyforce();
 
 #if DebugLevel >= 1
     ops_printf("Colliding...\n");
@@ -438,7 +419,7 @@ void StreamCollision() {
     if (nullptr != HaloGroup()) {
         ops_halo_transfer(HaloGroup());
     }
-    
+
 #if DebugLevel >= 1
     ops_printf("Implementing the boundary conditions...\n");
 #endif

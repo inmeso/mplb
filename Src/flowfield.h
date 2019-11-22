@@ -8,7 +8,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,    
+ * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
@@ -82,11 +82,6 @@ extern ops_dat* g_MacroVars;
  * Typically used for steady flow.
  */
 extern ops_dat* g_MacroVarsCopy;
-/*!
- * Relaxation time
- * Depend on some macroscopic variables like rho,T
- */
-extern ops_dat* g_Tau;
 /*!
  * the residual error for steady flows
  * for each macroscopic variable, there are two values: the absolute

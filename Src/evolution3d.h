@@ -97,7 +97,6 @@ void InitialiseSolution3D();
 void DispResidualError3D(const int iter, const Real timePeriod);
 void NormaliseF3D(Real* ratio);
 void UpdateMacroVars3D();
-void UpdateTau3D();
 void UpdateFeqandBodyforce3D();
 void UpdateHalos3D();
 void ImplementBoundary3D();

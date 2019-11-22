@@ -47,20 +47,6 @@
  * some modifications in the Python translator.
  */
 #ifdef OPS_3D
-void UpdateTau3D() {
-    for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        ops_par_loop(KerCalcTau3D, "KerCalcTau3D", g_Block[blockIndex],
-                     SPACEDIM, iterRng,
-                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                                 LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_gbl(TauRef(), NUMCOMPONENTS, "double", OPS_READ),
-                     ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
-                                 LOCALSTENCIL, "double", OPS_READ),
-                     ops_arg_dat(g_Tau[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
-                                 "double", OPS_RW));
-    }
-}
 
 void Collision3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
@@ -336,10 +322,7 @@ void StreamCollision3D() {
     ops_printf("Calculating the equilibrium function and the body force term...\n");
 #endif
     UpdateFeqandBodyforce3D();
-#if DebugLevel >= 1
-    ops_printf("Calculating the relaxation time...\n");
-#endif
-    UpdateTau3D();
+
 #if DebugLevel >= 1
     ops_printf("Colliding...\n");
 #endif

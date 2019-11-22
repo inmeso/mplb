@@ -182,14 +182,7 @@ Real CalcSWEFeq(const int l, const Real h = 1, const Real u = 0,
 // Two-dimensional version
 void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq);
 void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars);
-/*!
- * @fn defining how to calculate the relaxation time
- * @param tauRef the reference relaxation time
- * @param macroVars the macroscopic variables
- * @param tau the calculated relaxation time
- */
-void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
-                Real* tau);
+
 // Three-dimensional version
 // We have to create 2D and 3D version because of the difference
 // of 2D and 3D OPS_ACC_MD2 macro
@@ -200,8 +193,6 @@ void KerCalcBodyForce(const Real* time, const int* nodeType,
                       const Real* coordinates, const Real* macroVars,
                       Real* bodyForce);
 void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq);
-void KerCalcTau3D(const int* nodeType, const Real* tauRef,
-                  const Real* macroVars, Real* tau);
 void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordinates, const Real* f, Real* macroVars);
 
 #endif
