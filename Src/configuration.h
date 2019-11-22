@@ -69,7 +69,7 @@ struct Configuration {
     std::vector<std::string> macroVarNames;
     std::vector<int> macroVarIds;
     std::vector<int> macroCompoIds;
-    std::vector<EquilibriumType> equilibriumTypes;
+    std::vector<CollisionType> CollisionTypes;
     std::vector<int> equilibriumCompoIds;
     std::vector<BodyForceType> bodyForceTypes;
     std::vector<int> bodyForceCompoIds;

@@ -68,10 +68,10 @@ NLOHMANN_JSON_SERIALIZE_ENUM(
     });
 
 NLOHMANN_JSON_SERIALIZE_ENUM(
-    EquilibriumType,
-    {{Equilibrium_BGKIsothermal2nd, "Equilibrium_BGKIsothermal2nd"},
-     {Equilibrium_BGKThermal4th, "Equilibrium_BGKThermal4th"},
-     {Equilibrium_BGKSWE4th, "Equilibrium_BGKSWE4th"}});
+    CollisionType,
+    {{Collision_BGKIsothermal2nd, "Collision_BGKIsothermal2nd"},
+     {Collision_BGKThermal4th, "Collision_BGKThermal4th"},
+     {Collision_BGKSWE4th, "Collision_BGKSWE4th"}});
 
 NLOHMANN_JSON_SERIALIZE_ENUM(BodyForceType,
                              {{BodyForce_1st, "BodyForce_1st"},
@@ -175,14 +175,14 @@ void ParseJson(json& jsonConfig) {
             jsonConfig["MacroVarTypes"].get<std::vector<VariableTypes>>();
     }
 
-    if (jsonConfig["EquilibriumType"].is_null()) {
+    if (jsonConfig["CollisionType"].is_null()) {
         ops_printf(
-            "Error! Please insert the EquilibriumType item into the "
+            "Error! Please insert the CollisionType item into the "
             "configuration!\n");
-        assert(jsonConfig["EquilibriumType"].is_null());
+        assert(jsonConfig["CollisionType"].is_null());
     } else {
-        config.equilibriumTypes =
-            jsonConfig["EquilibriumType"].get<std::vector<EquilibriumType>>();
+        config.CollisionTypes =
+            jsonConfig["CollisionType"].get<std::vector<CollisionType>>();
     }
 
     if (jsonConfig["EquilibriumCompoIds"].is_null()) {

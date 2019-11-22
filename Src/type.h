@@ -195,10 +195,10 @@ enum VariableTypes {
     Variable_W_Force = 10,
 };
 
-enum EquilibriumType {
-    Equilibrium_BGKIsothermal2nd = 0,
-    Equilibrium_BGKThermal4th = 1,
-    Equilibrium_BGKSWE4th = 2,
+enum CollisionType {
+    Collision_BGKIsothermal2nd = 0,
+    Collision_BGKThermal4th = 1,
+    Collision_BGKSWE4th = 2,
 };
 
 enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };

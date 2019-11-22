@@ -50,7 +50,7 @@ int* VARIABLECOMPINDEX{nullptr};
 int NUMCOMPONENTS{1};
 int* COMPOINDEX{nullptr};
 Real XIMAXVALUE{1};
-int* EQUILIBRIUMTYPE{nullptr};
+std::list<std::pair<SizeType, CollisionType>> COLLISIONTERMS;
 int* FORCETYPE{nullptr};
 int* VARIABLECOMPPOS{nullptr};
 /*!
@@ -374,31 +374,36 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     }
 }
 
-void DefineEquilibrium(std::vector<EquilibriumType> types,
-                       std::vector<int> compoId) {
-    int typeNum{(int)types.size()};
-    if (typeNum == NUMCOMPONENTS) {
-        if (nullptr == EQUILIBRIUMTYPE) {
-            EQUILIBRIUMTYPE = new int[typeNum];
-            for (int idx = 0; idx < typeNum; idx++) {
-                EQUILIBRIUMTYPE[idx] = types[idx];
-                ops_printf(
-                    "The equilibrium function type %i is chosen for "
-                    "Component "
-                    "%i\n",
-                    EQUILIBRIUMTYPE[idx], compoId[idx]);
-            }
-        } else {
-            ops_printf("%s\n", "Warning! EQUILIBRIUMTYPE has been allocated!");
-        }
-    } else {
+void DefineCollision(std::vector<CollisionType> types,
+                     std::vector<SizeType> compoId) {
+    const std::size_t typeSize{types.size()};
+    const std::size_t compoSize{compoId.size()};
+
+    if (typeSize != compoSize) {
         ops_printf(
-            "Error! There are %i equilibrium types defined but we have %i "
+            "Error! There are %i collision types defined for  %i "
             "components\n",
-            typeNum, NUMCOMPONENTS);
-        assert(typeNum == NUMCOMPONENTS);
+            typeSize, compoSize);
+        assert(typeSize == compoSize);
     }
-    ops_decl_const("EQUILIBRIUMTYPE", NUMCOMPONENTS, "int", EQUILIBRIUMTYPE);
+
+    if (compoSize > NUMCOMPONENTS){
+        ops_printf(
+            "Error! There are %i collision types defined but only %i "
+            "components\n",
+            compoSize, NUMCOMPONENTS);
+        assert(compoSize < NUMCOMPONENTS);
+    }
+
+    for (int idx = 0; idx < typeSize; idx++) {
+        ops_printf(
+            "The equilibrium function type %i is chosen for "
+            "Component "
+            "%i\n",
+            types.at(idx), compoId.at(idx));
+        std::pair<int, CollisionType> pair(compoId.at(idx), types.at(idx));
+        COLLISIONTERMS.push_back(pair);
+    }
 }
 
 void DefineBodyForce(std::vector<BodyForceType> types,
@@ -432,7 +437,6 @@ void DestroyModel() {
     FreeArrayMemory(VARIABLECOMPINDEX);
     FreeArrayMemory(COMPOINDEX);
     FreeArrayMemory(VARIABLECOMPPOS);
-    FreeArrayMemory(EQUILIBRIUMTYPE);
     FreeArrayMemory(FORCETYPE);
     FreeArrayMemory(XI);
     FreeArrayMemory(WEIGHTS);

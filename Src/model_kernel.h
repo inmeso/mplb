@@ -53,10 +53,10 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
     VertexTypes vt{(VertexTypes)nodeType[OPS_ACC0(0, 0)]};
     if (vt != Vertex_ImmersedSolid) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-            EquilibriumType equilibriumType{
-                (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
+            CollisionType CollisionType{
+                (CollisionType)CollisionType[compoIndex]};
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-            if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
+            if (Equilibrium_BGKIsothermal2nd == CollisionType) {
                 Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0)]};
                 Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0)]};
                 Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0)]};
@@ -68,7 +68,7 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
                         CalcBGKFeq(xiIndex, rho, u, v, T, polyOrder);
                 }
             }
-            if (Equilibrium_BGKThermal4th == equilibriumType) {
+            if (Collision_BGKThermal4th == CollisionType) {
                 Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0)]};
                 Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0)]};
                 Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0)]};
@@ -80,7 +80,7 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
                         CalcBGKFeq(xiIndex, rho, u, v, T, polyOrder);
                 }
             }
-            if (Equilibrium_BGKSWE4th == equilibriumType) {
+            if (Collision_BGKSWE4th == CollisionType) {
                 Real h{macroVars[OPS_ACC_MD1(startPos, 0, 0)]};
                 Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0)]};
                 Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0)]};
@@ -106,22 +106,22 @@ void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
     VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
     if (vt != Vertex_ImmersedSolid) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-            EquilibriumType equilibriumType{
-                (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
+            CollisionType CollisionType{
+                (CollisionType)CollisionType[compoIndex]};
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-            if (Equilibrium_BGKIsothermal2nd == equilibriumType) {
+            if (Equilibrium_BGKIsothermal2nd == CollisionType) {
                 Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};
                 const Real T{1};
                 tau[OPS_ACC_MD3(compoIndex, 0, 0)] =
                     tauRef[compoIndex] / (rho * sqrt(T));
             }
-            if (Equilibrium_BGKThermal4th == equilibriumType) {
+            if (Collision_BGKThermal4th == CollisionType) {
                 Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};
                 Real T{macroVars[OPS_ACC_MD2(startPos + 3, 0, 0)]};
                 tau[OPS_ACC_MD3(compoIndex, 0, 0)] =
                     tauRef[compoIndex] / (rho * sqrt(T));
             }
-            if (Equilibrium_BGKSWE4th == equilibriumType) {
+            if (Collision_BGKSWE4th == CollisionType) {
                 Real h{macroVars[OPS_ACC_MD2(startPos, 0, 0)]};
                 tau[OPS_ACC_MD3(compoIndex, 0, 0)] = tauRef[compoIndex] / h;
             }
@@ -457,11 +457,11 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
         VertexTypes vt =
             (VertexTypes)nodeType[OPS_ACC_MD0(compoIndex, 0, 0, 0)];
         if (vt != Vertex_ImmersedSolid) {
-            EquilibriumType equilibriumType{
-                (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
+            CollisionType equilibriumType{
+                (CollisionType)EQUILIBRIUMTYPE[compoIndex]};
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-            switch (equilibriumType) {
-                case Equilibrium_BGKIsothermal2nd: {
+            switch (CollisionType) {
+                case Collision_BGKIsothermal2nd: {
                     Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
                     Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
                     Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
@@ -485,7 +485,7 @@ void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
 #endif
                     }
                 } break;
-                case Equilibrium_BGKThermal4th: {
+                case Collision_BGKThermal4th: {
                     Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
                     Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
                     Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
@@ -597,11 +597,11 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
         VertexTypes vt =
             (VertexTypes)nodeType[OPS_ACC_MD0(compoIndex, 0, 0, 0)];
         if (vt != Vertex_ImmersedSolid) {
-            EquilibriumType equilibriumType{
-                (EquilibriumType)EQUILIBRIUMTYPE[compoIndex]};
+            CollisionType equilibriumType{
+                (CollisionType)EQUILIBRIUMTYPE[compoIndex]};
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
             switch (equilibriumType) {
-                case Equilibrium_BGKIsothermal2nd: {
+                case Collision_BGKIsothermal2nd: {
                     Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
                     const Real T{1};
                     tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =
@@ -618,7 +618,7 @@ void KerCalcTau3D(const int* nodeType, const Real* tauRef,
 #endif
 
                 } break;
-                case Equilibrium_BGKThermal4th: {
+                case Collision_BGKThermal4th: {
                     Real rho{macroVars[OPS_ACC_MD2(startPos, 0, 0, 0)]};
                     Real T{macroVars[OPS_ACC_MD2(startPos + 3, 0, 0, 0)]};
                     tau[OPS_ACC_MD3(compoIndex, 0, 0, 0)] =

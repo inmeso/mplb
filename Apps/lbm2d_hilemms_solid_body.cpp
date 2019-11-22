@@ -65,9 +65,9 @@ void simulate() {
     std::vector<int> macroCompoId{0, 0, 0};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
-    std::vector<EquilibriumType> equTypes{Equilibrium_BGKIsothermal2nd};
+    std::vector<CollisionType> equTypes{Equilibrium_BGKIsothermal2nd};
     std::vector<int> equCompoId{0};
-    DefineEquilibrium(equTypes, equCompoId);
+    DefineCollision(equTypes, equCompoId);
 
     std::vector<BodyForceType> bodyForceTypes{BodyForce_1st};
     std::vector<int> bodyForceCompoId{0};

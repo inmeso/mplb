@@ -38,6 +38,7 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <list>
 #include "type.h"
 
 /*!
@@ -104,10 +105,7 @@ extern int* VARIABLECOMPINDEX;
  * component
  */
 extern int* VARIABLECOMPPOS;
-/*!
- * Equilibrium function type
- */
-extern int* EQUILIBRIUMTYPE;
+
 /*!
  * Force function type
  */
@@ -116,6 +114,11 @@ extern int* FORCETYPE;
 void SetLatticeName(const std::vector<std::string>& latticeName);
 const std::vector<std::string> LatticeName();
 const std::vector<std::string> MacroVarName();
+/*!
+ * Get collision type
+ */
+const std::list<std::pair<SizeType,CollisionType >> & CollisionTerms();
+
 inline const int ComponentNum() { return NUMCOMPONENTS; }
 inline const int MacroVarsNum() { return NUMMACROVAR; }
 inline const int SizeF() { return NUMXI; }
@@ -138,8 +141,13 @@ void DefineMacroVars(std::vector<VariableTypes> types,
                      std::vector<std::string> names, std::vector<int> varId,
                      std::vector<int> compoId);
 
-void DefineEquilibrium(std::vector<EquilibriumType> types,
-                       std::vector<int> compoId);
+/*!
+* Define collision terms for specified components
+* Must be called after DefineComponets()
+* HiLeMMS interface, , https://gitlab.com/jpmeng/hilemms
+*/
+void DefineCollision(std::vector<CollisionType> types,
+                       std::vector<SizeType> compoId);
 
 void DefineBodyForce(std::vector<BodyForceType> types,
                      std::vector<int> compoId);
