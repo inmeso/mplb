@@ -193,6 +193,42 @@ void KerCalcBodyForce(const Real* time, const int* nodeType,
                       const Real* coordinates, const Real* macroVars,
                       Real* bodyForce);
 void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq);
+
 void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordinates, const Real* f, Real* macroVars);
+
+/**
+ * @brief Implement the BGK isothermal collision model
+ *
+ * @param fStage the temporary variable storing distribution after collision
+ * @param f distribution
+ * @param macroVars macroscopic variables
+ * @param nodeType
+ * @param tauRef relaxation time
+ * @param dt time step
+ * @param componentId the component to be working on
+ * Assumptions:
+ * 1. fStage before collision is body force distribution
+ * 2. The layout of macroVars is "rho, u, v, w"
+ */
+void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
+                  const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                  const Real* tauRef, const Real* dt, const int* componentId);
+
+/**
+ * @brief Implement the BGK thermal collision model
+ *
+ * @param fStage the temporary variable storing distribution after collision
+ * @param f distribution
+ * @param macroVars macroscopic variables
+ * @param nodeType
+ * @param tauRef relaxation time
+ * @param dt time step
+ * @param componentId componentId the component to be working on
+ * 1. fStage before collision is body force distribution
+ * 2. The layout of macroVars is "rho, u, v, w, T"
+*/
+void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
+                  const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                  const Real* tauRef, const Real* dt, const int* componentId)
 
 #endif

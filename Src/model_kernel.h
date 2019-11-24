@@ -417,82 +417,104 @@ void KerCalcBodyForce(const Real* time, const int* nodeType,
 
 #endif
 
-
+void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
+                  const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                  const Real* tauRef, const Real* dt, const int* componentId) {
 #ifdef OPS_3D
-void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq) {
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        VertexTypes vt =
-            (VertexTypes)nodeType[OPS_ACC_MD0(compoIndex, 0, 0, 0)];
-        if (vt != Vertex_ImmersedSolid) {
-            CollisionType equilibriumType{
-                (CollisionType)EQUILIBRIUMTYPE[compoIndex]};
-            const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-            switch (CollisionType) {
-                case Collision_BGKIsothermal2nd: {
-                    Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
-                    Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
-                    Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
-                    Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
-                    const Real T{1};
-                    const int polyOrder{2};
-                    for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                        const Real res{
-                           CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
-                        feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] = res;
+    const int compoIndex{*componentId};
+    VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
+    // collisionRequired: means if collision is required at boundary
+    // e.g., the ZouHe boundary condition explicitly requires collision
+    bool collisionRequired =
+        (vt == Vertex_Fluid || vt == Vertex_ZouHeVelocity ||
+         // vt == Vertex_KineticDiffuseWall ||
+         vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
+         vt == Vertex_ExtrapolPressure2ND || vt == Vertex_Periodic ||
+         vt == Vertex_NoslipEQN);
+    if (collisionRequired) {
+        const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
+        Real rho{macroVars(startPos, 0, 0, 0)};
+        Real u{macroVars(startPos + 1, 0, 0, 0)};
+        Real v{macroVars(startPos + 2, 0, 0, 0)};
+        Real w{macroVars(startPos + 3, 0, 0, 0)};
+        const Real T{1};
+        const int polyOrder{2};
+        Real tau = (*tauRef);
+        Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+        for (int xiIndex = COMPOINDEX[2 * compoIndex];
+             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+            const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
+            fStage(xiIndex, 0, 0, 0) =
+                f(xiIndex, 0, 0, 0) -
+                dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq) +
+                tau * dtOvertauPlusdt * fStage(xiIndex, 0, 0, 0);
 #ifdef CPU
-                        if (isnan(res) || res <= 0 || isinf(res)) {
-                            ops_printf(
-                                "Error! Equilibrium function %f becomes "
-                                "invalid for the component %i at the lattice "
-                                "%i\n",
-                                res, compoIndex, xiIndex);
-                            assert(!(isnan(res) || res <= 0 || isinf(res)));
-                        }
-#endif
-                    }
-                } break;
-                case Collision_BGKThermal4th: {
-                    Real rho{macroVars[OPS_ACC_MD1(startPos, 0, 0, 0)]};
-                    Real u{macroVars[OPS_ACC_MD1(startPos + 1, 0, 0, 0)]};
-                    Real v{macroVars[OPS_ACC_MD1(startPos + 2, 0, 0, 0)]};
-                    Real w{macroVars[OPS_ACC_MD1(startPos + 3, 0, 0, 0)]};
-                    Real T{macroVars[OPS_ACC_MD1(startPos + 4, 0, 0, 0)]};
-                    const int polyOrder{4};
-                    for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                        const Real res{
-                            CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
-                        feq[OPS_ACC_MD2(xiIndex, 0, 0, 0)] = res;
-#ifdef CPU
-                        if (isnan(res) || res <= 0 || isinf(res)) {
-                            ops_printf(
-                                "Error! Equilibrium function %f becomes "
-                                "invalid for the component %i at  the lattice "
-                                "%i\n",
-                                res, compoIndex, xiIndex);
-                            assert(!(isnan(res) || res <= 0 || isinf(res)));
-                        }
-#endif
-                    }
-
-                } break;
-                default:
-#ifdef CPU
-                    ops_printf(
-                        "Error! We don't deal with the chosen type of "
-                        "equilibrium function at this moment!\n");
-                    assert(false);
-#endif
-                    break;
+            const Real res{fStage(xiIndex, 0, 0, 0)};
+            if (isnan(res) || res <= 0 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes "
+                    "invalid for the component %i at  the lattice "
+                    "%i\n",
+                    res, compoIndex, xiIndex);
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
             }
+#endif // CPU
         }
     }
+#endif // OPS_3D
+}
+
+void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
+                  const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                  const Real* tauRef, const Real* dt, const int* componentId) {
+#ifdef OPS_3D
+    const int compoIndex{*componentId};
+    VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
+    // collisionRequired: means if collision is required at boundary
+    // e.g., the ZouHe boundary condition explicitly requires collision
+    bool collisionRequired =
+        (vt == Vertex_Fluid || vt == Vertex_ZouHeVelocity ||
+         // vt == Vertex_KineticDiffuseWall ||
+         vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
+         vt == Vertex_ExtrapolPressure2ND || vt == Vertex_Periodic ||
+         vt == Vertex_NoslipEQN);
+    if (collisionRequired) {
+        const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
+        Real rho{macroVars(startPos, 0, 0, 0)};
+        Real u{macroVars(startPos + 1, 0, 0, 0)};
+        Real v{macroVars(startPos + 2, 0, 0, 0)};
+        Real w{macroVars(startPos + 3, 0, 0, 0)};
+        Real T{macroVars(startPos + 4, 0, 0, 0)};
+        const int polyOrder{4};
+        Real tau = (*tauRef)/(rho*sqrt(T));
+        Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+        for (int xiIndex = COMPOINDEX[2 * compoIndex];
+             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+            const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
+            fStage(xiIndex, 0, 0, 0) =
+                f(xiIndex, 0, 0, 0) -
+                dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq) +
+                tau * dtOvertauPlusdt * fStage(xiIndex, 0, 0, 0);
+#ifdef CPU
+            const Real res{fStage(xiIndex, 0, 0, 0)};
+            if (isnan(res) || res <= 0 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes "
+                    "invalid for the component %i at  the lattice "
+                    "%i\n",
+                    res, compoIndex, xiIndex);
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
+            }
+#endif // CPU
+        }
+    }
+#endif // OPS_3D
 }
 
 void KerCalcBodyForce3D(const Real* time, const int* nodeType,
                         const Real* coordinates, const Real* macroVars,
                         Real* bodyForce) {
+#ifdef OPS_3D
     // here we assume the force is constant
     // user may introduce a function of g(r,t) for the body force
     const Real g[]{0.0001, 0, 0};
@@ -548,11 +570,12 @@ void KerCalcBodyForce3D(const Real* time, const int* nodeType,
                         "Error! We don't deal with the chosen type of "
                         "force function at this moment!\n");
                     assert(false);
-#endif
+#endif // CPU
                     break;
             }
         }
     }
+#endif //OPS_3D
 }
 
 /*!

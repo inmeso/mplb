@@ -1200,48 +1200,6 @@ void KerCutCellExplicitTimeMach(const Real* dt, const Real* schemeCoeff,
 #endif
 #ifdef OPS_3D  // three dimensional code
 
-void KerCollide3D(const Real* dt, const int* nodeType, const Real* f,
-                  const Real* feq, const Real* relaxationTime,
-                  const Real* bodyForce, Real* fStage) {
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        // collisionRequired: means if collision is required at boundary
-        // e.g., the ZouHe boundary condition explicitly requires collision
-        VertexTypes vt =
-            (VertexTypes)nodeType[OPS_ACC_MD1(compoIndex, 0, 0, 0)];
-        bool collisionRequired =
-            (vt == Vertex_Fluid  ||
-             vt == Vertex_ZouHeVelocity ||
-             // vt == Vertex_KineticDiffuseWall ||
-             vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
-             vt == Vertex_ExtrapolPressure2ND || vt == Vertex_Periodic ||
-             vt == Vertex_NoslipEQN );
-        if (collisionRequired) {
-            Real tau = relaxationTime[OPS_ACC_MD4(compoIndex, 0, 0, 0)];
-            Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
-            for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                 xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                fStage[OPS_ACC_MD6(xiIndex, 0, 0, 0)] =
-                    f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] -
-                    dtOvertauPlusdt * (f[OPS_ACC_MD2(xiIndex, 0, 0, 0)] -
-                                       feq[OPS_ACC_MD3(xiIndex, 0, 0, 0)]) +
-                    tau * dtOvertauPlusdt *
-                        bodyForce[OPS_ACC_MD5(xiIndex, 0, 0, 0)];
-#ifdef CPU
-                const Real res{fStage[OPS_ACC_MD6(xiIndex, 0, 0, 0)]};
-                if (isnan(res) || res <= 0 || isinf(res)) {
-                    ops_printf(
-                        "Error! Distribution function %f becomes "
-                        "invalid for the component %i at  the lattice "
-                        "%i\n",
-                        res, compoIndex, xiIndex);
-                    assert(!(isnan(res) || res <= 0 || isinf(res)));
-                }
-#endif
-            }
-        }
-    }
-}
-
 void KerStream3D(const int* nodeType, const int* geometry, const Real* fStage,
                  Real* f) {
     VertexGeometryTypes vg = (VertexGeometryTypes)geometry[OPS_ACC1(0, 0, 0)];
