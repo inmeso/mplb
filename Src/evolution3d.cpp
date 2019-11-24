@@ -51,21 +51,21 @@
 void Collision3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        ops_par_loop(KerCollide3D, "KerCollide3D", g_Block[blockIndex],
-                     SPACEDIM, iterRng,
-                     ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                                 LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
-                                 OPS_READ),
-                     ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
-                                 "double", OPS_READ),
-                     ops_arg_dat(g_Tau[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
-                                 "double", OPS_READ),
-                     ops_arg_dat(g_Bodyforce[blockIndex], NUMXI, LOCALSTENCIL,
-                                 "double", OPS_READ),
-                     ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
-                                 "double", OPS_WRITE));
+        // ops_par_loop(KerCollide3D, "KerCollide3D", g_Block[blockIndex],
+        //              SPACEDIM, iterRng,
+        //              ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
+        //              ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+        //                          LOCALSTENCIL, "int", OPS_READ),
+        //              ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
+        //                          OPS_READ),
+        //              ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
+        //                          "double", OPS_READ),
+        //              ops_arg_dat(g_Tau[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
+        //                          "double", OPS_READ),
+        //              ops_arg_dat(g_Bodyforce[blockIndex], NUMXI, LOCALSTENCIL,
+        //                          "double", OPS_READ),
+        //              ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
+        //                          "double", OPS_WRITE));
     }
 }
 
@@ -105,15 +105,6 @@ void UpdateMacroVars3D() {
 void UpdateFeqandBodyforce3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        ops_par_loop(KerCalcFeq3D, "KerCalcFeq3D", g_Block[blockIndex],
-                     SPACEDIM, iterRng,
-                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                                 LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
-                                 LOCALSTENCIL, "double", OPS_READ),
-                     ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
-                                 "double", OPS_RW));
-
         // time is not used in the current force
         Real* timeF{0};
         ops_par_loop(KerCalcBodyForce3D, "KerCalcBodyForce3D",
