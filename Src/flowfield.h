@@ -67,7 +67,6 @@ extern ops_dat* g_f;
  * if we use some control routine in the main.cpp
  */
 extern ops_dat* g_fStage;
-extern ops_dat* g_feq;
 /*!
  * Bodyforce, which is independent of the particle velocity
  */

@@ -51,7 +51,6 @@ int HALODEPTH{0};
 ops_block* g_Block{nullptr};
 ops_dat* g_f{nullptr};
 ops_dat* g_fStage{nullptr};
-ops_dat* g_feq{nullptr};
 ops_dat* g_MacroVars{nullptr};
 ops_dat* g_MacroVarsCopy{nullptr};
 Real* g_ResidualError{nullptr};
@@ -119,7 +118,6 @@ void DefineVariables() {
     g_f = new ops_dat[BLOCKNUM];
     g_Bodyforce = new ops_dat[BLOCKNUM];
     g_fStage = new ops_dat[BLOCKNUM];
-    g_feq = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
     BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
@@ -194,10 +192,6 @@ void DefineVariables() {
         g_f[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "feq_" + label;
-        g_feq[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
         dataName = "fStage_" + label;
         g_fStage[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
@@ -245,7 +239,6 @@ void DefineVariables() {
     g_f = new ops_dat[BLOCKNUM];
     g_Bodyforce = new ops_dat[BLOCKNUM];
     g_fStage = new ops_dat[BLOCKNUM];
-    g_feq = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
     BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
@@ -380,10 +373,6 @@ void DefineVariables() {
         g_f[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "feq_" + label;
-        g_feq[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
         dataName = "fStage_" + label;
         g_fStage[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
@@ -438,7 +427,6 @@ void DefineVariablesFromHDF5() {
     g_f = new ops_dat[BLOCKNUM];
     g_Bodyforce = new ops_dat[BLOCKNUM];
     g_fStage = new ops_dat[BLOCKNUM];
-    g_feq = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
     BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
@@ -543,10 +531,6 @@ void DefineVariablesFromHDF5() {
         std::string dataName("f_");
         dataName += label;
         g_f[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        dataName = "feq_" + label;
-        g_feq[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
         dataName = "fStage_" + label;
@@ -797,10 +781,7 @@ void WriteDistributionsToHdf5(const long timeStep) {
         blockName += (label + "_" + time);
         std::string fileName = CASENAME + "_" + blockName + ".h5";
         ops_fetch_block_hdf5_file(g_Block[blockIndex], fileName.c_str());
-        ops_fetch_dat_hdf5_file(g_f[blockIndex], fileName.c_str());
-        ops_fetch_dat_hdf5_file(g_feq[blockIndex], fileName.c_str());
-        ops_fetch_dat_hdf5_file(g_fStage[blockIndex], fileName.c_str());
-        ops_fetch_dat_hdf5_file(g_Bodyforce[blockIndex], fileName.c_str());
+        ops_fetch_dat_hdf5_file(g_f[blockIndex], fileName.c_str()););
     }
 }
 
@@ -869,7 +850,6 @@ void SetHaloRelationNum(const int haloRelationNum) {
 void DestroyFlowfield() {
     FreeArrayMemory(g_f);
     FreeArrayMemory(g_fStage);
-    FreeArrayMemory(g_feq);
     FreeArrayMemory(g_Bodyforce);
     FreeArrayMemory(g_Block);
     FreeArrayMemory(g_MacroVars);
