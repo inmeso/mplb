@@ -55,7 +55,7 @@ ops_dat* g_MacroVars{nullptr};
 ops_dat* g_MacroVarsCopy{nullptr};
 Real* g_ResidualError{nullptr};
 ops_reduction* g_ResidualErrorHandle{nullptr};
-ops_dat* g_Bodyforce{nullptr};
+ops_dat* g_MacroBodyforce{nullptr};
 /**
  * DT: time step
  */
@@ -196,7 +196,7 @@ void DefineVariables() {
         g_fStage[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "Bodyforce_" + label;
+        dataName = "MacroBodyForce_" + label;
         g_Bodyforce[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
@@ -237,7 +237,7 @@ void DefineVariables() {
     void* temp = NULL;
     g_Block = new ops_block[BLOCKNUM];
     g_f = new ops_dat[BLOCKNUM];
-    g_Bodyforce = new ops_dat[BLOCKNUM];
+    g_MacroBodyforce = new ops_dat[BLOCKNUM];
     g_fStage = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
@@ -260,10 +260,6 @@ void DefineVariables() {
 
     int haloDepth{HaloPtNum()};
     HALODEPTH = HaloPtNum();
-
-#ifdef debug
-    ops_printf("%s%i\n", "DefineVariable: haloDepth=", haloDepth);
-#endif
 
     // max halo depths for the dat in the positive direction
     // int d_p[2] = {haloDepth, haloDepth};
@@ -377,9 +373,9 @@ void DefineVariables() {
         g_fStage[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "Bodyforce_" + label;
-        g_Bodyforce[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
+        dataName = "MacroBodyForce_" + label;
+        g_MacroBodyforce[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], SPACEDIM, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
         dataName = "MacroVars_" + label;
         g_MacroVars[blockIndex] =
@@ -425,7 +421,7 @@ void DefineVariablesFromHDF5() {
     void* temp = NULL;
     g_Block = new ops_block[BLOCKNUM];
     g_f = new ops_dat[BLOCKNUM];
-    g_Bodyforce = new ops_dat[BLOCKNUM];
+    g_MacroBodyforce = new ops_dat[BLOCKNUM];
     g_fStage = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
@@ -445,9 +441,6 @@ void DefineVariablesFromHDF5() {
     g_ResidualError = new Real[2 * MacroVarsNum()];
     // end if steady flow
     int haloDepth = HaloDepth();
-#ifdef debug
-    ops_printf("%s%i\n", "DefineVariable: haloDepth=", haloDepth);
-#endif
     // max halo depths for the dat in the positive direction
     int* d_p = new int[SPACEDIM];
     // max halo depths for the dat in the negative direction
@@ -537,9 +530,9 @@ void DefineVariablesFromHDF5() {
         g_fStage[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "Bodyforce_" + label;
-        g_Bodyforce[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
+        dataName = "MacroBodyForce_" + label;
+        g_MacroBodyforce[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], SPACEDIM, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
         dataName = "MacroVars_" + label;
         g_MacroVars[blockIndex] =
@@ -770,6 +763,7 @@ void WriteFlowfieldToHdf5(const long timeStep) {
         ops_fetch_block_hdf5_file(g_Block[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_MacroVars[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_CoordinateXYZ[blockIndex], fileName.c_str());
+        ops_fetch_dat_hdf5_file(g_MacroBodyforce[blockIndex], fileName.c_str());
     }
 }
 
@@ -781,7 +775,7 @@ void WriteDistributionsToHdf5(const long timeStep) {
         blockName += (label + "_" + time);
         std::string fileName = CASENAME + "_" + blockName + ".h5";
         ops_fetch_block_hdf5_file(g_Block[blockIndex], fileName.c_str());
-        ops_fetch_dat_hdf5_file(g_f[blockIndex], fileName.c_str()););
+        ops_fetch_dat_hdf5_file(g_f[blockIndex], fileName.c_str());
     }
 }
 
@@ -850,7 +844,7 @@ void SetHaloRelationNum(const int haloRelationNum) {
 void DestroyFlowfield() {
     FreeArrayMemory(g_f);
     FreeArrayMemory(g_fStage);
-    FreeArrayMemory(g_Bodyforce);
+    FreeArrayMemory(g_MacroBodyforce);
     FreeArrayMemory(g_Block);
     FreeArrayMemory(g_MacroVars);
     FreeArrayMemory(TAUREF);

@@ -68,9 +68,9 @@ extern ops_dat* g_f;
  */
 extern ops_dat* g_fStage;
 /*!
- * Bodyforce, which is independent of the particle velocity
+ * Macroscopic bodyforce
  */
-extern ops_dat* g_Bodyforce;
+extern ops_dat* g_MacroBodyforce;
 /*!
  * g_MacroVars: for storing the macroscopic variables, to reduce
  * the complexity of calculating equilibrium, it will has a specific order
