@@ -74,7 +74,7 @@ void Stream3D();
 /*!
  * Ops_par_loop for the collision step
  */
-void Collision3D();
+void PreDefinedCollision3D();
 // finite-difference scheme with cutting-cell technique related
 /*!
  * Overall wrap for a finite difference scheme
@@ -97,7 +97,7 @@ void InitialiseSolution3D();
 void DispResidualError3D(const int iter, const Real timePeriod);
 void NormaliseF3D(Real* ratio);
 void UpdateMacroVars3D();
-void UpdateFeqandBodyforce3D();
+void PreDefinedBodyForce3D();
 void UpdateHalos3D();
 void ImplementBoundary3D();
 void CopyDistribution3D(const ops_dat* fSrc, ops_dat* fDest);

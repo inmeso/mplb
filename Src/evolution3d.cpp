@@ -48,24 +48,52 @@
  */
 #ifdef OPS_3D
 
-void Collision3D() {
+void PreDefinedCollision3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        // ops_par_loop(KerCollide3D, "KerCollide3D", g_Block[blockIndex],
-        //              SPACEDIM, iterRng,
-        //              ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
-        //              ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-        //                          LOCALSTENCIL, "int", OPS_READ),
-        //              ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
-        //                          OPS_READ),
-        //              ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
-        //                          "double", OPS_READ),
-        //              ops_arg_dat(g_Tau[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
-        //                          "double", OPS_READ),
-        //              ops_arg_dat(g_Bodyforce[blockIndex], NUMXI, LOCALSTENCIL,
-        //                          "double", OPS_READ),
-        //              ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
-        //                          "double", OPS_WRITE));
+        for (auto& pair : CollisionTerms()) {
+            const int compoId{pair.first};
+            const CollisionType collisionType{pair.second};
+            const Real tau{TauRef()[compoId]};
+
+            switch (collisionType) {
+                case Collision_BGKIsothermal2nd:
+                    ops_par_loop(
+                        KerCollideBGKIsothermal3D, "KerCollideBGKIsothermal3D",
+                        g_Block[blockIndex], SPACEDIM, iterRng,
+                        ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
+                                    LOCALSTENCIL, "double", OPS_RW),
+                        ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
+                        ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
+                        ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+                    break;
+                case Collision_BGKThermal4th:
+                    ops_par_loop(
+                        KerCollideBGKThermal3D, "KerCollideBGKThermal3D",
+                        g_Block[blockIndex], SPACEDIM, iterRng,
+                        ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
+                                    LOCALSTENCIL, "double", OPS_RW),
+                        ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
+                        ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
+                        ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+                    break;
+
+                default:
+                    break;
+            }
+        }
     }
 }
 
@@ -101,7 +129,7 @@ void UpdateMacroVars3D() {
     }
 }
 
-void UpdateFeqandBodyforce3D() {
+void PreDefinedBodyForce3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         // time is not used in the current force
@@ -193,9 +221,9 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
 //     }
 // }
 
-
+//TODO to be updated according to the new idea
 void InitialiseSolution3D() {
-    UpdateFeqandBodyforce3D();
+    PreDefinedBodyForce3D();
     CopyDistribution3D(g_feq, g_f);
 }
 
@@ -297,26 +325,75 @@ void DispResidualError3D(const int iter, const Real checkPeriod) {
     }
 }
 
+void Iterate(const SizeType steps, const SizeType checkPointPeriod) {
+    const SchemeType scheme = Scheme();
+    ops_printf("Starting the iteration...\n");
+    switch (scheme) {
+        case Scheme_StreamCollision: {
+            for (int iter = 0; iter < steps; iter++) {
+                StreamCollision3D();
+                if ((iter % checkPointPeriod) == 0 && iter != 0) {
+                    UpdateMacroVars3D();
+                    CalcResidualError3D();
+                    DispResidualError3D(iter, checkPointPeriod * TimeStep());
+                    WriteFlowfieldToHdf5(iter);
+                    WriteDistributionsToHdf5(iter);
+                    WriteNodePropertyToHdf5(iter);
+                }
+            }
+        } break;
+        default:
+            break;
+    }
+    ops_printf("Simulation finished! Exiting...\n");
+    DestroyModel();
+    DestroyFlowfield();
+}
+
+void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod) {
+    const SchemeType scheme = Scheme();
+    ops_printf("Starting the iteration...\n");
+    switch (scheme) {
+        case Scheme_StreamCollision: {
+            int iter{0};
+            Real residualError{1};
+            do {
+                if ((iter % checkPointPeriod) == 0) {
+                    UpdateMacroVars3D();
+                    CalcResidualError3D();
+                    residualError =
+                        GetMaximumResidualError(checkPointPeriod * TimeStep());
+                    DispResidualError3D(iter, checkPointPeriod * TimeStep());
+                    WriteFlowfieldToHdf5(iter);
+                    WriteDistributionsToHdf5(iter);
+                    WriteNodePropertyToHdf5(iter);
+                }
+
+                iter = iter + 1;
+            } while (residualError >= convergenceCriteria);
+        } break;
+        default:
+            break;
+    }
+    ops_printf("Simulation finished! Exiting...\n");
+    DestroyModel();
+    DestroyFlowfield();
+}
+
 void StreamCollision3D() {
 #if DebugLevel >= 1
     ops_printf("Calculating the macroscopic variables...\n");
 #endif
     UpdateMacroVars3D();
-    // Real TotalMass{0};
-    // CalcTotalMass(&TotalMass);
-    // Real Ratio{TotalMass/TotalMeshSize()};
-    // NormaliseF(&Ratio);
-    // UpdateMacroVars();
     CopyDistribution3D(g_f, g_fStage);
 #if DebugLevel >= 1
-    ops_printf("Calculating the equilibrium function and the body force term...\n");
+    ops_printf("Calculating the collision term...\n");
 #endif
-    UpdateFeqandBodyforce3D();
-
+    PreDefinedCollision3D();
 #if DebugLevel >= 1
-    ops_printf("Colliding...\n");
+    ops_printf("Calculating the collision term...\n");
 #endif
-    Collision3D();
+    PreDefinedBodyForce3D();
 #if DebugLevel >= 1
     ops_printf("Streaming...\n");
 #endif
@@ -330,6 +407,8 @@ void StreamCollision3D() {
 #if DebugLevel >= 1
     ops_printf("Implementing the boundary conditions...\n");
 #endif
+//TODO This function shall be inside evolution3D.cpp
+//TODO The data structure for BCs shall be inside boundary module
     ImplementBoundaryConditions();
 }
 

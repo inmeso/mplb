@@ -397,93 +397,6 @@ Real GetMaximumResidualError(const Real checkPeriod) {
     return maxResError;
 }
 
-void Iterate(const SizeType steps, const SizeType checkPointPeriod) {
-    const SchemeType scheme = Scheme();
-    ops_printf("Starting the iteration...\n");
-    switch (scheme) {
-        case Scheme_StreamCollision: {
-            for (int iter = 0; iter < steps; iter++) {
-#ifdef OPS_3D
-                StreamCollision3D();  // Stream-Collision scheme
-                // TimeMarching();//Finite difference scheme + cutting cell
-                if ((iter % checkPointPeriod) == 0 && iter != 0) {
-                    UpdateMacroVars3D();
-                    CalcResidualError3D();
-                    DispResidualError3D(iter, checkPointPeriod * TimeStep());
-                    WriteFlowfieldToHdf5(iter);
-                    WriteDistributionsToHdf5(iter);
-                    WriteNodePropertyToHdf5(iter);
-                }
-#endif  // end of OPS_3D
-#ifdef OPS_2D
-                StreamCollision();  // Stream-Collision scheme
-                // TimeMarching();//Finite difference scheme + cutting cell
-                if ((iter % checkPointPeriod) == 0 && iter != 0) {
-                    UpdateMacroVars();
-                    CalcResidualError();
-                    DispResidualError(iter, checkPointPeriod * TimeStep());
-                    WriteFlowfieldToHdf5(iter);
-                    WriteDistributionsToHdf5(iter);
-                    WriteNodePropertyToHdf5(iter);
-                }
-#endif  // end of OPS_2D
-            }
-        } break;
-        default:
-            break;
-    }
-    ops_printf("Simulation finished! Exiting...\n");
-    DestroyModel();
-    DestroyFlowfield();
-}
-
-void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod) {
-    const SchemeType scheme = Scheme();
-    ops_printf("Starting the iteration...\n");
-    switch (scheme) {
-        case Scheme_StreamCollision: {
-            int iter{0};
-            Real residualError{1};
-            do {
-#ifdef OPS_3D
-                StreamCollision3D();  // Stream-Collision scheme
-                if ((iter % checkPointPeriod) == 0) {
-                    UpdateMacroVars3D();
-                    CalcResidualError3D();
-                    residualError =
-                        GetMaximumResidualError(checkPointPeriod * TimeStep());
-                    DispResidualError3D(iter, checkPointPeriod * TimeStep());
-                    WriteFlowfieldToHdf5(iter);
-                    WriteDistributionsToHdf5(iter);
-                    WriteNodePropertyToHdf5(iter);
-                }
-#endif  // end of OPS_3D
-
-#ifdef OPS_2D
-                StreamCollision();  // Stream-Collision scheme
-                // TimeMarching();//Finite difference scheme + cutting cell
-                if ((iter % checkPointPeriod) == 0 && iter != 0) {
-                    UpdateMacroVars();
-                    CalcResidualError();
-                    residualError =
-                        GetMaximumResidualError(checkPointPeriod * TimeStep());
-                    DispResidualError(iter, checkPointPeriod * TimeStep());
-                    WriteFlowfieldToHdf5(iter);
-                    WriteDistributionsToHdf5(iter);
-                    WriteNodePropertyToHdf5(iter);
-                }
-
-#endif  // end of OPS_2D
-                iter = iter + 1;
-            } while (residualError >= convergenceCriteria);
-        } break;
-        default:
-            break;
-    }
-    ops_printf("Simulation finished! Exiting...\n");
-    DestroyModel();
-    DestroyFlowfield();
-}
 
 void AllocateVertices(const int vertexNum) {
     if (vertexNum == NUMVERTICES) {
@@ -492,6 +405,8 @@ void AllocateVertices(const int vertexNum) {
         }
     }
 }
+
+
 
 void AddEmbeddedBody(int vertexNum, Real* vertexCoords) {
     NUMVERTICES = vertexNum;
