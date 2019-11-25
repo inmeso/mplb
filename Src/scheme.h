@@ -69,25 +69,6 @@ void SetupCommonStencils();
 
 // Declaring kernel functions which to be called by ops_par_loop
 #ifdef OPS_2D
-// Finite difference schemes for boundary fitting mesh
-// These schemes have not been tested.
-/*!
- * General function to calculate the gradient
- * len is the dimension of var, the dimension of grad must be 2*len for 2D case
- * the halo points must be filled beforehand according to the chosen scheme.
- * To be improved in the future
- */
-//TODO delete unimplemented functionalities for the release
-void KerGradCentral2nd(const Real* var, Real* grad, const int len);
-void KerGradCentral4th(const Real* var, Real* grad, const int len);
-void KerGradCentral6th(const Real* var, Real* grad, const int len);
-void KerCVTUpwind2nd(const Real* metrics, const Real* f, Real* xidotgrad,
-                     const Real* XI);
-void KerCVTUpwind4th(const Real* metrics, const Real* f, Real* xidotgrad,
-                     const Real* XI);
-void KerCVTUpwind6th(const Real* metrics, const Real* f, Real* xidotgrad,
-                     const Real* XI);
-// End finite difference schemes for boundary fitting mesh
 // Schemes for cutting cell mesh technique
 // stream-collision scheme
 /*!
@@ -112,8 +93,8 @@ void KerCollide(const Real* dt, const int* nodeType, const Real* f,
  * @param fStage temporary storage
  * @param f distribution function
  */
-void KerStream(const int* nodeType, const int* geometry, const Real* fStage,
-               Real* f);
+void KerStream(ACC<Real>& f, const ACC<Real>& fStage, const ACC<int>& nodeType,
+               const ACC<int>& geometry);
 #endif
 
 #ifdef OPS_3D
@@ -139,40 +120,38 @@ void KerCollide3D(const Real* dt, const int* nodeType, const Real* f,
  * @param fStage temporary storage
  * @param f distribution function
  */
-void KerStream3D(const int* nodeType, const int* geometry, const Real* fStage,
-                 Real* f);
+void KerStream3D(ACC<Real>& f, const ACC<Real>& fStage,
+                 const ACC<int>& nodeType, const ACC<int>& geometry);
 #endif
 #ifdef OPS_2D
 // Finite difference scheme for the cutting cell mesh
 /*!
  * First order upwind scheme for term c dot df/dx
  */
-void KerCutCellCVTUpwind1st(const Real* coordinateXYZ, const int* nodeType,
-                            const int* geometry, const Real* f,
-                            Real* fGradient);
+void KerCutCellCVTUpwind1st(const ACC<Real>& coordinateXYZ,
+                            const ACC<int>& nodeType, const ACC<int>& geometry,
+                            const ACC<Real>& f, ACC<Real>& fGradient)
 /*!
  * Second order upwind scheme for term c dot df/dx
  */
-void KerCutCellCVTUpwind2nd(const Real* coordinateXYZ, const int* nodeType,
-                            const int* geometry, const Real* f,
-                            Real* fGradient);
+KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ, const ACC<int> nodeType,
+                       const ACC<int>& geometry, const ACC<Real>& f,
+                       ACC<Real>& fGradient);
 /*!
  * A semi-implicit time scheme where f in the n+1 time step is used in
  * collision term
  */
-void KerCutCellSemiImplicitTimeMach(const Real* dt, const Real* schemeCoeff,
-                                    const int* nodeType, const int* geometry,
-                                    const Real* fGradient, const Real* feq,
-                                    const Real* relaxationTime,
-                                    const Real* bodyForce, Real* f);
+void KerCutCellSemiImplicitTimeMach(
+    const Real* dt, const Real* schemeCoeff, const ACC<int>& nodeType,
+    const ACC<int>& geometry, const ACC<Real>& fGradient, const ACC<Real>& feq,
+    const ACC<Real>& relaxationTime, const ACC<Real>& bodyForce, Real* f);
 /*!
  * A general explicit time scheme which can be defined by using schemeCoeff
  */
-void KerCutCellExplicitTimeMach(const Real* dt, const Real* schemeCoeff,
-                                const int* nodeType, const int* geometry,
-                                const Real* fGradient, const Real* feq,
-                                const Real* relaxationTime,
-                                const Real* bodyForce, Real* f);
+void KerCutCellExplicitTimeMach(
+    const Real* dt, const Real* schemeCoeff, const ACC<int>& nodeType,
+    const ACC<int>& geometry, const ACC<Real>& fGradient, const ACC<Real>& feq,
+    const ACC<Real>& relaxationTime, const ACC<Real>& bodyForce, ACC<Real>& f);
 // End Finite difference scheme for the cutting cell mesh
 #endif
 //HiLeMMS interface see https://gitlab.com/jpmeng/hilemms
@@ -180,61 +159,61 @@ void DefineScheme(const SchemeType scheme);
 /*!
  * Utility kernel function for setting distribution to a fixed value
  */
-void KerSetfFixValue(const Real* value, Real* f);
+void KerSetfFixValue(const Real* value, ACC<Real>& f);
 /*!
  * Utility kernel function for re-normalise distribution function by a ratio
  */
-void KerNormaliseF(const Real* ratio, Real* f);
+void KerNormaliseF(const Real* ratio, ACC<Real>& f);
 /*!
  * Utility kernel function for copying distribution function
  */
-void KerCopyf(const Real* src, Real* dest);
+void KerCopyf(const ACC<Real>& src, ACC<Real>& dest);
 /*!
  * Utility kernel function for calculating numerator of L2 norm
  */
-void KerCalcMacroVarSquareofDifference(const Real* macroVars,
-                                       const Real* macroVarsCopy,
+void KerCalcMacroVarSquareofDifference(const ACC<Real>& macroVars,
+                                       const ACC<Real>& macroVarsCopy,
                                        const int* varId, double* sumSquareDiff);
 
 /*!
  * Utility kernel function for calculating denominator of L2 norm
  * Mainly for a steady problem
  */
-void KerCalcMacroVarSquare(const Real* macroVars, const int* varId,
+void KerCalcMacroVarSquare(const ACC<Real>& macroVars, const int* varId,
                            double* sumSquare);
 /*!
  * Utility kernel function for calculating whole block sum of density
  */
-void KerCalcSumofDensity(const Real* macroVars, double* densitySum);
+void KerCalcSumofDensity(const ACC<Real>& macroVars, double* densitySum);
 /*!
  * Utility kernel function for copying geometry and node property data
  */
-void KerCopyProperty(const int* src, int* dest);
+void KerCopyProperty(const ACC<int>& src, ACC<int>& dest);
 /*!
  * Utility kernel function for copying macroscopic variables
  */
-void KerCopyMacroVars(const Real* src, Real* dest);
+void KerCopyMacroVars(const ACC<Real> &src, ACC<Real>& dest);
 /*!
  * Utility kernel function for copying distribution with a displacement
  */
-void KerCopyDispf(const Real* src, Real* dest, const int* disp);
+void KerCopyDispf(const ACC<Real>& src, ACC<Real>& dest, const int* disp);
 /*!
  * Utility kernel function for copying coordinates
  */
-void KerCopyCoordinateXYZ(const Real* src, Real* dest);
+void KerCopyCoordinateXYZ(const ACC<Real>& src, ACC<Real>& dest);
 /*!
  * Set a scalar variable to a specific value.Mainly used in initialisation.
  */
-void KerSetGeometryProperty(const int* value, int* var);
-void KerSetNodeType(const int* value, int* var, const int* compoId);
+void KerSetGeometryProperty(const int* value, ACC<int>& var);
+void KerSetNodeType(const int* value, ACC<int>& var, const int* compoId);
 /*!
  * Set macroscopic variable to values specified by value.
  */
-void KerSetMacroVarToConst(const Real* value, Real* macroVar);
+void KerSetMacroVarToConst(const Real* value, ACC<Real>& macroVar);
 /*!
  * Kernel function for getting the value at a grid point
  */
-void KerGetPointMacroVarValue(const Real* macroVars, Real* pointValue);
+void KerGetPointMacroVarValue(const ACC<Real>& macroVars, Real* pointValue);
 const int SchemeHaloNum();
 void SetSchemeHaloNum(const int schemeHaloNum);
 const SchemeType Scheme();
