@@ -422,8 +422,9 @@ void KerCalcBodyForce(const Real* time, const ACC<int>& nodeType,
 #ifdef OPS_3D
 
 void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
-                  const ACC<Real>& macroVars, const ACC<int>& nodeType,
-                  const Real* tauRef, const Real* dt, const int* componentId) {
+                               const ACC<Real>& macroVars,
+                               const ACC<int>& nodeType, const Real* tauRef,
+                               const Real* dt, const int* componentId) {
 #ifdef OPS_3D
     const int compoIndex{*componentId};
     VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
@@ -448,10 +449,16 @@ void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
             const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
-            fStage(xiIndex, 0, 0, 0) =
-                f(xiIndex, 0, 0, 0) -
-                dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq) +
-                tau * dtOvertauPlusdt * fStage(xiIndex, 0, 0, 0);
+            if (vt == Vertex_Fluid) {
+                fStage(xiIndex, 0, 0, 0) =
+                    f(xiIndex, 0, 0, 0) -
+                    dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq) +
+                    tau * dtOvertauPlusdt * fStage(xiIndex, 0, 0, 0);
+            } else {
+                fStage(xiIndex, 0, 0, 0) =
+                    f(xiIndex, 0, 0, 0) -
+                    dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq);
+            }
 #ifdef CPU
             const Real res{fStage(xiIndex, 0, 0, 0)};
             if (isnan(res) || res <= 0 || isinf(res)) {
@@ -462,15 +469,16 @@ void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
                     res, compoIndex, xiIndex);
                 assert(!(isnan(res) || res <= 0 || isinf(res)));
             }
-#endif // CPU
+#endif  // CPU
         }
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
 void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
-                  const ACC<Real>& macroVars, const ACC<int>& nodeType,
-                  const Real* tauRef, const Real* dt, const int* componentId) {
+                            const ACC<Real>& macroVars,
+                            const ACC<int>& nodeType, const Real* tauRef,
+                            const Real* dt, const int* componentId) {
 #ifdef OPS_3D
     const int compoIndex{*componentId};
     VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
@@ -490,15 +498,21 @@ void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
         Real w{macroVars(startPos + 3, 0, 0, 0)};
         Real T{macroVars(startPos + 4, 0, 0, 0)};
         const int polyOrder{4};
-        Real tau = (*tauRef)/(rho*sqrt(T));
+        Real tau = (*tauRef) / (rho * sqrt(T));
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
             const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
-            fStage(xiIndex, 0, 0, 0) =
-                f(xiIndex, 0, 0, 0) -
-                dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq) +
-                tau * dtOvertauPlusdt * fStage(xiIndex, 0, 0, 0);
+            if (vt == Vertex_Fluid) {
+                fStage(xiIndex, 0, 0, 0) =
+                    f(xiIndex, 0, 0, 0) -
+                    dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq) +
+                    tau * dtOvertauPlusdt * fStage(xiIndex, 0, 0, 0);
+            } else {
+                fStage(xiIndex, 0, 0, 0) =
+                    f(xiIndex, 0, 0, 0) -
+                    dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq);
+            }
 #ifdef CPU
             const Real res{fStage(xiIndex, 0, 0, 0)};
             if (isnan(res) || res <= 0 || isinf(res)) {
@@ -509,77 +523,41 @@ void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
                     res, compoIndex, xiIndex);
                 assert(!(isnan(res) || res <= 0 || isinf(res)));
             }
-#endif // CPU
+#endif  // CPU
         }
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
-void KerCalcBodyForce3D(const Real* time, const int* nodeType,
-                        const Real* coordinates, const Real* macroVars,
-                        Real* bodyForce) {
+void KerCalcBodyForce1ST(ACC<Real>& fStage, const ACC<Real>& acceration,
+                        const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                        const int* componentId) {
 #ifdef OPS_3D
-    // here we assume the force is constant
-    // user may introduce a function of g(r,t) for the body force
-    const Real g[]{0.0001, 0, 0};
-
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        VertexTypes vt =
-            (VertexTypes)nodeType(compoIndex, 0, 0, 0);
-        if (vt != Vertex_ImmersedSolid) {
-            BodyForceType forceType{(BodyForceType)FORCETYPE[compoIndex]};
-            const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-            switch (forceType) {
-                case BodyForce_1st: {
-                    Real rho{macroVars(startPos, 0, 0, 0)};
-                    for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                        bodyForce(xiIndex, 0, 0, 0) =
-                            CalcBodyForce(xiIndex, rho, g);
+    const int compoIndex{*componentId};
+    VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
+    if (vt == Vertex_Fluid) {
+        const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
+        Real rho{macroVars(startPos, 0, 0, 0)};
+        Real g[]{acceration(3 * compoIndex, 0, 0, 0),
+                 acceration(3 * compoIndex + 1, 0, 0, 0),
+                 acceration(3 * compoIndex + 2, 0, 0, 0)};
+        for (int xiIndex = COMPOINDEX[2 * compoIndex];
+             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+            const Real bodyForce{CalcBodyForce(xiIndex, rho, g)};
 #ifdef CPU
-                        const Real res{
-                            bodyForce(xiIndex, 0, 0, 0)};
-                        if (isnan(res) || isinf(res)) {
-                            ops_printf(
-                                "Error! Body force  %f becomes "
-                                "invalid for the component %i at  the lattice "
-                                "%i\n",
-                                res, compoIndex, xiIndex);
-                            assert(!(isnan(res) || res <= 0 || isinf(res)));
-                        }
-#endif
-                    }
-                } break;
-                case BodyForce_None: {
-                    for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                        bodyForce(xiIndex, 0, 0, 0) = 0;
-#ifdef CPU
-                        const Real res{
-                            bodyForce(xiIndex, 0, 0, 0)};
-                        if (isnan(res) || isinf(res)) {
-                            ops_printf(
-                                "Error! Body force %f becomes "
-                                "invalid for the component %i at  the lattice "
-                                "%i\n",
-                                res, compoIndex, xiIndex);
-                            assert(!(isnan(res) || res <= 0 || isinf(res)));
-                        }
-#endif
-                    }
-                } break;
-                default:
-#ifdef CPU
-                    ops_printf(
-                        "Error! We don't deal with the chosen type of "
-                        "force function at this moment!\n");
-                    assert(false);
-#endif // CPU
-                    break;
+            if (isnan(bodyForce) || isinf(bodyForce)) {
+                ops_printf(
+                    "Error! Body force  %f becomes "
+                    "invalid for the component %i at  the lattice "
+                    "%i\n",
+                    bodyForce, compoIndex, xiIndex);
+                assert(!(isnan(bodyForce) || isinf(bodyForce)));
             }
+#endif
+            fStage(xiIndex, 0, 0, 0) = bodyForce;
         }
     }
-#endif //OPS_3D
+#endif  // OPS_3D
 }
 
 /*!

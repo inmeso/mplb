@@ -100,7 +100,7 @@ void UpdateMacroVars3D();
 void PreDefinedBodyForce3D();
 void UpdateHalos3D();
 void ImplementBoundary3D();
-void CopyDistribution3D(const ops_dat* fSrc, ops_dat* fDest);
+void CopyDistribution3D(ops_dat* fDest, const ops_dat* fSrc);
 
 void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                           const Real* givenVars, int* range,

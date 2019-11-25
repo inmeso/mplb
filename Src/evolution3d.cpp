@@ -224,18 +224,66 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
 //TODO to be updated according to the new idea
 void InitialiseSolution3D() {
     PreDefinedBodyForce3D();
-    CopyDistribution3D(g_feq, g_f);
+    //CopyBlockEnvelopDistribution3D(g_fStage, g_f);
 }
 
-void CopyDistribution3D(const ops_dat* fSrc, ops_dat* fDest) {
+void CopyDistribution3D(ops_dat* fDest, const ops_dat* fSrc) {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
                      iterRng,
-                     ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
-                                 "double", OPS_READ),
                      ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
-                                 "double", OPS_WRITE));
+                                 "double", OPS_WRITE),
+                     ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_READ));
+    }
+}
+
+void CopyBlockEnvelopDistribution3D(ops_dat* fDest, const ops_dat* fSrc) {
+    for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
+        int* iterRng = BlockIterRng(blockIndex, IterRngImin());
+        ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
+                     iterRng,
+                     ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_WRITE),
+                     ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_READ));
+
+        iterRng = BlockIterRng(blockIndex, IterRngImax());
+        ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
+                     iterRng,
+                     ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_WRITE),
+                     ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_READ));
+        iterRng = BlockIterRng(blockIndex, IterRngJmin());
+        ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
+                     iterRng,
+                     ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_WRITE),
+                     ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_READ));
+        iterRng = BlockIterRng(blockIndex, IterRngJmax());
+        ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
+                     iterRng,
+                     ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_WRITE),
+                     ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_READ));
+        iterRng = BlockIterRng(blockIndex, IterRngKmin());
+        ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
+                     iterRng,
+                     ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_WRITE),
+                     ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_READ));
+        iterRng = BlockIterRng(blockIndex, IterRngKmax());
+        ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
+                     iterRng,
+                     ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_WRITE),
+                     ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
+                                 "double", OPS_READ));
     }
 }
 
@@ -385,15 +433,16 @@ void StreamCollision3D() {
     ops_printf("Calculating the macroscopic variables...\n");
 #endif
     UpdateMacroVars3D();
-    CopyDistribution3D(g_f, g_fStage);
+    CopyBlockEnvelopDistribution3D(g_fStage, g_f);
+#if DebugLevel >= 1
+    ops_printf("Calculating the mesoscopic body force term...\n");
+#endif
+    PreDefinedBodyForce3D();
 #if DebugLevel >= 1
     ops_printf("Calculating the collision term...\n");
 #endif
     PreDefinedCollision3D();
-#if DebugLevel >= 1
-    ops_printf("Calculating the collision term...\n");
-#endif
-    PreDefinedBodyForce3D();
+
 #if DebugLevel >= 1
     ops_printf("Streaming...\n");
 #endif

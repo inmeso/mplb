@@ -374,9 +374,10 @@ void DefineVariables() {
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
         dataName = "MacroBodyForce_" + label;
+        const int bodyForceSize{SPACEDIM * NUMCOMPONENTS};
         g_MacroBodyforce[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], SPACEDIM, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
+            ops_decl_dat(g_Block[blockIndex], bodyForceSize, size, base, d_m,
+                         d_p, (Real*)temp, RealC, dataName.c_str());
         dataName = "MacroVars_" + label;
         g_MacroVars[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
@@ -531,9 +532,10 @@ void DefineVariablesFromHDF5() {
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
         dataName = "MacroBodyForce_" + label;
+        const int bodyForceSize{SPACEDIM * NUMCOMPONENTS};
         g_MacroBodyforce[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], SPACEDIM, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
+            ops_decl_dat(g_Block[blockIndex], bodyForceSize, size, base, d_m,
+                         d_p, (Real*)temp, RealC, dataName.c_str());
         dataName = "MacroVars_" + label;
         g_MacroVars[blockIndex] =
             ops_decl_dat_hdf5(g_Block[blockIndex], NUMMACROVAR, "double",

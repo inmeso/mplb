@@ -1612,7 +1612,7 @@ void KerSetMacroVarToConst(const Real* value, ACC<Real>& macroVar) {
 #endif
     }
 }
-void KerCopyf(const ACC<Real>& src, ACC<Real>& dest) {
+void KerCopyf(ACC<Real>& dest, const ACC<Real>& src) {
     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
 #ifdef OPS_2D
         dest(xiIndex, 0, 0) = src(xiIndex, 0, 0);
@@ -1622,6 +1622,7 @@ void KerCopyf(const ACC<Real>& src, ACC<Real>& dest) {
 #endif
     }
 }
+
 void KerCopyProperty(const ACC<int>& src, ACC<int>& dest) {
 #ifdef OPS_2D
     dest(0, 0) = src(0, 0);
@@ -1716,6 +1717,20 @@ void KerSetfFixValue(const Real* value, ACC<Real>& f) {
 #endif
     }
 }
+
+void KerSetfFixValue(ACC<Real>& f, const Real* value, const int* componentId) {
+    const int compoIndex{*componentId};
+    for (int xiIndex = COMPOINDEX[2 * compoIndex];
+         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+#ifdef OPS_2D
+        f(xiIndex, 0, 0) = (*value);
+#endif
+#ifdef OPS_3D
+        f(xiIndex, 0, 0, 0) = (*value);
+#endif
+    }
+}
+
 void KerGetPointMacroVarValue(const ACC<Real>& macroVars, Real* pointValue) {
 #ifdef OPS_2D
     *pointValue = *pointValue + macroVars(1, 0, 0) / macroVars(0, 0, 0);
