@@ -70,16 +70,15 @@ void Collision() {
 void Stream() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        ops_par_loop(KerStream, "KerStream", g_Block[blockIndex], SPACEDIM,
-                     iterRng,
-                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                                 LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
-                                 LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_dat(g_fStage[blockIndex], NUMXI,
-                                 ONEPTLATTICESTENCIL, "double", OPS_READ),
-                     ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
-                                 OPS_RW));
+        ops_par_loop(
+            KerStream, "KerStream", g_Block[blockIndex], SPACEDIM, iterRng,
+            ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double", OPS_RW),
+            ops_arg_dat(g_fStage[blockIndex], NUMXI, ONEPTLATTICESTENCIL,
+                        "double", OPS_READ)
+                ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
+                            "int", OPS_READ),
+            ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL, "int",
+                        OPS_READ));
     }
 }
 
@@ -343,38 +342,39 @@ void CalcResidualError() {
 void ForwardEuler() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        ops_par_loop(KerCutCellCVTUpwind2nd, "KerCutCellCVTUpwind2nd",
-                     g_Block[blockIndex], SPACEDIM, iterRng,
-                     ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
-                                 ONEPTREGULARSTENCIL, "double", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                                 LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
-                                 LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_dat(g_f[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
-                                 "double", OPS_READ),
-                     ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
-                                 "double", OPS_RW));
+//TODO finite difference scheme needs to be revised for the new colliison manner
+        // ops_par_loop(KerCutCellCVTUpwind2nd, "KerCutCellCVTUpwind2nd",
+        //              g_Block[blockIndex], SPACEDIM, iterRng,
+        //              ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
+        //                          ONEPTREGULARSTENCIL, "double", OPS_READ),
+        //              ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+        //                          LOCALSTENCIL, "int", OPS_READ),
+        //              ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+        //                          LOCALSTENCIL, "int", OPS_READ),
+        //              ops_arg_dat(g_f[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
+        //                          "double", OPS_READ),
+        //              ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
+        //                          "double", OPS_RW));
         Real schemeCoeff{1};
-        ops_par_loop(KerCutCellExplicitTimeMach, "KerCutCellExplicitTimeMach",
-                     g_Block[blockIndex], SPACEDIM, iterRng,
-                     ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
-                     ops_arg_gbl(&schemeCoeff, 1, "double", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                                 LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
-                                 LOCALSTENCIL, "int", OPS_READ),
-                     ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
-                                 "double", OPS_READ),
-                     ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
-                                 "double", OPS_READ),
-                     ops_arg_dat(g_Tau[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
-                                 "double", OPS_READ),
-                     ops_arg_dat(g_Bodyforce[blockIndex], NUMXI, LOCALSTENCIL,
-                                 "double", OPS_READ),
-                     ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
-                                 OPS_RW));
-    }
+    //     ops_par_loop(KerCutCellExplicitTimeMach, "KerCutCellExplicitTimeMach",
+    //                  g_Block[blockIndex], SPACEDIM, iterRng,
+    //                  ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
+    //                  ops_arg_gbl(&schemeCoeff, 1, "double", OPS_READ),
+    //                  ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+    //                              LOCALSTENCIL, "int", OPS_READ),
+    //                  ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+    //                              LOCALSTENCIL, "int", OPS_READ),
+    //                  ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
+    //                              "double", OPS_READ),
+    //                  ops_arg_dat(g_feq[blockIndex], NUMXI, LOCALSTENCIL,
+    //                              "double", OPS_READ),
+    //                  ops_arg_dat(g_Tau[blockIndex], NUMCOMPONENTS, LOCALSTENCIL,
+    //                              "double", OPS_READ),
+    //                  ops_arg_dat(g_Bodyforce[blockIndex], NUMXI, LOCALSTENCIL,
+    //                              "double", OPS_READ),
+    //                  ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
+    //                              OPS_RW));
+    // }
 }
 
 void DispResidualError(const int iter, const Real checkPeriod) {

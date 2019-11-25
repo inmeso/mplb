@@ -60,7 +60,8 @@ typedef std::size_t SizeType;
 //#define debug
 #include "assert.h"
 #include <vector>
-#include "ops_seq.h"
+#include "ops_seq_v2.h"
+
 // It looks that OPS always fills the uninitialised storage with 0 so
 // we try to avoid 0 value for these types
 // Use this type to describe different node type in terms of boundary types

@@ -180,21 +180,25 @@ Real CalcSWEFeq(const int l, const Real h = 1, const Real u = 0,
  * Polynomial equilibrium function: upto the fourth order
  */
 // Two-dimensional version
+#ifdef OPS_2D
 void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq);
-void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars);
-
-// Three-dimensional version
-// We have to create 2D and 3D version because of the difference
-// of 2D and 3D OPS_ACC_MD2 macro
-void KerCalcBodyForce3D(const Real* time, const int* nodeType,
-                        const Real* coordinates, const Real* macroVars,
-                        Real* bodyForce);
+void KerCalcMacroVars(const ACC<int>& nodeType, const ACC<Real>& f,
+                      ACC<Real>& macroVars);
 void KerCalcBodyForce(const Real* time, const int* nodeType,
                       const Real* coordinates, const Real* macroVars,
                       Real* bodyForce);
-void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq);
+#endif
+// Three-dimensional version
+// We have to create 2D and 3D version because of the difference
+// of 2D and 3D OPS_ACC_MD2 macro
+#ifdef OPS_3D
+void KerCalcBodyForce3D(const Real* time, const int* nodeType,
+                        const Real* coordinates, const Real* macroVars,
+                        Real* bodyForce);
 
-void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordinates, const Real* f, Real* macroVars);
+void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
+                        const ACC<int>& nodeType, const ACC<Real>& coordinates,
+                        const Real* dt);
 
 /**
  * @brief Implement the BGK isothermal collision model
@@ -229,6 +233,6 @@ void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
 */
 void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
                   const ACC<Real>& macroVars, const ACC<int>& nodeType,
-                  const Real* tauRef, const Real* dt, const int* componentId)
-
+                  const Real* tauRef, const Real* dt, const int* componentId);
+#endif // OPS_3D
 #endif

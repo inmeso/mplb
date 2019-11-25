@@ -28,125 +28,111 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 #ifndef HILEMMS_OPS_KERNEL
 #define HILEMMS_OPS_KERNEL
 #include "hilemms.h"
 
-void KerSetCoordinates(const Real* coordX, const Real* coordY, const int* idx,
-                       Real* coordinates) {
+void KerSetCoordinates(ACC<Real>& coordinates, const int* idx,
+                       const Real* coordX, const Real* coordY) {
 #ifdef OPS_2D
-    coordinates[OPS_ACC_MD3(0, 0, 0)] = coordX[idx[0]];
-    coordinates[OPS_ACC_MD3(1, 0, 0)] = coordY[idx[1]];
+    coordinates(0, 0, 0) = coordX[idx[0]];
+    coordinates(1, 0, 0) = coordY[idx[1]];
 #endif
 }
 
-
-void KerSetCoordinates3D(const Real* coordX, const Real* coordY,
-                         const Real* coordZ, const int* idx,
-                         Real* coordinates) {
+void KerSetCoordinates3D(ACC<Real>& coordinates, const int* idx,
+                         const Real* coordX, const Real* coordY,
+                         const Real* coordZ) {
 #ifdef OPS_3D
-    coordinates[OPS_ACC_MD4(0, 0, 0, 0)] = coordX[idx[0]];
-    coordinates[OPS_ACC_MD4(1, 0, 0, 0)] = coordY[idx[1]];
-    coordinates[OPS_ACC_MD4(2, 0, 0, 0)] = coordZ[idx[2]];
-#endif 
+    coordinates(0, 0, 0, 0) = coordX[idx[0]];
+    coordinates(1, 0, 0, 0) = coordY[idx[1]];
+    coordinates(2, 0, 0, 0) = coordZ[idx[2]];
+#endif
 }
 
-
 // Kernel to set initial value for a particlaur component.
-void KerSetInitialMacroVars(Real* macroVars, const Real* coordinates,
+void KerSetInitialMacroVars(ACC<Real>& macroVars, const ACC<Real>& coordinates,
                             const int* idx) {
     Real* initiaNodeMacroVars = new Real[NUMMACROVAR];
     Real* nodeCoordinates = new Real[SPACEDIM];
     for (int i = 0; i < SPACEDIM; i++) {
 #ifdef OPS_2D
-        nodeCoordinates[i] = coordinates[OPS_ACC_MD1(i, 0, 0)];
+        nodeCoordinates[i] = coordinates(i, 0, 0);
 #endif
 #ifdef OPS_3D
-        nodeCoordinates[i] = coordinates[OPS_ACC_MD1(i, 0, 0, 0)];
+        nodeCoordinates[i] = coordinates(i, 0, 0, 0);
 #endif
     }
     InitialiseNodeMacroVars(initiaNodeMacroVars, nodeCoordinates);
     for (int i = 0; i < NUMMACROVAR; i++) {
 #ifdef OPS_2D
-        macroVars[OPS_ACC_MD0(i, 0, 0)] = initiaNodeMacroVars[i];
+        macroVars(i, 0, 0) = initiaNodeMacroVars[i];
 #endif
 #ifdef OPS_3D
-        macroVars[OPS_ACC_MD0(i, 0, 0, 0)] = initiaNodeMacroVars[i];
+        macroVars(i, 0, 0, 0) = initiaNodeMacroVars[i];
 #endif
     }
     delete[] initiaNodeMacroVars;
     delete[] nodeCoordinates;
 }
 
-void KerSetEmbeddedBodyBoundary(int* surfaceBoundary,
-                                const int* geometryProperty, int* nodeType) {
+void KerSetEmbeddedBodyBoundary(ACC<int>& nodeType,
+                                const ACC<int>& geometryProperty,
+                                int* surfaceBoundary) {
 #ifdef OPS_2D
-    VertexGeometryTypes gp =
-        (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0)];
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC2(0, 0)];
+    VertexGeometryTypes gp = (VertexGeometryTypes)geometryProperty(0, 0);
+    VertexTypes vt = (VertexTypes)nodeType(0, 0);
     if (gp != VG_Fluid && gp != VG_ImmersedSolid && Vertex_Fluid != vt) {
-        nodeType[OPS_ACC2(0, 0)] = *surfaceBoundary;
+        nodeType(0, 0) = *surfaceBoundary;
     }
 #endif
 }
 
-void KerSetEmbeddedCircle(Real* diameter, Real* centerPos,
-                         const Real* coordinates, int* nodeType,
-                         int* geometryProperty) {
+void KerSetEmbeddedCircle(ACC<int>& nodeType, ACC<int>& geometryProperty,
+                          const Real* coordinates, Real* diameter,
+                          Real* centerPos) {
 #ifdef OPS_2D
-    if ((coordinates[OPS_ACC_MD3(0, 0, 0)] - centerPos[0]) *
-                (coordinates[OPS_ACC_MD3(0, 0, 0)] - centerPos[0]) +
-            (coordinates[OPS_ACC_MD3(1, 0, 0)] - centerPos[1]) *
-                (coordinates[OPS_ACC_MD3(1, 0, 0)] - centerPos[1]) <=
+    if ((coordinates(0, 0, 0) - centerPos[0]) *
+                (coordinates(0, 0, 0) - centerPos[0]) +
+            (coordinates(1, 0, 0) - centerPos[1]) *
+                (coordinates(1, 0, 0) - centerPos[1]) <=
         (*diameter) * (*diameter) / 4) {
-        nodeType[OPS_ACC4(0, 0)] = (int)Vertex_ImmersedSolid;
-        geometryProperty[OPS_ACC5(0, 0)] = (int)VG_ImmersedSolid;
+        nodeType(0, 0) = (int)Vertex_ImmersedSolid;
+        geometryProperty(0, 0) = (int)VG_ImmersedSolid;
     }
 #endif
 }
 
-void KerSetEmbeddedEllipse(Real* semiMajorAxes, Real* semiMinorAxis,
-                           Real* centerPos, const Real* coordinates,
-                           int* nodeType, int* geometryProperty) {
+void KerSetEmbeddedEllipse(ACC<int>& nodeType, ACC<int>& geometryProperty,
+                           const ACC<Real>& coordinates, Real* semiMajorAxes,
+                           Real* semiMinorAxis, Real* centerPos) {
 #ifdef OPS_2D
-    if ((coordinates[OPS_ACC_MD3(0, 0, 0)] - centerPos[0]) / (*semiMajorAxes) *
-                (coordinates[OPS_ACC_MD3(0, 0, 0)] - centerPos[0]) /
-                (*semiMajorAxes) +
-            (coordinates[OPS_ACC_MD3(1, 0, 0)] - centerPos[1]) /
-                (*semiMinorAxis) *
-                (coordinates[OPS_ACC_MD3(1, 0, 0)] - centerPos[1]) /
-                (*semiMinorAxis) <=
+    if ((coordinates(0, 0, 0) - centerPos[0]) / (*semiMajorAxes) *
+                (coordinates(0, 0, 0) - centerPos[0]) / (*semiMajorAxes) +
+            (coordinates(1, 0, 0) - centerPos[1]) / (*semiMinorAxis) *
+                (coordinates(1, 0, 0) - centerPos[1]) / (*semiMinorAxis) <=
         1.0) {
-        nodeType[OPS_ACC4(0, 0)] = (int)Vertex_ImmersedSolid;
-        geometryProperty[OPS_ACC5(0, 0)] = (int)VG_ImmersedSolid;
+        nodeType(0, 0) = (int)Vertex_ImmersedSolid;
+        geometryProperty(0, 0) = (int)VG_ImmersedSolid;
     }
 #endif
 }
 
-void KerSweep(const int* geometryProperty, int* nodeType) {
+void KerSweep(ACC<int> nodeType, const ACC<int>& geometryProperty) {
 #ifdef OPS_2D
-    VertexGeometryTypes vg =
-        (VertexGeometryTypes)geometryProperty[OPS_ACC0(0, 0)];
+    VertexGeometryTypes vg = (VertexGeometryTypes)geometryProperty(0, 0);
     if (VG_ImmersedSolid == vg) {
         VertexGeometryTypes neiborVertexType[8];
-        neiborVertexType[0] =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC0(1, 0)];
-        neiborVertexType[1] =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC0(-1, 0)];
-        neiborVertexType[2] =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC0(0, 1)];
-        neiborVertexType[3] =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC0(0, -1)];
-        neiborVertexType[4] =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC0(1, 1)];
-        neiborVertexType[5] =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC0(-1, -1)];
-        neiborVertexType[6] =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC0(-1, 1)];
-        neiborVertexType[7] =
-            (VertexGeometryTypes)geometryProperty[OPS_ACC0(1, -1)];
+        neiborVertexType[0] = (VertexGeometryTypes)geometryProperty(1, 0);
+        neiborVertexType[1] = (VertexGeometryTypes)geometryProperty(-1, 0);
+        neiborVertexType[2] = (VertexGeometryTypes)geometryProperty(0, 1);
+        neiborVertexType[3] = (VertexGeometryTypes)geometryProperty(0, -1);
+        neiborVertexType[4] = (VertexGeometryTypes)geometryProperty(1, 1);
+        neiborVertexType[5] = (VertexGeometryTypes)geometryProperty(-1, -1);
+        neiborVertexType[6] = (VertexGeometryTypes)geometryProperty(-1, 1);
+        neiborVertexType[7] = (VertexGeometryTypes)geometryProperty(1, -1);
         int fluidNeighborNum = 0;
         for (int i = 0; i < 8; i++) {
             if (VG_ImmersedSolid != neiborVertexType[i]) {
@@ -161,7 +147,7 @@ void KerSweep(const int* geometryProperty, int* nodeType) {
             }
         }
         if (fluidNeighborNum > 0 && solidNeighborNumatCoord <= 1) {
-            nodeType[OPS_ACC1(0, 0)] = Vertex_Fluid;
+            nodeType(0, 0) = Vertex_Fluid;
             ops_printf(
                 "A solid point is wiped off due to there are %d fluid points "
                 "surrounded and only %d solid points at x and y coordinates\n ",
@@ -171,20 +157,21 @@ void KerSweep(const int* geometryProperty, int* nodeType) {
 #endif
 }
 
-void KerSyncGeometryProperty(const int* nodeType, int* geometryProperty) {
+void KerSyncGeometryProperty(ACC<int>& geometryProperty,
+                             const ACC<int>& nodeType) {
 #ifdef OPS_2D
-    VertexGeometryTypes gp =
-        (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0)];
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
+    VertexGeometryTypes gp = (VertexGeometryTypes)geometryProperty(0, 0);
+    VertexTypes vt = (VertexTypes)nodeType(0, 0);
     if (Vertex_Fluid == vt && gp != VG_Fluid) {
-        geometryProperty[OPS_ACC1(0, 0)] = (int)VG_Fluid;
+        geometryProperty(0, 0) = (int)VG_Fluid;
     }
 #endif
 }
 
-void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
+void KerSetEmbeddedBodyGeometry(ACC<int>& geometryProperty,
+                                const ACC<int>& nodeType) {
 #ifdef OPS_2D
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
+    VertexTypes vt = (VertexTypes)nodeType(0, 0);
     if (Vertex_ImmersedSolid == vt) {
         VertexTypes neiborVertexType[8];
         /*
@@ -196,14 +183,14 @@ void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
                         *     *     *
                         5*****3*****7
         */
-        neiborVertexType[0] = (VertexTypes)nodeType[OPS_ACC0(1, 0)];
-        neiborVertexType[1] = (VertexTypes)nodeType[OPS_ACC0(-1, 0)];
-        neiborVertexType[2] = (VertexTypes)nodeType[OPS_ACC0(0, 1)];
-        neiborVertexType[3] = (VertexTypes)nodeType[OPS_ACC0(0, -1)];
-        neiborVertexType[4] = (VertexTypes)nodeType[OPS_ACC0(1, 1)];
-        neiborVertexType[5] = (VertexTypes)nodeType[OPS_ACC0(-1, -1)];
-        neiborVertexType[6] = (VertexTypes)nodeType[OPS_ACC0(-1, 1)];
-        neiborVertexType[7] = (VertexTypes)nodeType[OPS_ACC0(1, -1)];
+        neiborVertexType[0] = (VertexTypes)nodeType(1, 0);
+        neiborVertexType[1] = (VertexTypes)nodeType(-1, 0);
+        neiborVertexType[2] = (VertexTypes)nodeType(0, 1);
+        neiborVertexType[3] = (VertexTypes)nodeType(0, -1);
+        neiborVertexType[4] = (VertexTypes)nodeType(1, 1);
+        neiborVertexType[5] = (VertexTypes)nodeType(-1, -1);
+        neiborVertexType[6] = (VertexTypes)nodeType(-1, 1);
+        neiborVertexType[7] = (VertexTypes)nodeType(1, -1);
         int fluidNeiborNum{0};
         for (int i = 0; i < 8; i++) {
             if (Vertex_ImmersedSolid != neiborVertexType[i]) {
@@ -230,7 +217,7 @@ void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
                 if (Vertex_ImmersedSolid == neiborVertexType[2] &&
                     Vertex_ImmersedSolid == neiborVertexType[1]) {
                     if (Vertex_ImmersedSolid == neiborVertexType[6]) {
-                        geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IPJM_O;
+                        geometryProperty(0, 0) = (int)VG_IPJM_O;
                     } else {
                         ops_printf("%s\n",
                                    "There appears to be hanged solid points");
@@ -240,7 +227,7 @@ void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
                 if (Vertex_ImmersedSolid == neiborVertexType[3] &&
                     Vertex_ImmersedSolid == neiborVertexType[1]) {
                     if (Vertex_ImmersedSolid == neiborVertexType[5]) {
-                        geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IPJP_O;
+                        geometryProperty(0, 0) = (int)VG_IPJP_O;
                     } else {
                         ops_printf("%s\n",
                                    "There appears to be hanged solid points");
@@ -250,7 +237,7 @@ void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
                 if (Vertex_ImmersedSolid == neiborVertexType[3] &&
                     Vertex_ImmersedSolid == neiborVertexType[0]) {
                     if (Vertex_ImmersedSolid == neiborVertexType[7]) {
-                        geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IMJP_O;
+                        geometryProperty(0, 0) = (int)VG_IMJP_O;
                     } else {
                         ops_printf("%s\n",
                                    "There appears to be hanged solid points");
@@ -259,7 +246,7 @@ void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
                 if (Vertex_ImmersedSolid == neiborVertexType[2] &&
                     Vertex_ImmersedSolid == neiborVertexType[0]) {
                     if (Vertex_ImmersedSolid == neiborVertexType[4]) {
-                        geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IMJM_O;
+                        geometryProperty(0, 0) = (int)VG_IMJM_O;
                     } else {
                         ops_printf("%s\n",
                                    "There appears to be hanged solid points");
@@ -269,32 +256,32 @@ void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
             // Planlar corner
             if (3 == solidNeiborNumatCoord) {
                 if (Vertex_ImmersedSolid != neiborVertexType[0]) {
-                    geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IP;
+                    geometryProperty(0, 0) = (int)VG_IP;
                 }
                 if (Vertex_ImmersedSolid != neiborVertexType[1]) {
-                    geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IM;
+                    geometryProperty(0, 0) = (int)VG_IM;
                 }
                 if (Vertex_ImmersedSolid != neiborVertexType[2]) {
-                    geometryProperty[OPS_ACC1(0, 0)] = (int)VG_JP;
+                    geometryProperty(0, 0) = (int)VG_JP;
                 }
                 if (Vertex_ImmersedSolid != neiborVertexType[3]) {
-                    geometryProperty[OPS_ACC1(0, 0)] = (int)VG_JM;
+                    geometryProperty(0, 0) = (int)VG_JM;
                 }
             }
             // Inner corner
             if (4 == solidNeiborNumatCoord) {
                 if (1 == fluidNeiborNum) {
                     if (Vertex_ImmersedSolid != neiborVertexType[4]) {
-                        geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IPJP_I;
+                        geometryProperty(0, 0) = (int)VG_IPJP_I;
                     }
                     if (Vertex_ImmersedSolid != neiborVertexType[5]) {
-                        geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IMJM_I;
+                        geometryProperty(0, 0) = (int)VG_IMJM_I;
                     }
                     if (Vertex_ImmersedSolid != neiborVertexType[6]) {
-                        geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IMJP_I;
+                        geometryProperty(0, 0) = (int)VG_IMJP_I;
                     }
                     if (Vertex_ImmersedSolid != neiborVertexType[7]) {
-                        geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IPJM_I;
+                        geometryProperty(0, 0) = (int)VG_IPJM_I;
                     }
                 } else {
                     ops_printf("%s\n",
@@ -305,6 +292,5 @@ void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
     }
 #endif
 }
-
 
 #endif  // HILEMMS_OPS_KERNEL
