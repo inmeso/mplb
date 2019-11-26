@@ -200,17 +200,20 @@ void KerCalcBodyForce(const Real* time, const int* nodeType,
 // We have to create 2D and 3D version because of the difference
 // of 2D and 3D OPS_ACC_MD2 macro
 #ifdef OPS_3D
-void KerCalcBodyForce1ST(ACC<Real>& fStage, const ACC<Real>& acceration,
+void KerCalcBodyForce1ST3D(ACC<Real>& fStage, const ACC<Real>& acceration,
                          const ACC<Real>& macroVars, const ACC<int>& nodeType,
                          const int* componentId);
 
-void KerCalcBodyForceNone(ACC<Real>& fStage, const ACC<Real>& acceration,
+void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
                           const ACC<Real>& macroVars, const ACC<int>& nodeType,
                           const int* componentId);
 
 void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                         const ACC<int>& nodeType, const ACC<Real>& coordinates,
                         const Real* dt);
+
+void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<Real>& macroVars,
+                           const ACC<int>& nodeType, const int* componentId);
 
 /**
  * @brief Implement the BGK isothermal collision model

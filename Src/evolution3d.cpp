@@ -139,7 +139,7 @@ void PreDefinedBodyForce3D() {
             switch (forceType) {
                 case BodyForce_1st:
                     ops_par_loop(
-                        KerCalcBodyForce1ST, "KerCalcBodyForce1ST",
+                        KerCalcBodyForce1ST3D, "KerCalcBodyForce1ST3D",
                         g_Block[blockIndex], SPACEDIM, iterRng,
                         ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
@@ -153,7 +153,7 @@ void PreDefinedBodyForce3D() {
                     break;
                 case BodyForce_None:
                     ops_par_loop(
-                        KerCalcBodyForceNone, "KerCalcBodyForceNone",
+                        KerCalcBodyForceNone3D, "KerCalcBodyForceNone",
                         g_Block[blockIndex], SPACEDIM, iterRng,
                         ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
@@ -256,20 +256,16 @@ void PreDefinedInitialCondition3D() {
             const int compoId{pair.first};
             const InitialType initialType{pair.second};
             switch (initialType) {
-                case Collision_BGKIsothermal2nd:
+                case Initial_BGKFeq2nd:
                     ops_par_loop(
-                        KerCollideBGKIsothermal3D, "KerCollideBGKIsothermal3D",
+                        KerInitialiseBGK2nd3D, "KerInitialiseBGK2nd3D",
                         g_Block[blockIndex], SPACEDIM, iterRng,
-                        ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
-                                    "double", OPS_WRITE),
                         ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL,
-                                    "double", OPS_READ),
+                                    "double", OPS_WRITE),
                         ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
                                     LOCALSTENCIL, "double", OPS_RW),
                         ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                                     LOCALSTENCIL, "int", OPS_READ),
-                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
-                        ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
                         ops_arg_gbl(&compoId, 1, "int", OPS_READ));
                     break;
                 default:
@@ -467,7 +463,7 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod) {
                     UpdateMacroVars3D();
                     CalcResidualError3D();
                     residualError =
-                        GetMaximumResidualError(checkPointPeriod * TimeStep());
+                        GetMaximumResidual(checkPointPeriod * TimeStep());
                     DispResidualError3D(iter, checkPointPeriod * TimeStep());
                     WriteFlowfieldToHdf5(iter);
                     WriteDistributionsToHdf5(iter);

@@ -356,6 +356,7 @@ void KerCalcMacroVars(const ACC<int>& nodeType, const ACC<Real>& f,
 void KerCalcBodyForce(const Real* time, const ACC<int>& nodeType,
                         const ACC<Real>& coordinates, const ACC<Real> macroVars,
                         ACC<Real>& bodyForce) {
+#ifdef OPS_2D
     // here we assume the force is constant
     // user may introduce a function of g(r,t) for the body force
     const Real g[]{0.0001, 0};
@@ -416,10 +417,45 @@ void KerCalcBodyForce(const Real* time, const ACC<int>& nodeType,
             }
         }
     }
+    #endif //OPS_2D
 }
 
-#endif
+#endif //OPS_2D outter
 #ifdef OPS_3D
+
+void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<Real>& macroVars,
+                           const ACC<int>& nodeType, const int* componentId) {
+#ifdef OPS_3D
+    const int compoIndex{*componentId};
+    VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
+
+    if (vt != Vertex_ImmersedSolid) {
+        const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
+        Real rho{macroVars(startPos, 0, 0, 0)};
+        Real u{macroVars(startPos + 1, 0, 0, 0)};
+        Real v{macroVars(startPos + 2, 0, 0, 0)};
+        Real w{macroVars(startPos + 3, 0, 0, 0)};
+        const Real T{1};
+        const int polyOrder{2};
+        for (int xiIndex = COMPOINDEX[2 * compoIndex];
+             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+            f(xiIndex, 0, 0, 0) =
+                CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder);
+#ifdef CPU
+            const Real res{f(xiIndex, 0, 0, 0)};
+            if (isnan(res) || res <= 0 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes "
+                    "invalid for the component %i at  the lattice "
+                    "%i\n",
+                    res, compoIndex, xiIndex);
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
+            }
+#endif  // CPU
+        }
+    }
+#endif  // OPS_3D
+}
 
 void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
                                const ACC<Real>& macroVars,
@@ -529,7 +565,7 @@ void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
 #endif  // OPS_3D
 }
 
-void KerCalcBodyForce1ST(ACC<Real>& fStage, const ACC<Real>& acceration,
+void KerCalcBodyForce1ST3D(ACC<Real>& fStage, const ACC<Real>& acceration,
                         const ACC<Real>& macroVars, const ACC<int>& nodeType,
                         const int* componentId) {
 #ifdef OPS_3D
@@ -560,7 +596,7 @@ void KerCalcBodyForce1ST(ACC<Real>& fStage, const ACC<Real>& acceration,
 #endif  // OPS_3D
 }
 
-void KerCalcBodyForceNone(ACC<Real>& fStage, const ACC<Real>& acceration,
+void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
                           const ACC<Real>& macroVars, const ACC<int>& nodeType,
                           const int* componentId) {
 #ifdef OPS_3D
