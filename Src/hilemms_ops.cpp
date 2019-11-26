@@ -381,23 +381,6 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
     }
 }
 
-// Check whether this needs to be defines using OPS Kernel.
-Real GetMaximumResidualError(const Real checkPeriod) {
-    Real maxResError = 1E-15;
-    Real relResErrorMacroVar;
-    for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
-        relResErrorMacroVar = g_ResidualError[2 * macroVarIdx] /
-                              g_ResidualError[2 * macroVarIdx + 1] /
-                              (checkPeriod * TimeStep());
-
-        if (maxResError <= relResErrorMacroVar) {
-            maxResError = relResErrorMacroVar;
-        }
-    }
-    return maxResError;
-}
-
-
 void AllocateVertices(const int vertexNum) {
     if (vertexNum == NUMVERTICES) {
         if (nullptr == VERTEXCOORDINATES) {

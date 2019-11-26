@@ -173,4 +173,5 @@ void SetHaloRelationNum(const int haloRelationNum);
 // caseName: case name
 // spaceDim: 2D or 3D application
 void DefineCase(std::string caseName, const int spaceDim);
+Real GetMaximumResidualError(const Real checkPeriod);
 #endif

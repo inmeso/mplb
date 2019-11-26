@@ -949,5 +949,19 @@ void SetBlockNum(const int blockNum) {
     }
 }
 
+Real GetMaximumResidual(const Real checkPeriod) {
+    Real maxResError{0};
+    Real relResErrorMacroVar{0};
+    for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
+        relResErrorMacroVar = g_ResidualError[2 * macroVarIdx] /
+                              g_ResidualError[2 * macroVarIdx + 1] /
+                              (checkPeriod * TimeStep());
+
+        if (maxResError <= relResErrorMacroVar) {
+            maxResError = relResErrorMacroVar;
+        }
+    }
+    return maxResError;
+}
 
 // const int* GetBlockNum() { return &BLOCKNUM; }
