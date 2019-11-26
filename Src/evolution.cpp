@@ -393,18 +393,6 @@ void Iterate(const SizeType steps, const SizeType checkPointPeriod) {
     switch (scheme) {
         case Scheme_StreamCollision: {
             for (int iter = 0; iter < steps; iter++) {
-#ifdef OPS_3D
-                StreamCollision3D();  // Stream-Collision scheme
-                // TimeMarching();//Finite difference scheme + cutting cell
-                if ((iter % checkPointPeriod) == 0 && iter != 0) {
-                    UpdateMacroVars3D();
-                    CalcResidualError3D();
-                    DispResidualError3D(iter, checkPointPeriod * TimeStep());
-                    WriteFlowfieldToHdf5(iter);
-                    WriteDistributionsToHdf5(iter);
-                    WriteNodePropertyToHdf5(iter);
-                }
-#endif  // end of OPS_3D
 #ifdef OPS_2D
                 StreamCollision();  // Stream-Collision scheme
                 // TimeMarching();//Finite difference scheme + cutting cell
@@ -435,20 +423,6 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod) {
             int iter{0};
             Real residualError{1};
             do {
-#ifdef OPS_3D
-                StreamCollision3D();  // Stream-Collision scheme
-                if ((iter % checkPointPeriod) == 0) {
-                    UpdateMacroVars3D();
-                    CalcResidualError3D();
-                    residualError =
-                        GetMaximumResidualError(checkPointPeriod * TimeStep());
-                    DispResidualError3D(iter, checkPointPeriod * TimeStep());
-                    WriteFlowfieldToHdf5(iter);
-                    WriteDistributionsToHdf5(iter);
-                    WriteNodePropertyToHdf5(iter);
-                }
-#endif  // end of OPS_3D
-
 #ifdef OPS_2D
                 StreamCollision();  // Stream-Collision scheme
                 // TimeMarching();//Finite difference scheme + cutting cell
