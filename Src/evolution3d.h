@@ -66,7 +66,7 @@
 /*!
  * Overall wrap for stream-collision scheme
  */
-void StreamCollision3D();
+void StreamCollision3D(const Real time);
 /*!
  * Ops_par_loop for the stream step
  */
@@ -105,6 +105,12 @@ void CopyDistribution3D(ops_dat* fDest, const ops_dat* fSrc);
 void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                           const Real* givenVars, int* range,
                           const VertexTypes boundaryType);
+
+void Iterate(const SizeType steps, const SizeType checkPointPeriod);
+void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod);
+
+void UpdateMacroscopicBodyForce(const Real time);
+void SetInitialMacrosVars();
 
 #endif /* OPS_3D */
 #endif /* EVOLUTION3D_H_ */

@@ -560,6 +560,22 @@ void KerCalcBodyForce1ST(ACC<Real>& fStage, const ACC<Real>& acceration,
 #endif  // OPS_3D
 }
 
+void KerCalcBodyForceNone(ACC<Real>& fStage, const ACC<Real>& acceration,
+                          const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                          const int* componentId) {
+#ifdef OPS_3D
+    const int compoIndex{*componentId};
+    VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
+    if (vt == Vertex_Fluid) {
+        const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
+        for (int xiIndex = COMPOINDEX[2 * compoIndex];
+             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+            fStage(xiIndex, 0, 0, 0) = 0;
+        }
+    }
+#endif  // OPS_3D
+}
+
 /*!
  * If a Newton-Cotes quadrature is used, it can be converted to the way
  * similar to the Gauss-Hermite quadrature

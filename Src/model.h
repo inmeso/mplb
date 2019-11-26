@@ -106,18 +106,18 @@ extern int* VARIABLECOMPINDEX;
  */
 extern int* VARIABLECOMPPOS;
 
-/*!
- * Force function type
- */
-extern int* FORCETYPE;
 // Convenient functions
 void SetLatticeName(const std::vector<std::string>& latticeName);
 const std::vector<std::string> LatticeName();
 const std::vector<std::string> MacroVarName();
-/*!
+/**
  * Get collision type
  */
 const std::list<std::pair<SizeType,CollisionType >> & CollisionTerms();
+ /**
+ * Get force type
+ */
+const std::list<std::pair<SizeType,BodyForceType>> & BodyForceTerms();
 
 inline const int ComponentNum() { return NUMCOMPONENTS; }
 inline const int MacroVarsNum() { return NUMMACROVAR; }
@@ -150,7 +150,7 @@ void DefineCollision(std::vector<CollisionType> types,
                        std::vector<SizeType> compoId);
 
 void DefineBodyForce(std::vector<BodyForceType> types,
-                     std::vector<int> compoId);
+                     std::vector<SizeType> compoId);
 /*
  * Local function for calculating the equilibrium
  * 2D BGK model including up to fourth order terms
@@ -192,9 +192,13 @@ void KerCalcBodyForce(const Real* time, const int* nodeType,
 // We have to create 2D and 3D version because of the difference
 // of 2D and 3D OPS_ACC_MD2 macro
 #ifdef OPS_3D
-void KerCalcBodyForce3D(const Real* time, const int* nodeType,
-                        const Real* coordinates, const Real* macroVars,
-                        Real* bodyForce);
+void KerCalcBodyForce1ST(ACC<Real>& fStage, const ACC<Real>& acceration,
+                         const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                         const int* componentId);
+
+void KerCalcBodyForceNone(ACC<Real>& fStage, const ACC<Real>& acceration,
+                          const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                          const int* componentId);
 
 void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                         const ACC<int>& nodeType, const ACC<Real>& coordinates,

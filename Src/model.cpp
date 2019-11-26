@@ -51,7 +51,7 @@ int NUMCOMPONENTS{1};
 int* COMPOINDEX{nullptr};
 Real XIMAXVALUE{1};
 std::list<std::pair<SizeType, CollisionType>> COLLISIONTERMS;
-int* FORCETYPE{nullptr};
+std::list<std::pair<SizeType, BodyForceType>> FORCETERMS;
 int* VARIABLECOMPPOS{nullptr};
 /*!
  *Name of all macroscopic variables
@@ -407,29 +407,34 @@ void DefineCollision(std::vector<CollisionType> types,
 }
 
 void DefineBodyForce(std::vector<BodyForceType> types,
-                     std::vector<int> compoId) {
-    int typeNum{(int)types.size()};
-    if (typeNum == NUMCOMPONENTS) {
-        if (nullptr == FORCETYPE) {
-            FORCETYPE = new int[typeNum];
-            for (int idx = 0; idx < typeNum; idx++) {
-                FORCETYPE[idx] = types[idx];
-                ops_printf(
-                    "The body force function type %i is chosen for Component "
-                    "%i\n",
-                    FORCETYPE[idx], compoId[idx]);
-            }
-        } else {
-            ops_printf("%s\n", "Warning! BODYFORCE has been allocated!");
-        }
-    } else {
+                     std::vector<SizeType> compoId) {
+    const SizeType typeSize{types.size()};
+    const SizeType compoSize{compoId.size()};
+
+    if (typeSize != compoSize) {
         ops_printf(
-            "There are %i force types defined but we have %i "
+            "Error! There are %i force types defined for  %i "
             "components\n",
-            typeNum, NUMCOMPONENTS);
-            assert(typeNum == NUMCOMPONENTS);
+            typeSize, compoSize);
+        assert(typeSize == compoSize);
     }
-    ops_decl_const("FORCETYPE", NUMCOMPONENTS, "int", FORCETYPE);
+
+    if (compoSize > NUMCOMPONENTS) {
+        ops_printf(
+            "Error! There are %i forces types defined but only %i "
+            "components\n",
+            compoSize, NUMCOMPONENTS);
+        assert(compoSize < NUMCOMPONENTS);
+    }
+
+    for (int idx = 0; idx < typeSize; idx++) {
+        ops_printf(
+            "The body force function type %i is chosen for Component "
+            "%i\n",
+            types.at(idx), compoId.at(idx));
+        std::pair<SizeType, BodyForceType> pair(compoId.at(idx), types.at(idx));
+        FORCETERMS.push_back(pair);
+    }
 }
 
 void DestroyModel() {
@@ -437,7 +442,6 @@ void DestroyModel() {
     FreeArrayMemory(VARIABLECOMPINDEX);
     FreeArrayMemory(COMPOINDEX);
     FreeArrayMemory(VARIABLECOMPPOS);
-    FreeArrayMemory(FORCETYPE);
     FreeArrayMemory(XI);
     FreeArrayMemory(WEIGHTS);
     FreeArrayMemory(OPP);
