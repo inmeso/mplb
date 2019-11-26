@@ -52,32 +52,6 @@ void KerSetCoordinates3D(ACC<Real>& coordinates, const int* idx,
 #endif
 }
 
-// Kernel to set initial value for a particlaur component.
-void KerSetInitialMacroVars(ACC<Real>& macroVars, const ACC<Real>& coordinates,
-                            const int* idx) {
-    Real* initiaNodeMacroVars = new Real[NUMMACROVAR];
-    Real* nodeCoordinates = new Real[SPACEDIM];
-    for (int i = 0; i < SPACEDIM; i++) {
-#ifdef OPS_2D
-        nodeCoordinates[i] = coordinates(i, 0, 0);
-#endif
-#ifdef OPS_3D
-        nodeCoordinates[i] = coordinates(i, 0, 0, 0);
-#endif
-    }
-    InitialiseNodeMacroVars(initiaNodeMacroVars, nodeCoordinates);
-    for (int i = 0; i < NUMMACROVAR; i++) {
-#ifdef OPS_2D
-        macroVars(i, 0, 0) = initiaNodeMacroVars[i];
-#endif
-#ifdef OPS_3D
-        macroVars(i, 0, 0, 0) = initiaNodeMacroVars[i];
-#endif
-    }
-    delete[] initiaNodeMacroVars;
-    delete[] nodeCoordinates;
-}
-
 void KerSetEmbeddedBodyBoundary(ACC<int>& nodeType,
                                 const ACC<int>& geometryProperty,
                                 int* surfaceBoundary) {

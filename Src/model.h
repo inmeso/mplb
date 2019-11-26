@@ -119,6 +119,11 @@ const std::list<std::pair<SizeType,CollisionType >> & CollisionTerms();
  */
 const std::list<std::pair<SizeType,BodyForceType>> & BodyForceTerms();
 
+/**
+ * Get initial type
+ */
+const std::list<std::pair<SizeType,InitialType>> & InitialTerms();
+
 inline const int ComponentNum() { return NUMCOMPONENTS; }
 inline const int MacroVarsNum() { return NUMMACROVAR; }
 inline const int SizeF() { return NUMXI; }
@@ -151,6 +156,9 @@ void DefineCollision(std::vector<CollisionType> types,
 
 void DefineBodyForce(std::vector<BodyForceType> types,
                      std::vector<SizeType> compoId);
+
+void DefineInitialCondition(std::vector<InitialType> types,
+                            std::vector<SizeType> compoId);
 /*
  * Local function for calculating the equilibrium
  * 2D BGK model including up to fourth order terms

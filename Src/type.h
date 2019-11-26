@@ -204,6 +204,8 @@ enum CollisionType {
 
 enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };
 
+enum InitialType {Initial_BGKFeq2nd = 1};
+
 enum SolidBodyType { SolidBody_circle = 0, SolidBody_ellipse = 1 };
 
 enum SpaceSchemeType {

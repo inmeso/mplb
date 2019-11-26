@@ -142,6 +142,7 @@ void simulate(const Configuration & config) {
     }
     DefineProblemDomain(config.blockNum, config.blockSize, config.meshSize,
                         config.startPos);
+    SetInitialMacrosVars();
     DefineInitialCondition();
 
     SetTauRef(config.tauRef);

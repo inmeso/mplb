@@ -90,7 +90,7 @@ void CalcResidualError3D();
  * Calculating the total mass of the whole problem domain (all the blocks)
  */
 void CalcTotalMass3D(Real* totalMass);
-void InitialiseSolution3D();
+void PreDefinedInitialCondition3D();
 /*!
  * Mainly for a steady simulation
  */

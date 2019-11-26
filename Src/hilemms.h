@@ -54,12 +54,6 @@
 void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
                          const Real meshSize, const std::vector<Real> startPos);
 
-// Iterator for transient simulations.
-void Iterate(const SizeType steps, const SizeType checkPointPeriod);
-
-// Iterator for steady simulations.
-void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod);
-
 // Add 2D polygon.
 // vertexNum: total number of vertexes.
 // vertexCoords: Coordinates of each vertex.
@@ -93,27 +87,9 @@ void KerSetCoordinates3D(ACC<Real>& coordinates, const int* idx,
                          const Real* coordX, const Real* coordY,
                          const Real* coordZ);
 
-// Kernel which will call a user-defined function for inital conditions
-void KerSetInitialMacroVars(ACC<Real>& macroVars, const ACC<Real>& coordinates,
-                            const int* idx);
+
 void AssignCoordinates(int blockIndex,
                        const std::vector<std::vector<Real>>& coordinates);
-// blockIndex: Block id.
-// Coordinates: Array to store coordinates of various points inside the
-// domain. This function was defined in setup_comput_domain and has been
-// declared here as we are not using the preprocessor code separately.
-
-// blockIndex: Block Id.
-// componentId: Id of the component.
-// initialMacroValues: Initial values of the macroscopic variables for a
-// given component in a particular block.
-void DefineInitialCondition(int blockIndex, int componentId,
-                            std::vector<Real> initialMacroValues);
-
-// User-defined function for initialising macroscopic variables
-void InitialiseNodeMacroVars(Real* nodeMacroVars, const Real* nodeCoordinates);
-// Defining the initial conditions by using user-defined functions
-void DefineInitialCondition();
 
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType);
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType,

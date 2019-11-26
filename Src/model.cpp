@@ -52,6 +52,20 @@ int* COMPOINDEX{nullptr};
 Real XIMAXVALUE{1};
 std::list<std::pair<SizeType, CollisionType>> COLLISIONTERMS;
 std::list<std::pair<SizeType, BodyForceType>> FORCETERMS;
+std::list<std::pair<SizeType, InitialType>> INITIALTERMS;
+
+const std::list<std::pair<SizeType,CollisionType >> & CollisionTerms(){
+    return COLLISIONTERMS;
+}
+
+const std::list<std::pair<SizeType,BodyForceType>> & BodyForceTerms(){
+    return FORCETERMS;
+}
+
+const std::list<std::pair<SizeType,InitialType>> & InitialTerms(){
+    return INITIALTERMS;
+}
+
 int* VARIABLECOMPPOS{nullptr};
 /*!
  *Name of all macroscopic variables
@@ -404,6 +418,11 @@ void DefineCollision(std::vector<CollisionType> types,
         std::pair<int, CollisionType> pair(compoId.at(idx), types.at(idx));
         COLLISIONTERMS.push_back(pair);
     }
+     if (compoSize < NUMCOMPONENTS) {
+        ops_printf(
+            "Warning! Kernel functions are required for components without "
+            "pre-defined collision terms!\n");
+    }
 }
 
 void DefineBodyForce(std::vector<BodyForceType> types,
@@ -434,6 +453,46 @@ void DefineBodyForce(std::vector<BodyForceType> types,
             types.at(idx), compoId.at(idx));
         std::pair<SizeType, BodyForceType> pair(compoId.at(idx), types.at(idx));
         FORCETERMS.push_back(pair);
+    }
+     if (compoSize < NUMCOMPONENTS) {
+        ops_printf(
+            "Warning! Kernel functions are required for components without "
+            "pre-defined body force terms!\n");
+    }
+}
+void DefineInitialCondition(std::vector<InitialType> types,
+                            std::vector<SizeType> compoId) {
+    const SizeType typeSize{types.size()};
+    const SizeType compoSize{compoId.size()};
+
+    if (typeSize != compoSize) {
+        ops_printf(
+            "Error! There are %i initial types defined for  %i "
+            "components\n",
+            typeSize, compoSize);
+        assert(typeSize == compoSize);
+    }
+
+    if (compoSize > NUMCOMPONENTS) {
+        ops_printf(
+            "Error! There are %i initial types defined but only %i "
+            "components\n",
+            compoSize, NUMCOMPONENTS);
+        assert(compoSize < NUMCOMPONENTS);
+    }
+
+    for (int idx = 0; idx < typeSize; idx++) {
+        ops_printf(
+            "The initial condition type %i is chosen for Component "
+            "%i\n",
+            types.at(idx), compoId.at(idx));
+        std::pair<SizeType, InitialType> pair(compoId.at(idx), types.at(idx));
+        INITIALTERMS.push_back(pair);
+    }
+    if (compoSize < NUMCOMPONENTS) {
+        ops_printf(
+            "Warning! Kernel functions are required for components without "
+            "pre-defined initial contiditions!\n");
     }
 }
 
