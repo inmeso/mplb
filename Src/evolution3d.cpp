@@ -51,7 +51,7 @@ void PreDefinedCollision3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         for (auto& pair : CollisionTerms()) {
-            const int compoId{pair.first};
+            const SizeType compoId{pair.first};
             const CollisionType collisionType{pair.second};
             const Real tau{TauRef()[compoId]};
 
@@ -115,6 +115,7 @@ void Stream3D() {
 void UpdateMacroVars3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
+        const int forceSize{SPACEDIM * NUMCOMPONENTS};
         ops_par_loop(KerCalcMacroVars3D, "KerCalcMacroVars3D",
                      g_Block[blockIndex], SPACEDIM, iterRng,
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
@@ -125,6 +126,8 @@ void UpdateMacroVars3D() {
                                  LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
                                  LOCALSTENCIL, "double", OPS_READ),
+                     ops_arg_dat(g_MacroBodyforce[blockIndex], forceSize,
+                                 LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ));
     }
 }
@@ -134,7 +137,7 @@ void PreDefinedBodyForce3D() {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         const int forceSize{SPACEDIM * NUMCOMPONENTS};
         for (auto& pair : BodyForceTerms()) {
-            const int compoId{pair.first};
+            const SizeType compoId{pair.first};
             const BodyForceType forceType{pair.second};
             switch (forceType) {
                 case BodyForce_1st:
@@ -253,7 +256,7 @@ void PreDefinedInitialCondition3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         for (auto& pair : InitialTerms()) {
-            const int compoId{pair.first};
+            const SizeType compoId{pair.first};
             const InitialType initialType{pair.second};
             switch (initialType) {
                 case Initial_BGKFeq2nd:
@@ -481,6 +484,14 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod) {
     DestroyFlowfield();
 }
 
+void TransferHalos(const std::vector<ops_halo_group>& haloGroups) {
+    if (haloGroups.size() > 0) {
+        for (auto haloGroup : haloGroups){
+             ops_halo_transfer(haloGroup);
+        }
+    }
+}
+
 void StreamCollision3D(const Real time) {
 #if DebugLevel >= 1
     ops_printf("Calculating the macroscopic variables...\n");
@@ -504,9 +515,7 @@ void StreamCollision3D(const Real time) {
 #if DebugLevel >= 1
     ops_printf("Updating the halos...\n");
 #endif
-    if (nullptr != HaloGroup()) {
-        ops_halo_transfer(HaloGroup());
-    }
+    TransferHalos(HaloGroups());
 #if DebugLevel >= 1
     ops_printf("Implementing the boundary conditions...\n");
 #endif
@@ -514,5 +523,6 @@ void StreamCollision3D(const Real time) {
     // TODO The data structure for BCs shall be inside boundary module
     ImplementBoundaryConditions();
 }
+
 
 #endif /* OPS_3D */

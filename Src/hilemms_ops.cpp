@@ -315,19 +315,11 @@ void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
                          const std::vector<Real> startPos) {
     SetBlockNum(blockNum);
     SetBlockSize(blockSize);
+    //TODO  the DefineVariables() will be replaced by the individual allocation
+    // way gradually according to the new DSL definition
     DefineVariables();
-// TODO We need to define the halo relation and
-#ifdef OPS_3D
-    DefineHaloTransfer3D();
-#endif  // OPS_3D
-
-#ifdef OPS_2D
-    DefineHaloTransfer();
-#endif
-
-    ops_partition((char*)"LBM Solver");
-    ops_printf("%i blocks are parted and all field variable allocated!\n",
-               BlockNum());
+    //DefinePeriodicHaloPair3D();
+    Partition();
     int numBlockStartPos;
     numBlockStartPos = startPos.size();
 
@@ -888,21 +880,6 @@ void  SetBlockGeometryProperty(int blockIndex) {
                      ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                  LOCALSTENCIL, "int", OPS_WRITE));
     }
-}
-
-// Define varios halo numbers such as HaloNum, HaloDepth and SchemeHaloPt.
-void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
-                      int Num_Bound_Halo_Points) {
-    // g_HaloNum   = Halo_Number;
-    // g_HaloDepth = Halo_Depth;
-    // schemeHaloPt = Scheme_Halo_points;
-
-    SetHaloRelationNum(Halo_Number);
-    SetHaloDepth(Halo_Depth);
-    SetSchemeHaloNum(Scheme_Halo_points);
-
-    // boundaryHaloPt = Num_Bound_Halo_Points;
-    SetBoundaryHaloNum(Num_Bound_Halo_Points);
 }
 
 #ifdef OPS_2D

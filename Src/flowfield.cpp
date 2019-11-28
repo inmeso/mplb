@@ -75,18 +75,11 @@ ops_dat* g_CoordinateXYZ{nullptr};
 ops_dat* g_Metrics{nullptr};
 ops_dat* g_NodeType{nullptr};
 ops_dat* g_GeometryProperty{nullptr};
+
 /*!
- * Total number of halo relation.
+ * Formal collection of halo relations required by the OPS library
  */
-int HaloRelationNum{0};
-/*!
- * Array of halo relations
- */
-ops_halo* HaloRelations{nullptr};
-/*!
- * Formal collection of halo relations
- */
-ops_halo_group HaloGroups;
+std::vector<ops_halo_group> HALOGROUPS;
 
 int* BlockIterRngWhole{nullptr};
 int* BlockIterRngJmin{nullptr};
@@ -666,89 +659,112 @@ void DefineHaloTransfer() {
     //     HaloGroups = ops_decl_halo_group ( HaloRelationNum,
     //     HaloRelations );
 
-    HaloRelationNum = 2;
-    HaloRelations = new ops_halo[HaloRelationNum];
-    int haloDepth = HaloDepth();
-    // max halo depths for the dat in the positive direction
-    int d_p[2] = {haloDepth, haloDepth};
-    // max halo depths for the dat in the negative direction
-    int d_m[2] = {-haloDepth, -haloDepth};
-    // The domain size in the Block 0
-    int nx = BlockSize(0)[0];
-    int ny = BlockSize(0)[1];
-    int dir[] = {1, 2};
-    {
-        int halo_iter[] = {nx + d_p[0] - d_m[0], 1};
-        int base_from[] = {d_m[0], 0};
-        int base_to[] = {d_m[0], ny};
-        HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-        base_from[1] = ny - 1;  // need to be changed
-        base_to[1] = d_m[1];
-        HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-    }
+    // HaloRelationNum = 2;
+    // HaloRelations = new ops_halo[HaloRelationNum];
+    // int haloDepth = HaloDepth();
+    // // max halo depths for the dat in the positive direction
+    // int d_p[2] = {haloDepth, haloDepth};
+    // // max halo depths for the dat in the negative direction
+    // int d_m[2] = {-haloDepth, -haloDepth};
+    // // The domain size in the Block 0
+    // int nx = BlockSize(0)[0];
+    // int ny = BlockSize(0)[1];
+    // int dir[] = {1, 2};
+    // {
+    //     int halo_iter[] = {nx + d_p[0] - d_m[0], 1};
+    //     int base_from[] = {d_m[0], 0};
+    //     int base_to[] = {d_m[0], ny};
+    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    //     base_from[1] = ny - 1;  // need to be changed
+    //     base_to[1] = d_m[1];
+    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    // }
 
-    HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
+    // HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
 }
-
-void DefineHaloTransfer3D() {
-    // This is a hard coded version
-    // could be used as an example for user-defined routines.
-    HaloRelationNum = 2;
-    HaloRelations = new ops_halo[HaloRelationNum];
+//This version is for the distribution function
+//Other version to follow.
+#ifdef OPS_3D
+void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair) {
+    if (g_f == nullptr) {
+        ops_printf("Distribution function must be allocated first!");
+        assert(g_f == nullptr);
+    }
+    if (BlockNum() > 1) {
+        ops_printf(
+            "Periodic boundary conditions are only valid for single-block "
+            "applications!");
+        assert(BlockNum() > 1);
+    }
     int haloDepth = HaloDepth();
     // max halo depths for the dat in the positive direction
     int d_p[3] = {haloDepth, haloDepth, haloDepth};
     // max halo depths for the dat in the negative direction
     int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
-    //The domain size in the Block 0
+    // The domain size in the Block 0
     int nx = BlockSize(0)[0];
     int ny = BlockSize(0)[1];
     int nz = BlockSize(0)[2];
-    // {
-    //     // Template for the periodic pair (front-back)
-    //     int dir[] = {1, 2, 3};
-    //     int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
-    //     int base_from[] = {d_m[0], d_m[0], 0};
-    //     int base_to[] = {d_m[0], d_m[0], nz};
-    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    //     base_from[2] = nz - 1;
-    //     base_to[2] = d_m[1];
-    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    // }
+    int dir[] = {1, 2, 3};
+    for (auto& pair : haloPair) {
+        if (0 == pair) {
+            // left and right pair
+            int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
+            int base_from[] = {0, d_m[0], d_m[0]};
+            int base_to[] = {nx, d_m[0], d_m[0]};
+            ops_halo leftToRight = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                                 base_from, base_to, dir, dir);
+            base_from[0] = nx - 1;
+            base_to[0] = d_m[1];
+            ops_halo rightToLeft = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                                 base_from, base_to, dir, dir);
+            ops_halo group[]{leftToRight, rightToLeft};
+            HALOGROUPS.push_back(ops_decl_halo_group(2, group));
+        }
 
-    {
-        // Template for the periodic pair (left-right)
-        int dir[] = {1, 2, 3};
-        int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
-        int base_from[] = {0, d_m[0], d_m[0]};
-        int base_to[] = {nx, d_m[0], d_m[0]};
-        HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-        base_from[0] = nx - 1;  // need to be changed
-        base_to[0] = d_m[1];
-        HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
+        if (1 == pair) {
+            // top and bottom pair
+            int halo_iter[] = {nx + d_p[0] - d_m[0], 1, nz + d_p[0] - d_m[0]};
+            int base_from[] = {d_m[0], 0, d_m[0]};
+            int base_to[] = {d_m[0], ny, d_m[0]};
+            ops_halo botToTop = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                              base_from, base_to, dir, dir);
+            base_from[1] = ny - 1;
+            base_to[1] = d_m[1];
+            ops_halo topToBot = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                              base_from, base_to, dir, dir);
+            ops_halo group[]{botToTop, topToBot};
+            HALOGROUPS.push_back(ops_decl_halo_group(2, group));
+        }
+
+        if (2 == pair) {
+            // front and back pair
+            int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
+            int base_from[] = {d_m[0], d_m[0], 0};
+            int base_to[] = {d_m[0], d_m[0], nz};
+            ops_halo backToFront = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                                 base_from, base_to, dir, dir);
+            base_from[2] = nz - 1;
+            base_to[2] = d_m[1];
+            ops_halo frontToBack = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                                 base_from, base_to, dir, dir);
+            ops_halo group[]{backToFront, frontToBack};
+            HALOGROUPS.push_back(ops_decl_halo_group(2, group));
+        }
     }
+}
 
-    // {
-    //     // Template for the periodic pair (top-bottom)
-    //     int dir[] = {1, 2, 3};
-    //     int halo_iter[] = {nx + d_p[0] - d_m[0], 1 , nz + d_p[0] - d_m[0]};
-    //     int base_from[] = {d_m[0], 0, d_m[0]};
-    //     int base_to[] = {d_m[0], ny, d_m[0]};
-    //     HaloRelations[4] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    //     base_from[1] = ny - 1;  // need to be changed
-    //     base_to[1] = d_m[1];
-    //     HaloRelations[5] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    // }
+#endif //OPS_3D
+void Partition(){
+     ops_partition((char*)"LBM Solver");
+}
 
-    HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
+void DefineHaloTransfer3D() {
+    // This is a hard coded version
+    // could be used as an example for user-defined routines.
+
 }
 /*
  * We need a name to specify which file to input
@@ -839,9 +855,6 @@ const int SpaceDim() { return SPACEDIM; }
 const int HaloDepth() { return HALODEPTH; }
 
 void SetHaloDepth(const int haloDepth) { HALODEPTH = haloDepth; }
-void SetHaloRelationNum(const int haloRelationNum) {
-    HaloRelationNum = haloRelationNum;
-}
 
 void DestroyFlowfield() {
     FreeArrayMemory(g_f);
@@ -851,7 +864,6 @@ void DestroyFlowfield() {
     FreeArrayMemory(g_MacroVars);
     FreeArrayMemory(TAUREF);
     FreeArrayMemory(g_CoordinateXYZ);
-    if (HaloRelationNum > 0) FreeArrayMemory(HaloRelations);
     FreeArrayMemory(g_NodeType);
     FreeArrayMemory(g_GeometryProperty);
     FreeArrayMemory(BlockIterRngWhole);
@@ -872,8 +884,6 @@ void DestroyFlowfield() {
     // end if steady flow
     // delete[] halos;
 }
-
-const ops_halo_group HaloGroup() { return HaloGroups; }
 
 int* IterRngWhole() { return BlockIterRngWhole; }
 int* IterRngJmin() { return BlockIterRngJmin; }
@@ -964,4 +974,5 @@ Real GetMaximumResidual(const Real checkPeriod) {
     return maxResError;
 }
 
+const std::vector<ops_halo_group>& HaloGroups() { return HALOGROUPS; }
 // const int* GetBlockNum() { return &BLOCKNUM; }
