@@ -619,20 +619,11 @@ void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
  */
 void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                         const ACC<int>& nodeType, const ACC<Real>& coordinates,
-                        const Real* dt) {
+                        const ACC<Real>& acceleration, const Real* dt) {
 #ifdef OPS_3D
-    Real* acceleration = new Real[LATTDIM * NUMCOMPONENTS];
     const Real x{coordinates(0, 0, 0, 0)};
     const Real y{coordinates(1, 0, 0, 0)};
     const Real z{coordinates(2, 0, 0, 0)};
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        for (int i = 0; i < LATTDIM; i++) {
-            acceleration[compoIndex + i] = 0;
-        }
-    }
-    acceleration[0] = 0.0001;
-    //acceleration[0] = 0.0;
-
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
         VertexTypes vt =
             (VertexTypes)nodeType(compoIndex, 0, 0, 0);
@@ -968,7 +959,7 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                             if (Vertex_Fluid == vt) {
                                 macroVars(m, 0, 0, 0) +=
                                     ((*dt) *
-                                     acceleration[compoIndex * LATTDIM] / 2);
+                                     acceleration(3* compoIndex,0,0,0) / 2);
                             }
                             velo[0] = macroVars(m, 0, 0, 0);
 #ifdef CPU
@@ -1010,7 +1001,7 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                             if (Vertex_Fluid == vt) {
                                 macroVars(m, 0, 0, 0) +=
                                     ((*dt) *
-                                     acceleration[compoIndex * LATTDIM + 1] /
+                                     acceleration(3* compoIndex + 1,0,0,0) /
                                      2);
                             }
                             velo[1] = macroVars(m, 0, 0, 0);
@@ -1050,7 +1041,7 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                             if (Vertex_Fluid == vt) {
                                 macroVars(m, 0, 0, 0) +=
                                     ((*dt) *
-                                     acceleration[compoIndex * LATTDIM + 2] /
+                                     acceleration(3*compoIndex + 2,0,0,0) /
                                      2);
                             }
                             velo[2] = macroVars(m, 0, 0, 0);
@@ -1084,7 +1075,6 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
             delete[] velo;
         }  // compoIdx
     }      // isVertex
-    delete[] acceleration;
 #endif // OPS_3D
 }
 #endif //OPS_3D outter

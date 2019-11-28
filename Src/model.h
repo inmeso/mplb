@@ -41,6 +41,7 @@
 #include <list>
 #include "type.h"
 
+
 /*!
  * Most of variables in this module will not change when the code is running.
  */
@@ -210,7 +211,7 @@ void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
 
 void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                         const ACC<int>& nodeType, const ACC<Real>& coordinates,
-                        const Real* dt);
+                        const ACC<Real>& acceleration, const Real* dt);
 
 void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<Real>& macroVars,
                            const ACC<int>& nodeType, const int* componentId);
