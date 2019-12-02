@@ -8,7 +8,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,    
+ * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
@@ -67,11 +67,10 @@ extern ops_dat* g_f;
  * if we use some control routine in the main.cpp
  */
 extern ops_dat* g_fStage;
-extern ops_dat* g_feq;
 /*!
- * Bodyforce, which is independent of the particle velocity
+ * Macroscopic bodyforce
  */
-extern ops_dat* g_Bodyforce;
+extern ops_dat* g_MacroBodyforce;
 /*!
  * g_MacroVars: for storing the macroscopic variables, to reduce
  * the complexity of calculating equilibrium, it will has a specific order
@@ -82,11 +81,6 @@ extern ops_dat* g_MacroVars;
  * Typically used for steady flow.
  */
 extern ops_dat* g_MacroVarsCopy;
-/*!
- * Relaxation time
- * Depend on some macroscopic variables like rho,T
- */
-extern ops_dat* g_Tau;
 /*!
  * the residual error for steady flows
  * for each macroscopic variable, there are two values: the absolute
@@ -154,13 +148,13 @@ const Real* TauRef();
 const std::string CaseName();
 const int HaloPtNum();
 Real TotalMeshSize();
-const ops_halo_group HaloGroup();
+const std::vector<ops_halo_group>& HaloGroups();
 void SetTimeStep(Real dt);
 void SetCaseName(const std::string caseName);
 void setCaseName(const char* caseName);
 void SetTauRef(const std::vector<Real> tauRef);
-void SetBlockSize(const std::vector<int> blockSize);
-void SetBlockNum(const int blockNum);
+void SetBlockSize(const std::vector<SizeType> blockSize);
+void SetBlockNum(const SizeType blockNum);
 
 /*!
  * Manually setup the flow field.
@@ -173,10 +167,11 @@ void WriteDistributionsToHdf5(const long timeStep);
 void WriteNodePropertyToHdf5(const long timeStep);
 void DestroyFlowfield();
 void DefineHaloTransfer();
-void DefineHaloTransfer3D();
+void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair);
 void SetHaloDepth(const int haloDepth);
-void SetHaloRelationNum(const int haloRelationNum);
+void Partition();
 // caseName: case name
 // spaceDim: 2D or 3D application
 void DefineCase(std::string caseName, const int spaceDim);
+Real GetMaximumResidual(const Real checkPeriod);
 #endif

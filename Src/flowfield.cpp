@@ -51,12 +51,11 @@ int HALODEPTH{0};
 ops_block* g_Block{nullptr};
 ops_dat* g_f{nullptr};
 ops_dat* g_fStage{nullptr};
-ops_dat* g_feq{nullptr};
 ops_dat* g_MacroVars{nullptr};
 ops_dat* g_MacroVarsCopy{nullptr};
 Real* g_ResidualError{nullptr};
 ops_reduction* g_ResidualErrorHandle{nullptr};
-ops_dat* g_Bodyforce{nullptr};
+ops_dat* g_MacroBodyforce{nullptr};
 /**
  * DT: time step
  */
@@ -67,7 +66,6 @@ Real DT{1};
  * It must be a constant during the run time
  */
 Real* TAUREF{nullptr};
-ops_dat* g_Tau{nullptr};
 ops_dat* g_DiscreteConvectionTerm{nullptr};
 ops_dat* g_CoordinateXYZ{nullptr};
 /*!
@@ -77,18 +75,11 @@ ops_dat* g_CoordinateXYZ{nullptr};
 ops_dat* g_Metrics{nullptr};
 ops_dat* g_NodeType{nullptr};
 ops_dat* g_GeometryProperty{nullptr};
+
 /*!
- * Total number of halo relation.
+ * Formal collection of halo relations required by the OPS library
  */
-int HaloRelationNum{0};
-/*!
- * Array of halo relations
- */
-ops_halo* HaloRelations{nullptr};
-/*!
- * Formal collection of halo relations
- */
-ops_halo_group HaloGroups;
+std::vector<ops_halo_group> HALOGROUPS;
 
 int* BlockIterRngWhole{nullptr};
 int* BlockIterRngJmin{nullptr};
@@ -120,9 +111,7 @@ void DefineVariables() {
     g_f = new ops_dat[BLOCKNUM];
     g_Bodyforce = new ops_dat[BLOCKNUM];
     g_fStage = new ops_dat[BLOCKNUM];
-    g_feq = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
-    g_Tau = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
     BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
     BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
@@ -196,15 +185,11 @@ void DefineVariables() {
         g_f[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "feq_" + label;
-        g_feq[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
         dataName = "fStage_" + label;
         g_fStage[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "Bodyforce_" + label;
+        dataName = "MacroBodyForce_" + label;
         g_Bodyforce[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
@@ -212,10 +197,6 @@ void DefineVariables() {
         g_MacroVars[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "Tau_" + label;
-        g_Tau[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMCOMPONENTS, size, base, d_m,
-                         d_p, (Real*)temp, RealC, dataName.c_str());
         dataName = "Nodetype_" + label;
         // problem specific -- cut cell method
         g_NodeType[blockIndex] =
@@ -249,11 +230,9 @@ void DefineVariables() {
     void* temp = NULL;
     g_Block = new ops_block[BLOCKNUM];
     g_f = new ops_dat[BLOCKNUM];
-    g_Bodyforce = new ops_dat[BLOCKNUM];
+    g_MacroBodyforce = new ops_dat[BLOCKNUM];
     g_fStage = new ops_dat[BLOCKNUM];
-    g_feq = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
-    g_Tau = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
     BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
     BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
@@ -274,10 +253,6 @@ void DefineVariables() {
 
     int haloDepth{HaloPtNum()};
     HALODEPTH = HaloPtNum();
-
-#ifdef debug
-    ops_printf("%s%i\n", "DefineVariable: haloDepth=", haloDepth);
-#endif
 
     // max halo depths for the dat in the positive direction
     // int d_p[2] = {haloDepth, haloDepth};
@@ -387,26 +362,19 @@ void DefineVariables() {
         g_f[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "feq_" + label;
-        g_feq[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
         dataName = "fStage_" + label;
         g_fStage[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "Bodyforce_" + label;
-        g_Bodyforce[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
+        dataName = "MacroBodyForce_" + label;
+        const int bodyForceSize{SPACEDIM * NUMCOMPONENTS};
+        g_MacroBodyforce[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], bodyForceSize, size, base, d_m,
+                         d_p, (Real*)temp, RealC, dataName.c_str());
         dataName = "MacroVars_" + label;
         g_MacroVars[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "Tau_" + label;
-        g_Tau[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMCOMPONENTS, size, base, d_m,
-                         d_p, (Real*)temp, RealC, dataName.c_str());
         dataName = "Nodetype_" + label;
         // problem specific -- cut cell method
         g_NodeType[blockIndex] =
@@ -447,11 +415,9 @@ void DefineVariablesFromHDF5() {
     void* temp = NULL;
     g_Block = new ops_block[BLOCKNUM];
     g_f = new ops_dat[BLOCKNUM];
-    g_Bodyforce = new ops_dat[BLOCKNUM];
+    g_MacroBodyforce = new ops_dat[BLOCKNUM];
     g_fStage = new ops_dat[BLOCKNUM];
-    g_feq = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
-    g_Tau = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
     BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
     BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
@@ -469,9 +435,6 @@ void DefineVariablesFromHDF5() {
     g_ResidualError = new Real[2 * MacroVarsNum()];
     // end if steady flow
     int haloDepth = HaloDepth();
-#ifdef debug
-    ops_printf("%s%i\n", "DefineVariable: haloDepth=", haloDepth);
-#endif
     // max halo depths for the dat in the positive direction
     int* d_p = new int[SPACEDIM];
     // max halo depths for the dat in the negative direction
@@ -557,26 +520,19 @@ void DefineVariablesFromHDF5() {
         g_f[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "feq_" + label;
-        g_feq[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
         dataName = "fStage_" + label;
         g_fStage[blockIndex] =
             ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
                          (Real*)temp, RealC, dataName.c_str());
-        dataName = "Bodyforce_" + label;
-        g_Bodyforce[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
+        dataName = "MacroBodyForce_" + label;
+        const int bodyForceSize{SPACEDIM * NUMCOMPONENTS};
+        g_MacroBodyforce[blockIndex] =
+            ops_decl_dat(g_Block[blockIndex], bodyForceSize, size, base, d_m,
+                         d_p, (Real*)temp, RealC, dataName.c_str());
         dataName = "MacroVars_" + label;
         g_MacroVars[blockIndex] =
             ops_decl_dat_hdf5(g_Block[blockIndex], NUMMACROVAR, "double",
                               dataName.c_str(), fileName.c_str());
-        dataName = "Tau_" + label;
-        g_Tau[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMCOMPONENTS, size, base, d_m,
-                         d_p, (Real*)temp, RealC, dataName.c_str());
         dataName = "Nodetype_" + label;
         // problem specific -- cut cell method
         g_NodeType[blockIndex] = ops_decl_dat_hdf5(
@@ -703,89 +659,112 @@ void DefineHaloTransfer() {
     //     HaloGroups = ops_decl_halo_group ( HaloRelationNum,
     //     HaloRelations );
 
-    HaloRelationNum = 2;
-    HaloRelations = new ops_halo[HaloRelationNum];
-    int haloDepth = HaloDepth();
-    // max halo depths for the dat in the positive direction
-    int d_p[2] = {haloDepth, haloDepth};
-    // max halo depths for the dat in the negative direction
-    int d_m[2] = {-haloDepth, -haloDepth};
-    // The domain size in the Block 0
-    int nx = BlockSize(0)[0];
-    int ny = BlockSize(0)[1];
-    int dir[] = {1, 2};
-    {
-        int halo_iter[] = {nx + d_p[0] - d_m[0], 1};
-        int base_from[] = {d_m[0], 0};
-        int base_to[] = {d_m[0], ny};
-        HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-        base_from[1] = ny - 1;  // need to be changed
-        base_to[1] = d_m[1];
-        HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-    }
+    // HaloRelationNum = 2;
+    // HaloRelations = new ops_halo[HaloRelationNum];
+    // int haloDepth = HaloDepth();
+    // // max halo depths for the dat in the positive direction
+    // int d_p[2] = {haloDepth, haloDepth};
+    // // max halo depths for the dat in the negative direction
+    // int d_m[2] = {-haloDepth, -haloDepth};
+    // // The domain size in the Block 0
+    // int nx = BlockSize(0)[0];
+    // int ny = BlockSize(0)[1];
+    // int dir[] = {1, 2};
+    // {
+    //     int halo_iter[] = {nx + d_p[0] - d_m[0], 1};
+    //     int base_from[] = {d_m[0], 0};
+    //     int base_to[] = {d_m[0], ny};
+    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    //     base_from[1] = ny - 1;  // need to be changed
+    //     base_to[1] = d_m[1];
+    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
+    //                                      base_to, dir, dir);
+    // }
 
-    HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
+    // HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
 }
-
-void DefineHaloTransfer3D() {
-    // This is a hard coded version
-    // could be used as an example for user-defined routines.
-    HaloRelationNum = 2;
-    HaloRelations = new ops_halo[HaloRelationNum];
+//This version is for the distribution function
+//Other version to follow.
+#ifdef OPS_3D
+void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair) {
+    if (g_f == nullptr) {
+        ops_printf("Distribution function must be allocated first!");
+        assert(g_f == nullptr);
+    }
+    if (BlockNum() > 1) {
+        ops_printf(
+            "Periodic boundary conditions are only valid for single-block "
+            "applications!");
+        assert(BlockNum() > 1);
+    }
     int haloDepth = HaloDepth();
     // max halo depths for the dat in the positive direction
     int d_p[3] = {haloDepth, haloDepth, haloDepth};
     // max halo depths for the dat in the negative direction
     int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
-    //The domain size in the Block 0
+    // The domain size in the Block 0
     int nx = BlockSize(0)[0];
     int ny = BlockSize(0)[1];
     int nz = BlockSize(0)[2];
-    // {
-    //     // Template for the periodic pair (front-back)
-    //     int dir[] = {1, 2, 3};
-    //     int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
-    //     int base_from[] = {d_m[0], d_m[0], 0};
-    //     int base_to[] = {d_m[0], d_m[0], nz};
-    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    //     base_from[2] = nz - 1;
-    //     base_to[2] = d_m[1];
-    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    // }
+    int dir[] = {1, 2, 3};
+    for (auto& pair : haloPair) {
+        if (0 == pair) {
+            // left and right pair
+            int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
+            int base_from[] = {0, d_m[0], d_m[0]};
+            int base_to[] = {nx, d_m[0], d_m[0]};
+            ops_halo leftToRight = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                                 base_from, base_to, dir, dir);
+            base_from[0] = nx - 1;
+            base_to[0] = d_m[1];
+            ops_halo rightToLeft = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                                 base_from, base_to, dir, dir);
+            ops_halo group[]{leftToRight, rightToLeft};
+            HALOGROUPS.push_back(ops_decl_halo_group(2, group));
+        }
 
-    {
-        // Template for the periodic pair (left-right)
-        int dir[] = {1, 2, 3};
-        int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
-        int base_from[] = {0, d_m[0], d_m[0]};
-        int base_to[] = {nx, d_m[0], d_m[0]};
-        HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
-        base_from[0] = nx - 1;  // need to be changed
-        base_to[0] = d_m[1];
-        HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-                                         base_to, dir, dir);
+        if (1 == pair) {
+            // top and bottom pair
+            int halo_iter[] = {nx + d_p[0] - d_m[0], 1, nz + d_p[0] - d_m[0]};
+            int base_from[] = {d_m[0], 0, d_m[0]};
+            int base_to[] = {d_m[0], ny, d_m[0]};
+            ops_halo botToTop = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                              base_from, base_to, dir, dir);
+            base_from[1] = ny - 1;
+            base_to[1] = d_m[1];
+            ops_halo topToBot = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                              base_from, base_to, dir, dir);
+            ops_halo group[]{botToTop, topToBot};
+            HALOGROUPS.push_back(ops_decl_halo_group(2, group));
+        }
+
+        if (2 == pair) {
+            // front and back pair
+            int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
+            int base_from[] = {d_m[0], d_m[0], 0};
+            int base_to[] = {d_m[0], d_m[0], nz};
+            ops_halo backToFront = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                                 base_from, base_to, dir, dir);
+            base_from[2] = nz - 1;
+            base_to[2] = d_m[1];
+            ops_halo frontToBack = ops_decl_halo(g_f[0], g_f[0], halo_iter,
+                                                 base_from, base_to, dir, dir);
+            ops_halo group[]{backToFront, frontToBack};
+            HALOGROUPS.push_back(ops_decl_halo_group(2, group));
+        }
     }
+}
 
-    // {
-    //     // Template for the periodic pair (top-bottom)
-    //     int dir[] = {1, 2, 3};
-    //     int halo_iter[] = {nx + d_p[0] - d_m[0], 1 , nz + d_p[0] - d_m[0]};
-    //     int base_from[] = {d_m[0], 0, d_m[0]};
-    //     int base_to[] = {d_m[0], ny, d_m[0]};
-    //     HaloRelations[4] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    //     base_from[1] = ny - 1;  // need to be changed
-    //     base_to[1] = d_m[1];
-    //     HaloRelations[5] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    // }
+#endif //OPS_3D
+void Partition(){
+     ops_partition((char*)"LBM Solver");
+}
 
-    HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
+void DefineHaloTransfer3D() {
+    // This is a hard coded version
+    // could be used as an example for user-defined routines.
+
 }
 /*
  * We need a name to specify which file to input
@@ -801,8 +780,8 @@ void WriteFlowfieldToHdf5(const long timeStep) {
         std::string fileName = CASENAME + "_" + blockName + ".h5";
         ops_fetch_block_hdf5_file(g_Block[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_MacroVars[blockIndex], fileName.c_str());
-        ops_fetch_dat_hdf5_file(g_Tau[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_CoordinateXYZ[blockIndex], fileName.c_str());
+        ops_fetch_dat_hdf5_file(g_MacroBodyforce[blockIndex], fileName.c_str());
     }
 }
 
@@ -815,9 +794,6 @@ void WriteDistributionsToHdf5(const long timeStep) {
         std::string fileName = CASENAME + "_" + blockName + ".h5";
         ops_fetch_block_hdf5_file(g_Block[blockIndex], fileName.c_str());
         ops_fetch_dat_hdf5_file(g_f[blockIndex], fileName.c_str());
-        ops_fetch_dat_hdf5_file(g_feq[blockIndex], fileName.c_str());
-        ops_fetch_dat_hdf5_file(g_fStage[blockIndex], fileName.c_str());
-        ops_fetch_dat_hdf5_file(g_Bodyforce[blockIndex], fileName.c_str());
     }
 }
 
@@ -879,21 +855,15 @@ const int SpaceDim() { return SPACEDIM; }
 const int HaloDepth() { return HALODEPTH; }
 
 void SetHaloDepth(const int haloDepth) { HALODEPTH = haloDepth; }
-void SetHaloRelationNum(const int haloRelationNum) {
-    HaloRelationNum = haloRelationNum;
-}
 
 void DestroyFlowfield() {
     FreeArrayMemory(g_f);
     FreeArrayMemory(g_fStage);
-    FreeArrayMemory(g_feq);
-    FreeArrayMemory(g_Bodyforce);
+    FreeArrayMemory(g_MacroBodyforce);
     FreeArrayMemory(g_Block);
     FreeArrayMemory(g_MacroVars);
-    FreeArrayMemory(g_Tau);
     FreeArrayMemory(TAUREF);
     FreeArrayMemory(g_CoordinateXYZ);
-    if (HaloRelationNum > 0) FreeArrayMemory(HaloRelations);
     FreeArrayMemory(g_NodeType);
     FreeArrayMemory(g_GeometryProperty);
     FreeArrayMemory(BlockIterRngWhole);
@@ -914,8 +884,6 @@ void DestroyFlowfield() {
     // end if steady flow
     // delete[] halos;
 }
-
-const ops_halo_group HaloGroup() { return HaloGroups; }
 
 int* IterRngWhole() { return BlockIterRngWhole; }
 int* IterRngJmin() { return BlockIterRngJmin; }
@@ -962,7 +930,7 @@ void SetTauRef(const std::vector<Real> tauRef) {
     }
 }
 
-void SetBlockSize(const std::vector<int> blockSize) {
+void SetBlockSize(const std::vector<SizeType> blockSize) {
     const int dim{SPACEDIM * BLOCKNUM};
     if (blockSize.size() == dim) {
         BLOCKSIZE = new int[BLOCKNUM * SPACEDIM];
@@ -982,7 +950,7 @@ void SetBlockSize(const std::vector<int> blockSize) {
     }
 }
 
-void SetBlockNum(const int blockNum) {
+void SetBlockNum(const SizeType blockNum) {
     if (blockNum > 0) {
         BLOCKNUM = blockNum;
     } else {
@@ -991,5 +959,20 @@ void SetBlockNum(const int blockNum) {
     }
 }
 
+Real GetMaximumResidual(const Real checkPeriod) {
+    Real maxResError{0};
+    Real relResErrorMacroVar{0};
+    for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
+        relResErrorMacroVar = g_ResidualError[2 * macroVarIdx] /
+                              g_ResidualError[2 * macroVarIdx + 1] /
+                              (checkPeriod * TimeStep());
 
+        if (maxResError <= relResErrorMacroVar) {
+            maxResError = relResErrorMacroVar;
+        }
+    }
+    return maxResError;
+}
+
+const std::vector<ops_halo_group>& HaloGroups() { return HALOGROUPS; }
 // const int* GetBlockNum() { return &BLOCKNUM; }

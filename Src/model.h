@@ -38,7 +38,9 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <list>
 #include "type.h"
+
 
 /*!
  * Most of variables in this module will not change when the code is running.
@@ -104,18 +106,25 @@ extern int* VARIABLECOMPINDEX;
  * component
  */
 extern int* VARIABLECOMPPOS;
-/*!
- * Equilibrium function type
- */
-extern int* EQUILIBRIUMTYPE;
-/*!
- * Force function type
- */
-extern int* FORCETYPE;
+
 // Convenient functions
 void SetLatticeName(const std::vector<std::string>& latticeName);
 const std::vector<std::string> LatticeName();
 const std::vector<std::string> MacroVarName();
+/**
+ * Get collision type
+ */
+const std::list<std::pair<SizeType,CollisionType >> & CollisionTerms();
+ /**
+ * Get force type
+ */
+const std::list<std::pair<SizeType,BodyForceType>> & BodyForceTerms();
+
+/**
+ * Get initial type
+ */
+const std::list<std::pair<SizeType,InitialType>> & InitialTerms();
+
 inline const int ComponentNum() { return NUMCOMPONENTS; }
 inline const int MacroVarsNum() { return NUMMACROVAR; }
 inline const int SizeF() { return NUMXI; }
@@ -131,18 +140,27 @@ void DestroyModel();
 inline const int SizeofTau() { return NUMCOMPONENTS; }
 // HiLeMMS interface, https://gitlab.com/jpmeng/hilemms
 void DefineComponents(std::vector<std::string> compoNames,
-                      std::vector<int> compoId,
+                      std::vector<SizeType> compoId,
                       std::vector<std::string> lattNames);
 
 void DefineMacroVars(std::vector<VariableTypes> types,
-                     std::vector<std::string> names, std::vector<int> varId,
-                     std::vector<int> compoId);
+                     std::vector<std::string> names,
+                     std::vector<SizeType> varId,
+                     std::vector<SizeType> compoId);
 
-void DefineEquilibrium(std::vector<EquilibriumType> types,
-                       std::vector<int> compoId);
+/*!
+* Define collision terms for specified components
+* Must be called after DefineComponets()
+* HiLeMMS interface, , https://gitlab.com/jpmeng/hilemms
+*/
+void DefineCollision(std::vector<CollisionType> types,
+                       std::vector<SizeType> compoId);
 
 void DefineBodyForce(std::vector<BodyForceType> types,
-                     std::vector<int> compoId);
+                     std::vector<SizeType> compoId);
+
+void DefineInitialCondition(std::vector<InitialType> types,
+                            std::vector<SizeType> compoId);
 /*
  * Local function for calculating the equilibrium
  * 2D BGK model including up to fourth order terms
@@ -172,28 +190,66 @@ Real CalcSWEFeq(const int l, const Real h = 1, const Real u = 0,
  * Polynomial equilibrium function: upto the fourth order
  */
 // Two-dimensional version
+#ifdef OPS_2D
 void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq);
-void KerCalcMacroVars(const int* nodeType, const Real* f, Real* macroVars);
-/*!
- * @fn defining how to calculate the relaxation time
- * @param tauRef the reference relaxation time
- * @param macroVars the macroscopic variables
- * @param tau the calculated relaxation time
- */
-void KerCalcTau(const int* nodeType, const Real* tauRef, const Real* macroVars,
-                Real* tau);
-// Three-dimensional version
-// We have to create 2D and 3D version because of the difference
-// of 2D and 3D OPS_ACC_MD2 macro
-void KerCalcBodyForce3D(const Real* time, const int* nodeType,
-                        const Real* coordinates, const Real* macroVars,
-                        Real* bodyForce);
+void KerCalcMacroVars(const ACC<int>& nodeType, const ACC<Real>& f,
+                      ACC<Real>& macroVars);
 void KerCalcBodyForce(const Real* time, const int* nodeType,
                       const Real* coordinates, const Real* macroVars,
                       Real* bodyForce);
-void KerCalcFeq3D(const int* nodeType, const Real* macroVars, Real* feq);
-void KerCalcTau3D(const int* nodeType, const Real* tauRef,
-                  const Real* macroVars, Real* tau);
-void KerCalcMacroVars3D(const Real* dt, const int* nodeType, const Real* coordinates, const Real* f, Real* macroVars);
+#endif
+// Three-dimensional version
+// We have to create 2D and 3D version because of the difference
+// of 2D and 3D OPS_ACC_MD2 macro
+#ifdef OPS_3D
+void KerCalcBodyForce1ST3D(ACC<Real>& fStage, const ACC<Real>& acceration,
+                         const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                         const int* componentId);
 
+void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
+                          const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                          const int* componentId);
+
+void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
+                        const ACC<int>& nodeType, const ACC<Real>& coordinates,
+                        const ACC<Real>& acceleration, const Real* dt);
+
+void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<Real>& macroVars,
+                           const ACC<int>& nodeType, const int* componentId);
+
+/**
+ * @brief Implement the BGK isothermal collision model
+ *
+ * @param fStage the temporary variable storing distribution after collision
+ * @param f distribution
+ * @param macroVars macroscopic variables
+ * @param nodeType
+ * @param tauRef relaxation time
+ * @param dt time step
+ * @param componentId the component to be working on
+ * Assumptions:
+ * 1. fStage before collision is body force distribution
+ * 2. The layout of macroVars is "rho, u, v, w"
+ */
+void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
+                  const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                  const Real* tauRef, const Real* dt, const int* componentId);
+
+/**
+ * @brief Implement the BGK thermal collision model
+ *
+ * @param fStage the temporary variable storing distribution after collision
+ * @param f distribution
+ * @param macroVars macroscopic variables
+ * @param nodeType
+ * @param tauRef relaxation time
+ * @param dt time step
+ * @param componentId componentId the component to be working on
+ * 1. fStage before collision is body force distribution
+ * 2. The layout of macroVars is "rho, u, v, w, T"
+*/
+void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
+                  const ACC<Real>& macroVars, const ACC<int>& nodeType,
+                  const Real* tauRef, const Real* dt, const int* componentId);
+#endif // OPS_3D
 #endif

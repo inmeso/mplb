@@ -9,7 +9,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice, 
+ * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
@@ -1360,9 +1360,9 @@ int main(int argc, char* argv[]) {
     std::vector<int> macroVarId{0, 1, 2, 3};
     std::vector<int> macroCompoId{0, 0, 0, 0};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
-    std::vector<EquilibriumType> equTypes{Equilibrium_BGKIsothermal2nd};
+    std::vector<CollisionType> equTypes{Equilibrium_BGKIsothermal2nd};
     std::vector<int> equCompoId{0};
-    DefineEquilibrium(equTypes, equCompoId);
+    DefineCollision(equTypes, equCompoId);
 
     SetupBoundary();
     SetupScheme();
