@@ -66,7 +66,7 @@
 /*!
  * Overall wrap for stream-collision scheme
  */
-void StreamCollision3D();
+void StreamCollision3D(const Real time);
 /*!
  * Ops_par_loop for the stream step
  */
@@ -74,7 +74,7 @@ void Stream3D();
 /*!
  * Ops_par_loop for the collision step
  */
-void Collision3D();
+void PreDefinedCollision3D();
 // finite-difference scheme with cutting-cell technique related
 /*!
  * Overall wrap for a finite difference scheme
@@ -90,22 +90,27 @@ void CalcResidualError3D();
  * Calculating the total mass of the whole problem domain (all the blocks)
  */
 void CalcTotalMass3D(Real* totalMass);
-void InitialiseSolution3D();
+void PreDefinedInitialCondition3D();
 /*!
  * Mainly for a steady simulation
  */
 void DispResidualError3D(const int iter, const Real timePeriod);
 void NormaliseF3D(Real* ratio);
 void UpdateMacroVars3D();
-void UpdateTau3D();
-void UpdateFeqandBodyforce3D();
+void PreDefinedBodyForce3D();
 void UpdateHalos3D();
 void ImplementBoundary3D();
-void CopyDistribution3D(const ops_dat* fSrc, ops_dat* fDest);
+void CopyDistribution3D(ops_dat* fDest, const ops_dat* fSrc);
 
 void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                           const Real* givenVars, int* range,
                           const VertexTypes boundaryType);
+
+void Iterate(const SizeType steps, const SizeType checkPointPeriod);
+void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod);
+
+void UpdateMacroscopicBodyForce(const Real time);
+void SetInitialMacrosVars();
 
 #endif /* OPS_3D */
 #endif /* EVOLUTION3D_H_ */

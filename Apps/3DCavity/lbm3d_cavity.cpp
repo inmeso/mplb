@@ -38,48 +38,63 @@
 #include <ostream>
 #include <string>
 #include "boundary.h"
-#include "evolution.h"
 #include "evolution3d.h"
 #include "flowfield.h"
 #include "hilemms.h"
 #include "model.h"
-#include "ops_seq.h"
+#include "ops_seq_v2.h"
 #include "scheme.h"
 #include "type.h"
 #include "configuration.h"
+#include "cavity3d.h"
+
+void SetInitialMacrosVars() {
+    for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+        int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
+        ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
+                     g_Block[blockIdx], SPACEDIM, iterRng,
+                     ops_arg_dat(g_MacroVars[blockIdx], NUMMACROVAR,
+                                 LOCALSTENCIL, "double", OPS_RW),
+                     ops_arg_dat(g_CoordinateXYZ[blockIdx], SPACEDIM,
+                                 LOCALSTENCIL, "double", OPS_READ),
+                     ops_arg_idx());
+    }
+}
+
+void UpdateMacroscopicBodyForce(const Real time) {}
 
 void simulate() {
 
     std::string caseName{"3D_lid_Driven_cavity"};
-    int spaceDim{3};
+    SizeType spaceDim{3};
     DefineCase(caseName, spaceDim);
 
     std::vector<std::string> compoNames{"Fluid"};
-    std::vector<int> compoid{0};
+    std::vector<SizeType> compoid{0};
     std::vector<std::string> lattNames{"d3q19"};
     DefineComponents(compoNames, compoid, lattNames);
 
     std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
                                              Variable_V, Variable_W};
     std::vector<std::string> macroVarNames{"rho", "u", "v", "w"};
-    std::vector<int> macroVarId{0, 1, 2, 3};
-    std::vector<int> macroCompoId{0, 0, 0, 0};
+    std::vector<SizeType> macroVarId{0, 1, 2, 3};
+    std::vector<SizeType> macroCompoId{0, 0, 0, 0};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
-    std::vector<EquilibriumType> equTypes{Equilibrium_BGKIsothermal2nd};
-    std::vector<int> equCompoId{0};
-    DefineEquilibrium(equTypes, equCompoId);
+    std::vector<CollisionType> collisionTypes{Collision_BGKIsothermal2nd};
+    std::vector<SizeType> collisionCompoId{0};
+    DefineCollision(collisionTypes, collisionCompoId);
 
-    std::vector<BodyForceType> bodyForceTypes{BodyForce_1st};
-    std::vector<int> bodyForceCompoId{0};
+    std::vector<BodyForceType> bodyForceTypes{BodyForce_None};
+    std::vector<SizeType> bodyForceCompoId{0};
     DefineBodyForce(bodyForceTypes, bodyForceCompoId);
 
     SchemeType scheme{Scheme_StreamCollision};
     DefineScheme(scheme);
 
     // Setting boundary conditions
-    int blockIndex{0};
-    int componentId{0};
+    SizeType blockIndex{0};
+    SizeType componentId{0};
     std::vector<VariableTypes> macroVarTypesatBoundary{Variable_U, Variable_V,
                                                        Variable_W};
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
@@ -109,21 +124,25 @@ void simulate() {
                         BoundaryType_EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
-    int blockNum{1};
-    std::vector<int> blockSize{11, 11, 11};
-    Real meshSize{1. / 10};
+    std::vector<InitialType> initType{Initial_BGKFeq2nd};
+    std::vector<SizeType> initalCompoId{0};
+    DefineInitialCondition(initType,initalCompoId);
+
+    SizeType blockNum{1};
+    std::vector<SizeType> blockSize{33, 33, 33};
+    Real meshSize{1. / 32};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
     DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
-
-    DefineInitialCondition();
-
+    SetInitialMacrosVars();
+    PreDefinedInitialCondition3D();
     std::vector<Real> tauRef{0.01};
     SetTauRef(tauRef);
     SetTimeStep(meshSize / SoundSpeed());
 
     const Real convergenceCriteria{1E-7};
-    const int checkPeriod{1000};
+    const SizeType checkPeriod{1000};
     Iterate(convergenceCriteria, checkPeriod);
+
 }
 
 void simulate(const Configuration & config) {
@@ -131,10 +150,10 @@ void simulate(const Configuration & config) {
     DefineComponents(config.compoNames, config.compoIds, config.lattNames);
     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
                     config.macroVarIds, config.macroCompoIds);
-    DefineEquilibrium(config.equilibriumTypes, config.equilibriumCompoIds);
+    DefineCollision(config.CollisionTypes, config.CollisionCompoIds);
     DefineBodyForce(config.bodyForceTypes, config.bodyForceCompoIds);
     DefineScheme(config.schemeType);
-
+    DefineInitialCondition(config.initialTypes,config.initialConditionCompoId);
     for (auto& bcConfig : config.blockBoundaryConditions) {
         DefineBlockBoundary(bcConfig.blockIndex, bcConfig.componentID,
                             bcConfig.boundarySurface, bcConfig.boundaryType,
@@ -143,7 +162,8 @@ void simulate(const Configuration & config) {
     }
     DefineProblemDomain(config.blockNum, config.blockSize, config.meshSize,
                         config.startPos);
-    DefineInitialCondition();
+    SetInitialMacrosVars();
+    PreDefinedInitialCondition3D();
 
     SetTauRef(config.tauRef);
     SetTimeStep(config.meshSize / SoundSpeed());
@@ -168,8 +188,8 @@ int main(int argc, const char** argv) {
     }
 
     ops_timers(&ct1, &et1);
-    //ops_printf("\nTotal Wall time %lf\n", et1 - et0);
-    // Print OPS performance details to output stream
-    //ops_timing_output(stdout);
+    ops_printf("\nTotal Wall time %lf\n", et1 - et0);
+    //Print OPS performance details to output stream
+    ops_timing_output(stdout);
     ops_exit();
 }

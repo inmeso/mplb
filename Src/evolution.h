@@ -74,7 +74,6 @@ void TimeMarching();
 // Common routines
 void InitialiseSolution();
 void UpdateMacroVars();
-void UpdateTau();
 void UpdateFeqandBodyforce();
 void UpdateHalos();
 void CopyDistribution(const ops_dat *fSrc, ops_dat *fDest);

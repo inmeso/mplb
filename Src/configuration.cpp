@@ -68,10 +68,10 @@ NLOHMANN_JSON_SERIALIZE_ENUM(
     });
 
 NLOHMANN_JSON_SERIALIZE_ENUM(
-    EquilibriumType,
-    {{Equilibrium_BGKIsothermal2nd, "Equilibrium_BGKIsothermal2nd"},
-     {Equilibrium_BGKThermal4th, "Equilibrium_BGKThermal4th"},
-     {Equilibrium_BGKSWE4th, "Equilibrium_BGKSWE4th"}});
+    CollisionType,
+    {{Collision_BGKIsothermal2nd, "Collision_BGKIsothermal2nd"},
+     {Collision_BGKThermal4th, "Collision_BGKThermal4th"},
+     {Collision_BGKSWE4th, "Collision_BGKSWE4th"}});
 
 NLOHMANN_JSON_SERIALIZE_ENUM(BodyForceType,
                              {{BodyForce_1st, "BodyForce_1st"},
@@ -84,6 +84,9 @@ NLOHMANN_JSON_SERIALIZE_ENUM(BoundarySurface,
                               {BoundarySurface_Bottom, "Bottom"},
                               {BoundarySurface_Front, "Front"},
                               {BoundarySurface_Back, "Back"}});
+
+NLOHMANN_JSON_SERIALIZE_ENUM(InitialType,
+                             {{Initial_BGKFeq2nd, "Initial_BGKFeq2nd"}});
 
 NLOHMANN_JSON_SERIALIZE_ENUM(SchemeType, {{Scheme_E1st2nd, "Scheme_E1st2nd"},
                                           {Scheme_StreamCollision,
@@ -133,7 +136,7 @@ void ParseJson(json& jsonConfig) {
             "Error! Please insert the SpaceDim item into the configuration!\n");
         assert(jsonConfig["CompoIds"].is_null());
     } else {
-        config.compoIds = jsonConfig["CompoIds"].get<std::vector<int>>();
+        config.compoIds = jsonConfig["CompoIds"].get<std::vector<SizeType>>();
     }
 
     if (jsonConfig["MacroVarNames"].is_null()) {
@@ -152,7 +155,7 @@ void ParseJson(json& jsonConfig) {
             "configuration!\n");
         assert(jsonConfig["MacroVarIds"].is_null());
     } else {
-        config.macroVarIds = jsonConfig["MacroVarIds"].get<std::vector<int>>();
+        config.macroVarIds = jsonConfig["MacroVarIds"].get<std::vector<SizeType>>();
     }
 
     if (jsonConfig["MacroCompoIds"].is_null()) {
@@ -162,7 +165,7 @@ void ParseJson(json& jsonConfig) {
         assert(jsonConfig["MacroCompoIds"].is_null());
     } else {
         config.macroCompoIds =
-            jsonConfig["MacroCompoIds"].get<std::vector<int>>();
+            jsonConfig["MacroCompoIds"].get<std::vector<SizeType>>();
     }
 
     if (jsonConfig["MacroVarTypes"].is_null()) {
@@ -175,24 +178,44 @@ void ParseJson(json& jsonConfig) {
             jsonConfig["MacroVarTypes"].get<std::vector<VariableTypes>>();
     }
 
-    if (jsonConfig["EquilibriumType"].is_null()) {
+    if (jsonConfig["CollisionType"].is_null()) {
         ops_printf(
-            "Error! Please insert the EquilibriumType item into the "
+            "Error! Please insert the CollisionType item into the "
             "configuration!\n");
-        assert(jsonConfig["EquilibriumType"].is_null());
+        assert(jsonConfig["CollisionType"].is_null());
     } else {
-        config.equilibriumTypes =
-            jsonConfig["EquilibriumType"].get<std::vector<EquilibriumType>>();
+        config.CollisionTypes =
+            jsonConfig["CollisionType"].get<std::vector<CollisionType>>();
     }
 
-    if (jsonConfig["EquilibriumCompoIds"].is_null()) {
+    if (jsonConfig["CollisionCompoIds"].is_null()) {
         ops_printf(
             "Error! Please insert the EquilibriumCompoIds item into the "
             "configuration!\n");
-        assert(jsonConfig["EquilibriumCompoIds"].is_null());
+        assert(jsonConfig["CollisionCompoIds"].is_null());
     } else {
-        config.equilibriumCompoIds =
-            jsonConfig["EquilibriumCompoIds"].get<std::vector<int>>();
+        config.CollisionCompoIds =
+            jsonConfig["CollisionCompoIds"].get<std::vector<SizeType>>();
+    }
+
+    if (jsonConfig["InitialType"].is_null()) {
+        ops_printf(
+            "Error! Please insert the InitialType item into the "
+            "configuration!\n");
+        assert(jsonConfig["InitialType"].is_null());
+    } else {
+        config.initialTypes =
+            jsonConfig["InitialType"].get<std::vector<InitialType>>();
+    }
+
+    if (jsonConfig["InitialCompoIds"].is_null()) {
+        ops_printf(
+            "Error! Please insert the InitialCompoIds item into the "
+            "configuration!\n");
+        assert(jsonConfig["InitialCompoIds"].is_null());
+    } else {
+        config.initialConditionCompoId =
+            jsonConfig["InitialCompoIds"].get<std::vector<SizeType>>();
     }
 
     if (jsonConfig["BodyForceType"].is_null()) {
@@ -212,7 +235,7 @@ void ParseJson(json& jsonConfig) {
         assert(jsonConfig["BodyForceCompoId"].is_null());
     } else {
         config.bodyForceCompoIds =
-            jsonConfig["BodyForceCompoId"].get<std::vector<int>>();
+            jsonConfig["BodyForceCompoId"].get<std::vector<SizeType>>();
     }
 
     if (jsonConfig["SchemeType"].is_null()) {
@@ -224,7 +247,7 @@ void ParseJson(json& jsonConfig) {
         config.schemeType = jsonConfig["SchemeType"];
     }
 
-    int boundaryConditionNum{2 * config.spaceDim * config.blockNum};
+    SizeType boundaryConditionNum{2 * config.spaceDim * config.blockNum};
     config.blockBoundaryConditions.resize(boundaryConditionNum);
     for (int bcIdx = 0; bcIdx < boundaryConditionNum; bcIdx++) {
         std::string bcName{"BoundaryCondition" + std::to_string(bcIdx)};
@@ -311,7 +334,7 @@ void ParseJson(json& jsonConfig) {
             "configuration!\n");
         assert(jsonConfig["BlockSize"].is_null());
     } else {
-        config.blockSize = jsonConfig["BlockSize"].get<std::vector<int>>();
+        config.blockSize = jsonConfig["BlockSize"].get<std::vector<SizeType>>();
     }
 
     if (jsonConfig["TauRef"].is_null()) {
