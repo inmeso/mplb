@@ -167,7 +167,7 @@ void KerNormaliseF(const Real* ratio, ACC<Real>& f);
 /*!
  * Utility kernel function for copying distribution function
  */
-void KerCopyf(const ACC<Real>& src, ACC<Real>& dest);
+void KerCopyf(ACC<Real>& dest, const ACC<Real>& src);
 /*!
  * Utility kernel function for calculating numerator of L2 norm
  */

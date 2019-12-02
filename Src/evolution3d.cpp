@@ -462,6 +462,8 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod) {
             int iter{0};
             Real residualError{1};
             do {
+                const Real time{iter * TimeStep()};
+                StreamCollision3D(time);
                 if ((iter % checkPointPeriod) == 0) {
                     UpdateMacroVars3D();
                     CalcResidualError3D();

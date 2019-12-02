@@ -51,7 +51,8 @@
 // blockSize: array of integers specifying the block blocksize.
 // meshSize: The size of mesh i.e. dx (At present dx = dy = dz).
 // startPos: Starting position of each block.
-void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
+void DefineProblemDomain(const SizeType blockNum,
+                         const std::vector<SizeType> blockSize,
                          const Real meshSize, const std::vector<Real> startPos);
 
 // Add 2D polygon.

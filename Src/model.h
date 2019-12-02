@@ -140,12 +140,13 @@ void DestroyModel();
 inline const int SizeofTau() { return NUMCOMPONENTS; }
 // HiLeMMS interface, https://gitlab.com/jpmeng/hilemms
 void DefineComponents(std::vector<std::string> compoNames,
-                      std::vector<int> compoId,
+                      std::vector<SizeType> compoId,
                       std::vector<std::string> lattNames);
 
 void DefineMacroVars(std::vector<VariableTypes> types,
-                     std::vector<std::string> names, std::vector<int> varId,
-                     std::vector<int> compoId);
+                     std::vector<std::string> names,
+                     std::vector<SizeType> varId,
+                     std::vector<SizeType> compoId);
 
 /*!
 * Define collision terms for specified components

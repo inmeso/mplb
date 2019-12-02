@@ -255,7 +255,7 @@ void AllocateMacroVarProperty(const int macroVarNum) {
 }
 
 void DefineComponents(std::vector<std::string> compoNames,
-                      std::vector<int> compoId,
+                      std::vector<SizeType> compoId,
                       std::vector<std::string> lattNames) {
     NUMCOMPONENTS = compoNames.size();
     if (NUMCOMPONENTS > 0) {
@@ -334,8 +334,9 @@ void DefineComponents(std::vector<std::string> compoNames,
 }
 
 void DefineMacroVars(std::vector<VariableTypes> types,
-                     std::vector<std::string> names, std::vector<int> varId,
-                     std::vector<int> compoId) {
+                     std::vector<std::string> names,
+                     std::vector<SizeType> varId,
+                     std::vector<SizeType> compoId) {
     // It seems varId is not necessary at this moment
     NUMMACROVAR = names.size();
     MACROVARNAME = names;

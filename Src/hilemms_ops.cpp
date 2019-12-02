@@ -310,7 +310,8 @@ VertexTypes BoundTypeToVertexType(BoundaryType type) {
 }
 
 //TODO It may be better to add one more init module
-void DefineProblemDomain(const int blockNum, const std::vector<int> blockSize,
+void DefineProblemDomain(const SizeType blockNum,
+                         const std::vector<SizeType> blockSize,
                          const Real meshSize,
                          const std::vector<Real> startPos) {
     SetBlockNum(blockNum);

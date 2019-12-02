@@ -153,8 +153,8 @@ void SetTimeStep(Real dt);
 void SetCaseName(const std::string caseName);
 void setCaseName(const char* caseName);
 void SetTauRef(const std::vector<Real> tauRef);
-void SetBlockSize(const std::vector<int> blockSize);
-void SetBlockNum(const int blockNum);
+void SetBlockSize(const std::vector<SizeType> blockSize);
+void SetBlockNum(const SizeType blockNum);
 
 /*!
  * Manually setup the flow field.

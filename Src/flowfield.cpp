@@ -930,7 +930,7 @@ void SetTauRef(const std::vector<Real> tauRef) {
     }
 }
 
-void SetBlockSize(const std::vector<int> blockSize) {
+void SetBlockSize(const std::vector<SizeType> blockSize) {
     const int dim{SPACEDIM * BLOCKNUM};
     if (blockSize.size() == dim) {
         BLOCKSIZE = new int[BLOCKNUM * SPACEDIM];
@@ -950,7 +950,7 @@ void SetBlockSize(const std::vector<int> blockSize) {
     }
 }
 
-void SetBlockNum(const int blockNum) {
+void SetBlockNum(const SizeType blockNum) {
     if (blockNum > 0) {
         BLOCKNUM = blockNum;
     } else {
