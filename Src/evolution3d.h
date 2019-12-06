@@ -112,5 +112,52 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod);
 void UpdateMacroscopicBodyForce(const Real time);
 void SetInitialMacrosVars();
 
+template <typename T>
+void Iterate(void (*cycle)(T), const SizeType steps,
+             const SizeType checkPointPeriod) {
+    ops_printf("Starting the iteration...\n");
+    for (int iter = 0; iter < steps; iter++) {
+        const Real time{iter * TimeStep()};
+        cycle(time);
+        if ((iter % checkPointPeriod) == 0 && iter != 0) {
+            UpdateMacroVars3D();
+            CalcResidualError3D();
+            DispResidualError3D(iter, checkPointPeriod * TimeStep());
+            WriteFlowfieldToHdf5(iter);
+            WriteDistributionsToHdf5(iter);
+            WriteNodePropertyToHdf5(iter);
+        }
+    }
+    ops_printf("Simulation finished! Exiting...\n");
+    DestroyModel();
+    DestroyFlowfield();
+}
+
+template <typename T>
+void Iterate(void (*cycle)(T), const Real convergenceCriteria,
+             const SizeType checkPointPeriod) {
+    int iter{0};
+    Real residualError{1};
+    do {
+        const Real time{iter * TimeStep()};
+        cycle(time);
+        if ((iter % checkPointPeriod) == 0) {
+            UpdateMacroVars3D();
+            CalcResidualError3D();
+            residualError = GetMaximumResidual(checkPointPeriod * TimeStep());
+            DispResidualError3D(iter, checkPointPeriod * TimeStep());
+            WriteFlowfieldToHdf5(iter);
+            WriteDistributionsToHdf5(iter);
+            WriteNodePropertyToHdf5(iter);
+        }
+
+        iter = iter + 1;
+    } while (residualError >= convergenceCriteria);
+
+    ops_printf("Simulation finished! Exiting...\n");
+    DestroyModel();
+    DestroyFlowfield();
+}
+
 #endif /* OPS_3D */
 #endif /* EVOLUTION3D_H_ */

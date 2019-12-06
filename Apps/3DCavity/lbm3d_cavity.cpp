@@ -141,8 +141,7 @@ void simulate() {
 
     const Real convergenceCriteria{1E-7};
     const SizeType checkPeriod{1000};
-    Iterate(convergenceCriteria, checkPeriod);
-
+    Iterate(StreamCollision3D,convergenceCriteria, checkPeriod);
 }
 
 void simulate(const Configuration & config) {
