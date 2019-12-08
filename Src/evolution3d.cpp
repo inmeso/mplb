@@ -493,7 +493,10 @@ void TransferHalos(const std::vector<ops_halo_group>& haloGroups) {
         }
     }
 }
-
+void PrepareSimulation() {
+    PrepareFlowField();
+    PrepareBoundary();
+}
 void StreamCollision3D(const Real time) {
 #if DebugLevel >= 1
     ops_printf("Calculating the macroscopic variables...\n");

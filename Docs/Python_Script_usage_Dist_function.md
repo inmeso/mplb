@@ -152,7 +152,7 @@ void simulate() {
     std::vector<int> blockSize{64, 64, 64};
     Real meshSize{1. / 63};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
-    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+    DefineBlocks(blockNum, blockSize, meshSize, startPos);
 
     std::vector<Real> initialMacroValues{1, 0, 0, 0};
     DefineInitialCondition(blockIndex, componentId, initialMacroValues);

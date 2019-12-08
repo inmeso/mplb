@@ -101,7 +101,7 @@ void simulate() {
     std::vector<int> blockSize{501, 251};
     Real meshSize{0.02};
     std::vector<Real> startPos{0.0, 0.0};
-    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+    DefineBlocks(blockNum, blockSize, meshSize, startPos);
 
     DefineInitialCondition();
     ops_printf("%s\n", "Flowfield is Initialised now!");

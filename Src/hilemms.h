@@ -47,13 +47,6 @@
 #include "ops_seq.h"
 #include "scheme.h"
 #include "type.h"
-// blockNum: total number if blocks.
-// blockSize: array of integers specifying the block blocksize.
-// meshSize: The size of mesh i.e. dx (At present dx = dy = dz).
-// startPos: Starting position of each block.
-void DefineProblemDomain(const SizeType blockNum,
-                         const std::vector<SizeType> blockSize,
-                         const Real meshSize, const std::vector<Real> startPos);
 
 // Add 2D polygon.
 // vertexNum: total number of vertexes.
@@ -74,33 +67,11 @@ void DefineBlockBoundary(int blockIndex, int componentID,
                          const std::vector<VariableTypes>& macroVarTypes,
                          const std::vector<Real>& macroVarValues);
 
-// blockIndex: Block Index
-// blockStartPos: Starting position of the block in x, y, z directions to find
-// coordinates. meshSize: Size of mesh (Assuming a constant in all 3 directions
-// for stream collision scheme).
-void CalculateBlockCoordinates(const int blockIndex, Real* blockStartPos,
-                         Real meshsize);
-
-void KerSetCoordinates(ACC<Real>& coordinates, const int* idx,
-                       const Real* coordX, const Real* coordY);
-
-void KerSetCoordinates3D(ACC<Real>& coordinates, const int* idx,
-                         const Real* coordX, const Real* coordY,
-                         const Real* coordZ);
-
-
-void AssignCoordinates(int blockIndex,
-                       const std::vector<std::vector<Real>>& coordinates);
-
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType);
 void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType,
                               BoundaryType* edgeType, BoundaryType* cornerType);
-void SetBlockGeometryProperty(int blockIndex);
-
-void DefineHaloNumber(int Halo_Number, int Halo_Depth, int Scheme_Halo_points,
-                      int Num_Bound_Halo_Points);
 // Functions to check for inclusion.
-
+void PrepareBoundary();
 // A wrapper Function which implements all the boundary conditions.
 void ImplementBoundaryConditions();
 

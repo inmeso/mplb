@@ -950,7 +950,9 @@ void KerStream3D(ACC<Real>& f, const ACC<Real>& fStage,
                      vt == Vertex_EQMDiffuseRefl ||
                      vt == Vertex_ExtrapolPressure1ST ||
                      vt == Vertex_ExtrapolPressure2ND ||
-                     vt == Vertex_Periodic || vt == Vertex_NoslipEQN);
+                     vt == Vertex_Periodic ||
+                     vt == Vertex_NoslipEQN ||
+                     vt == Vertex_Boundary);
                 if (streamRequired) {
                     if ((cx == 0) && (cy == 0) && (cz == 0)) {
                         f(xiIndex, 0, 0, 0) = fStage(xiIndex, 0, 0, 0);
@@ -1737,6 +1739,24 @@ void KerGetPointMacroVarValue(const ACC<Real>& macroVars, Real* pointValue) {
 #endif
 #ifdef OPS_3D
     *pointValue = *pointValue + macroVars(1, 0, 0, 0) / macroVars(0, 0, 0, 0);
+#endif
+}
+
+void KerSetCoordinates(ACC<Real>& coordinates, const int* idx,
+                       const Real* coordX, const Real* coordY) {
+#ifdef OPS_2D
+    coordinates(0, 0, 0) = coordX[idx[0]];
+    coordinates(1, 0, 0) = coordY[idx[1]];
+#endif
+}
+
+void KerSetCoordinates3D(ACC<Real>& coordinates, const int* idx,
+                         const Real* coordX, const Real* coordY,
+                         const Real* coordZ) {
+#ifdef OPS_3D
+    coordinates(0, 0, 0, 0) = coordX[idx[0]];
+    coordinates(1, 0, 0, 0) = coordY[idx[1]];
+    coordinates(2, 0, 0, 0) = coordZ[idx[2]];
 #endif
 }
 #endif  // SCHEME_KERNEL_H
