@@ -34,24 +34,6 @@
 #define HILEMMS_OPS_KERNEL
 #include "hilemms.h"
 
-void KerSetCoordinates(ACC<Real>& coordinates, const int* idx,
-                       const Real* coordX, const Real* coordY) {
-#ifdef OPS_2D
-    coordinates(0, 0, 0) = coordX[idx[0]];
-    coordinates(1, 0, 0) = coordY[idx[1]];
-#endif
-}
-
-void KerSetCoordinates3D(ACC<Real>& coordinates, const int* idx,
-                         const Real* coordX, const Real* coordY,
-                         const Real* coordZ) {
-#ifdef OPS_3D
-    coordinates(0, 0, 0, 0) = coordX[idx[0]];
-    coordinates(1, 0, 0, 0) = coordY[idx[1]];
-    coordinates(2, 0, 0, 0) = coordZ[idx[2]];
-#endif
-}
-
 void KerSetEmbeddedBodyBoundary(ACC<int>& nodeType,
                                 const ACC<int>& geometryProperty,
                                 int* surfaceBoundary) {

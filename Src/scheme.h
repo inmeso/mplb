@@ -201,6 +201,12 @@ void KerCopyDispf(const ACC<Real>& src, ACC<Real>& dest, const int* disp);
  * Utility kernel function for copying coordinates
  */
 void KerCopyCoordinateXYZ(const ACC<Real>& src, ACC<Real>& dest);
+void KerSetCoordinates(ACC<Real>& coordinates, const int* idx,
+                       const Real* coordX, const Real* coordY);
+
+void KerSetCoordinates3D(ACC<Real>& coordinates, const int* idx,
+                         const Real* coordX, const Real* coordY,
+                         const Real* coordZ);
 /*!
  * Set a scalar variable to a specific value.Mainly used in initialisation.
  */
