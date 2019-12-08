@@ -471,7 +471,7 @@ void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
          // vt == Vertex_KineticDiffuseWall ||
          vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
          vt == Vertex_ExtrapolPressure2ND || vt == Vertex_Periodic ||
-         vt == Vertex_NoslipEQN);
+         vt == Vertex_NoslipEQN || vt == Vertex_Boundary);
     if (collisionRequired) {
         const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
         Real rho{macroVars(startPos, 0, 0, 0)};
@@ -525,7 +525,7 @@ void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
          // vt == Vertex_KineticDiffuseWall ||
          vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
          vt == Vertex_ExtrapolPressure2ND || vt == Vertex_Periodic ||
-         vt == Vertex_NoslipEQN);
+         vt == Vertex_NoslipEQN || vt == Vertex_Boundary);
     if (collisionRequired) {
         const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
         Real rho{macroVars(startPos, 0, 0, 0)};

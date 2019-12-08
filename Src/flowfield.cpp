@@ -68,6 +68,7 @@ Real DT{1};
 Real* TAUREF{nullptr};
 ops_dat* g_DiscreteConvectionTerm{nullptr};
 ops_dat* g_CoordinateXYZ{nullptr};
+std::vector<std::vector<std::vector<Real>>> COORDINATES;
 /*!
  *metrics for 2D: 0 xi_x 1 xi_y  2 eta_x  3 eta_y
  *metrics for 3D:
@@ -226,7 +227,7 @@ void DefineVariables() {
 }
 */
 
-void DefineVariables() {
+void AllocateMemory() {
     void* temp = NULL;
     g_Block = new ops_block[BLOCKNUM];
     g_f = new ops_dat[BLOCKNUM];
@@ -757,8 +758,8 @@ void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair) {
 }
 
 #endif //OPS_3D
-void Partition(){
-     ops_partition((char*)"LBM Solver");
+void Partition() {
+    ops_partition((char*)"LBM Solver");
 }
 
 void DefineHaloTransfer3D() {
@@ -975,4 +976,573 @@ Real GetMaximumResidual(const Real checkPeriod) {
 }
 
 const std::vector<ops_halo_group>& HaloGroups() { return HALOGROUPS; }
-// const int* GetBlockNum() { return &BLOCKNUM; }
+
+void  SetBlockGeometryProperty(int blockIndex) {
+    int geometryProperty = (int)VG_Fluid;
+    int* iterRange = BlockIterRng(blockIndex, IterRngBulk());
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, iterRange,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    // specify halo points
+    geometryProperty = VG_ImmersedSolid;
+    iterRange = BlockIterRng(blockIndex, IterRngJmin());
+    int* haloIterRng = new int[2 * SPACEDIM];
+    haloIterRng[0] = iterRange[0] - 1;
+    haloIterRng[1] = iterRange[1] + 1;
+    haloIterRng[2] = iterRange[2] - 1;
+    haloIterRng[3] = iterRange[3] - 1;
+    if (3 == SPACEDIM) {
+        haloIterRng[4] = iterRange[4] - 1;
+        haloIterRng[5] = iterRange[5] + 1;
+    }
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    iterRange = BlockIterRng(blockIndex, IterRngJmax());
+    haloIterRng[0] = iterRange[0] - 1;
+    haloIterRng[1] = iterRange[1] + 1;
+    haloIterRng[2] = iterRange[2] + 1;
+    haloIterRng[3] = iterRange[3] + 1;
+    if (3 == SPACEDIM) {
+        haloIterRng[4] = iterRange[4] - 1;
+        haloIterRng[5] = iterRange[5] + 1;
+    }
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    iterRange = BlockIterRng(blockIndex, IterRngImin());
+    haloIterRng[0] = iterRange[0] - 1;
+    haloIterRng[1] = iterRange[1] - 1;
+    haloIterRng[2] = iterRange[2] - 1;
+    haloIterRng[3] = iterRange[3] + 1;
+    if (3 == SPACEDIM) {
+        haloIterRng[4] = iterRange[4] - 1;
+        haloIterRng[5] = iterRange[5] + 1;
+    }
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+
+    iterRange = BlockIterRng(blockIndex, IterRngImax());
+    haloIterRng[0] = iterRange[0] + 1;
+    haloIterRng[1] = iterRange[1] + 1;
+    haloIterRng[2] = iterRange[2] - 1;
+    haloIterRng[3] = iterRange[3] + 1;
+    if (3 == SPACEDIM) {
+        haloIterRng[4] = iterRange[4] - 1;
+        haloIterRng[5] = iterRange[5] + 1;
+    }
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    if (3 == SPACEDIM) {
+        iterRange = BlockIterRng(blockIndex, IterRngKmin());
+        haloIterRng[0] = iterRange[0] - 1;
+        haloIterRng[1] = iterRange[1] + 1;
+        haloIterRng[2] = iterRange[2] - 1;
+        haloIterRng[3] = iterRange[3] + 1;
+        haloIterRng[4] = iterRange[4] - 1;
+        haloIterRng[5] = iterRange[5] - 1;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, haloIterRng,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        iterRange = BlockIterRng(blockIndex, IterRngKmax());
+        haloIterRng[0] = iterRange[0] - 1;
+        haloIterRng[1] = iterRange[1] + 1;
+        haloIterRng[2] = iterRange[2] - 1;
+        haloIterRng[3] = iterRange[3] + 1;
+        haloIterRng[4] = iterRange[4] + 1;
+        haloIterRng[5] = iterRange[5] + 1;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, haloIterRng,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+    }
+
+    // specify domain
+    geometryProperty = VG_JP;
+    iterRange = BlockIterRng(blockIndex, IterRngJmin());
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, iterRange,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    geometryProperty = VG_JM;
+    iterRange = BlockIterRng(blockIndex, IterRngJmax());
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, iterRange,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    geometryProperty = VG_IP;
+    iterRange = BlockIterRng(blockIndex, IterRngImin());
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, iterRange,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    geometryProperty = VG_IM;
+    iterRange = BlockIterRng(blockIndex, IterRngImax());
+    ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                 g_Block[blockIndex], SPACEDIM, iterRange,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    if (3 == SPACEDIM) {
+        geometryProperty = VG_KP;
+        iterRange = BlockIterRng(blockIndex, IterRngKmin());
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iterRange,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        geometryProperty = VG_KM;
+        iterRange = BlockIterRng(blockIndex, IterRngKmax());
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iterRange,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+    }
+
+    const int nx = BlockSize(blockIndex)[0];
+    const int ny = BlockSize(blockIndex)[1];
+    // 2D Domain corner points four types
+    if (2 == SPACEDIM) {
+        int iminjmin[]{0, 1, 0, 1};
+        geometryProperty = VG_IPJP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iminjmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int iminjmax[] = {0, 1, ny - 1, ny};
+        geometryProperty = VG_IPJM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iminjmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int imaxjmax[] = {nx - 1, nx, ny - 1, ny};
+        geometryProperty = VG_IMJM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, imaxjmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int imaxjmin[] = {nx - 1, nx, 0, 1};
+        geometryProperty = VG_IMJP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, imaxjmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+    }
+
+    if (3 == SPACEDIM) {
+        const int nz = BlockSize(blockIndex)[2];
+        // 3D Domain edges 12 types
+        int iminjmin[]{0, 1, 0, 1, 0, nz};
+        geometryProperty = VG_IPJP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iminjmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int iminjmax[]{0, 1, ny - 1, ny, 0, nz};
+        geometryProperty = VG_IPJM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iminjmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int imaxjmax[]{nx - 1, nx, ny - 1, ny, 0, nz};
+        geometryProperty = VG_IMJM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, imaxjmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int imaxjmin[]{nx - 1, nx, 0, 1, 0, nz};
+        geometryProperty = VG_IMJP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, imaxjmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+
+        int iminkmin[]{0, 1, 0, ny, 0, 1};
+        geometryProperty = VG_IPKP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iminkmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int iminkmax[]{0, 1, 0, ny, nz - 1, nz};
+        geometryProperty = VG_IPKM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iminkmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int imaxkmax[]{nx - 1, nx, 0, ny, nz - 1, nz};
+        geometryProperty = VG_IMKM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, imaxkmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int imaxkmin[]{nx - 1, nx, 0, ny, 0, 1};
+        geometryProperty = VG_IMKP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, imaxkmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+
+        int jminkmin[]{0, nx, 0, 1, 0, 1};
+        geometryProperty = VG_JPKP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, jminkmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int jminkmax[]{0, nx, 0, 1, nz - 1, nz};
+        geometryProperty = VG_JPKM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, jminkmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int jmaxkmax[]{0, nx, ny - 1, ny, nz - 1, nz};
+        geometryProperty = VG_JMKM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, jmaxkmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int jmaxkmin[]{0, nx, ny - 1, ny, 0, 1};
+        geometryProperty = VG_JMKP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, jmaxkmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+
+        // 3D domain corners 8 types
+        int iminjminkmin[]{0, 1, 0, 1, 0, 1};
+        geometryProperty = VG_IPJPKP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iminjminkmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int iminjminkmax[]{0, 1, 0, 1, nz - 1, nz};
+        geometryProperty = VG_IPJPKM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iminjminkmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int iminjmaxkmin[]{0, 1, ny - 1, ny, 0, 1};
+        geometryProperty = VG_IPJMKP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iminjmaxkmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int iminjmaxkmax[]{0, 1, ny - 1, ny, nz - 1, nz};
+        geometryProperty = VG_IPJMKM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, iminjmaxkmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int imaxjminkmin[]{nx - 1, nx, 0, 1, 0, 1};
+        geometryProperty = VG_IMJPKP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, imaxjminkmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int imaxjminkmax[]{nx - 1, nx, 0, 1, nz - 1, nz};
+        geometryProperty = VG_IMJPKM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, imaxjminkmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int imaxjmaxkmin[]{nx - 1, nx, ny - 1, ny, 0, 1};
+        geometryProperty = VG_IMJMKP_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, imaxjmaxkmin,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+        int imaxjmaxkmax[]{nx - 1, nx, ny - 1, ny, nz - 1, nz};
+        geometryProperty = VG_IMJMKM_I;
+        ops_par_loop(KerSetGeometryProperty, "KerSetGeometryProperty",
+                     g_Block[blockIndex], SPACEDIM, imaxjmaxkmax,
+                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                     ops_arg_dat(g_GeometryProperty[blockIndex], 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
+    }
+}
+
+void SetBulkandHaloNodesType(int blockIndex, int compoId) {
+    const int fluidType{(int)Vertex_Fluid};
+    const int immersedSolidType{(int)Vertex_ImmersedSolid};
+    const int boundaryType{(int)Vertex_Boundary};
+    int* iterRange = BlockIterRng(blockIndex, IterRngBulk());
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, iterRange,
+                 ops_arg_gbl(&fluidType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+
+    iterRange = BlockIterRng(blockIndex, IterRngJmin());
+    // Specify general boundary type
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, iterRange,
+                 ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+    // Specify halo points
+    int* haloIterRng = new int[2 * SPACEDIM];
+    haloIterRng[0] = iterRange[0] - 1;
+    haloIterRng[1] = iterRange[1] + 1;
+    haloIterRng[2] = iterRange[2] - 1;
+    haloIterRng[3] = iterRange[3] - 1;
+    if (3 == SPACEDIM) {
+        haloIterRng[4] = iterRange[4] - 1;
+        haloIterRng[5] = iterRange[5] + 1;
+    }
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&immersedSolidType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+
+    iterRange = BlockIterRng(blockIndex, IterRngJmax());
+    // Specify general boundary type
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, iterRange,
+                 ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+    haloIterRng[0] = iterRange[0] - 1;
+    haloIterRng[1] = iterRange[1] + 1;
+    haloIterRng[2] = iterRange[2] + 1;
+    haloIterRng[3] = iterRange[3] + 1;
+    if (3 == SPACEDIM) {
+        haloIterRng[4] = iterRange[4] - 1;
+        haloIterRng[5] = iterRange[5] + 1;
+    }
+    // Specify halo points
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&immersedSolidType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+
+    iterRange = BlockIterRng(blockIndex, IterRngImin());
+    // Specify general boundary type
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, iterRange,
+                 ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+    haloIterRng[0] = iterRange[0] - 1;
+    haloIterRng[1] = iterRange[1] - 1;
+    haloIterRng[2] = iterRange[2] - 1;
+    haloIterRng[3] = iterRange[3] + 1;
+    if (3 == SPACEDIM) {
+        haloIterRng[4] = iterRange[4] - 1;
+        haloIterRng[5] = iterRange[5] + 1;
+    }
+    // Specify halo points
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&immersedSolidType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+
+    iterRange = BlockIterRng(blockIndex, IterRngImax());
+    // Specify general boundary type
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, iterRange,
+                 ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+    haloIterRng[0] = iterRange[0] + 1;
+    haloIterRng[1] = iterRange[1] + 1;
+    haloIterRng[2] = iterRange[2] - 1;
+    haloIterRng[3] = iterRange[3] + 1;
+    if (3 == SPACEDIM) {
+        haloIterRng[4] = iterRange[4] - 1;
+        haloIterRng[5] = iterRange[5] + 1;
+    }
+    // Specify halo points
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, haloIterRng,
+                 ops_arg_gbl(&immersedSolidType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+
+    if (3 == SPACEDIM) {
+        iterRange = BlockIterRng(blockIndex, IterRngKmin());
+        // Specify general boundary type
+        ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                     SPACEDIM, iterRange,
+                     ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+        haloIterRng[0] = iterRange[0] - 1;
+        haloIterRng[1] = iterRange[1] + 1;
+        haloIterRng[2] = iterRange[2] - 1;
+        haloIterRng[3] = iterRange[3] + 1;
+        haloIterRng[4] = iterRange[4] - 1;
+        haloIterRng[5] = iterRange[5] - 1;
+        // Specify halo points
+        ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                     SPACEDIM, haloIterRng,
+                     ops_arg_gbl(&immersedSolidType, 1, "int", OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+
+        iterRange = BlockIterRng(blockIndex, IterRngKmax());
+        // Specify general boundary type
+        ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                     SPACEDIM, iterRange,
+                     ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+        haloIterRng[0] = iterRange[0] - 1;
+        haloIterRng[1] = iterRange[1] + 1;
+        haloIterRng[2] = iterRange[2] - 1;
+        haloIterRng[3] = iterRange[3] + 1;
+        haloIterRng[4] = iterRange[4] + 1;
+        haloIterRng[5] = iterRange[5] + 1;
+        // Specify halo points
+        ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                     SPACEDIM, haloIterRng,
+                     ops_arg_gbl(&immersedSolidType, 1, "int", OPS_READ),
+                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+    }
+    FreeArrayMemory(haloIterRng);
+}
+
+void DefineBlocks(const SizeType blockNum,
+                         const std::vector<SizeType>& blockSize,
+                         const Real meshSize,
+                         const std::vector<Real>& startPos) {
+    SetBlockNum(blockNum);
+    SetBlockSize(blockSize);
+    COORDINATES.resize(blockNum);
+    SizeType numBlockStartPos;
+    numBlockStartPos = startPos.size();
+    if (numBlockStartPos == blockNum * SPACEDIM) {
+        for (int blockIndex = 0; blockIndex < blockNum; blockIndex++) {
+            COORDINATES.at(blockIndex).resize(SPACEDIM);
+            for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) {
+                int numOfGridPoints =
+                    BlockSize(blockIndex)[SPACEDIM * blockIndex + coordIndex];
+                COORDINATES.at(blockIndex)
+                    .at(coordIndex)
+                    .resize(numOfGridPoints);
+                for (int nodeIndex = 0; nodeIndex < numOfGridPoints;
+                     nodeIndex++) {
+                    COORDINATES.at(blockIndex).at(coordIndex).at(nodeIndex) =
+                        startPos.at(coordIndex) + nodeIndex * meshSize;
+                }
+            }
+        }
+    } else {
+        ops_printf(
+            "Error! Expected %i coordinates of three starting points %i, but "
+            "received only =%i \n",
+            SPACEDIM * blockNum, numBlockStartPos);
+        assert(numBlockStartPos == blockNum * SPACEDIM);
+    }
+}
+
+
+void AssignCoordinates(int blockIndex,
+                       const std::vector<std::vector<Real>>& blockCoordinates) {
+#ifdef OPS_2D
+    if (SPACEDIM == 2) {
+        int* range = BlockIterRng(blockIndex, IterRngWhole());
+        ops_par_loop(KerSetCoordinates, "KerSetCoordinates",
+                     g_Block[blockIndex], SPACEDIM, range,
+                     ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
+                                 LOCALSTENCIL, "double", OPS_WRITE),
+                     ops_arg_idx(),
+                     ops_arg_gbl(blockCoordinates.at(0).data(),
+                                 BlockSize(blockIndex)[0], "double", OPS_READ),
+                     ops_arg_gbl(blockCoordinates.at(1).data(),
+                                 BlockSize(blockIndex)[1], "double", OPS_READ));
+    }
+#endif
+
+#ifdef OPS_3D
+    if (SPACEDIM == 3) {
+        int* range = BlockIterRng(blockIndex, IterRngWhole());
+        ops_par_loop(KerSetCoordinates3D, "KerSetCoordinates3D",
+                     g_Block[blockIndex], SPACEDIM, range,
+                     ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
+                                 LOCALSTENCIL, "double", OPS_WRITE),
+                     ops_arg_idx(),
+                     ops_arg_gbl(blockCoordinates.at(0).data(),
+                                 BlockSize(blockIndex)[0], "double", OPS_READ),
+                     ops_arg_gbl(blockCoordinates.at(1).data(),
+                                 BlockSize(blockIndex)[1], "double", OPS_READ),
+                     ops_arg_gbl(blockCoordinates.at(2).data(),
+                                 BlockSize(blockIndex)[2], "double", OPS_READ)
+
+        );
+    }
+#endif
+}
+
+void PrepareFlowField() {
+    ops_printf("The coordinates are assigned!\n");
+    for (int blockId = 0; blockId < BlockNum(); blockId++) {
+        SetBlockGeometryProperty(blockId);
+        ops_printf("The geometry property for Block %i is set!\n", blockId);
+        for (int compoId = 0; compoId < NUMCOMPONENTS; compoId++) {
+            SetBulkandHaloNodesType(blockId, compoId);
+            ops_printf(
+                "The bulk and halo node property are set for Component %i at "
+                "Block %i\n",
+                compoId, blockId);
+        }
+        AssignCoordinates(blockId, COORDINATES.at(blockId));
+    }
+}

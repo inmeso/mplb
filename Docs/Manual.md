@@ -258,7 +258,7 @@ In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source i
    std::vector<int> blockSize{64, 64, 64};
    Real meshSize{1. / 63};
    std::vector<Real> startPos{0.0, 0.0, 0.0};
-   DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+   DefineBlocks(blockNum, blockSize, meshSize, startPos);
    ```
    This call will formally allocate the memory needed by the macroscopic variables and distribution functions.
    **Note** This function must be called after steps 1-7.
@@ -595,7 +595,7 @@ void simulate() {
     std::vector<int> blockSize{64, 64, 64};
     Real meshSize{1. / 63};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
-    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+    DefineBlocks(blockNum, blockSize, meshSize, startPos);
 
     DefineInitialCondition();
 
@@ -708,7 +708,7 @@ void simulate() {
     std::vector<int> blockSize{501, 251};
     Real meshSize{0.02};
     std::vector<Real> startPos{0.0, 0.0};
-    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+    DefineBlocks(blockNum, blockSize, meshSize, startPos);
 
     //***************************************************************************
 

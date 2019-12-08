@@ -158,6 +158,7 @@ void Iterate(void (*cycle)(T), const Real convergenceCriteria,
     DestroyModel();
     DestroyFlowfield();
 }
-
+//TODO this function is temporary,might be renamed or removed future
+void PrepareSimulation();
 #endif /* OPS_3D */
 #endif /* EVOLUTION3D_H_ */
