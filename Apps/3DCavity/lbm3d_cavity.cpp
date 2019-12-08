@@ -132,7 +132,10 @@ void simulate() {
     std::vector<SizeType> blockSize{33, 33, 33};
     Real meshSize{1. / 32};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
-    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+    DefineBlocks(blockNum, blockSize, meshSize, startPos);
+    AllocateMemory();
+    Partition();
+    PrepareSimulation();
     SetInitialMacrosVars();
     PreDefinedInitialCondition3D();
     std::vector<Real> tauRef{0.01};
@@ -159,8 +162,11 @@ void simulate(const Configuration & config) {
                             bcConfig.macroVarTypesatBoundary,
                             bcConfig.givenVars);
     }
-    DefineProblemDomain(config.blockNum, config.blockSize, config.meshSize,
+    DefineBlocks(config.blockNum, config.blockSize, config.meshSize,
                         config.startPos);
+    AllocateMemory();
+    Partition();
+    PrepareSimulation();
     SetInitialMacrosVars();
     PreDefinedInitialCondition3D();
 
