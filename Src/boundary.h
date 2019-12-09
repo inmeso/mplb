@@ -165,4 +165,5 @@ void KerCutCellPeriodic3D(ACC<Real>& f, const ACC<int>& nodeType,
 
 const int BoundaryHaloNum();
 void SetBoundaryHaloNum(const int boundaryhaloNum);
+void BoundaryNormal3D(const VertexGeometryTypes vg, int* unitNormal);
 #endif  // BOUNDARY_H

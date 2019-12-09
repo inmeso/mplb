@@ -2362,7 +2362,6 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         }
 #ifdef CPU
         for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
-            f(xiIndex, 0, 0, 0) = f(xiIndex, -1, 0, 0);
             const Real res{f(xiIndex, 0, 0, 0)};
             if (isnan(res) || res <= 0 || isinf(res)) {
                 ops_printf(
