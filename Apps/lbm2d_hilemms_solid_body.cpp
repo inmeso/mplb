@@ -65,9 +65,9 @@ void simulate() {
     std::vector<int> macroCompoId{0, 0, 0};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
-    std::vector<EquilibriumType> equTypes{Equilibrium_BGKIsothermal2nd};
+    std::vector<CollisionType> equTypes{Equilibrium_BGKIsothermal2nd};
     std::vector<int> equCompoId{0};
-    DefineEquilibrium(equTypes, equCompoId);
+    DefineCollision(equTypes, equCompoId);
 
     std::vector<BodyForceType> bodyForceTypes{BodyForce_1st};
     std::vector<int> bodyForceCompoId{0};
@@ -101,7 +101,7 @@ void simulate() {
     std::vector<int> blockSize{501, 251};
     Real meshSize{0.02};
     std::vector<Real> startPos{0.0, 0.0};
-    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+    DefineBlocks(blockNum, blockSize, meshSize, startPos);
 
     DefineInitialCondition();
     ops_printf("%s\n", "Flowfield is Initialised now!");

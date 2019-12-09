@@ -73,50 +73,55 @@ BndryDvType FindBdyDvType(const VertexGeometryTypes vg,
  * @param f distribution function
  * see Meng, Gu Emerson, Peng and Zhang, https://arxiv.org/abs/1803.00390.
  */
-void KerCutCellEQMDiffuseRefl(const Real* givenMacroVars, const int* nodeType,
-                              const int* geometryProperty, Real* f,
+void KerCutCellEQMDiffuseRefl(const Real* givenMacroVars,
+                              const ACC<int>& nodeType,
+                              const ACC<int>& geometryProperty, ACC<Real>& f,
                               const int* componentId);
-void KerCutCellPeriodic(const int* nodeType, const int* geometryProperty,
-                        Real* f);
+void KerCutCellPeriodic(const ACC<int>& nodeType,
+                        const ACC<int>& geometryProperty, ACC<Real>& f);
 /*!
  * Standard bounce back boundary condition for block boundaries
  * As discussed by Meng, Gu and Emerson, Journal of Computational Science
  * 2018 (28): 476-482, its definition is incomplete which will induc
  * non-physical slip velocity at wall
  */
-void KerCutCellBounceBack(const int* nodeType, const int* geometryProperty,
-                          Real* f);
+void KerCutCellBounceBack(const ACC<int>& nodeType,
+                          const ACC<int>& geometryProperty, ACC<Real>& f);
 
 void KerCutCellKinetic(const Real* givenMacroVars, const int* nodeType,
                        const int* geometryProperty, Real* f);
 void KerCutCellCorrectedKinetic(const Real* givenMacroVars, const Real* dt,
-                                const int* nodeType,
-                                const int* geometryProperty, const Real* tau,
-                                const Real* feq, Real* f);
+                                const ACC<int>& nodeType,
+                                const ACC<int>& geometryProperty,
+                                const ACC<Real>& tau, const ACC<Real>& feq,
+                                ACC<Real>& f);
 void KerCutCellExtrapolPressure1ST(const Real* givenBoundaryVars,
-                                   const int* nodeType,
-                                   const int* geometryProperty, Real* f);
+                                   const ACC<int>& nodeType,
+                                   const ACC<int>& geometryProperty,
+                                   ACC<Real>& f);
 void KerCutCellExtrapolPressure2ND(const Real* givenBoundaryVars,
-                                   const int* nodeType,
-                                   const int* geometryProperty, Real* f);
+                                   const ACC<int>& nodeType,
+                                   const ACC<int>& geometryProperty,
+                                   ACC<Real>& f);
 
 
 /*!
  * The Zou-He boundary condition can only be valid for the D2Q9 lattice and
  * the second order equilibrium function
  */
-void KerCutCellZouHeVelocity(const Real* givenMacroVars, const int* nodeType,
-                             const int* geometryProperty, const Real* macroVars,
-                             Real* f);
-void KerCutCellZeroFlux(const int* nodeType, const int* geometryProperty,
-                        Real* f);
+void KerCutCellZouHeVelocity(const Real* givenMacroVars,
+                             const ACC<int>& nodeType,
+                             const ACC<int>& geometryProperty,
+                             const ACC<Real>& macroVars, ACC<Real>& f);
+void KerCutCellZeroFlux(const ACC<int>& nodeType,
+                        const ACC<int>& geometryProperty, ACC<Real>& f);
 /*
  * @givenMacroVars:given macroscopic variables for the boundary condition.
  */
 
 // CutCell immersed solid boundary condition
-void KerCutCellEmbeddedBoundary(const int* nodeType,
-                                const int* geometryProperty, Real* f);
+void KerCutCellEmbeddedBoundary(const ACC<int>& nodeType,
+                                const ACC<int>& geometryProperty, ACC<Real>& f);
 
 #endif /* OPS_2D  */
 #ifdef OPS_3D
@@ -129,8 +134,9 @@ void KerCutCellEmbeddedBoundary(const int* nodeType,
  * @param f distribution
  */
 void KerCutCellExtrapolPressure1ST3D(const Real* givenBoundaryVars,
-                                     const int* nodeType,
-                                     const int* geometryProperty, Real* f);
+                                     const ACC<int>& nodeType,
+                                     const ACC<int>& geometryProperty,
+                                     ACC<Real>& f);
 /*!
  * @brief  Equilibrium diffuse reflection boundary condition: 3D
  * @param givenMacroVars  specified velocity
@@ -138,8 +144,8 @@ void KerCutCellExtrapolPressure1ST3D(const Real* givenBoundaryVars,
  * @param geometryProperty e.g., corner types
  * @param f distribution function
  */
-void KerCutCellEQMDiffuseRefl3D(Real* f, const int* nodeType,
-                                const int* geometryProperty,
+void KerCutCellEQMDiffuseRefl3D(ACC<Real>& f, const ACC<int>& nodeType,
+                                const ACC<int>& geometryProperty,
                                 const Real* givenMacroVars,
                                 const int* componentId);
 
@@ -149,11 +155,12 @@ void KerCutCellEQMDiffuseRefl3D(Real* f, const int* nodeType,
  * @param nodeType if the current node is a Dirichlet node
  * @param f distribution function
  */
-void KerCutCellNoslipEQN3D(const Real* givenMacroVars, const int* nodeType,
-                           Real* f, const int* componentId);
+void KerCutCellNoslipEQN3D(ACC<Real>& f, const ACC<int>& nodeType,
+                           const Real* givenMacroVars, const int* componentId);
 
-void KerCutCellPeriodic3D(Real* f, const int* nodeType,
-                          const int* geometryProperty, const int* componentId);
+void KerCutCellPeriodic3D(ACC<Real>& f, const ACC<int>& nodeType,
+                          const ACC<int>& geometryProperty,
+                          const int* componentId);
 #endif /* OPS_3D*/
 
 const int BoundaryHaloNum();

@@ -50,8 +50,22 @@ int* VARIABLECOMPINDEX{nullptr};
 int NUMCOMPONENTS{1};
 int* COMPOINDEX{nullptr};
 Real XIMAXVALUE{1};
-int* EQUILIBRIUMTYPE{nullptr};
-int* FORCETYPE{nullptr};
+std::list<std::pair<SizeType, CollisionType>> COLLISIONTERMS;
+std::list<std::pair<SizeType, BodyForceType>> FORCETERMS;
+std::list<std::pair<SizeType, InitialType>> INITIALTERMS;
+
+const std::list<std::pair<SizeType,CollisionType >> & CollisionTerms(){
+    return COLLISIONTERMS;
+}
+
+const std::list<std::pair<SizeType,BodyForceType>> & BodyForceTerms(){
+    return FORCETERMS;
+}
+
+const std::list<std::pair<SizeType,InitialType>> & InitialTerms(){
+    return INITIALTERMS;
+}
+
 int* VARIABLECOMPPOS{nullptr};
 /*!
  *Name of all macroscopic variables
@@ -241,7 +255,7 @@ void AllocateMacroVarProperty(const int macroVarNum) {
 }
 
 void DefineComponents(std::vector<std::string> compoNames,
-                      std::vector<int> compoId,
+                      std::vector<SizeType> compoId,
                       std::vector<std::string> lattNames) {
     NUMCOMPONENTS = compoNames.size();
     if (NUMCOMPONENTS > 0) {
@@ -320,8 +334,9 @@ void DefineComponents(std::vector<std::string> compoNames,
 }
 
 void DefineMacroVars(std::vector<VariableTypes> types,
-                     std::vector<std::string> names, std::vector<int> varId,
-                     std::vector<int> compoId) {
+                     std::vector<std::string> names,
+                     std::vector<SizeType> varId,
+                     std::vector<SizeType> compoId) {
     // It seems varId is not necessary at this moment
     NUMMACROVAR = names.size();
     MACROVARNAME = names;
@@ -374,57 +389,112 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     }
 }
 
-void DefineEquilibrium(std::vector<EquilibriumType> types,
-                       std::vector<int> compoId) {
-    int typeNum{(int)types.size()};
-    if (typeNum == NUMCOMPONENTS) {
-        if (nullptr == EQUILIBRIUMTYPE) {
-            EQUILIBRIUMTYPE = new int[typeNum];
-            for (int idx = 0; idx < typeNum; idx++) {
-                EQUILIBRIUMTYPE[idx] = types[idx];
-                ops_printf(
-                    "The equilibrium function type %i is chosen for "
-                    "Component "
-                    "%i\n",
-                    EQUILIBRIUMTYPE[idx], compoId[idx]);
-            }
-        } else {
-            ops_printf("%s\n", "Warning! EQUILIBRIUMTYPE has been allocated!");
-        }
-    } else {
+void DefineCollision(std::vector<CollisionType> types,
+                     std::vector<SizeType> compoId) {
+    const std::size_t typeSize{types.size()};
+    const std::size_t compoSize{compoId.size()};
+
+    if (typeSize != compoSize) {
         ops_printf(
-            "Error! There are %i equilibrium types defined but we have %i "
+            "Error! There are %i collision types defined for  %i "
             "components\n",
-            typeNum, NUMCOMPONENTS);
-        assert(typeNum == NUMCOMPONENTS);
+            typeSize, compoSize);
+        assert(typeSize == compoSize);
     }
-    ops_decl_const("EQUILIBRIUMTYPE", NUMCOMPONENTS, "int", EQUILIBRIUMTYPE);
+
+    if (compoSize > NUMCOMPONENTS){
+        ops_printf(
+            "Error! There are %i collision types defined but only %i "
+            "components\n",
+            compoSize, NUMCOMPONENTS);
+        assert(compoSize < NUMCOMPONENTS);
+    }
+
+    for (int idx = 0; idx < typeSize; idx++) {
+        ops_printf(
+            "The equilibrium function type %i is chosen for "
+            "Component "
+            "%i\n",
+            types.at(idx), compoId.at(idx));
+        std::pair<int, CollisionType> pair(compoId.at(idx), types.at(idx));
+        COLLISIONTERMS.push_back(pair);
+    }
+     if (compoSize < NUMCOMPONENTS) {
+        ops_printf(
+            "Warning! Kernel functions are required for components without "
+            "pre-defined collision terms!\n");
+    }
 }
 
 void DefineBodyForce(std::vector<BodyForceType> types,
-                     std::vector<int> compoId) {
-    int typeNum{(int)types.size()};
-    if (typeNum == NUMCOMPONENTS) {
-        if (nullptr == FORCETYPE) {
-            FORCETYPE = new int[typeNum];
-            for (int idx = 0; idx < typeNum; idx++) {
-                FORCETYPE[idx] = types[idx];
-                ops_printf(
-                    "The body force function type %i is chosen for Component "
-                    "%i\n",
-                    FORCETYPE[idx], compoId[idx]);
-            }
-        } else {
-            ops_printf("%s\n", "Warning! BODYFORCE has been allocated!");
-        }
-    } else {
+                     std::vector<SizeType> compoId) {
+    const SizeType typeSize{types.size()};
+    const SizeType compoSize{compoId.size()};
+
+    if (typeSize != compoSize) {
         ops_printf(
-            "There are %i force types defined but we have %i "
+            "Error! There are %i force types defined for  %i "
             "components\n",
-            typeNum, NUMCOMPONENTS);
-            assert(typeNum == NUMCOMPONENTS);
+            typeSize, compoSize);
+        assert(typeSize == compoSize);
     }
-    ops_decl_const("FORCETYPE", NUMCOMPONENTS, "int", FORCETYPE);
+
+    if (compoSize > NUMCOMPONENTS) {
+        ops_printf(
+            "Error! There are %i forces types defined but only %i "
+            "components\n",
+            compoSize, NUMCOMPONENTS);
+        assert(compoSize < NUMCOMPONENTS);
+    }
+
+    for (int idx = 0; idx < typeSize; idx++) {
+        ops_printf(
+            "The body force function type %i is chosen for Component "
+            "%i\n",
+            types.at(idx), compoId.at(idx));
+        std::pair<SizeType, BodyForceType> pair(compoId.at(idx), types.at(idx));
+        FORCETERMS.push_back(pair);
+    }
+     if (compoSize < NUMCOMPONENTS) {
+        ops_printf(
+            "Warning! Kernel functions are required for components without "
+            "pre-defined body force terms!\n");
+    }
+}
+void DefineInitialCondition(std::vector<InitialType> types,
+                            std::vector<SizeType> compoId) {
+    const SizeType typeSize{types.size()};
+    const SizeType compoSize{compoId.size()};
+
+    if (typeSize != compoSize) {
+        ops_printf(
+            "Error! There are %i initial types defined for  %i "
+            "components\n",
+            typeSize, compoSize);
+        assert(typeSize == compoSize);
+    }
+
+    if (compoSize > NUMCOMPONENTS) {
+        ops_printf(
+            "Error! There are %i initial types defined but only %i "
+            "components\n",
+            compoSize, NUMCOMPONENTS);
+        assert(compoSize < NUMCOMPONENTS);
+    }
+
+    for (int idx = 0; idx < typeSize; idx++) {
+        ops_printf(
+            "The initial condition type %i is chosen for Component "
+            "%i\n",
+            types.at(idx), compoId.at(idx));
+        std::pair<SizeType, InitialType> pair(compoId.at(idx), types.at(idx));
+        INITIALTERMS.push_back(pair);
+    }
+    if (compoSize < NUMCOMPONENTS) {
+        ops_printf(
+            "Warning! Kernel functions are required for components without "
+            "pre-defined initial contiditions!\n");
+    }
 }
 
 void DestroyModel() {
@@ -432,8 +502,6 @@ void DestroyModel() {
     FreeArrayMemory(VARIABLECOMPINDEX);
     FreeArrayMemory(COMPOINDEX);
     FreeArrayMemory(VARIABLECOMPPOS);
-    FreeArrayMemory(EQUILIBRIUMTYPE);
-    FreeArrayMemory(FORCETYPE);
     FreeArrayMemory(XI);
     FreeArrayMemory(WEIGHTS);
     FreeArrayMemory(OPP);

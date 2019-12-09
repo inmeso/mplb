@@ -60,7 +60,8 @@ typedef std::size_t SizeType;
 //#define debug
 #include "assert.h"
 #include <vector>
-#include "ops_seq.h"
+#include "ops_seq_v2.h"
+
 // It looks that OPS always fills the uninitialised storage with 0 so
 // we try to avoid 0 value for these types
 // Use this type to describe different node type in terms of boundary types
@@ -195,13 +196,15 @@ enum VariableTypes {
     Variable_W_Force = 10,
 };
 
-enum EquilibriumType {
-    Equilibrium_BGKIsothermal2nd = 0,
-    Equilibrium_BGKThermal4th = 1,
-    Equilibrium_BGKSWE4th = 2,
+enum CollisionType {
+    Collision_BGKIsothermal2nd = 0,
+    Collision_BGKThermal4th = 1,
+    Collision_BGKSWE4th = 2,
 };
 
 enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };
+
+enum InitialType {Initial_BGKFeq2nd = 1};
 
 enum SolidBodyType { SolidBody_circle = 0, SolidBody_ellipse = 1 };
 

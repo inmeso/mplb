@@ -152,13 +152,13 @@ In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source i
 4. Define the type of equilibrium function. At present, the code supports the following three types.
 
    ```c++
-   enum EquilibriumType {
+   enum CollisionType {
        // Second order BGK isothermal
        Equilibrium_BGKIsothermal2nd = 0,
        // Fourth order BGK model
        Equilibrium_BGKThermal4th = 1,
        //Shallow water equations fourth-order
-       Equilibrium_BGKSWE4th = 2,
+       Collision_BGKSWE4th = 2,
    };
    ```
    Also, we need to define which component this equilibrium function will be applied to. Therefore, we allow to choose different equilibrium functions for different components.
@@ -166,7 +166,7 @@ In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source i
    For the cavity case, we can define these as below.
 
    ```c++
-   std::vector<EquilibriumType> equTypes{Equilibrium_BGKIsothermal2nd};
+   std::vector<CollisionType> equTypes{Equilibrium_BGKIsothermal2nd};
    //ID of componenet to which it applies.
    std::vector<int> equCompoId{0};
    DefineEquilibrium(equTypes, equCompoId);
@@ -258,7 +258,7 @@ In this example, we focus on a 3D Lid-driven Cavity flow, and the  main source i
    std::vector<int> blockSize{64, 64, 64};
    Real meshSize{1. / 63};
    std::vector<Real> startPos{0.0, 0.0, 0.0};
-   DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+   DefineBlocks(blockNum, blockSize, meshSize, startPos);
    ```
    This call will formally allocate the memory needed by the macroscopic variables and distribution functions.
    **Note** This function must be called after steps 1-7.
@@ -332,7 +332,7 @@ We need to create a Json configuration Cavity.cfg as
   "MacroVarIds":[0,1,2,3],
   "MacroCompoIds":[0,0,0,0],
   "MacroVarTypes":["Variable_Rho","Variable_U","Variable_V","Variable_W"],
-  "EquilibriumType":["Equilibrium_BGKIsothermal2nd"],
+  "CollisionType":["Equilibrium_BGKIsothermal2nd"],
   "EquilibriumCompoIds":[0],
   "BodyForceType":["BodyForce_None"],
   "BodyForceCompoId":[0],
@@ -536,7 +536,7 @@ void simulate() {
     DefineMacroVars(marcoVarTypes, macroVarNames,
     macroVarId, macroCompoId);
 
-    std::vector<EquilibriumType> equTypes{Equilibrium_BGKIsothermal2nd};
+    std::vector<CollisionType> equTypes{Equilibrium_BGKIsothermal2nd};
     std::vector<int> equCompoId{0};
     DefineEquilibrium(equTypes, equCompoId);
 
@@ -595,7 +595,7 @@ void simulate() {
     std::vector<int> blockSize{64, 64, 64};
     Real meshSize{1. / 63};
     std::vector<Real> startPos{0.0, 0.0, 0.0};
-    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+    DefineBlocks(blockNum, blockSize, meshSize, startPos);
 
     DefineInitialCondition();
 
@@ -658,7 +658,7 @@ void simulate() {
 
     //***************************************************************************
 
-    std::vector<EquilibriumType> equTypes{Equilibrium_BGKIsothermal2nd};
+    std::vector<CollisionType> equTypes{Equilibrium_BGKIsothermal2nd};
     std::vector<int> equCompoId{0};
     DefineEquilibrium(equTypes, equCompoId);
 
@@ -708,7 +708,7 @@ void simulate() {
     std::vector<int> blockSize{501, 251};
     Real meshSize{0.02};
     std::vector<Real> startPos{0.0, 0.0};
-    DefineProblemDomain(blockNum, blockSize, meshSize, startPos);
+    DefineBlocks(blockNum, blockSize, meshSize, startPos);
 
     //***************************************************************************
 
@@ -802,15 +802,15 @@ In the Tecplot, following the steps below:
 
 ## Coupling MPLB with LIGGGHTS
 
-The MPLB is coupled with LIGGGHTS with the use of the MUI library. With the MUI, each code is compiled and linked seperately but invoked simultaneously as a single job. Thr MUI uses MPI as the communication mechanism of the codes. In practice, the MUI is an inter-solver communicator that makes use of the MPI predefined world communicator MPI_COMM_WORLD and each code must have its private communication world. Unfortunately, both LIGGGHTS (in reality LAMMPS) and  OPS library make use of the MPI_COMM_WORLD as their primary communication world. 
+The MPLB is coupled with LIGGGHTS with the use of the MUI library. With the MUI, each code is compiled and linked seperately but invoked simultaneously as a single job. Thr MUI uses MPI as the communication mechanism of the codes. In practice, the MUI is an inter-solver communicator that makes use of the MPI predefined world communicator MPI_COMM_WORLD and each code must have its private communication world. Unfortunately, both LIGGGHTS (in reality LAMMPS) and  OPS library make use of the MPI_COMM_WORLD as their primary communication world.
 
 ### Modification of LIGGGHTS and OPS library
 
-Based on the above each code must use its own communication world that is the offspring of the MPI_COMM_WORLD. In this section, the required modifications of the OPS library and LIGGGHTS are presented. 
+Based on the above each code must use its own communication world that is the offspring of the MPI_COMM_WORLD. In this section, the required modifications of the OPS library and LIGGGHTS are presented.
 
 #### Modification of the OPS library
 
-The first step is the introduction of communication world that is only accessible from the OPS library. The OPS communication world, **OPS_MPI_GLOBAL** must be declared in the file "ops_mpi_core.h" 
+The first step is the introduction of communication world that is only accessible from the OPS library. The OPS communication world, **OPS_MPI_GLOBAL** must be declared in the file "ops_mpi_core.h"
 
 ``` c++
 extern MPI_Comm OPS_MPI_GLOBAL;
@@ -823,12 +823,12 @@ and defined in the file "ops_mpi_partition.cpp"
 MPI_Comm OPS_MPI_GLOBAL;
 
 ```
- The next task is to seperate the communication world of the OPS library from the global one. For that, the following code must be added  in all the function **ops_init**.  These functions can be found in the files **"ops_mpi_decl.cpp"**, **"ops_mpi_decl_cuda.cpp"**,**"ops_mpi_decl_opencl.cpp"**. 
- 
+ The next task is to seperate the communication world of the OPS library from the global one. For that, the following code must be added  in all the function **ops_init**.  These functions can be found in the files **"ops_mpi_decl.cpp"**, **"ops_mpi_decl_cuda.cpp"**,**"ops_mpi_decl_opencl.cpp"**.
+
 
  ``` c++
     void *v;
-    int flag1; 
+    int flag1;
 
     MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &v, &flag1);
 
@@ -869,7 +869,7 @@ int main(int argc, char **argv)
   //Create a unique communication world for LAMMPS
   MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &v, &flag1);
 
-  if (!flag1) //Only LIGGGHTS run 
+  if (!flag1) //Only LIGGGHTS run
 	  MPI_Comm_dup( MPI_COMM_WORLD, &worldLammps);
   else {
 	  int appnum = *(int *) v;
@@ -893,7 +893,7 @@ After the performed modification, the OPS libraries **libops_hdf5_mpi.a**, **lib
 ```bash
 make fedora
 ```
-### Running coupled simulations 
+### Running coupled simulations
 
 To run DNS simulations with the MPLBM and LIGGGHTS, the following command must be used
 ``` bash
@@ -901,11 +901,11 @@ To run DNS simulations with the MPLBM and LIGGGHTS, the following command must b
 mpirun -np n lmp_fedora<in.inputfile : -np m lbm2d_cfd_dem_mpi_mui
 
 ```
-where in.inputfile is the input file of LIGGGHTS, n the number of processes assigned to LIGGGHTS and m the number of processes assigned to MPLBM. 
+where in.inputfile is the input file of LIGGGHTS, n the number of processes assigned to LIGGGHTS and m the number of processes assigned to MPLBM.
 
 #### LIGGGGHTS input file for coupled simulations
 
-Currently only two dimensional coupled simulations can be run. To set up two dimensional simulations in LIGGGHTS the following lines should be added in LIGGGHTS input files 
+Currently only two dimensional coupled simulations can be run. To set up two dimensional simulations in LIGGGHTS the following lines should be added in LIGGGHTS input files
 ``` bash
 dimension 2
 ```
@@ -913,16 +913,16 @@ This command sets a two dimensional simulation. The second requirement is to set
 ```bash
 boundary f f p
 ```
-where f stands for fixed size in the other two directions, which is a recommended option for DEM-LBM simulations. The center of the particles must be found at the same plane that is parallel to the x-y plane. 
+where f stands for fixed size in the other two directions, which is a recommended option for DEM-LBM simulations. The center of the particles must be found at the same plane that is parallel to the x-y plane.
 
 To perform data transfer between LIGGGHTS and MPLBM, the following fix must be included in the in file.
 ```bash
 fix     NAME all lbm/mui dtLBM timestepOfLBM
 ```
 
-- NAME: name of the particular fix defined 
+- NAME: name of the particular fix defined
 - lbm/mui: style of fix
--dtLBM (must be included) Timestep of the LBM 
+-dtLBM (must be included) Timestep of the LBM
 - timestepOfLBM: The timestep of LBM in numbers
 
 Requirements for the lbm/mui fix
@@ -933,15 +933,15 @@ Requirements for the lbm/mui fix
 
 For finalizing the 2d simulations, the forces and moments at the z-direction must be set to zero. The fix enforce2d sets the forces and moments in the z-direction to zero. The syntax for the freeze fix is
 ``` bash
-fix			nameofFix	group enforce2d 
+fix			nameofFix	group enforce2d
 ```
-where nameofFix is user defined, the group of particles that the fix will operate, in our case group must be set to all. 
+where nameofFix is user defined, the group of particles that the fix will operate, in our case group must be set to all.
 
 #### Part II: MPLBM input files for running coupled simulations
 
 For two dimensional DEM-LBM coupled simulations, input parameters are parsed from the file "input_params.txt". This file must include the following
 - **Name of the conducted simulation** A hdf5 file of similar name must be also created
-- **Number of blocks**: The number of blocks 
+- **Number of blocks**: The number of blocks
 - **Number of nodes in the x direction**
 - **Number of nodes in the y direction**
 - **x coordinate of the last node in the x-direction**
@@ -976,20 +976,20 @@ Before mergining with HiLemms, to run DEM-LBM coupled simulations, it is require
 
 #### Part III: Generating a h5 file
 
-To generate an h5 file for two dimensional coupled simulations, the grid generator geom2d_dev_seq was developed. The grid generatator acceepts as inputs the name of the block, the grid size, the number of segments and the position of the upper right corner of the rectangle (The lower left corner point is by default set at (0,0)), the boundary conditions and the initial conditions. 
+To generate an h5 file for two dimensional coupled simulations, the grid generator geom2d_dev_seq was developed. The grid generatator acceepts as inputs the name of the block, the grid size, the number of segments and the position of the upper right corner of the rectangle (The lower left corner point is by default set at (0,0)), the boundary conditions and the initial conditions.
 
 #### Part IV: Implementation of boundary conditions
 
-The use of the right boundary condition at the current 2d version requires a modification to the code and the generation of a new h5 file. The boundary conditions in the h5 file correspond to a given code. The most commonly boundary conditions that used in DEM/LBM simulations are 
+The use of the right boundary condition at the current 2d version requires a modification to the code and the generation of a new h5 file. The boundary conditions in the h5 file correspond to a given code. The most commonly boundary conditions that used in DEM/LBM simulations are
 - **Equilibrium Diffuse Reflection BC** : Enforces a user defined velocity at the fluid boundary. **Code** 1014, **TypeNum**  Vertex_EQMDiffuseRefl
 - **1st oder Density Extrapolation** : Used in the outlet to set the density to 1. **Code** 1006, **TypeNum** Vertex_ExtrapolPressure1ST
 - **Far field BC**: Mimicks far field behavior **Code** 1016, **TypeNum** Vertex_FarField
 
-The implementation of a given boundary condition, requires from the user  to modify the function ImplementBoundary (in evolution.cpp) and modify the BC in the required wall. The user can alter prescribed velocity and the type of BC. The  function looks like this 
+The implementation of a given boundary condition, requires from the user  to modify the function ImplementBoundary (in evolution.cpp) and modify the BC in the required wall. The user can alter prescribed velocity and the type of BC. The  function looks like this
 ``` c++
     int* inletRng = BlockIterRng(0, g_BlockIterRngImin);
     //Input params: {Density, velocity in the x-direction, velocity in y direction, Temperature}
-    Real givenInletVars[]{1, ux, 0 ,1}; // Input Parameters of inlet "wall" 
+    Real givenInletVars[]{1, ux, 0 ,1}; // Input Parameters of inlet "wall"
     TreatDomainBoundary(givenInletVars,inletRng,Vertex_EQMDiffuseRefl);
     int* outletRng = BlockIterRng(0, g_BlockIterRngImax);
     Real givenOutletVars[]{1, ux, 0, 1};// Input Parameters of outlet "Wall"

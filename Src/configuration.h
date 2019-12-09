@@ -51,8 +51,8 @@
 */
 
 struct BlockBoundaryConfig {
-    int blockIndex;
-    int componentID;
+    SizeType blockIndex;
+    SizeType componentID;
     std::vector<Real> givenVars;
     BoundarySurface boundarySurface;
     BoundaryType boundaryType;
@@ -61,21 +61,25 @@ struct BlockBoundaryConfig {
 
 struct Configuration {
     std::string caseName;
-    int spaceDim{3};
+    SizeType spaceDim{3};
     std::vector<std::string> compoNames;
-    std::vector<int> compoIds;
+    std::vector<SizeType> compoIds;
     std::vector<std::string> lattNames;
+//The following is optional
+//TODO to write Query() method very soon.
     std::vector<VariableTypes> macroVarTypes;
     std::vector<std::string> macroVarNames;
-    std::vector<int> macroVarIds;
-    std::vector<int> macroCompoIds;
-    std::vector<EquilibriumType> equilibriumTypes;
-    std::vector<int> equilibriumCompoIds;
+    std::vector<SizeType> macroVarIds;
+    std::vector<SizeType> macroCompoIds;
+    std::vector<CollisionType> CollisionTypes;
+    std::vector<SizeType> CollisionCompoIds;
     std::vector<BodyForceType> bodyForceTypes;
-    std::vector<int> bodyForceCompoIds;
+    std::vector<SizeType> bodyForceCompoIds;
+    std::vector<InitialType> initialTypes;
+    std::vector<SizeType> initialConditionCompoId;
     SchemeType schemeType{Scheme_StreamCollision};
-    int blockNum{1};
-    std::vector<int> blockSize;
+    SizeType blockNum{1};
+    std::vector<SizeType> blockSize;
     std::vector<Real> startPos;
     Real meshSize;
     std::vector<Real> tauRef;
