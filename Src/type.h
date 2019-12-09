@@ -260,6 +260,7 @@ enum BoundaryType {
     BoundaryType_BounceBackWall = 20,
     BoundaryType_FreeFlux = 21,
     BoundaryType_ZouHeVelocity = 22,
+    BoundaryType_EQN = 23,
     BoundaryType_EQMDiffuseRefl = 24
 };
 

@@ -85,8 +85,9 @@ int* BoundarySurfaceRange(const int blockId, BoundarySurface surface) {
 }
 
 
-// This subroutine is for internal use only.
-VertexTypes BoundTypeToVertexType(BoundaryType type) {
+//TODO It seems a bit fancy to manually tranform two types.
+// Do we have better method?
+VertexTypes BoundaryTypeToVertexType(BoundaryType type) {
     VertexTypes vtType;
 
     switch (type) {
@@ -140,6 +141,9 @@ VertexTypes BoundTypeToVertexType(BoundaryType type) {
 
         case BoundaryType_EQMDiffuseRefl:
             vtType = Vertex_EQMDiffuseRefl;
+            break;
+        case BoundaryType_EQN:
+            vtType = Vertex_NoslipEQN;
             break;
 
         default:
@@ -200,7 +204,7 @@ void DefineBlockBoundary(int blockIndex, int componentID,
                          const std::vector<Real>& macroVarValues) {
     // Type conversion from BoundaryType to VertexType.
     VertexTypes vtType;
-    vtType = BoundTypeToVertexType(boundaryType);
+    vtType = BoundaryTypeToVertexType(boundaryType);
     // Set the number of halo point required by the boundary condition
     // So far all boundary conditions are implemented in a way that requires no
     // halos so we leave it as the initial value 1
