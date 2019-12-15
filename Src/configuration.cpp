@@ -37,6 +37,8 @@
 #include "configuration.h"
 Configuration config;
 using json = nlohmann::json;
+json jsonConfig;
+
 
 // map Enum types to JSON as strings
 NLOHMANN_JSON_SERIALIZE_ENUM(VariableTypes,
@@ -95,7 +97,9 @@ NLOHMANN_JSON_SERIALIZE_ENUM(SchemeType, {{Scheme_E1st2nd, "Scheme_E1st2nd"},
 
 const Configuration& Config() { return config; }
 
-void ParseJson(json& jsonConfig) {
+const json& JsonConfig() { return jsonConfig; }
+
+void ParseJson() {
     if (jsonConfig["CaseName"].is_null()) {
         ops_printf(
             "Error! Please insert the CaseName item into the configuration!\n");
@@ -442,6 +446,6 @@ void ReadConfiguration(std::string& configFileName) {
                        std::istreambuf_iterator<char>());
     configString = tmpStr;
 #endif  // OPS_MPI
-    json jsonConfig = json::parse(configString);
-    ParseJson(jsonConfig);
+    jsonConfig = json::parse(configString);
+    ParseJson();
 }
