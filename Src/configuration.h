@@ -44,6 +44,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <type_traits>
 #include "json.hpp"
 #include "type.h"
 
@@ -99,5 +100,18 @@ void ReadConfiguration(std::string& configFileName);
 /** Get the pointer to the data structure holding various parameters
  */
 const Configuration& Config();
+
+const nlohmann::json& JsonConfig();
+
+template <typename T>
+void Query(T& value, std::string key) {
+    const nlohmann::json& jsonConfig{JsonConfig()};
+    if (jsonConfig[key].is_null()) {
+        ops_printf("Error! Please insert the %s item into the configuration!\n",
+                   key.c_str());
+        assert(jsonConfig[key].is_null());
+    };
+    value = jsonConfig[key].get<T>();
+}
 
 #endif  // CONFIGURATION_H
