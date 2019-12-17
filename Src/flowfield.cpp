@@ -1546,3 +1546,63 @@ void PrepareFlowField() {
         AssignCoordinates(blockId, COORDINATES.at(blockId));
     }
 }
+
+Field::Field(const std::string& varName, const SizeType dim,
+             const SizeType haloDepth) {
+    name = varName;
+    void* temp = NULL;
+    int* size = new int[SPACEDIM];
+    int* d_p = new int[SPACEDIM];
+    int* d_m = new int[SPACEDIM];
+    int* base = new int[SPACEDIM];
+    for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
+        d_p[cordIdx] = haloDepth;
+        d_m[cordIdx] = -haloDepth;
+        base[cordIdx] = 0;
+    }
+    for (SizeType blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+        std::string dataName{varName + "_" + std::to_string(blockIdx)};
+        for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
+            size[cordIdx] = BlockSize(blockIdx)[cordIdx];
+            base[cordIdx] = 0;
+        }
+        ops_dat localDat =
+            ops_decl_dat(g_Block[blockIdx], dim, size, base, d_m, d_p,
+                         (Real*)temp, RealC, dataName.c_str());
+        data.emplace(blockIdx, localDat);
+
+    }
+    delete[] size;
+    delete[] d_p;
+    delete[] d_m;
+    delete[] base;
+}
+
+Field::Field(const std::string& varName, const Real time) {
+    name = varName;
+    for (SizeType blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+        std::string dataName{varName + "_" + std::to_string(blockIdx)};
+        std::string label{std::to_string(blockIdx)};
+        std::string timeStr{std::to_string(time)};
+        std::string blockName {"Block_" +label + "_" + timeStr};
+        std::string fileName{CASENAME + "_" + blockName + ".h5"};
+        ops_dat localDat =
+            ops_decl_dat_hdf5(g_Block[blockIdx], NUMMACROVAR, "double",
+                              dataName.c_str(), fileName.c_str());
+        data.emplace(blockIdx, localDat);
+    }
+}
+
+Field::Field(const std::string& varName,
+             const std::vector<std::string> fileNames) {
+    name = varName;
+    for (SizeType blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+        std::string dataName{varName + "_" + std::to_string(blockIdx)};
+        ops_dat localDat =
+            ops_decl_dat_hdf5(g_Block[blockIdx], NUMMACROVAR, "double",
+                              dataName.c_str(), fileNames.at(blockIdx).c_str());
+        data.emplace(blockIdx, localDat);
+    }
+}
+
+ops_dat Field::at(SizeType blockIdx) { return data.at(blockIdx); }

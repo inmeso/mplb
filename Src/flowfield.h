@@ -39,6 +39,8 @@
 #ifndef FLOWFIELD_H
 #define FLOWFIELD_H
 #include <algorithm>
+#include <map>
+#include <string>
 #include <cmath>
 #include <string>
 #include "boundary.h"
@@ -183,4 +185,20 @@ Real GetMaximumResidual(const Real checkPeriod);
 void DefineBlocks(const SizeType blockNum,
                   const std::vector<SizeType>& blockSize, const Real meshSize,
                   const std::vector<Real>& startPos);
+
+class Field {
+   private:
+    std::map<SizeType, ops_dat> data;
+    std::string name;
+   public:
+    // Create variable from scratch
+    Field(const std::string& varName, const SizeType dim = 1,
+          const SizeType haloDepth = 1);
+    //Restart simulation
+    Field(const std::string& varName, const Real time);
+    // Create variable from hdf5 files
+    Field(const std::string& varName, const std::vector<std::string> fileNames);
+    ~Field();
+    ops_dat at(SizeType blockIdx);
+};
 #endif
