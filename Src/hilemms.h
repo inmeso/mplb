@@ -110,5 +110,5 @@ void WipeSolidPtsBasedNeigbours();
 void UpdateGeometryAfterWiping();
 void MarkSurfacePoints();
 void SetBoundaryTypeofImmersedBody();
-
+int* BoundarySurfaceRange(const int blockId, BoundarySurface surface);
 #endif  // Hilemms_H

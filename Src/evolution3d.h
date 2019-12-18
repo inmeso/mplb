@@ -160,5 +160,7 @@ void Iterate(void (*cycle)(T), const Real convergenceCriteria,
 }
 //TODO this function is temporary,might be renamed or removed future
 void PrepareSimulation();
+void CopyBlockEnvelopDistribution3D(ops_dat* fDest, const ops_dat* fSrc);
+void TransferHalos(const std::vector<ops_halo_group>& haloGroups);
 #endif /* OPS_3D */
 #endif /* EVOLUTION3D_H_ */
