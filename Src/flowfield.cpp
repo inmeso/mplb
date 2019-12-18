@@ -229,29 +229,16 @@ void DefineVariables() {
 
 void AllocateMemory() {
     void* temp = NULL;
-    g_Block = new ops_block[BLOCKNUM];
     g_f = new ops_dat[BLOCKNUM];
     g_MacroBodyforce = new ops_dat[BLOCKNUM];
     g_fStage = new ops_dat[BLOCKNUM];
     g_MacroVars = new ops_dat[BLOCKNUM];
     g_CoordinateXYZ = new ops_dat[BLOCKNUM];
-    BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngJmax = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngImax = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngImin = new int[BLOCKNUM * 2 * SPACEDIM];
-    if (3 == SPACEDIM) {
-        BlockIterRngKmax = new int[BLOCKNUM * 2 * SPACEDIM];
-        BlockIterRngKmin = new int[BLOCKNUM * 2 * SPACEDIM];
-    }
-    BlockIterRngBulk = new int[BLOCKNUM * 2 * SPACEDIM];
     // if steady flow
     g_MacroVarsCopy = new ops_dat[BLOCKNUM];
     g_ResidualErrorHandle = new ops_reduction[MacroVarsNum()];
     g_ResidualError = new Real[2 * MacroVarsNum()];
     // end if steady flow
-
-
     int haloDepth{HaloPtNum()};
     HALODEPTH = HaloPtNum();
 
@@ -260,7 +247,6 @@ void AllocateMemory() {
     // max halo depths for the dat in the negative direction
     // int d_m[2] = {-haloDepth, -haloDepth};
     // int base[2] = {0, 0};
-
     // max halo depths for the dat in the positive direction
     int* d_p = new int[SPACEDIM];
     // max halo depths for the dat in the negative direction
@@ -281,81 +267,11 @@ void AllocateMemory() {
     g_GeometryProperty = new ops_dat[BLOCKNUM];
     for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
         std::string label(std::to_string(blockIndex));
-        std::string blockName("Block_" + label);
-        // The name parameter is not properly typed in the definition of
-        // ops_decl_block, so there is a minor warning here.
-        g_Block[blockIndex] =
-            ops_decl_block(SPACEDIM, (char*)blockName.c_str());
-
+        // int size[2] = {BlockSize(blockIndex)[0],BlockSize(blockIndex)[1]}; //
+        // size of the dat
         int* size = new int[SPACEDIM];  // size of the dat
         for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
             size[cordIdx] = BlockSize(blockIndex)[cordIdx];
-        }
-        // int size[2] = {BlockSize(blockIndex)[0],BlockSize(blockIndex)[1]}; //
-        // size of the dat
-
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
-
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
-
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        if (3 == SPACEDIM) {
-            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 4] = 1;
-            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 5] = size[2] - 1;
-
-            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM] = 0;
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 2] = 0;
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 4] = size[2] - 1;
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM] = 0;
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 3] = size[1];
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 5] = 1;
         }
 
         std::string dataName("f_");
@@ -1460,9 +1376,8 @@ void SetBulkandHaloNodesType(int blockIndex, int compoId) {
 }
 
 void DefineBlocks(const SizeType blockNum,
-                         const std::vector<SizeType>& blockSize,
-                         const Real meshSize,
-                         const std::vector<Real>& startPos) {
+                  const std::vector<SizeType>& blockSize, const Real meshSize,
+                  const std::vector<Real>& startPos) {
     SetBlockNum(blockNum);
     SetBlockSize(blockSize);
     COORDINATES.resize(blockNum);
@@ -1491,8 +1406,94 @@ void DefineBlocks(const SizeType blockNum,
             SPACEDIM * blockNum, numBlockStartPos);
         assert(numBlockStartPos == blockNum * SPACEDIM);
     }
-}
 
+    g_Block = new ops_block[BLOCKNUM];
+    BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImin = new int[BLOCKNUM * 2 * SPACEDIM];
+    if (3 == SPACEDIM) {
+        BlockIterRngKmax = new int[BLOCKNUM * 2 * SPACEDIM];
+        BlockIterRngKmin = new int[BLOCKNUM * 2 * SPACEDIM];
+    }
+    BlockIterRngBulk = new int[BLOCKNUM * 2 * SPACEDIM];
+    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
+        std::string label(std::to_string(blockIndex));
+        std::string blockName("Block_" + label);
+        // The name parameter is not properly typed in the definition of
+        // ops_decl_block, so there is a minor warning here.
+        int* size = new int[SPACEDIM];  // size of the dat
+        for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
+            size[cordIdx] = BlockSize(blockIndex)[cordIdx];
+        }
+        g_Block[blockIndex] =
+            ops_decl_block(SPACEDIM, (char*)blockName.c_str());
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
+
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
+
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        if (3 == SPACEDIM) {
+            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 4] = 1;
+            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 5] = size[2] - 1;
+
+            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM] = 0;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 2] = 0;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 4] = size[2] - 1;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 2] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 3] = size[1];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 5] = 1;
+        }
+        delete[] size;
+    }
+}
 
 void AssignCoordinates(int blockIndex,
                        const std::vector<std::vector<Real>>& blockCoordinates) {
