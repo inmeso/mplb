@@ -40,6 +40,8 @@
 #include <vector>
 #include <list>
 #include "type.h"
+#include "flowfield.h"
+#include "typeinfo"
 
 
 /*!
@@ -139,14 +141,17 @@ void DestroyModel();
  */
 inline const int SizeofTau() { return NUMCOMPONENTS; }
 // HiLeMMS interface, https://gitlab.com/jpmeng/hilemms
-void DefineComponents(std::vector<std::string> compoNames,
-                      std::vector<SizeType> compoId,
-                      std::vector<std::string> lattNames);
+
+void DefineComponents(const std::vector<std::string>& compoNames,
+                      const std::vector<SizeType>& compoId,
+                      const std::vector<std::string>& lattNames,
+                      const SizeType timeStep=0);
+
 
 void DefineMacroVars(std::vector<VariableTypes> types,
                      std::vector<std::string> names,
-                     std::vector<SizeType> varId,
-                     std::vector<SizeType> compoId);
+                     std::vector<SizeType> varId, std::vector<SizeType> compoId,
+                     const SizeType timeStep=0);
 
 /*!
 * Define collision terms for specified components

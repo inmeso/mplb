@@ -254,9 +254,10 @@ void AllocateMacroVarProperty(const int macroVarNum) {
     }
 }
 
-void DefineComponents(std::vector<std::string> compoNames,
-                      std::vector<SizeType> compoId,
-                      std::vector<std::string> lattNames) {
+void DefineComponents(const std::vector<std::string>& compoNames,
+                      const std::vector<SizeType>& compoId,
+                      const std::vector<std::string>& lattNames,
+                      const SizeType timeStep) {
     NUMCOMPONENTS = compoNames.size();
     if (NUMCOMPONENTS > 0) {
         AllocateComponentIndex(NUMCOMPONENTS);
@@ -331,12 +332,20 @@ void DefineComponents(std::vector<std::string> compoNames,
     ops_decl_const("XI", NUMXI * LATTDIM, "double", XI);
     ops_decl_const("WEIGHTS", NUMXI, "double", WEIGHTS);
     ops_decl_const("OPP", NUMXI, "int", OPP);
+    g_f.SetDataDim(NUMXI);
+    if (timeStep == 0){
+    g_f.CreateFieldFromScratch();}
+    else {
+        g_f.CreateFieldFromCheckPoint(timeStep);
+    }
+    g_fStage.SetDataDim(NUMXI);
+    g_fStage.CreateFieldFromScratch();
 }
 
 void DefineMacroVars(std::vector<VariableTypes> types,
                      std::vector<std::string> names,
-                     std::vector<SizeType> varId,
-                     std::vector<SizeType> compoId) {
+                     std::vector<SizeType> varId, std::vector<SizeType> compoId,
+                     const SizeType timeStep) {
     // It seems varId is not necessary at this moment
     NUMMACROVAR = names.size();
     MACROVARNAME = names;
@@ -379,13 +388,26 @@ void DefineMacroVars(std::vector<VariableTypes> types,
                 "called!\n");
             assert(nullptr != VARIABLECOMPPOS);
         }
-
-        ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
-        ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);
-        ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int",
-                       VARIABLECOMPINDEX);
-        ops_decl_const("VARIABLECOMPPOS", NUMCOMPONENTS, "int",
-                       VARIABLECOMPPOS);
+    }
+    ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
+    ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);
+    ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int", VARIABLECOMPINDEX);
+    ops_decl_const("VARIABLECOMPPOS", NUMCOMPONENTS, "int", VARIABLECOMPPOS);
+    g_MacroVars.SetDataDim(NUMMACROVAR);
+    if (timeStep == 0) {
+        g_MacroVars.CreateFieldFromScratch();
+    } else {
+        g_MacroVars.CreateFieldFromCheckPoint(timeStep);
+    }
+    if (!IsTransient()) {
+        g_MacroVarsCopy.SetDataDim(NUMMACROVAR);
+        g_MacroVarsCopy.CreateFieldFromScratch();
+        g_ResidualErrorHandle = new ops_reduction[MacroVarsNum()];
+        g_ResidualError = new Real[2 * MacroVarsNum()];
+        for (int localIdx = 0; localIdx < MacroVarsNum(); localIdx++) {
+            g_ResidualErrorHandle[localIdx] = ops_decl_reduction_handle(
+                sizeof(Real), "double", MacroVarName()[localIdx].c_str());
+        }
     }
 }
 
@@ -455,11 +477,13 @@ void DefineBodyForce(std::vector<BodyForceType> types,
         std::pair<SizeType, BodyForceType> pair(compoId.at(idx), types.at(idx));
         FORCETERMS.push_back(pair);
     }
-     if (compoSize < NUMCOMPONENTS) {
+    if (compoSize < NUMCOMPONENTS) {
         ops_printf(
             "Warning! Kernel functions are required for components without "
             "pre-defined body force terms!\n");
     }
+    g_MacroBodyforce.SetDataDim(SPACEDIM * NUMCOMPONENTS);
+    g_MacroBodyforce.CreateFieldFromScratch();
 }
 void DefineInitialCondition(std::vector<InitialType> types,
                             std::vector<SizeType> compoId) {

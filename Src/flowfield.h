@@ -28,7 +28,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 /*! @brief   Implementing functions related to the flow field
  * @author  Jianping Meng
@@ -39,10 +39,10 @@
 #ifndef FLOWFIELD_H
 #define FLOWFIELD_H
 #include <algorithm>
+#include <cmath>
 #include <map>
 #include <string>
-#include <cmath>
-#include <string>
+#include <typeinfo>
 #include "boundary.h"
 #include "model.h"
 #include "scheme.h"
@@ -59,65 +59,6 @@
  */
 extern int SPACEDIM;
 extern ops_block* g_Block;
-/*!
- * The size of g_f in each node will be determined by the employed quadrature
- * and the model. For example, if we are simulating a two-phase flow, then the
- * size will be the product of NUMXI and NUMCOMPONENTS.
- */
-extern ops_dat* g_f;
-/*! might be changed to a local temporary variable
- * if we use some control routine in the main.cpp
- */
-extern ops_dat* g_fStage;
-/*!
- * Macroscopic bodyforce
- */
-extern ops_dat* g_MacroBodyforce;
-/*!
- * g_MacroVars: for storing the macroscopic variables, to reduce
- * the complexity of calculating equilibrium, it will has a specific order
- */
-extern ops_dat* g_MacroVars;
-/*!
- * Save the macroscopic variables at the previous step
- * Typically used for steady flow.
- */
-extern ops_dat* g_MacroVarsCopy;
-/*!
- * the residual error for steady flows
- * for each macroscopic variable, there are two values: the absolute
- * and relative
- * for each component of a vector, two values are allocated
- */
-extern Real* g_ResidualError;
-extern ops_reduction* g_ResidualErrorHandle;
-// Boundary fitting mesh
-// The following variables are introduced for
-// implementing finite difference schemes
-/*!
- * g_DiscreteConvectionTerm: for finite difference scheme
- */
-extern ops_dat* g_DiscreteConvectionTerm;
-/*! metrics structure
- * | xi_x  0 xi_y  1 |
- * | eta_x 2 eta_y 3 |
- *
- */
-extern ops_dat* g_Metrics;
-// Boundary fitting mesh
-// Cutting cell
-/*!
- * g_NodeType: boundary or fluid
- */
-extern ops_dat* g_NodeType;
-/*!
- * immersed solid? or the end point of the body.
- */
-extern ops_dat* g_GeometryProperty;
-/*!
- * Coordinate
- */
-extern ops_dat* g_CoordinateXYZ;
 // Cutting cell
 int* IterRngWhole();
 int* IterRngJmin();
@@ -157,27 +98,196 @@ void setCaseName(const char* caseName);
 void SetTauRef(const std::vector<Real> tauRef);
 void SetBlockSize(const std::vector<SizeType> blockSize);
 void SetBlockNum(const SizeType blockNum);
+template <typename T>
+class Field {
+   private:
+    std::map<SizeType, ops_dat> data;
+    std::string name;
+    SizeType dim{1};
+    SizeType haloDepth{1};
+    std::string type;
+
+   public:
+    Field(std::string& varName, const SizeType dataDim = 1,
+          const SizeType halo = 1);
+
+    Field(const char* varName, const SizeType dataDim = 1,
+          const SizeType halo = 1);
+
+    void CreateFieldFromScratch();
+
+    void CreateFieldFromCheckPoint(const SizeType timeStep);
+
+    void CreateFieldFromFile(const std::vector<std::string>& fileNames);
+
+    void SetDataDim(const SizeType dataDim) { dim = dataDim; };
+
+    void SetDataHalo(const SizeType halo) { haloDepth = halo; };
+
+    const SizeType HaloDepth() const { return haloDepth; };
+
+    const SizeType DataDim() const { return dim; };
+
+    ~Field(){};
+
+    ops_dat at(SizeType blockIdx) { return data.at(blockIdx); };
+    ops_dat operator[](SizeType blockIdx) { return this->at(blockIdx); };
+};
+
+template <typename T>
+Field<T>::Field(std::string& varName, const SizeType dataDim,
+                const SizeType halo) {
+    name = varName;
+    dim = dataDim;
+    haloDepth = halo;
+    std::string name{typeid(T).name()};
+    if (name == "i") {
+        type = "int";
+    }
+    if (name == "f") {
+        type = "float";
+    }
+    if (name == "d") {
+        type = "double";
+    }
+}
+template <typename T>
+Field<T>::Field(const char* varName, const SizeType dataDim,
+                const SizeType halo) {
+    name = std::string{varName};
+    dim = dataDim;
+    haloDepth = halo;
+    std::string name{typeid(T).name()};
+    if (name == "i") {
+        type = "int";
+    }
+    if (name == "f") {
+        type = "float";
+    }
+    if (name == "d") {
+        type = "double";
+    }
+}
+
+template <typename T>
+void Field<T>::CreateFieldFromScratch() {
+    T* temp = NULL;
+    int* size = new int[SPACEDIM];
+    int* d_p = new int[SPACEDIM];
+    int* d_m = new int[SPACEDIM];
+    int* base = new int[SPACEDIM];
+    for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
+        d_p[cordIdx] = haloDepth;
+        d_m[cordIdx] = -haloDepth;
+        base[cordIdx] = 0;
+    }
+    for (SizeType blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+        std::string dataName{name + "_" + std::to_string(blockIdx)};
+        for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
+            size[cordIdx] = BlockSize(blockIdx)[cordIdx];
+            base[cordIdx] = 0;
+        }
+        ops_dat localDat =
+            ops_decl_dat(g_Block[blockIdx], dim, size, base, d_m, d_p, temp,
+                         type.c_str(), dataName.c_str());
+        data.emplace(blockIdx, localDat);
+    }
+    delete[] size;
+    delete[] d_p;
+    delete[] d_m;
+    delete[] base;
+}
+
+template <typename T>
+void Field<T>::CreateFieldFromCheckPoint(const SizeType timeStep) {
+    for (SizeType blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+        std::string dataName{name + "_" + std::to_string(blockIdx)};
+        std::string label{std::to_string(blockIdx)};
+        std::string stepStr{std::to_string(timeStep)};
+        std::string blockName{"Block_" + label + "_" + stepStr};
+        std::string fileName{CaseName() + "_" + blockName + ".h5"};
+        ops_dat localDat =
+            ops_decl_dat_hdf5(g_Block[blockIdx], dim, type.c_str(),
+                              dataName.c_str(), fileName.c_str());
+        data.emplace(blockIdx, localDat);
+    }
+}
+template <typename T>
+void Field<T>::CreateFieldFromFile(const std::vector<std::string>& fileNames) {
+    for (SizeType blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+        std::string dataName{name + "_" + std::to_string(blockIdx)};
+        ops_dat localDat =
+            ops_decl_dat_hdf5(g_Block[blockIdx], dim, type.c_str(),
+                              dataName.c_str(), fileNames.at(blockIdx).c_str());
+        data.emplace(blockIdx, localDat);
+    }
+}
+
+/*!
+ * The size of g_f in each node will be determined by the employed quadrature
+ * and the model. For example, if we are simulating a two-phase flow, then the
+ * size will be the product of NUMXI and NUMCOMPONENTS.
+ */
+extern Field<Real> g_f;
+/*! might be changed to a local temporary variable
+ * if we use some control routine in the main.cpp
+ */
+extern Field<Real> g_fStage;
+/*!
+ * Macroscopic bodyforce
+ */
+extern Field<Real> g_MacroBodyforce;
+/*!
+ * g_MacroVars: for storing the macroscopic variables, to reduce
+ * the complexity of calculating equilibrium, it will has a specific order
+ */
+extern Field<Real> g_MacroVars;
+/*!
+ * Save the macroscopic variables at the previous step
+ * Typically used for steady flow.
+ */
+extern Field<Real> g_MacroVarsCopy;
+/*!
+ * the residual error for steady flows
+ * for each macroscopic variable, there are two values: the absolute
+ * and relative
+ * for each component of a vector, two values are allocated
+ */
+extern Real* g_ResidualError;
+extern ops_reduction* g_ResidualErrorHandle;
+extern Field<int> g_NodeType;
+/*!
+ * immersed solid? or the end point of the body.
+ */
+extern Field<int> g_GeometryProperty;
+/*!
+ * Coordinate
+ */
+extern Field<Real> g_CoordinateXYZ;
 
 /*!
  * Manually setup the flow field.
  */
 void SetupFlowfield();
 void SetupFlowfieldfromHdf5();
-//TODO This function is temporary, will be removed in the near future
-void AllocateMemory();
-void WriteFlowfieldToHdf5(const long timeStep);
-void WriteDistributionsToHdf5(const long timeStep);
-void WriteNodePropertyToHdf5(const long timeStep);
+// TODO This function is temporary, will be removed in the near future
+//void AllocateMemory();
+void WriteFlowfieldToHdf5(const  SizeType timeStep);
+void WriteDistributionsToHdf5(const  SizeType timeStep);
+void WriteNodePropertyToHdf5(const  SizeType timeStep);
 void DestroyFlowfield();
 void DefineHaloTransfer();
 void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair);
+void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair, ops_dat dat,
+                              const int haloDepth);
 void SetHaloDepth(const int haloDepth);
 void Partition();
 void PrepareFlowField();
 // caseName: case name
 // spaceDim: 2D or 3D application
-void DefineCase(std::string caseName, const int spaceDim);
-Real GetMaximumResidual(const Real checkPeriod);
+void DefineCase(const std::string& caseName, const int spaceDim,
+                const bool transient=false);
+Real GetMaximumResidual(const SizeType checkPeriod);
 // blockNum: total number if blocks.
 // blockSize: array of integers specifying the block blocksize.
 // meshSize: The size of mesh i.e. dx (At present dx = dy = dz).
@@ -186,19 +296,12 @@ void DefineBlocks(const SizeType blockNum,
                   const std::vector<SizeType>& blockSize, const Real meshSize,
                   const std::vector<Real>& startPos);
 
-class Field {
-   private:
-    std::map<SizeType, ops_dat> data;
-    std::string name;
-   public:
-    // Create variable from scratch
-    Field(const std::string& varName, const SizeType dim = 1,
-          const SizeType haloDepth = 1);
-    //Restart simulation
-    Field(const std::string& varName, const Real time);
-    // Create variable from hdf5 files
-    Field(const std::string& varName, const std::vector<std::string> fileNames);
-    ~Field();
-    ops_dat at(SizeType blockIdx);
-};
+bool IsTransient();
+template <typename T>
+void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair,
+                              Field<T>& data) {
+#ifdef OPS_3D
+    DefinePeriodicHaloPair3D(haloPair, data[0], data.HaloDepth);
+#endif  // OPS_3D
+}
 #endif

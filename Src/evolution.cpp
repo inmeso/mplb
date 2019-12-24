@@ -377,7 +377,7 @@ void ForwardEuler() {
     // }
 }
 
-void DispResidualError(const int iter, const Real checkPeriod) {
+void DispResidualError(const int iter, const SizeType checkPeriod) {
     ops_printf("##########Residual Error at %i time step##########\n", iter);
     for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
         Real residualError = g_ResidualError[2 * macroVarIdx] /
@@ -399,7 +399,7 @@ void Iterate(const SizeType steps, const SizeType checkPointPeriod) {
                 if ((iter % checkPointPeriod) == 0 && iter != 0) {
                     UpdateMacroVars();
                     CalcResidualError();
-                    DispResidualError(iter, checkPointPeriod * TimeStep());
+                    DispResidualError(iter, checkPointPeriod);
                     WriteFlowfieldToHdf5(iter);
                     WriteDistributionsToHdf5(iter);
                     WriteNodePropertyToHdf5(iter);
@@ -430,8 +430,8 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod) {
                     UpdateMacroVars();
                     CalcResidualError();
                     residualError =
-                        GetMaximumResidualError(checkPointPeriod * TimeStep());
-                    DispResidualError(iter, checkPointPeriod * TimeStep());
+                        GetMaximumResidual(checkPointPeriod);
+                    DispResidualError(iter, checkPointPeriod);
                     WriteFlowfieldToHdf5(iter);
                     WriteDistributionsToHdf5(iter);
                     WriteNodePropertyToHdf5(iter);
