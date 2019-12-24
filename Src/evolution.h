@@ -77,7 +77,7 @@ void UpdateMacroVars();
 void UpdateFeqandBodyforce();
 void UpdateHalos();
 void CopyDistribution(const ops_dat *fSrc, ops_dat *fDest);
-void DispResidualError(const int iter, const Real timePeriod);
+void DispResidualError(const int iter, const SizeType timePeriod);
 void NormaliseF(Real *ratio);
 void TreatDomainBoundary(const int blockIndex, const int componentID,
                          const Real *givenVars, int *range,

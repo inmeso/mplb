@@ -16,10 +16,11 @@
   "BodyForceType":["BodyForce_None"],
   "BodyForceCompoId":[0],
   "SchemeType":"Scheme_StreamCollision",
+
    "BoundaryCondition0":{
     "BlockIndex": 0,
     "ComponentId": 0,
-    "GivenVars":[0,0,0],
+    "GivenVars":[0.01,0,0],
     "BoundarySurface":"Top",
     "BoundaryType": "Boundary_EQMDiffuseREfl",
     "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
@@ -30,7 +31,7 @@
     "BlockIndex": 0,
     "ComponentId": 0,
     "GivenVars":[0,0,0],
-    "BoundarySurface":"Top",
+    "BoundarySurface":"Bottom",
     "BoundaryType": "Boundary_EQMDiffuseREfl",
     "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
 
@@ -39,8 +40,8 @@
   "BoundaryCondition2":{
      "BlockIndex": 0,
 	 "ComponentId": 0,
-	 "GivenVars":[0.01,0,0],
-	 "BoundarySurface":"Top",
+	 "GivenVars":[0.0,0,0],
+	 "BoundarySurface":"Left",
 	 "BoundaryType": "Boundary_EQMDiffuseREfl",
 	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
 
@@ -50,7 +51,7 @@
      "BlockIndex": 0,
 	 "ComponentId": 0,
 	 "GivenVars":[0,0,0],
-	 "BoundarySurface":"Bottom",
+	 "BoundarySurface":"Right",
 	 "BoundaryType": "Boundary_EQMDiffuseREfl",
 	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
 

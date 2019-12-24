@@ -68,6 +68,11 @@ void simulate() {
     std::string caseName{"3D_lid_Driven_cavity"};
     SizeType spaceDim{3};
     DefineCase(caseName, spaceDim);
+    SizeType blockNum{1};
+    std::vector<SizeType> blockSize{33, 33, 33};
+    Real meshSize{1. / 32};
+    std::vector<Real> startPos{0.0, 0.0, 0.0};
+    DefineBlocks(blockNum, blockSize, meshSize, startPos);
 
     std::vector<std::string> compoNames{"Fluid"};
     std::vector<SizeType> compoid{0};
@@ -127,13 +132,6 @@ void simulate() {
     std::vector<InitialType> initType{Initial_BGKFeq2nd};
     std::vector<SizeType> initalCompoId{0};
     DefineInitialCondition(initType,initalCompoId);
-
-    SizeType blockNum{1};
-    std::vector<SizeType> blockSize{33, 33, 33};
-    Real meshSize{1. / 32};
-    std::vector<Real> startPos{0.0, 0.0, 0.0};
-    DefineBlocks(blockNum, blockSize, meshSize, startPos);
-    AllocateMemory();
     Partition();
     PrepareSimulation();
     SetInitialMacrosVars();
@@ -147,11 +145,21 @@ void simulate() {
     Iterate(StreamCollision3D,convergenceCriteria, checkPeriod);
 }
 
-void simulate(const Configuration & config) {
+void simulate(const Configuration & config, const SizeType timeStep=0) {
     DefineCase(config.caseName, config.spaceDim);
-    DefineComponents(config.compoNames, config.compoIds, config.lattNames);
-    DefineMacroVars(config.macroVarTypes, config.macroVarNames,
-                    config.macroVarIds, config.macroCompoIds);
+    DefineBlocks(config.blockNum, config.blockSize, config.meshSize,
+                        config.startPos);
+    if (timeStep == 0) {
+        DefineComponents(config.compoNames, config.compoIds, config.lattNames);
+        DefineMacroVars(config.macroVarTypes, config.macroVarNames,
+                        config.macroVarIds, config.macroCompoIds);
+    } else {
+        DefineComponents(config.compoNames, config.compoIds, config.lattNames,
+                         timeStep);
+         DefineMacroVars(config.macroVarTypes, config.macroVarNames,
+                        config.macroVarIds, config.macroCompoIds,timeStep);
+    }
+
     DefineCollision(config.CollisionTypes, config.CollisionCompoIds);
     DefineBodyForce(config.bodyForceTypes, config.bodyForceCompoIds);
     DefineScheme(config.schemeType);
@@ -162,20 +170,21 @@ void simulate(const Configuration & config) {
                             bcConfig.macroVarTypesatBoundary,
                             bcConfig.givenVars);
     }
-    DefineBlocks(config.blockNum, config.blockSize, config.meshSize,
-                        config.startPos);
-    AllocateMemory();
     Partition();
     PrepareSimulation();
-    SetInitialMacrosVars();
-    PreDefinedInitialCondition3D();
+    if (timeStep == 0) {
+        SetInitialMacrosVars();
+        PreDefinedInitialCondition3D();
+    } else{
+        RestartMacroVars4SteadySim();
+    }
 
     SetTauRef(config.tauRef);
     SetTimeStep(config.meshSize / SoundSpeed());
     if (config.transient){
-        Iterate(config.timeSteps, config.checkPeriod);
+        Iterate(config.timeSteps, config.checkPeriod,timeStep);
     } else{
-        Iterate(config.convergenceCriteria, config.checkPeriod);
+        Iterate(config.convergenceCriteria, config.checkPeriod,timeStep);
     }
 }
 
@@ -186,10 +195,20 @@ int main(int argc, const char** argv) {
     ops_timers(&ct0, &et0);
     if (argc <= 1) {
         simulate();
-    } else {
+    }
+
+    if (argc>1 && argc <=2){
+        ops_printf("Zero...\n");
         std::string configFileName(argv[1]);
         ReadConfiguration(configFileName);
         simulate(Config());
+    }
+
+    if (argc>2 && argc <=3){
+        std::string configFileName(argv[1]);
+        ReadConfiguration(configFileName);
+        const SizeType timeStep{std::stoi(argv[2])};
+        simulate(Config(),timeStep);
     }
 
     ops_timers(&ct1, &et1);

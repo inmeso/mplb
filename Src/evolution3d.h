@@ -94,7 +94,7 @@ void PreDefinedInitialCondition3D();
 /*!
  * Mainly for a steady simulation
  */
-void DispResidualError3D(const int iter, const Real timePeriod);
+void DispResidualError3D(const int iter, const SizeType checkPeriod);
 void NormaliseF3D(Real* ratio);
 void UpdateMacroVars3D();
 void PreDefinedBodyForce3D();
@@ -106,26 +106,25 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                           const Real* givenVars, int* range,
                           const VertexTypes boundaryType);
 
-void Iterate(const SizeType steps, const SizeType checkPointPeriod);
-void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod);
+void Iterate(const SizeType steps, const SizeType checkPointPeriod, const SizeType start=0);
+void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod, const SizeType start=0);
 
 void UpdateMacroscopicBodyForce(const Real time);
 void SetInitialMacrosVars();
 
 template <typename T>
 void Iterate(void (*cycle)(T), const SizeType steps,
-             const SizeType checkPointPeriod) {
+             const SizeType checkPointPeriod, const SizeType start = 0) {
     ops_printf("Starting the iteration...\n");
-    for (int iter = 0; iter < steps; iter++) {
+    for (int iter = start; iter < start + steps; iter++) {
         const Real time{iter * TimeStep()};
         cycle(time);
-        if ((iter % checkPointPeriod) == 0 && iter != 0) {
+        if (((iter + 1) % checkPointPeriod) == 0) {
+            ops_printf("%d iterations!\n", iter + 1);
             UpdateMacroVars3D();
-            CalcResidualError3D();
-            DispResidualError3D(iter, checkPointPeriod * TimeStep());
-            WriteFlowfieldToHdf5(iter);
-            WriteDistributionsToHdf5(iter);
-            WriteNodePropertyToHdf5(iter);
+            WriteFlowfieldToHdf5((iter + 1));
+            WriteDistributionsToHdf5((iter + 1));
+            WriteNodePropertyToHdf5((iter + 1));
         }
     }
     ops_printf("Simulation finished! Exiting...\n");
@@ -135,23 +134,22 @@ void Iterate(void (*cycle)(T), const SizeType steps,
 
 template <typename T>
 void Iterate(void (*cycle)(T), const Real convergenceCriteria,
-             const SizeType checkPointPeriod) {
-    int iter{0};
+             const SizeType checkPointPeriod, const SizeType start = 0) {
+    int iter{start};
     Real residualError{1};
     do {
         const Real time{iter * TimeStep()};
         cycle(time);
+        iter = iter + 1;
         if ((iter % checkPointPeriod) == 0) {
             UpdateMacroVars3D();
             CalcResidualError3D();
-            residualError = GetMaximumResidual(checkPointPeriod * TimeStep());
-            DispResidualError3D(iter, checkPointPeriod * TimeStep());
+            residualError = GetMaximumResidual(checkPointPeriod);
+            DispResidualError3D(iter, checkPointPeriod);
             WriteFlowfieldToHdf5(iter);
             WriteDistributionsToHdf5(iter);
             WriteNodePropertyToHdf5(iter);
         }
-
-        iter = iter + 1;
     } while (residualError >= convergenceCriteria);
 
     ops_printf("Simulation finished! Exiting...\n");
@@ -162,5 +160,6 @@ void Iterate(void (*cycle)(T), const Real convergenceCriteria,
 void PrepareSimulation();
 void CopyBlockEnvelopDistribution3D(ops_dat* fDest, const ops_dat* fSrc);
 void TransferHalos(const std::vector<ops_halo_group>& haloGroups);
+void RestartMacroVars4SteadySim();
 #endif /* OPS_3D */
 #endif /* EVOLUTION3D_H_ */
