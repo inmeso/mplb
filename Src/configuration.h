@@ -51,15 +51,6 @@
 /** Structure for holding various input parameters
 */
 
-struct BlockBoundaryConfig {
-    SizeType blockIndex;
-    SizeType componentID;
-    std::vector<Real> givenVars;
-    BoundarySurface boundarySurface;
-    BoundaryType boundaryType;
-    std::vector<VariableTypes> macroVarTypesatBoundary;
-};
-
 struct Configuration {
     std::string caseName;
     SizeType spaceDim{3};
@@ -88,7 +79,7 @@ struct Configuration {
     Real convergenceCriteria{-1};
     SizeType timeSteps{0};
     SizeType checkPeriod{1000};
-    std::vector<BlockBoundaryConfig> blockBoundaryConditions;
+    std::vector<BlockBoundary> blockBoundaryConfig;
 };
 
 /** Reading the parameters from a input file in the json format
