@@ -81,19 +81,19 @@ void simulate() {
     std::vector<VariableTypes> MacroVarsComp{Variable_Rho, Variable_U,
                                              Variable_V};
     std::vector<Real> inletValMacroVarsComp{1, 0.05, 0};
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Left, BoundaryType_EQMDiffuseRefl,
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Left, BoundaryScheme::EQMDiffuseRefl,
                         MacroVarsComp, inletValMacroVarsComp);
 
     std::vector<Real> outletValMacroVarsComp{1, 0, 0};
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Right, BoundaryType_EQMDiffuseRefl,
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Right, BoundaryScheme::EQMDiffuseRefl,
                         MacroVarsComp, outletValMacroVarsComp);
 
     std::vector<Real> topValMacroVarsComp{1, 0.01, 0};
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Top, BoundaryType_EQMDiffuseRefl,
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Top, BoundaryScheme::EQMDiffuseRefl,
                         MacroVarsComp, topValMacroVarsComp);
 
     std::vector<Real> bottomValMacroVarsComp{1, 0, 0};
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Bottom, BoundaryType_EQMDiffuseRefl,
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Bottom, BoundaryScheme::EQMDiffuseRefl,
                         MacroVarsComp, bottomValMacroVarsComp);
     ops_printf("Block boundary defined!\n");
 

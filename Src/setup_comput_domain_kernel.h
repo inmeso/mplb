@@ -53,7 +53,7 @@ void KerSetEmbeddedCircle(Real* diameter, Real* centerPos,
             (coordinates[OPS_ACC_MD3(1, 0, 0)] - centerPos[1]) *
                 (coordinates[OPS_ACC_MD3(1, 0, 0)] - centerPos[1]) <=
         (*diameter) * (*diameter) / 4) {
-        nodeType[OPS_ACC4(0, 0)] = (int)Vertex_ImmersedSolid;
+        nodeType[OPS_ACC4(0, 0)] = (int)VertexType::ImmersedSolid;
         geometryProperty[OPS_ACC5(0, 0)] = (int)VG_ImmersedSolid;
     }
 }
@@ -92,7 +92,7 @@ void KerSweep(const int* geometryProperty, int* nodeType) {
             }
         }
         if (fluidNeiborNum > 0 && solidNeiborNumatCoord <= 1) {
-            nodeType[OPS_ACC1(0, 0)] = Vertex_Fluid;
+            nodeType[OPS_ACC1(0, 0)] = VertexType::Fluid;
             ops_printf(
                 "A solid point is wiped off due to there are %d fluid points "
                 "surrounded and only %d solid points at x and y coordinates\n ",
@@ -104,16 +104,16 @@ void KerSweep(const int* geometryProperty, int* nodeType) {
 void KerSyncGeometryProperty(const int* nodeType, int* geometryProperty) {
     VertexGeometryTypes gp =
         (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0)];
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC0(0, 0)];
-    if (Vertex_Fluid == vt && gp != VG_Fluid) {
+    VertexType vt = (VertexType)nodeType[OPS_ACC0(0, 0)];
+    if (VertexType::Fluid == vt && gp != VG_Fluid) {
         geometryProperty[OPS_ACC1(0, 0)] = (int)VG_Fluid;
     }
 }
 
 void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC1(0, 0)];
-    if (Vertex_ImmersedSolid == vt) {
-        VertexTypes neiborVertexType[8];
+    VertexType vt = (VertexType)nodeType[OPS_ACC1(0, 0)];
+    if (VertexType::ImmersedSolid == vt) {
+        VertexType neiborVertexType[8];
         /*
                         6*****2*****4
                         *     *     *
@@ -123,64 +123,64 @@ void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
                         *     *     *
                         5*****3*****7
         */
-        neiborVertexType[0] = (VertexTypes)nodeType[OPS_ACC0(1, 0)];
-        neiborVertexType[1] = (VertexTypes)nodeType[OPS_ACC0(-1, 0)];
-        neiborVertexType[2] = (VertexTypes)nodeType[OPS_ACC0(0, 1)];
-        neiborVertexType[3] = (VertexTypes)nodeType[OPS_ACC0(0, -1)];
-        neiborVertexType[4] = (VertexTypes)nodeType[OPS_ACC0(1, 1)];
-        neiborVertexType[5] = (VertexTypes)nodeType[OPS_ACC0(-1, -1)];
-        neiborVertexType[6] = (VertexTypes)nodeType[OPS_ACC0(-1, 1)];
-        neiborVertexType[7] = (VertexTypes)nodeType[OPS_ACC0(1, -1)];
+        neiborVertexType[0] = (VertexType)nodeType[OPS_ACC0(1, 0)];
+        neiborVertexType[1] = (VertexType)nodeType[OPS_ACC0(-1, 0)];
+        neiborVertexType[2] = (VertexType)nodeType[OPS_ACC0(0, 1)];
+        neiborVertexType[3] = (VertexType)nodeType[OPS_ACC0(0, -1)];
+        neiborVertexType[4] = (VertexType)nodeType[OPS_ACC0(1, 1)];
+        neiborVertexType[5] = (VertexType)nodeType[OPS_ACC0(-1, -1)];
+        neiborVertexType[6] = (VertexType)nodeType[OPS_ACC0(-1, 1)];
+        neiborVertexType[7] = (VertexType)nodeType[OPS_ACC0(1, -1)];
         int fluidNeiborNum{0};
         for (int i = 0; i < 8; i++) {
-            if (Vertex_ImmersedSolid != neiborVertexType[i]) {
+            if (VertexType::ImmersedSolid != neiborVertexType[i]) {
                 fluidNeiborNum++;
             }
         }
         int solidNeiborNumatCoord{0};
         for (int i = 0; i < 4; i++) {
-            if (Vertex_ImmersedSolid == neiborVertexType[i]) {
+            if (VertexType::ImmersedSolid == neiborVertexType[i]) {
                 solidNeiborNumatCoord++;
             }
         }
         if (fluidNeiborNum > 0) {
             // outer corner
             if (2 == solidNeiborNumatCoord) {
-                if ((Vertex_ImmersedSolid == neiborVertexType[0] &&
-                     Vertex_ImmersedSolid == neiborVertexType[1]) ||
-                    (Vertex_ImmersedSolid == neiborVertexType[2] &&
-                     Vertex_ImmersedSolid == neiborVertexType[3])) {
+                if ((VertexType::ImmersedSolid == neiborVertexType[0] &&
+                     VertexType::ImmersedSolid == neiborVertexType[1]) ||
+                    (VertexType::ImmersedSolid == neiborVertexType[2] &&
+                     VertexType::ImmersedSolid == neiborVertexType[3])) {
                     ops_printf("%s\n", "This may be a dangling point.");
                 }
-                if (Vertex_ImmersedSolid == neiborVertexType[2] &&
-                    Vertex_ImmersedSolid == neiborVertexType[1]) {
-                    if (Vertex_ImmersedSolid == neiborVertexType[6]) {
+                if (VertexType::ImmersedSolid == neiborVertexType[2] &&
+                    VertexType::ImmersedSolid == neiborVertexType[1]) {
+                    if (VertexType::ImmersedSolid == neiborVertexType[6]) {
                         geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IPJM_O;
                     } else {
                         ops_printf("%s\n", "The solid body may be too thin.");
                     }
                 }
 
-                if (Vertex_ImmersedSolid == neiborVertexType[3] &&
-                    Vertex_ImmersedSolid == neiborVertexType[1]) {
-                    if (Vertex_ImmersedSolid == neiborVertexType[5]) {
+                if (VertexType::ImmersedSolid == neiborVertexType[3] &&
+                    VertexType::ImmersedSolid == neiborVertexType[1]) {
+                    if (VertexType::ImmersedSolid == neiborVertexType[5]) {
                         geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IPJP_O;
                     } else {
                        ops_printf("%s\n", "The solid body may be too thin.");
                     }
                 }
 
-                if (Vertex_ImmersedSolid == neiborVertexType[3] &&
-                    Vertex_ImmersedSolid == neiborVertexType[0]) {
-                    if (Vertex_ImmersedSolid == neiborVertexType[7]) {
+                if (VertexType::ImmersedSolid == neiborVertexType[3] &&
+                    VertexType::ImmersedSolid == neiborVertexType[0]) {
+                    if (VertexType::ImmersedSolid == neiborVertexType[7]) {
                         geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IMJP_O;
                     } else {
                        ops_printf("%s\n", "The solid body may be too thin.");
                     }
                 }
-                if (Vertex_ImmersedSolid == neiborVertexType[2] &&
-                    Vertex_ImmersedSolid == neiborVertexType[0]) {
-                    if (Vertex_ImmersedSolid == neiborVertexType[4]) {
+                if (VertexType::ImmersedSolid == neiborVertexType[2] &&
+                    VertexType::ImmersedSolid == neiborVertexType[0]) {
+                    if (VertexType::ImmersedSolid == neiborVertexType[4]) {
                         geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IMJM_O;
                     } else {
                        ops_printf("%s\n", "The solid body may be too thin.");
@@ -189,32 +189,32 @@ void KerSetEmbeddedBodyGeometry(const int* nodeType, int* geometryProperty) {
             }
             // Planlar corner
             if (3 == solidNeiborNumatCoord) {
-                if (Vertex_ImmersedSolid != neiborVertexType[0]) {
+                if (VertexType::ImmersedSolid != neiborVertexType[0]) {
                     geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IP;
                 }
-                if (Vertex_ImmersedSolid != neiborVertexType[1]) {
+                if (VertexType::ImmersedSolid != neiborVertexType[1]) {
                     geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IM;
                 }
-                if (Vertex_ImmersedSolid != neiborVertexType[2]) {
+                if (VertexType::ImmersedSolid != neiborVertexType[2]) {
                     geometryProperty[OPS_ACC1(0, 0)] = (int)VG_JP;
                 }
-                if (Vertex_ImmersedSolid != neiborVertexType[3]) {
+                if (VertexType::ImmersedSolid != neiborVertexType[3]) {
                     geometryProperty[OPS_ACC1(0, 0)] = (int)VG_JM;
                 }
             }
             // Inner corner
             if (4 == solidNeiborNumatCoord) {
                 if (1 == fluidNeiborNum) {
-                    if (Vertex_ImmersedSolid != neiborVertexType[4]) {
+                    if (VertexType::ImmersedSolid != neiborVertexType[4]) {
                         geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IPJP_I;
                     }
-                    if (Vertex_ImmersedSolid != neiborVertexType[5]) {
+                    if (VertexType::ImmersedSolid != neiborVertexType[5]) {
                         geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IMJM_I;
                     }
-                    if (Vertex_ImmersedSolid != neiborVertexType[6]) {
+                    if (VertexType::ImmersedSolid != neiborVertexType[6]) {
                         geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IMJP_I;
                     }
-                    if (Vertex_ImmersedSolid != neiborVertexType[7]) {
+                    if (VertexType::ImmersedSolid != neiborVertexType[7]) {
                         geometryProperty[OPS_ACC1(0, 0)] = (int)VG_IPJM_I;
                     }
                 } else {
@@ -263,16 +263,16 @@ void KerSetEmbeddedBodyBoundary(int* surfaceBoundary,
 #ifdef OPS_2D
     VertexGeometryTypes gp =
         (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0)];
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC2(0, 0)];
-    if (gp != VG_Fluid && gp != VG_ImmersedSolid && Vertex_Fluid != vt) {
+    VertexType vt = (VertexType)nodeType[OPS_ACC2(0, 0)];
+    if (gp != VG_Fluid && gp != VG_ImmersedSolid && VertexType::Fluid != vt) {
         nodeType[OPS_ACC2(0, 0)] = *surfaceBoundary;
     }
 #endif
 #ifdef OPS_3D
-    VertexGeometryTypes gp =
-        (VertexGeometryTypes)geometryProperty[OPS_ACC1(0, 0, 0)];
-    VertexTypes vt = (VertexTypes)nodeType[OPS_ACC2(0, 0, 0)];
-    if (gp != VG_Fluid && gp != VG_ImmersedSolid && Vertex_Fluid != vt) {
+    VertexGeometryType gp =
+        (VertexGeometryType)geometryProperty[OPS_ACC1(0, 0, 0)];
+    VertexType vt = (VertexType)nodeType[OPS_ACC2(0, 0, 0)];
+    if (gp != VG_Fluid && gp != VG_ImmersedSolid && VertexType::Fluid != vt) {
         nodeType[OPS_ACC2(0, 0, 0)] = *surfaceBoundary;
     }
 #endif

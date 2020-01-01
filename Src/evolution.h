@@ -81,5 +81,5 @@ void DispResidualError(const int iter, const SizeType timePeriod);
 void NormaliseF(Real *ratio);
 void TreatDomainBoundary(const int blockIndex, const int componentID,
                          const Real *givenVars, int *range,
-                         const VertexTypes boundaryType);
+                         const BoundaryScheme boundaryScheme);
 #endif /* EVOLUTION_H_ */

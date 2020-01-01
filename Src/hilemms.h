@@ -28,23 +28,21 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 #ifndef Hilemms_H
 #define Hilemms_H
 
 #include <string.h>
+
 #include <cmath>
 #include <fstream>
 #include <iostream>
 #include <ostream>
 #include <vector>
 #include "boundary.h"
-#include "evolution.h"
-#include "evolution3d.h"
 #include "flowfield.h"
 #include "model.h"
-#include "ops_seq.h"
 #include "scheme.h"
 #include "type.h"
 
@@ -53,7 +51,6 @@
 // vertexCoords: Coordinates of each vertex.
 void AddEmbeddedBody(int vertexNum, Real* vertexCoords);
 
-
 // blockIndex: block Index
 // compoId: component ID whose BC we want to set.
 // surface: which surface to set.
@@ -61,19 +58,11 @@ void AddEmbeddedBody(int vertexNum, Real* vertexCoords);
 // MacroVarsComp: which all macrovars are to be used in specifying the BC.
 // valueMacroVarsComp: specified value for the boundary condition for the macro
 // vars which are defined using MacroVarsComp.
-void DefineBlockBoundary(int blockIndex, int componentID,
-                         BoundarySurface boundarySurface,
-                         BoundaryType boundaryType,
-                         const std::vector<VariableTypes>& macroVarTypes,
-                         const std::vector<Real>& macroVarValues);
 
-void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType);
-void SetupGeomPropAndNodeType(int blockIndex, BoundaryType* boundType,
-                              BoundaryType* edgeType, BoundaryType* cornerType);
-// Functions to check for inclusion.
-void PrepareBoundary();
-// A wrapper Function which implements all the boundary conditions.
-void ImplementBoundaryConditions();
+void SetupGeomPropAndNodeType(int blockIndex, BoundaryScheme* boundType);
+void SetupGeomPropAndNodeType(int blockIndex, BoundaryScheme* boundType,
+                              BoundaryScheme* edgeType,
+                              BoundaryScheme* cornerType);
 
 // type: Circle/Sphere, Ellipse/Ellipsoid, superquadrics, ...
 // centerPos: the position vector of the center point.
@@ -110,5 +99,5 @@ void WipeSolidPtsBasedNeigbours();
 void UpdateGeometryAfterWiping();
 void MarkSurfacePoints();
 void SetBoundaryTypeofImmersedBody();
-int* BoundarySurfaceRange(const int blockId, BoundarySurface surface);
+
 #endif  // Hilemms_H

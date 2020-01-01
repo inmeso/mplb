@@ -47,14 +47,10 @@
 void KerCollide(const Real* dt, const int* nodeType, const Real* f,
                 const Real* feq, const Real* relaxationTime,
                 const Real* bodyForce, Real* fStage) {
-    VertexTypes vt = (VertexTypes)nodeType(0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0);
     // collisionRequired: means if collision is required at boundary
     // e.g., the ZouHe boundary condition explicitly requires collision
-    bool collisionRequired =
-        (vt == Vertex_Fluid || vt == Vertex_ZouHeVelocity ||
-         // vt == Vertex_KineticDiffuseWall ||
-         vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
-         vt == Vertex_ExtrapolPressure2ND || vt == Vertex_NoslipEQN);
+    bool collisionRequired = (vt != VertexType::ImmersedSolid);
     if (collisionRequired) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             Real tau = relaxationTime(compoIndex, 0, 0);
@@ -74,26 +70,23 @@ void KerStream(ACC<Real>& f, const ACC<Real>& fStage, const ACC<int>& nodeType,
                const ACC<int>& geometry) {
 #ifdef OPS_2D
     // ops_printf("Inside stream kernel!!!!!. \n");
-    VertexTypes vt = (VertexTypes)nodeType(0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0);
     VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
             int cx = (int)XI[xiIndex * LATTDIM];
             int cy = (int)XI[xiIndex * LATTDIM + 1];
-            if ((vt >= Vertex_Fluid) && (vt < Vertex_Boundary)) {
-                // ops_printf("I am inside if vt = %d. \n", (int)vt);
+
+            if (vt == VertexType::Fluid) {
                 f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                continue;
             }
-            if (vt >= Vertex_Boundary) {
-                // streamRequired: means if the particles with velocity parallel
-                // needs to be streamed at the boundary
-                bool streamRequired = (vt == Vertex_ZouHeVelocity ||
-                                       // vt == Vertex_KineticDiffuseWall ||
-                                       vt == Vertex_EQMDiffuseRefl ||
-                                       vt == Vertex_ExtrapolPressure1ST ||
-                                       vt == Vertex_ExtrapolPressure2ND ||
-                                       vt == Vertex_NoslipEQN);
+            //Block boundary and immersed boundary
+            if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
+                // TODO te be determined if necessary
+                bool streamRequired{true};
+
                 if (streamRequired) {
                     if ((cx == 0) && (cy == 0)) {
                         f(xiIndex, 0, 0) = fStage(xiIndex, 0, 0);
@@ -216,15 +209,16 @@ void KerStream(ACC<Real>& f, const ACC<Real>& fStage, const ACC<int>& nodeType,
                 }
             }
         }
-    }
+
 #endif  // OPS_2D
+    }
 }
 
 void KerCutCellCVTUpwind1st(const ACC<Real>& coordinateXYZ,
                             const ACC<int>& nodeType, const ACC<int>& geometry,
                             const ACC<Real>& f, ACC<Real>& fGradient) {
 #ifdef OPS_2D
-    VertexTypes vt = (VertexTypes)nodeType(0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0);
     VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
@@ -237,8 +231,11 @@ void KerCutCellCVTUpwind1st(const ACC<Real>& coordinateXYZ,
             // this can avoid access undefined memory if the halo point is set
             // incorrectly
             bool needCalc{true};
-            if (vt == Vertex_ImmersedSolid) needCalc = false;
-            if (vt >= Vertex_Boundary) {
+            if (vt == VertexType::ImmersedSolid) {
+                needCalc = false;
+            }
+            //Block and immersed boundary nodes
+            if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
                 switch (vg) {
                     case VG_IP:
                         if (cx > 0) {
@@ -342,7 +339,7 @@ void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
                             const ACC<int> nodeType, const ACC<int>& geometry,
                             const ACC<Real>& f, ACC<Real>& fGradient) {
 #ifdef OPS_2D
-    VertexTypes vt = (VertexTypes)nodeType(0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0);
     VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
@@ -354,48 +351,51 @@ void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
             bool needCalc{true};
             // setting a initial value
             fGradient(xiIndex, 0, 0) = 0;
-            if (vt == Vertex_ImmersedSolid) needCalc = false;
+            if (vt == VertexType::ImmersedSolid) {
+                needCalc = false;
+            }
             // make sure no calculation occurring at boundary when unnecessary
             // this can avoid access undefined memory if the halo point is set
             // incorrectly
-            if (vt >= Vertex_Fluid && vt < Vertex_Boundary) {
+            if (vt == VertexType::Fluid) {
                 // current node is a fluid point
                 if (cx > 0) {
-                    VertexTypes vtUpwind = (VertexTypes)nodeType(-1, 0);
+                    VertexType vtUpwind = (VertexType)nodeType(-1, 0);
                     VertexGeometryTypes vgUpwind =
                         (VertexGeometryTypes)geometry(-1, 0);
-                    if (vtUpwind >= Vertex_Boundary && vgUpwind == VG_IP) {
+                    if (vtUpwind != VertexType::Fluid && vgUpwind == VG_IP) {
                         // if the upwind node is boundary and VG_IP point
                         reduceOrderX = true;
                     }
                 }  // cx >0
                 if (cx < 0) {
-                    VertexTypes vtUpwind = (VertexTypes)nodeType(1, 0);
+                    VertexType vtUpwind = (VertexType)nodeType(1, 0);
                     VertexGeometryTypes vgUpwind =
                         (VertexGeometryTypes)geometry(1, 0);
-                    if (vtUpwind >= Vertex_Boundary && vgUpwind == VG_IM) {
+                    if (vtUpwind != VertexType::Fluid  && vgUpwind == VG_IM) {
                         // if the upwind node is boundary and VG_IM point
                         reduceOrderX = true;
                     }
                 }  // Cx<0
                 if (cy > 0) {
-                    VertexTypes vtUpwind = (VertexTypes)nodeType(0, -1);
+                    VertexType vtUpwind = (VertexType)nodeType(0, -1);
                     VertexGeometryTypes vgUpwind =
                         (VertexGeometryTypes)geometry(0, -1);
-                    if (vtUpwind >= Vertex_Boundary && vgUpwind == VG_JP) {
+                    if (vtUpwind != VertexType::Fluid  && vgUpwind == VG_JP) {
                         reduceOrderY = true;
                     }
                 }  // cy >0
                 if (cy < 0) {
-                    VertexTypes vtUpwind = (VertexTypes)nodeType(0, 1);
+                    VertexType vtUpwind = (VertexType)nodeType(0, 1);
                     VertexGeometryTypes vgUpwind =
                         (VertexGeometryTypes)geometry(0, 1);
-                    if (vtUpwind >= Vertex_Boundary && vgUpwind == VG_JM) {
+                    if (vtUpwind != VertexType::Fluid  && vgUpwind == VG_JM) {
                         reduceOrderY = true;
                     }
                 }  // cy < 0
             }      // current node is a fluid point
-            if (vt >= Vertex_Boundary) {
+            // Current node is a boundary node or a immersed boundary node
+            if (vt != VertexType::Fluid && vt != VertexType::ImmersedSolid) {
                 switch (vg) {
                     case VG_IP:
                         if (cx > 0) {
@@ -406,8 +406,8 @@ void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
                                     (VertexGeometryTypes)geometry(0, -1);
                                 if (((vgUpwind == VG_IPJM_O ||
                                       vgUpwind == VG_IPJP_O) &&
-                                     (((VertexTypes)nodeType(0, -2)) ==
-                                      Vertex_ImmersedSolid)) ||
+                                     (((VertexType)nodeType(0, -2)) ==
+                                      VertexType::ImmersedSolid)) ||
                                     (vgUpwind == VG_IPJM_I) ||
                                     (vgUpwind == VG_IPJP_I)) {
                                     reduceOrderY = true;
@@ -418,8 +418,8 @@ void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
                                     (VertexGeometryTypes)geometry(0, 1);
                                 if (((vgUpwind == VG_IPJM_O ||
                                       vgUpwind == VG_IPJP_O) &&
-                                     (((VertexTypes)nodeType(0, 2)) ==
-                                      Vertex_ImmersedSolid)) ||
+                                     (((VertexType)nodeType(0, 2)) ==
+                                      VertexType::ImmersedSolid)) ||
                                     (vgUpwind == VG_IPJM_I) ||
                                     (vgUpwind == VG_IPJP_I)) {
                                     reduceOrderY = true;
@@ -436,8 +436,8 @@ void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
                                     (VertexGeometryTypes)geometry(0, -1);
                                 if (((vgUpwind == VG_IMJM_O ||
                                       vgUpwind == VG_IMJP_O) &&
-                                     (((VertexTypes)nodeType(0, -2)) ==
-                                      Vertex_ImmersedSolid)) ||
+                                     (((VertexType)nodeType(0, -2)) ==
+                                      VertexType::ImmersedSolid)) ||
                                     (vgUpwind == VG_IMJM_I) ||
                                     (vgUpwind == VG_IMJP_I)) {
                                     reduceOrderY = true;
@@ -448,8 +448,8 @@ void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
                                     (VertexGeometryTypes)geometry(0, 1);
                                 if (((vgUpwind == VG_IMJM_O ||
                                       vgUpwind == VG_IMJP_O) &&
-                                     (((VertexTypes)nodeType(0, 2)) ==
-                                      Vertex_ImmersedSolid)) ||
+                                     (((VertexType)nodeType(0, 2)) ==
+                                      VertexType::ImmersedSolid)) ||
                                     (vgUpwind == VG_IMJM_I) ||
                                     (vgUpwind == VG_IMJP_I)) {
                                     reduceOrderY = true;
@@ -466,8 +466,8 @@ void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
                                     (VertexGeometryTypes)geometry(-1, 0);
                                 if (((vgUpwind == VG_IMJP_O ||
                                       vgUpwind == VG_IPJP_O) &&
-                                     (((VertexTypes)nodeType(-2, 0)) ==
-                                      Vertex_ImmersedSolid)) ||
+                                     (((VertexType)nodeType(-2, 0)) ==
+                                      VertexType::ImmersedSolid)) ||
                                     (vgUpwind == VG_IMJP_I) ||
                                     (vgUpwind == VG_IPJP_I)) {
                                     reduceOrderX = true;
@@ -478,8 +478,8 @@ void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
                                     (VertexGeometryTypes)geometry(1, 0);
                                 if (((vgUpwind == VG_IMJP_O ||
                                       vgUpwind == VG_IPJP_O) &&
-                                     (((VertexTypes)nodeType(2, 0)) ==
-                                      Vertex_ImmersedSolid)) ||
+                                     (((VertexType)nodeType(2, 0)) ==
+                                      VertexType::ImmersedSolid)) ||
                                     (vgUpwind == VG_IMJP_I) ||
                                     (vgUpwind == VG_IPJP_I)) {
                                     reduceOrderX = true;
@@ -496,8 +496,8 @@ void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
                                     (VertexGeometryTypes)geometry(-1, 0);
                                 if (((vgUpwind == VG_IMJM_O ||
                                       vgUpwind == VG_IPJM_O) &&
-                                     (((VertexTypes)nodeType(-2, 0)) ==
-                                      Vertex_ImmersedSolid)) ||
+                                     (((VertexType)nodeType(-2, 0)) ==
+                                      VertexType::ImmersedSolid)) ||
                                     (vgUpwind == VG_IMJM_I) ||
                                     (vgUpwind == VG_IPJM_I)) {
                                     reduceOrderX = true;
@@ -508,8 +508,8 @@ void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
                                     (VertexGeometryTypes)geometry(1, 0);
                                 if (((vgUpwind == VG_IPJM_O ||
                                       vgUpwind == VG_IMJM_O) &&
-                                     (((VertexTypes)nodeType(2, 0)) ==
-                                      Vertex_ImmersedSolid)) ||
+                                     (((VertexType)nodeType(2, 0)) ==
+                                      VertexType::ImmersedSolid)) ||
                                     (vgUpwind == VG_IMJM_I) ||
                                     (vgUpwind == VG_IPJM_I)) {
                                     reduceOrderX = true;
@@ -740,7 +740,7 @@ void KerCutCellSemiImplicitTimeMach(
     feq(5),
     relaxationTime(6), bodyForce(7), f(8)
     */
-    VertexTypes vt = (VertexTypes)nodeType(0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0);
     VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
         Real tau = relaxationTime(compoIndex, 0, 0);
@@ -749,8 +749,11 @@ void KerCutCellSemiImplicitTimeMach(
             Real cx{XI[xiIndex * LATTDIM]};
             Real cy{XI[xiIndex * LATTDIM + 1]};
             bool needMarch{true};
-            if (vt == Vertex_ImmersedSolid) needMarch = false;
-            if (vt >= Vertex_Boundary) {
+            if (vt == VertexType::ImmersedSolid) {
+                needMarch = false;
+            }
+            //Block or immersed boundary
+            if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
                 switch (vg) {
                     case VG_IP:
                         if (cx > 0) {
@@ -836,7 +839,7 @@ void KerCutCellExplicitTimeMach(
     feq(5),
     relaxationTime(6), bodyForce(7), f(8)
     */
-    VertexTypes vt = (VertexTypes)nodeType(0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0);
     VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
         Real tau = relaxationTime(compoIndex, 0, 0);
@@ -845,8 +848,11 @@ void KerCutCellExplicitTimeMach(
             Real cx{XI[xiIndex * LATTDIM]};
             Real cy{XI[xiIndex * LATTDIM + 1]};
             bool needMarch{true};
-            if (vt == Vertex_ImmersedSolid) needMarch = false;
-            if (vt >= Vertex_Boundary) {
+            if (vt == VertexType::ImmersedSolid) {
+                needMarch = false;
+            }
+            //Block or immersed boundary
+            if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) { {
                 switch (vg) {
                     case VG_IP:
                         if (cx > 0) {
@@ -927,38 +933,32 @@ void KerCutCellExplicitTimeMach(
 
 #ifdef OPS_3D  // three dimensional code
 
-void KerStream3D(ACC<Real>& f, const ACC<Real>& fStage,
+void KerStream3D(ACC<Real> & f, const ACC<Real>& fStage,
                  const ACC<int>& nodeType, const ACC<int>& geometry) {
 #ifdef OPS_3D
-    VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0, 0);
+    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
+        VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
             int cx = (int)XI[xiIndex * LATTDIM];
             int cy = (int)XI[xiIndex * LATTDIM + 1];
             int cz = (int)XI[xiIndex * LATTDIM + 2];
-            if ((vt >= Vertex_Fluid) && (vt < Vertex_Boundary)) {
+
+            if (vt == VertexType::Fluid) {
                 f(xiIndex, 0, 0, 0) = fStage(xiIndex, -cx, -cy, -cz);
             }
-            if (vt >= Vertex_Boundary) {
-                // streamRequired: means if the particles with velocity parallel
-                // needs to be streamed at the boundary
-                bool streamRequired =
-                    (vt == Vertex_ZouHeVelocity ||
-                     // vt == Vertex_KineticDiffuseWall ||
-                     vt == Vertex_EQMDiffuseRefl ||
-                     vt == Vertex_ExtrapolPressure1ST ||
-                     vt == Vertex_ExtrapolPressure2ND ||
-                     vt == Vertex_Periodic ||
-                     vt == Vertex_NoslipEQN ||
-                     vt == Vertex_Boundary);
+
+            if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
+                // TODO te be determined if necessary
+                bool streamRequired{true};
                 if (streamRequired) {
                     if ((cx == 0) && (cy == 0) && (cz == 0)) {
                         f(xiIndex, 0, 0, 0) = fStage(xiIndex, 0, 0, 0);
                         continue;
                     }
                 }
+
                 switch (vg) {
                         // faces six types
                     case VG_IP:

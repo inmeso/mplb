@@ -127,10 +127,10 @@ void UpdateFeqandBodyforce() {
 
 void TreatDomainBoundary(const int blockIndex, const int componentID,
                          const Real* givenVars, int* range,
-                         const VertexTypes boundaryType)
+                         const BoundaryType boundaryScheme)
 {
-    switch (boundaryType) {
-        case Vertex_ExtrapolPressure1ST: {
+    switch (boundaryScheme) {
+        case BoundaryScheme::ExtrapolPressure1ST: {
             ops_par_loop(
                 KerCutCellExtrapolPressure1ST, "KerCutCellExtrapolPressure1ST",
                 g_Block[blockIndex], SPACEDIM, range,
@@ -142,7 +142,7 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
                 ops_arg_dat(g_f[blockIndex], NUMXI, ONEPTREGULARSTENCIL, "double",
                             OPS_RW));
         } break;
-        case Vertex_ExtrapolPressure2ND: {
+        case BoundaryType__ExtrapolPressure2ND: {
             ops_par_loop(
                 KerCutCellExtrapolPressure2ND,
                 "KerCutCellExtrapolPressure2ND", g_Block[blockIndex],
@@ -155,7 +155,7 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
                 ops_arg_dat(g_f[blockIndex], NUMXI, TWOPTREGULARSTENCIL,
                             "double", OPS_RW));
         } break;
-        case Vertex_BounceBackWall: {
+        case BoundaryType__BounceBackWall: {
             ops_par_loop(KerCutCellBounceBack, "KerCutCellBounceBack",
                          g_Block[blockIndex], SPACEDIM, range,
                          ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL,
@@ -165,7 +165,7 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
                          ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL,
                                      "double", OPS_RW));
         } break;
-        case Vertex_ZouHeVelocity: {
+        case BoundaryType__ZouHeVelocity: {
             ops_par_loop(
                 KerCutCellZouHeVelocity, "KerCutCellZouHeVelocity,",
                 g_Block[blockIndex], SPACEDIM, range,
@@ -179,7 +179,7 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
                 ops_arg_dat(g_f[blockIndex], NUMXI, ONEPTLATTICESTENCIL,
                             "double", OPS_RW));
         } break;
-        case Vertex_KineticDiffuseWall: {
+        case BoundaryType__KineticDiffuseWall: {
             // ops_par_loop(
             //     KerCutCellKinetic, "KerCutCellKinetic", g_Block[blockIndex],
             //     SPACEDIM, range,
@@ -191,7 +191,7 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
             //     ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL, "double",
             //                 OPS_RW));
         }
-        case Vertex_EQMDiffuseRefl: {
+        case BoundaryType__EQMDiffuseRefl: {
             ops_par_loop(
                 KerCutCellEQMDiffuseRefl, "KerCutCellEQMDiffuseRefl",
                 g_Block[blockIndex], SPACEDIM, range,
@@ -204,7 +204,7 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
                             OPS_RW),
                 ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
-        case Vertex_FreeFlux: {
+        case BoundaryType__FreeFlux: {
             ops_par_loop(KerCutCellZeroFlux, "KerCutCellZeroFlux",
                          g_Block[blockIndex], SPACEDIM, range,
                          ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL,
@@ -214,7 +214,7 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
                          ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL,
                                      "double", OPS_RW));
         } break;
-        case Vertex_Periodic: {
+        case BoundaryType__Periodic: {
             ops_par_loop(KerCutCellPeriodic, "KerCutCellPeriodic",
                          g_Block[blockIndex], SPACEDIM, range,
                          ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
@@ -228,6 +228,17 @@ void TreatDomainBoundary(const int blockIndex, const int componentID,
             break;
     }
 }
+
+void ImplementBoundary() {
+    for (auto boundary : BlockBoundaries()) {
+        int* range{BoundarySurfaceRange(boundary.blockIndex,
+                                        boundary.boundarySurface)};
+        TreatBlockBoundary(boundary.blockIndex, boundary.componentID,
+                             boundary.givenVars.data(), range,
+                             boundary.boundaryScheme, boundary.boundarySurface);
+    }
+}
+
 
 void TreatEmbeddedBoundary() {
     for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {

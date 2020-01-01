@@ -28,7 +28,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 /*! @brief   Head file for wrap functions.
  * @author  Jianping Meng
@@ -40,10 +40,10 @@
 #define EVOLUTION3D_H_
 #include "boundary.h"
 #include "flowfield.h"
-#include "scheme.h"
-#include "type.h"
 #include "hilemms.h"
 #include "model.h"
+#include "scheme.h"
+#include "type.h"
 
 /*!
  * In this module, we provide subroutines that implement a update system over
@@ -104,10 +104,13 @@ void CopyDistribution3D(ops_dat* fDest, const ops_dat* fSrc);
 
 void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                           const Real* givenVars, int* range,
-                          const VertexTypes boundaryType);
+                          const BoundaryScheme boundaryScheme,
+                          const BoundarySurface boundarySurface);
 
-void Iterate(const SizeType steps, const SizeType checkPointPeriod, const SizeType start=0);
-void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod, const SizeType start=0);
+void Iterate(const SizeType steps, const SizeType checkPointPeriod,
+             const SizeType start = 0);
+void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
+             const SizeType start = 0);
 
 void UpdateMacroscopicBodyForce(const Real time);
 void SetInitialMacrosVars();
@@ -156,9 +159,7 @@ void Iterate(void (*cycle)(T), const Real convergenceCriteria,
     DestroyModel();
     DestroyFlowfield();
 }
-//TODO this function is temporary,might be renamed or removed future
-void PrepareSimulation();
-void CopyBlockEnvelopDistribution3D(ops_dat* fDest, const ops_dat* fSrc);
+void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc);
 void TransferHalos(const std::vector<ops_halo_group>& haloGroups);
 void RestartMacroVars4SteadySim();
 #endif /* OPS_3D */
