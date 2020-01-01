@@ -180,22 +180,26 @@ void PreDefinedBodyForce3D() {
 // TODO Delete unimplemented functionalities for release
 void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                           const Real* givenVars, int* range,
-                          const VertexTypes boundaryType) {
-    switch (boundaryType) {
-        case Vertex_ExtrapolPressure1ST: {
+                          const BoundaryScheme boundaryScheme,
+                          const BoundarySurface boundarySurface) {
+    const int surface{(int)boundarySurface};
+    switch (boundaryScheme) {
+        case BoundaryScheme::ExtrapolPressure1ST: {
             ops_par_loop(
                 KerCutCellExtrapolPressure1ST3D,
                 "KerCutCellExtrapolPressure1ST3D", g_Block[blockIndex],
                 SPACEDIM, range,
-                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
+                ops_arg_dat(g_f[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
+                            "double", OPS_RW),
                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                             ONEPTREGULARSTENCIL, "int", OPS_READ),
                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                             "int", OPS_READ),
-                ops_arg_dat(g_f[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
-                            "double", OPS_RW));
+                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
+                ops_arg_gbl(&componentID, 1, "int", OPS_READ),
+                ops_arg_gbl(&surface, 1, "int", OPS_READ));
         } break;
-        case Vertex_EQMDiffuseRefl: {
+        case BoundaryScheme::EQMDiffuseRefl: {
             ops_par_loop(
                 KerCutCellEQMDiffuseRefl3D, "KerCutCellEQMDiffuseRefl3D",
                 g_Block[blockIndex], SPACEDIM, range,
@@ -208,7 +212,7 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                 ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
                 ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
-        case Vertex_NoslipEQN: {
+        case BoundaryScheme::EQN: {
             ops_par_loop(
                 KerCutCellNoslipEQN3D, "KerCutCellNoslipEQN3D",
                 g_Block[blockIndex], SPACEDIM, range,
@@ -219,7 +223,7 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                 ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
                 ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
-        case Vertex_Periodic: {
+        case BoundaryScheme::Periodic: {
             ops_par_loop(KerCutCellPeriodic3D, "KerCutCellPeriodic3D",
                          g_Block[blockIndex], SPACEDIM, range,
                          ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL,
@@ -228,12 +232,23 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                                      LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                      LOCALSTENCIL, "int", OPS_READ),
-                         ops_arg_gbl(&componentID, 1, "int", OPS_READ));
+                         ops_arg_gbl(&componentID, 1, "int", OPS_READ),
+                         ops_arg_gbl(&surface, 1, "int", OPS_READ));
         } break;
         default:
             break;
     }
     //}
+}
+
+void ImplementBoundary3D() {
+    for (auto boundary : BlockBoundaries()) {
+        int* range{BoundarySurfaceRange(boundary.blockIndex,
+                                        boundary.boundarySurface)};
+        TreatBlockBoundary3D(boundary.blockIndex, boundary.componentID,
+                             boundary.givenVars.data(), range,
+                             boundary.boundaryScheme, boundary.boundarySurface);
+    }
 }
 
 // void TreatEmbeddedBoundary3D() {
@@ -303,7 +318,7 @@ void CopyDistribution3D(ops_dat* fDest, const ops_dat* fSrc) {
     }
 }
 
-void CopyBlockEnvelopDistribution3D(Field<Real> fDest, Field<Real> fSrc) {
+void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngImin());
         ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
@@ -510,10 +525,6 @@ void RestartMacroVars4SteadySim() {
     }
 }
 
-void PrepareSimulation() {
-    PrepareFlowField();
-    PrepareBoundary();
-}
 void StreamCollision3D(const Real time) {
 #if DebugLevel >= 1
     ops_printf("Calculating the macroscopic variables...\n");
@@ -543,7 +554,7 @@ void StreamCollision3D(const Real time) {
 #endif
     // TODO This function shall be inside evolution3D.cpp
     // TODO The data structure for BCs shall be inside boundary module
-    ImplementBoundaryConditions();
+    ImplementBoundary3D();
 }
 
 
