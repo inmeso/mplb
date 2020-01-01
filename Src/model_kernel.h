@@ -50,8 +50,8 @@
 
 // two dimensional code
 void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
-    VertexTypes vt{(VertexTypes)nodeType(0, 0)};
-    if (vt != Vertex_ImmersedSolid) {
+    VertexType vt{(VertexType)nodeType(0, 0)};
+    if (vt != VertexType::ImmersedSolid) {
         for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
             CollisionType CollisionType{
                 (CollisionType)CollisionType[compoIndex]};
@@ -102,8 +102,8 @@ void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq) {
 void KerCalcMacroVars(const ACC<int>& nodeType, const ACC<Real>& f,
                       ACC<Real>& macroVars) {
 #ifdef OPS_2D
-    VertexTypes vt = (VertexTypes)nodeType(0, 0);
-    if (vt != Vertex_ImmersedSolid) {
+    VertexType vt = (VertexType)nodeType(0, 0);
+    if (vt != VertexType::ImmersedSolid) {
         bool rhoCalculated{false};
         bool veloCalculated[LATTDIM];
         for (int lattIdx = 0; lattIdx < LATTDIM; lattIdx++) {
@@ -362,9 +362,9 @@ void KerCalcBodyForce(const Real* time, const ACC<int>& nodeType,
     const Real g[]{0.0001, 0};
 
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        VertexTypes vt =
-            (VertexTypes)nodeType(compoIndex, 0, 0);
-        if (vt != Vertex_ImmersedSolid) {
+        VertexType vt =
+            (VertexType)nodeType(compoIndex, 0, 0);
+        if (vt != VertexType::ImmersedSolid) {
             BodyForceType forceType{(BodyForceType)FORCETYPE[compoIndex]};
             const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
             switch (forceType) {
@@ -427,9 +427,9 @@ void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<Real>& macroVars,
                            const ACC<int>& nodeType, const int* componentId) {
 #ifdef OPS_3D
     const int compoIndex{*componentId};
-    VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
+    VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
 
-    if (vt != Vertex_ImmersedSolid) {
+    if (vt != VertexType::ImmersedSolid) {
         const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
         Real rho{macroVars(startPos, 0, 0, 0)};
         Real u{macroVars(startPos + 1, 0, 0, 0)};
@@ -463,15 +463,11 @@ void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
                                const Real* dt, const int* componentId) {
 #ifdef OPS_3D
     const int compoIndex{*componentId};
-    VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
+    VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
     // collisionRequired: means if collision is required at boundary
     // e.g., the ZouHe boundary condition explicitly requires collision
     bool collisionRequired =
-        (vt == Vertex_Fluid || vt == Vertex_ZouHeVelocity ||
-         // vt == Vertex_KineticDiffuseWall ||
-         vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
-         vt == Vertex_ExtrapolPressure2ND || vt == Vertex_Periodic ||
-         vt == Vertex_NoslipEQN || vt == Vertex_Boundary);
+        (vt != VertexType::ImmersedSolid);
     if (collisionRequired) {
         const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
         Real rho{macroVars(startPos, 0, 0, 0)};
@@ -485,7 +481,7 @@ void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
             const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
-            if (vt == Vertex_Fluid) {
+            if (vt == VertexType::Fluid) {
                 fStage(xiIndex, 0, 0, 0) =
                     f(xiIndex, 0, 0, 0) -
                     dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq) +
@@ -517,15 +513,11 @@ void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
                             const Real* dt, const int* componentId) {
 #ifdef OPS_3D
     const int compoIndex{*componentId};
-    VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
+    VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
     // collisionRequired: means if collision is required at boundary
     // e.g., the ZouHe boundary condition explicitly requires collision
     bool collisionRequired =
-        (vt == Vertex_Fluid || vt == Vertex_ZouHeVelocity ||
-         // vt == Vertex_KineticDiffuseWall ||
-         vt == Vertex_EQMDiffuseRefl || vt == Vertex_ExtrapolPressure1ST ||
-         vt == Vertex_ExtrapolPressure2ND || vt == Vertex_Periodic ||
-         vt == Vertex_NoslipEQN || vt == Vertex_Boundary);
+        (vt != VertexType::ImmersedSolid);
     if (collisionRequired) {
         const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
         Real rho{macroVars(startPos, 0, 0, 0)};
@@ -539,7 +531,7 @@ void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
             const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
-            if (vt == Vertex_Fluid) {
+            if (vt == VertexType::Fluid) {
                 fStage(xiIndex, 0, 0, 0) =
                     f(xiIndex, 0, 0, 0) -
                     dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq) +
@@ -570,8 +562,8 @@ void KerCalcBodyForce1ST3D(ACC<Real>& fStage, const ACC<Real>& acceration,
                         const int* componentId) {
 #ifdef OPS_3D
     const int compoIndex{*componentId};
-    VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
-    if (vt == Vertex_Fluid) {
+    VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
+    if (vt == VertexType::Fluid) {
         const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
         Real rho{macroVars(startPos, 0, 0, 0)};
         Real g[]{acceration(3 * compoIndex, 0, 0, 0),
@@ -601,8 +593,8 @@ void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
                           const int* componentId) {
 #ifdef OPS_3D
     const int compoIndex{*componentId};
-    VertexTypes vt = (VertexTypes)nodeType(compoIndex, 0, 0, 0);
-    if (vt == Vertex_Fluid) {
+    VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
+    if (vt == VertexType::Fluid) {
         const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
@@ -625,9 +617,9 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
     const Real y{coordinates(1, 0, 0, 0)};
     const Real z{coordinates(2, 0, 0, 0)};
     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        VertexTypes vt =
-            (VertexTypes)nodeType(compoIndex, 0, 0, 0);
-        if (vt != Vertex_ImmersedSolid) {
+        VertexType vt =
+            (VertexType)nodeType(compoIndex, 0, 0, 0);
+        if (vt != VertexType::ImmersedSolid) {
             bool rhoCalculated{false};
             Real rho{0};
             bool* veloCalculated = new bool[LATTDIM];
@@ -956,7 +948,7 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                                     f(xiIdx, 0, 0, 0);
                             }
                             macroVars(m, 0, 0, 0) /= rho;
-                            if (Vertex_Fluid == vt) {
+                            if (VertexType::Fluid == vt) {
                                 macroVars(m, 0, 0, 0) +=
                                     ((*dt) *
                                      acceleration(3* compoIndex,0,0,0) / 2);
@@ -998,7 +990,7 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                                     f(xiIdx, 0, 0, 0);
                             }
                             macroVars(m, 0, 0, 0) /= rho;
-                            if (Vertex_Fluid == vt) {
+                            if (VertexType::Fluid == vt) {
                                 macroVars(m, 0, 0, 0) +=
                                     ((*dt) *
                                      acceleration(3* compoIndex + 1,0,0,0) /
@@ -1038,7 +1030,7 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                                     f(xiIdx, 0, 0, 0);
                             }
                             macroVars(m, 0, 0, 0) /= rho;
-                            if (Vertex_Fluid == vt) {
+                            if (VertexType::Fluid == vt) {
                                 macroVars(m, 0, 0, 0) +=
                                     ((*dt) *
                                      acceleration(3*compoIndex + 2,0,0,0) /
