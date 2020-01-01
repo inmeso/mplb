@@ -231,9 +231,9 @@ void WriteFlowfieldToHdf5() {
     }
 }
 
-void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
-                         VertexTypes* edgeType, VertexTypes* cornerType) {
-    int nodeType = (int)Vertex_Fluid;
+void SetupDomainNodeType(int blockIndex, VertexType* faceType,
+                         VertexType* edgeType, VertexType* cornerType) {
+    int nodeType = (int)VertexType::Fluid;
     int* iterRange = BlockIterRng(blockIndex, BlockIterRngBulk);
     ops_par_loop(
         KerAssignProperty, "KerAssignProperty", g_Block[blockIndex], SPACEDIM,
@@ -241,7 +241,7 @@ void SetupDomainNodeType(int blockIndex, VertexTypes* faceType,
         ops_arg_dat(g_NodeType[blockIndex], 1, LOCALSTENCIL, "int", OPS_WRITE));
 
     // specify halo points
-    nodeType = (int)Vertex_ImmersedSolid;
+    nodeType = (int)VertexType::ImmersedSolid;
     iterRange = BlockIterRng(blockIndex, BlockIterRngJmin);
     int* haloIterRng = new int[2 * SPACEDIM];
     haloIterRng[0] = iterRange[0] - 1;
@@ -891,7 +891,7 @@ void  SetBlockGeometryProperty(int blockIndex) {
  */
 #ifdef OPS_2D
 void SetupEmbeddedBodyFlowAroundCircle(const int ratioLD, const int front,
-                                       const VertexTypes surface) {
+                                       const VertexType surface) {
     // specify the square
     const int nx = BLOCKSIZE[0];
     const int ny = BLOCKSIZE[1];
@@ -966,7 +966,7 @@ void SetupEmbeddedBodyFlowAroundCircle(const int ratioLD, const int front,
  * L Channel Length D Square Length H Channel height
  */
 void SetupEmbeddedBodyFlowAroundSquare(const int ratioLD, const int front,
-                                       const VertexTypes surface) {
+                                       const VertexType surface) {
     // specify the square
     const int nx = BLOCKSIZE[0];
     const int ny = BLOCKSIZE[1];
@@ -1037,7 +1037,7 @@ void SetupEmbeddedBodyFlowAroundSquare(const int ratioLD, const int front,
         squareimaxjmin, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
         ops_arg_dat(g_GeometryProperty[0], 1, LOCALSTENCIL, "int", OPS_WRITE));
     // nodeType
-    int nodeType{Vertex_ImmersedSolid};
+    int nodeType{VertexType::ImmersedSolid};
     int squareBulkRng[] = {squareXStart + 1, squareXEnd, squareYStart + 1,
                            squareYEnd};
     ops_par_loop(KerAssignProperty, "KerAssignProperty", g_Block[blockIndex],
@@ -1223,36 +1223,36 @@ void AssignCoordinates(int blockIndex, Real* coordinates[SPACEDIM]) {
 void InputBoundaryType(const int blockIndex) {
     int tmpVt;
     // input face property
-    VertexTypes faceType[4];
+    VertexType faceType[4];
     std::cout << "Please input boundary at left:";
     std::cin >> tmpVt;
-    faceType[0] = (VertexTypes)tmpVt;
+    faceType[0] = (VertexType)tmpVt;
     std::cout << "Please input boundary at right:";
     std::cin >> tmpVt;
-    faceType[1] = (VertexTypes)tmpVt;
+    faceType[1] = (VertexType)tmpVt;
     std::cout << "Please input boundary at bottom:";
     std::cin >> tmpVt;
-    faceType[2] = (VertexTypes)tmpVt;
+    faceType[2] = (VertexType)tmpVt;
     std::cout << "Please input boundary at top:";
     std::cin >> tmpVt;
-    faceType[3] = (VertexTypes)tmpVt;
+    faceType[3] = (VertexType)tmpVt;
 
     // input corner property
-    VertexTypes cornerType[4];
+    VertexType cornerType[4];
     std::cout << "Please input boundary at leftBottom:";
     std::cin >> tmpVt;
-    cornerType[0] = (VertexTypes)tmpVt;
+    cornerType[0] = (VertexType)tmpVt;
     std::cout << "Please input boundary at leftTop:";
     std::cin >> tmpVt;
-    cornerType[1] = (VertexTypes)tmpVt;
+    cornerType[1] = (VertexType)tmpVt;
     std::cout << "Please input boundary at rightBottom:";
     std::cin >> tmpVt;
-    cornerType[2] = (VertexTypes)tmpVt;
+    cornerType[2] = (VertexType)tmpVt;
     std::cout << "Please input boundary at rightTop:";
     std::cin >> tmpVt;
-    cornerType[3] = (VertexTypes)tmpVt;
+    cornerType[3] = (VertexType)tmpVt;
 
-    VertexTypes* edgeType{nullptr};
+    VertexType* edgeType{nullptr};
 
     SetupDomainNodeType(blockIndex, faceType, edgeType, cornerType);
 }
@@ -1260,91 +1260,91 @@ void InputBoundaryType(const int blockIndex) {
 void InputBoundaryType3D(const int blockIndex) {
     int tmpVt;
     // input face property
-    VertexTypes faceType[6];
+    VertexType faceType[6];
     std::cout << "Please input boundary at left:";
     std::cin >> tmpVt;
-    faceType[0] = (VertexTypes)tmpVt;
+    faceType[0] = (VertexType)tmpVt;
     std::cout << "Please input boundary at right:";
     std::cin >> tmpVt;
-    faceType[1] = (VertexTypes)tmpVt;
+    faceType[1] = (VertexType)tmpVt;
     std::cout << "Please input boundary at bottom:";
     std::cin >> tmpVt;
-    faceType[2] = (VertexTypes)tmpVt;
+    faceType[2] = (VertexType)tmpVt;
     std::cout << "Please input boundary at top:";
     std::cin >> tmpVt;
-    faceType[3] = (VertexTypes)tmpVt;
+    faceType[3] = (VertexType)tmpVt;
     std::cout << "Please input boundary at front:";
     std::cin >> tmpVt;
-    faceType[5] = (VertexTypes)tmpVt;
+    faceType[5] = (VertexType)tmpVt;
     std::cout << "Please input boundary at back:";
     std::cin >> tmpVt;
-    faceType[4] = (VertexTypes)tmpVt;
+    faceType[4] = (VertexType)tmpVt;
 
     // input edge type
-    VertexTypes edgeType[12];
+    VertexType edgeType[12];
     std::cout << "Please input boundary at leftBottom:";
     std::cin >> tmpVt;
-    edgeType[0] = (VertexTypes)tmpVt;
+    edgeType[0] = (VertexType)tmpVt;
     std::cout << "Please input boundary at LeftTop:";
     std::cin >> tmpVt;
-    edgeType[1] = (VertexTypes)tmpVt;
+    edgeType[1] = (VertexType)tmpVt;
     std::cout << "Please input boundary at rightBottom:";
     std::cin >> tmpVt;
-    edgeType[2] = (VertexTypes)tmpVt;
+    edgeType[2] = (VertexType)tmpVt;
     std::cout << "Please input boundary at rightTop:";
     std::cin >> tmpVt;
-    edgeType[3] = (VertexTypes)tmpVt;
+    edgeType[3] = (VertexType)tmpVt;
     std::cout << "Please input boundary at leftBack:";
     std::cin >> tmpVt;
-    edgeType[4] = (VertexTypes)tmpVt;
+    edgeType[4] = (VertexType)tmpVt;
     std::cout << "Please input boundary at leftFront:";
     std::cin >> tmpVt;
-    edgeType[5] = (VertexTypes)tmpVt;
+    edgeType[5] = (VertexType)tmpVt;
     std::cout << "Please input boundary at rightBack:";
     std::cin >> tmpVt;
-    edgeType[6] = (VertexTypes)tmpVt;
+    edgeType[6] = (VertexType)tmpVt;
     std::cout << "Please input boundary at rightFront:";
     std::cin >> tmpVt;
-    edgeType[7] = (VertexTypes)tmpVt;
+    edgeType[7] = (VertexType)tmpVt;
     std::cout << "Please input boundary at bottomBack:";
     std::cin >> tmpVt;
-    edgeType[8] = (VertexTypes)tmpVt;
+    edgeType[8] = (VertexType)tmpVt;
     std::cout << "Please input boundary at bottomFront:";
     std::cin >> tmpVt;
-    edgeType[9] = (VertexTypes)tmpVt;
+    edgeType[9] = (VertexType)tmpVt;
     std::cout << "Please input boundary at topBack:";
     std::cin >> tmpVt;
-    edgeType[10] = (VertexTypes)tmpVt;
+    edgeType[10] = (VertexType)tmpVt;
     std::cout << "Please input boundary at topFront:";
     std::cin >> tmpVt;
-    edgeType[11] = (VertexTypes)tmpVt;
+    edgeType[11] = (VertexType)tmpVt;
 
     // input corner property
-    VertexTypes cornerType[8];
+    VertexType cornerType[8];
     std::cout << "Please input boundary at leftBottomBack:";
     std::cin >> tmpVt;
-    cornerType[0] = (VertexTypes)tmpVt;
+    cornerType[0] = (VertexType)tmpVt;
     std::cout << "Please input boundary at LeftBottomFront:";
     std::cin >> tmpVt;
-    cornerType[1] = (VertexTypes)tmpVt;
+    cornerType[1] = (VertexType)tmpVt;
     std::cout << "Please input boundary at LeftTopBack:";
     std::cin >> tmpVt;
-    cornerType[2] = (VertexTypes)tmpVt;
+    cornerType[2] = (VertexType)tmpVt;
     std::cout << "Please input boundary at LeftTopFront:";
     std::cin >> tmpVt;
-    cornerType[3] = (VertexTypes)tmpVt;
+    cornerType[3] = (VertexType)tmpVt;
     std::cout << "Please input boundary at RightBottomBack:";
     std::cin >> tmpVt;
-    cornerType[4] = (VertexTypes)tmpVt;
+    cornerType[4] = (VertexType)tmpVt;
     std::cout << "Please input boundary at RightBottomFront:";
     std::cin >> tmpVt;
-    cornerType[5] = (VertexTypes)tmpVt;
+    cornerType[5] = (VertexType)tmpVt;
     std::cout << "Please input boundary at RightTopBack:";
     std::cin >> tmpVt;
-    cornerType[6] = (VertexTypes)tmpVt;
+    cornerType[6] = (VertexType)tmpVt;
     std::cout << "Please input boundary at RightTopFront:";
     std::cin >> tmpVt;
-    cornerType[7] = (VertexTypes)tmpVt;
+    cornerType[7] = (VertexType)tmpVt;
     SetupDomainNodeType(blockIndex, faceType, edgeType, cornerType);
 }
 
