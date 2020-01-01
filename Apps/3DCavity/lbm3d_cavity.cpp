@@ -47,7 +47,7 @@
 #include "type.h"
 #include "configuration.h"
 #include "cavity3d.h"
-
+//Provide macroscopic initial conditions
 void SetInitialMacrosVars() {
     for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
         int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
@@ -60,7 +60,7 @@ void SetInitialMacrosVars() {
                      ops_arg_idx());
     }
 }
-
+//Provide macroscopic body-force term
 void UpdateMacroscopicBodyForce(const Real time) {}
 
 void simulate() {
@@ -105,35 +105,34 @@ void simulate() {
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
     // Left noSlipStationaryWall
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Left,
-                        BoundaryType_EQMDiffuseRefl, macroVarTypesatBoundary,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     // Right noSlipStationaryWall
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Right,
-                        BoundaryType_EQMDiffuseRefl, macroVarTypesatBoundary,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     // Top noslipMovingWall
-    std::vector<Real> noSlipMovingWall{0.001, 0, 0};
+    std::vector<Real> noSlipMovingWall{0.01, 0, 0};
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Top,
-                        BoundaryType_EQMDiffuseRefl, macroVarTypesatBoundary,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipMovingWall);
     // bottom noSlipStationaryWall
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Bottom,
-                        BoundaryType_EQMDiffuseRefl, macroVarTypesatBoundary,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     // front noSlipStationaryWall
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Front,
-                        BoundaryType_EQMDiffuseRefl, macroVarTypesatBoundary,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     // back noSlipStationaryWall
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Back,
-                        BoundaryType_EQMDiffuseRefl, macroVarTypesatBoundary,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
     std::vector<InitialType> initType{Initial_BGKFeq2nd};
     std::vector<SizeType> initalCompoId{0};
     DefineInitialCondition(initType,initalCompoId);
     Partition();
-    PrepareSimulation();
     SetInitialMacrosVars();
     PreDefinedInitialCondition3D();
     std::vector<Real> tauRef{0.01};
@@ -154,9 +153,10 @@ void simulate(const Configuration & config, const SizeType timeStep=0) {
         DefineMacroVars(config.macroVarTypes, config.macroVarNames,
                         config.macroVarIds, config.macroCompoIds);
     } else {
+        // restart from a time step
         DefineComponents(config.compoNames, config.compoIds, config.lattNames,
                          timeStep);
-         DefineMacroVars(config.macroVarTypes, config.macroVarNames,
+        DefineMacroVars(config.macroVarTypes, config.macroVarNames,
                         config.macroVarIds, config.macroCompoIds,timeStep);
     }
 
@@ -164,18 +164,20 @@ void simulate(const Configuration & config, const SizeType timeStep=0) {
     DefineBodyForce(config.bodyForceTypes, config.bodyForceCompoIds);
     DefineScheme(config.schemeType);
     DefineInitialCondition(config.initialTypes,config.initialConditionCompoId);
-    for (auto& bcConfig : config.blockBoundaryConditions) {
+    for (auto& bcConfig : config.blockBoundaryConfig) {
         DefineBlockBoundary(bcConfig.blockIndex, bcConfig.componentID,
-                            bcConfig.boundarySurface, bcConfig.boundaryType,
+                            bcConfig.boundarySurface, bcConfig.boundaryScheme,
                             bcConfig.macroVarTypesatBoundary,
-                            bcConfig.givenVars);
+                            bcConfig.givenVars, bcConfig.boundaryType);
     }
+    DefinePeriodicHaloPair3D({0});
     Partition();
-    PrepareSimulation();
     if (timeStep == 0) {
         SetInitialMacrosVars();
         PreDefinedInitialCondition3D();
     } else{
+        //Help function for restart a steady simulation
+        //Mainly make the residual calculation correct at first iteration.
         RestartMacroVars4SteadySim();
     }
 
@@ -193,17 +195,17 @@ int main(int argc, const char** argv) {
     ops_init(argc, argv, 1);
     double ct0, ct1, et0, et1;
     ops_timers(&ct0, &et0);
+    // start a simulation by hard-coding
     if (argc <= 1) {
         simulate();
     }
-
+    // start a new simulaton from a configuration file
     if (argc>1 && argc <=2){
-        ops_printf("Zero...\n");
         std::string configFileName(argv[1]);
         ReadConfiguration(configFileName);
         simulate(Config());
     }
-
+    // restart from the time step specified by argv[2]
     if (argc>2 && argc <=3){
         std::string configFileName(argv[1]);
         ReadConfiguration(configFileName);
