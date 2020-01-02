@@ -53,7 +53,7 @@ enum BndryDvType {
  * @param discreteVelocity components of a discrete velocity
  * @return BndryDvType discrete velocity type
  */
-BndryDvType FindBdyDvType3D(const VertexGeometryTypes vg,
+BndryDvType FindBdyDvType3D(const VertexGeometryType vg,
                             const Real* discreteVelocity);
 /*!
  * @brief Determining discrete velocity type a solid wall boundary
@@ -61,7 +61,7 @@ BndryDvType FindBdyDvType3D(const VertexGeometryTypes vg,
  * @param discreteVelocity components of a discrete velocity
  * @return BndryDvType discrete velocity type
  */
-BndryDvType FindBdyDvType(const VertexGeometryTypes vg,
+BndryDvType FindBdyDvType(const VertexGeometryType vg,
                           const Real* discreteVelocity);
 #ifdef OPS_2D
 // CutCell block boundary condition
@@ -133,10 +133,11 @@ void KerCutCellEmbeddedBoundary(const ACC<int>& nodeType,
  * @param geometryProperty e.g., corner types
  * @param f distribution
  */
-void KerCutCellExtrapolPressure1ST3D(const Real* givenBoundaryVars,
-                                     const ACC<int>& nodeType,
+void KerCutCellExtrapolPressure1ST3D(ACC<Real>& f, const ACC<int>& nodeType,
                                      const ACC<int>& geometryProperty,
-                                     ACC<Real>& f);
+                                     const Real* givenBoundaryVars,
+                                     const int* componentId,
+                                     const int* surface);
 /*!
  * @brief  Equilibrium diffuse reflection boundary condition: 3D
  * @param givenMacroVars  specified velocity
@@ -160,10 +161,18 @@ void KerCutCellNoslipEQN3D(ACC<Real>& f, const ACC<int>& nodeType,
 
 void KerCutCellPeriodic3D(ACC<Real>& f, const ACC<int>& nodeType,
                           const ACC<int>& geometryProperty,
-                          const int* componentId);
+                          const int* componentId, const int* surface);
 #endif /* OPS_3D*/
 
 const int BoundaryHaloNum();
 void SetBoundaryHaloNum(const int boundaryhaloNum);
-void BoundaryNormal3D(const VertexGeometryTypes vg, int* unitNormal);
+void BoundaryNormal3D(const VertexGeometryType vg, int* unitNormal);
+int* BoundarySurfaceRange(const int blockId, BoundarySurface surface);
+void DefineBlockBoundary(int blockIndex, int componentID,
+                         BoundarySurface boundarySurface,
+                         BoundaryScheme boundaryScheme,
+                         const std::vector<VariableTypes>& macroVarTypes,
+                         const std::vector<Real>& macroVarValues,
+                         const VertexType boundaryType=VertexType::Wall);
+const std::vector<BlockBoundary>& BlockBoundaries();
 #endif  // BOUNDARY_H

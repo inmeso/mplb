@@ -16,12 +16,14 @@
   "BodyForceType":["BodyForce_None"],
   "BodyForceCompoId":[0],
   "SchemeType":"Scheme_StreamCollision",
+
    "BoundaryCondition0":{
     "BlockIndex": 0,
     "ComponentId": 0,
-    "GivenVars":[0,0,0],
+    "GivenVars":[0.01,0,0],
     "BoundarySurface":"Top",
-    "BoundaryType": "Boundary_EQMDiffuseREfl",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
     "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
 
   },
@@ -30,8 +32,9 @@
     "BlockIndex": 0,
     "ComponentId": 0,
     "GivenVars":[0,0,0],
-    "BoundarySurface":"Top",
-    "BoundaryType": "Boundary_EQMDiffuseREfl",
+    "BoundarySurface":"Bottom",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
     "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
 
   },
@@ -39,9 +42,10 @@
   "BoundaryCondition2":{
      "BlockIndex": 0,
 	 "ComponentId": 0,
-	 "GivenVars":[0.01,0,0],
-	 "BoundarySurface":"Top",
-	 "BoundaryType": "Boundary_EQMDiffuseREfl",
+	 "GivenVars":[0.0,0,0],
+	 "BoundarySurface":"Left",
+   "BoundaryScheme": "EQMDiffuseREfl",
+   "BoundaryType": "Wall",
 	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
 
   },
@@ -50,8 +54,9 @@
      "BlockIndex": 0,
 	 "ComponentId": 0,
 	 "GivenVars":[0,0,0],
-	 "BoundarySurface":"Bottom",
-	 "BoundaryType": "Boundary_EQMDiffuseREfl",
+	 "BoundarySurface":"Right",
+   "BoundaryScheme": "EQMDiffuseREfl",
+   "BoundaryType": "Wall",
 	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
 
   },
@@ -61,7 +66,8 @@
 	 "ComponentId": 0,
 	 "GivenVars":[0,0,0],
 	 "BoundarySurface":"Front",
-	 "BoundaryType": "Boundary_EQMDiffuseREfl",
+   "BoundaryScheme": "EQMDiffuseREfl",
+   "BoundaryType": "Wall",
 	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
 
   },
@@ -71,7 +77,8 @@
 	 "ComponentId": 0,
 	 "GivenVars":[0,0,0],
 	 "BoundarySurface":"Back",
-	 "BoundaryType": "Boundary_EQMDiffuseREfl",
+   "BoundaryScheme": "EQMDiffuseREfl",
+   "BoundaryType": "Wall",
 	 "MacroVarTypesatBoundary": ["Variable_U","Variable_V","Variable_W"]
 
   },

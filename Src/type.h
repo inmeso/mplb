@@ -61,6 +61,7 @@ typedef std::size_t SizeType;
 #include "assert.h"
 #include <vector>
 #include "ops_seq_v2.h"
+#define NEWVERTEX
 
 // It looks that OPS always fills the uninitialised storage with 0 so
 // we try to avoid 0 value for these types
@@ -76,11 +77,27 @@ enum PointPosition {
     RelativelyInteriorToEdge = 4,
     RelativelyInteriorToFace = 5
 };
-
-enum VertexTypes {
+#ifdef NEWVERTEX
+enum class VertexType {
     // vtfluid is the general type of node
     // All specific fluid types should be started as vtft
-    Vertex_Fluid = 10,
+    Fluid = 10,
+    Inlet = 11,
+    OutLet = 12,
+    Periodic = 13,
+    Symmetry = 14,
+    Wall = 1000,
+    // Bulk node but with immersed solid nodes
+    ImmersedSolid = -1,
+    // Immersed solid but surface
+    ImmersedBoundary = -2
+};  // vt
+#endif
+#ifndef NEWVERTEX
+enum VertexType {
+    // vtfluid is the general type of node
+    // All specific fluid types should be started as vtft
+    VertexType::Fluid = 10,
     Vertex_Boundary = 1000,
     // Vertex_Boundary is the general type of node
     // All specific boundary types should be started as vtbt
@@ -105,26 +122,28 @@ enum VertexTypes {
     // It is unlikely to be used.
     Vertex_BoundaryCorner = 2000,
     // Bulk node but with immersed solid nodes
-    Vertex_ImmersedSolid = -1
+    VertexType::ImmersedSolid = -1
 };  // vt
+#endif
 // Use this type to describe the geometry property of a node in terms of surface
 // for example, it is i=0, j=0, or i=imax,j=jmax
 // Rule i(x)=1 j(y)=2 k(z)=3, start(min)=0 end(max)=1
 // So the surface i=0 is 10
 // in the 2D case, we suppose that there are only i,j planes.
 //
-enum VertexGeometryTypes {
+enum VertexGeometryType {
     // boundary node which usually a envelop of the region
     // boundary surface
     // VertexGeometry= VG
-    VG_Fluid = 0,  // a normal fluid node, no need to give geometry property
-    VG_ImmersedSolid =
-        -1,  // a normal immesed solid node, no need to give geometry property
+    // a normal fluid node, no need to specify geometry property
+    VG_Fluid = 0,
+    // a normal immersed solid node, no need to specify geometry property
+    VG_ImmersedSolid = -1,
     // surface property, the normal direction
-    VG_IP =
-        10,  // the normal direction pointing to the Positive (P) X(I) direction
-    VG_IM =
-        11,  // the normal direction pointing to the Minor (M) X(I) direction
+    // the normal direction pointing to the Positive (P) X(I) direction
+    VG_IP = 10,
+    // the normal direction pointing to the Minor (M) X(I) direction
+    VG_IM = 11,
     VG_JP = 20,
     VG_JM = 21,
     VG_KP = 30,  // 3D
@@ -247,21 +266,27 @@ enum BoundarySurface {
     BoundarySurface_Back = 5,
 };
 
-enum BoundaryType {
-    BoundaryType_KineticDiffuseWall = 11,
-    BoundaryType_KineticSpelluarWall = 12,
-    BoundaryType_SlipWall = 13,
-    BoundaryType_VelocityInlet = 14,
-    BoundaryType_VelocityOutlet = 15,
-    BoundaryType_ExtrapolPressure1ST = 16,
-    BoundaryType_ExtrapolPressure2ND = 17,
-    BoundaryType_Periodic = 18,
-    BoundaryType_Uniform = 19,
-    BoundaryType_BounceBackWall = 20,
-    BoundaryType_FreeFlux = 21,
-    BoundaryType_ZouHeVelocity = 22,
-    BoundaryType_EQN = 23,
-    BoundaryType_EQMDiffuseRefl = 24
+enum class BoundaryScheme {
+    KineticDiffuseWall = 11,
+    KineticSpelluarWall = 12,
+    ExtrapolPressure1ST = 16,
+    ExtrapolPressure2ND = 17,
+    Periodic = 18,
+    BounceBack = 20,
+    FreeFlux = 21,
+    ZouHeVelocity = 22,
+    EQN = 23,
+    EQMDiffuseRefl = 24
+};
+
+struct BlockBoundary {
+    SizeType blockIndex;
+    SizeType componentID;
+    std::vector<Real> givenVars;
+    BoundarySurface boundarySurface;
+    BoundaryScheme boundaryScheme;
+    std::vector<VariableTypes> macroVarTypesatBoundary;
+    VertexType boundaryType;
 };
 
 typedef enum {

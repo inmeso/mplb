@@ -42,12 +42,163 @@
  * Other physical boundary schemes usually don't need halo point.
  *
  */
+
+// Vector to assemble all boundary conditions so as to use
+// in TreatDomainBoundary().
+
+std::vector<BlockBoundary> blockBoundaries;
+
 int boundaryHaloPt{1};
+
+const std::vector<BlockBoundary>& BlockBoundaries() { return blockBoundaries; }
+
+// This routine finds the index range of boundary surface
+int* BoundarySurfaceRange(const int blockId, BoundarySurface surface) {
+    int* boundarySurfaceRange;
+    switch (surface) {
+        case BoundarySurface_Left:
+            boundarySurfaceRange = BlockIterRng(blockId, IterRngImin());
+            break;
+
+        case BoundarySurface_Right:
+            boundarySurfaceRange = BlockIterRng(blockId, IterRngImax());
+            break;
+
+        case BoundarySurface_Top:
+            boundarySurfaceRange = BlockIterRng(blockId, IterRngJmax());
+            break;
+
+        case BoundarySurface_Bottom:
+            boundarySurfaceRange = BlockIterRng(blockId, IterRngJmin());
+            break;
+
+        case BoundarySurface_Front:
+            boundarySurfaceRange = BlockIterRng(blockId, IterRngKmax());
+            break;
+
+        case BoundarySurface_Back:
+            boundarySurfaceRange = BlockIterRng(blockId, IterRngKmin());
+            break;
+
+        default:
+            ops_printf("Surface entered for the BC is incorrect!\n");
+    }
+
+    return boundarySurfaceRange;
+}
+
+// TODO to be moved to the boundary module soon
+void DefineBlockBoundary(int blockIndex, int componentID,
+                         BoundarySurface boundarySurface,
+                         BoundaryScheme boundaryScheme,
+                         const std::vector<VariableTypes>& macroVarTypes,
+                         const std::vector<Real>& macroVarValues,
+                         const VertexType boundaryType) {   
+    // Set the number of halo point required by the boundary condition
+    // So far all boundary conditions are implemented in a way that requires no
+    // halos so we leave it as the initial value 1
+    // The only difference is the periodic boundary condition which needs same
+    // halos as required by the numerical scheme, which is set by the scheme
+    // module
+    // If necessary, uncomment the sentence below and give a correct number
+    // SetBoundaryHaloNum(1);
+
+    // Here we adopt the assumption that a boundary is defined by [\rho,u,v,w,T]
+    // in 3D or  [\rho,u,v,T] in 2D. For a kernel function for dealing with
+    // a boundary condition, these parameters shall be passed in a fixed order
+    // as shown.
+    const int numMacroVarTypes{macroVarTypes.size()};
+    const SizeType numMacroVarValues{macroVarValues.size()};
+
+    std::vector<Real> macroVarsAtBoundary;
+    const int macroVarNumOfCurrentComponent{
+        VARIABLECOMPPOS[2 * componentID + 1] -
+        VARIABLECOMPPOS[2 * componentID] + 1};
+    macroVarsAtBoundary.resize(macroVarNumOfCurrentComponent);
+
+    if (numMacroVarTypes == numMacroVarValues) {
+        for (int i = 0; i < numMacroVarValues; i++) {
+            int varPos{0};
+            switch (macroVarTypes[i]) {
+                case Variable_Rho:
+                    varPos = 0;
+                    break;
+                case Variable_U:
+                    varPos = 1;
+                    break;
+                case Variable_V:
+                    varPos = 2;
+                    break;
+                case Variable_W:
+                    if (3 == SPACEDIM) {
+                        varPos = 3;
+                    } else {
+                        varPos = -1;
+                        ops_printf(
+                            "Error! The velocity component w is defined/used "
+                            "for %iD problem.\n",
+                            SPACEDIM);
+                        assert(3 == SPACEDIM);
+                    }
+                    break;
+                case Variable_U_Force:
+                    varPos = 1;
+                    break;
+                case Variable_V_Force:
+                    varPos = 2;
+                    break;
+                case Variable_W_Force:
+                    if (3 == SPACEDIM) {
+                        varPos = 3;
+                    } else {
+                        varPos = -1;
+                        ops_printf(
+                            "Error! The velocity component w is defined/used "
+                            "for %iD problem.\n",
+                            SPACEDIM);
+                        assert(3 == SPACEDIM);
+                    }
+                    break;
+                case Variable_T:
+                    if (3 == SPACEDIM) {
+                        varPos = 4;
+                    } else {
+                        varPos = 2;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            macroVarsAtBoundary[varPos] = macroVarValues[i];
+        }
+        BlockBoundary blockBoundary;
+        blockBoundary.blockIndex = blockIndex;
+        blockBoundary.componentID = componentID;
+        blockBoundary.givenVars = macroVarsAtBoundary;
+        blockBoundary.boundarySurface = boundarySurface;
+        blockBoundary.boundaryScheme = boundaryScheme;
+        blockBoundary.boundaryType = boundaryType;
+        blockBoundaries.push_back(blockBoundary);
+        ops_printf(
+            "The scheme %i is adopted for Component %i at Surface %i, boundary "
+            "type %i and Block %i\n",
+            blockBoundary.boundaryScheme, blockBoundary.componentID,
+            blockBoundary.boundarySurface, blockBoundary.boundaryType,
+            blockBoundary.blockIndex);
+    } else {
+        ops_printf("Error! Expected %i values for BC but received only %i \n",
+                   numMacroVarTypes, numMacroVarValues);
+        assert(numMacroVarTypes == numMacroVarValues);
+    }
+}
+
 const int BoundaryHaloNum() { return boundaryHaloPt; }
+
 void SetBoundaryHaloNum(const int boundaryHaloNum) {
     boundaryHaloPt = boundaryHaloNum;
 }
-BndryDvType FindBdyDvType(const VertexGeometryTypes vg,
+
+BndryDvType FindBdyDvType(const VertexGeometryType vg,
                           const Real* discreteVelocity) {
     Real cx = discreteVelocity[0];
     Real cy = discreteVelocity[1];
@@ -185,7 +336,7 @@ BndryDvType FindBdyDvType(const VertexGeometryTypes vg,
     return res;
 }
 
-BndryDvType FindBdyDvType3D(const VertexGeometryTypes vg,
+BndryDvType FindBdyDvType3D(const VertexGeometryType vg,
                             const Real* discreteVelocity) {
     Real cx = discreteVelocity[0];
     Real cy = discreteVelocity[1];
@@ -702,7 +853,7 @@ BndryDvType FindBdyDvType3D(const VertexGeometryTypes vg,
     return res;
 }
 
-void BoundaryNormal3D(const VertexGeometryTypes vg, int* unitNormal) {
+void BoundaryNormal3D(const VertexGeometryType vg, int* unitNormal) {
     if (nullptr != unitNormal) {
         switch (vg) {
             case VG_IP: {

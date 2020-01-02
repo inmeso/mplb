@@ -57,16 +57,28 @@ NLOHMANN_JSON_SERIALIZE_ENUM(VariableTypes,
                              });
 
 NLOHMANN_JSON_SERIALIZE_ENUM(
-    BoundaryType,
+    VertexType,
     {
-        {BoundaryType_KineticDiffuseWall, "Boundary_KineticDiffuseWall"},
-        {BoundaryType_ExtrapolPressure1ST, "Boundary_ExtrapolPressure1ST"},
-        {BoundaryType_ExtrapolPressure2ND, "Boundary_ExtrapolPressure2ND"},
-        {BoundaryType_Periodic, "Boundary_Periodic"},
-        {BoundaryType_BounceBackWall, "Boundary_BounceBackWall"},
-        {BoundaryType_FreeFlux, "Boundary_FreeFlux"},
-        {BoundaryType_ZouHeVelocity, "Boundary_ZouHeVelocity"},
-        {BoundaryType_EQMDiffuseRefl, "Boundary_EQMDiffuseREfl"},
+        {VertexType::Inlet, "Inlet"},
+        {VertexType::OutLet, "OutLet"},
+        {VertexType::Periodic, "Periodic"},
+        {VertexType::Symmetry, "Symmetry"},
+        {VertexType::Wall, "Wall"},
+        {VertexType::ImmersedSolid, "ImmersedSolid"},
+        {VertexType::ImmersedBoundary, "ImmersedBoundary"}
+    });
+
+NLOHMANN_JSON_SERIALIZE_ENUM(
+    BoundaryScheme,
+    {
+        {BoundaryScheme::KineticDiffuseWall, "KineticDiffuseWall"},
+        {BoundaryScheme::ExtrapolPressure1ST, "ExtrapolPressure1ST"},
+        {BoundaryScheme::ExtrapolPressure2ND, "ExtrapolPressure2ND"},
+        {BoundaryScheme::Periodic, "Periodic"},
+        {BoundaryScheme::BounceBack, "BounceBack"},
+        {BoundaryScheme::FreeFlux, "FreeFlux"},
+        {BoundaryScheme::ZouHeVelocity, "ZouHeVelocity"},
+        {BoundaryScheme::EQMDiffuseRefl, "EQMDiffuseREfl"},
     });
 
 NLOHMANN_JSON_SERIALIZE_ENUM(
@@ -252,7 +264,7 @@ void ParseJson() {
     }
 
     SizeType boundaryConditionNum{2 * config.spaceDim * config.blockNum};
-    config.blockBoundaryConditions.resize(boundaryConditionNum);
+    config.blockBoundaryConfig.resize(boundaryConditionNum);
     for (int bcIdx = 0; bcIdx < boundaryConditionNum; bcIdx++) {
         std::string bcName{"BoundaryCondition" + std::to_string(bcIdx)};
         if (jsonConfig[bcName].is_null()) {
@@ -267,7 +279,7 @@ void ParseJson() {
                            bcName.c_str());
                 assert(jsonConfig[bcName]["BlockIndex"].is_null());
             } else {
-                config.blockBoundaryConditions[bcIdx].blockIndex =
+                config.blockBoundaryConfig[bcIdx].blockIndex =
                     jsonConfig[bcName]["BlockIndex"];
             }
 
@@ -277,7 +289,7 @@ void ParseJson() {
                     bcName.c_str());
                 assert(jsonConfig[bcName]["ComponentId"].is_null());
             } else {
-                config.blockBoundaryConditions[bcIdx].componentID =
+                config.blockBoundaryConfig[bcIdx].componentID =
                     jsonConfig[bcName]["ComponentId"];
             }
 
@@ -287,8 +299,18 @@ void ParseJson() {
                     bcName.c_str());
                 assert(jsonConfig[bcName]["BoundarySurface"].is_null());
             } else {
-                config.blockBoundaryConditions[bcIdx].boundarySurface =
+                config.blockBoundaryConfig[bcIdx].boundarySurface =
                     jsonConfig[bcName]["BoundarySurface"];
+            }
+
+            if (jsonConfig[bcName]["BoundaryScheme"].is_null()) {
+                ops_printf(
+                    "Error! Please insert the BoundaryType item into %s\n",
+                    bcName.c_str());
+                assert(jsonConfig[bcName]["BoundaryScheme"].is_null());
+            } else {
+                config.blockBoundaryConfig[bcIdx].boundaryScheme =
+                    jsonConfig[bcName]["BoundaryScheme"].get<BoundaryScheme>();
             }
 
             if (jsonConfig[bcName]["BoundaryType"].is_null()) {
@@ -297,8 +319,8 @@ void ParseJson() {
                     bcName.c_str());
                 assert(jsonConfig[bcName]["BoundaryType"].is_null());
             } else {
-                config.blockBoundaryConditions[bcIdx].boundaryType =
-                    jsonConfig[bcName]["BoundaryType"].get<BoundaryType>();
+                config.blockBoundaryConfig[bcIdx].boundaryType =
+                    jsonConfig[bcName]["BoundaryType"].get<VertexType>();
             }
 
             if (jsonConfig[bcName]["GivenVars"].is_null()) {
@@ -306,7 +328,7 @@ void ParseJson() {
                            bcName.c_str());
                 assert(jsonConfig[bcName]["GivenVars"].is_null());
             } else {
-                config.blockBoundaryConditions[bcIdx].givenVars =
+                config.blockBoundaryConfig[bcIdx].givenVars =
                     jsonConfig[bcName]["GivenVars"].get<std::vector<Real>>();
             }
             if (jsonConfig[bcName]["MacroVarTypesatBoundary"].is_null()) {
@@ -316,7 +338,7 @@ void ParseJson() {
                     bcName.c_str());
                 assert(jsonConfig[bcName]["MacroVarTypesatBoundary"].is_null());
             } else {
-                config.blockBoundaryConditions[bcIdx].macroVarTypesatBoundary =
+                config.blockBoundaryConfig[bcIdx].macroVarTypesatBoundary =
                     jsonConfig[bcName]["MacroVarTypesatBoundary"]
                         .get<std::vector<VariableTypes>>();
             }

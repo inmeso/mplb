@@ -180,22 +180,26 @@ void PreDefinedBodyForce3D() {
 // TODO Delete unimplemented functionalities for release
 void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                           const Real* givenVars, int* range,
-                          const VertexTypes boundaryType) {
-    switch (boundaryType) {
-        case Vertex_ExtrapolPressure1ST: {
+                          const BoundaryScheme boundaryScheme,
+                          const BoundarySurface boundarySurface) {
+    const int surface{(int)boundarySurface};
+    switch (boundaryScheme) {
+        case BoundaryScheme::ExtrapolPressure1ST: {
             ops_par_loop(
                 KerCutCellExtrapolPressure1ST3D,
                 "KerCutCellExtrapolPressure1ST3D", g_Block[blockIndex],
                 SPACEDIM, range,
-                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
+                ops_arg_dat(g_f[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
+                            "double", OPS_RW),
                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                             ONEPTREGULARSTENCIL, "int", OPS_READ),
                 ops_arg_dat(g_GeometryProperty[blockIndex], 1, LOCALSTENCIL,
                             "int", OPS_READ),
-                ops_arg_dat(g_f[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
-                            "double", OPS_RW));
+                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
+                ops_arg_gbl(&componentID, 1, "int", OPS_READ),
+                ops_arg_gbl(&surface, 1, "int", OPS_READ));
         } break;
-        case Vertex_EQMDiffuseRefl: {
+        case BoundaryScheme::EQMDiffuseRefl: {
             ops_par_loop(
                 KerCutCellEQMDiffuseRefl3D, "KerCutCellEQMDiffuseRefl3D",
                 g_Block[blockIndex], SPACEDIM, range,
@@ -208,7 +212,7 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                 ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
                 ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
-        case Vertex_NoslipEQN: {
+        case BoundaryScheme::EQN: {
             ops_par_loop(
                 KerCutCellNoslipEQN3D, "KerCutCellNoslipEQN3D",
                 g_Block[blockIndex], SPACEDIM, range,
@@ -219,7 +223,7 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                 ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
                 ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
-        case Vertex_Periodic: {
+        case BoundaryScheme::Periodic: {
             ops_par_loop(KerCutCellPeriodic3D, "KerCutCellPeriodic3D",
                          g_Block[blockIndex], SPACEDIM, range,
                          ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL,
@@ -228,12 +232,23 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                                      LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_GeometryProperty[blockIndex], 1,
                                      LOCALSTENCIL, "int", OPS_READ),
-                         ops_arg_gbl(&componentID, 1, "int", OPS_READ));
+                         ops_arg_gbl(&componentID, 1, "int", OPS_READ),
+                         ops_arg_gbl(&surface, 1, "int", OPS_READ));
         } break;
         default:
             break;
     }
     //}
+}
+
+void ImplementBoundary3D() {
+    for (auto boundary : BlockBoundaries()) {
+        int* range{BoundarySurfaceRange(boundary.blockIndex,
+                                        boundary.boundarySurface)};
+        TreatBlockBoundary3D(boundary.blockIndex, boundary.componentID,
+                             boundary.givenVars.data(), range,
+                             boundary.boundaryScheme, boundary.boundarySurface);
+    }
 }
 
 // void TreatEmbeddedBoundary3D() {
@@ -278,6 +293,17 @@ void PreDefinedInitialCondition3D() {
             }
         }
     }
+    if (!IsTransient()) {
+        for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+            int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
+            ops_par_loop(KerCopyMacroVars, "KerCopyMacroVars3D",
+                         g_Block[blockIdx], SPACEDIM, iterRng,
+                         ops_arg_dat(g_MacroVars[blockIdx], NUMMACROVAR,
+                                     LOCALSTENCIL, "double", OPS_READ),
+                         ops_arg_dat(g_MacroVarsCopy[blockIdx], NUMMACROVAR,
+                                     LOCALSTENCIL, "double", OPS_RW));
+        }
+    }
 }
 
 void CopyDistribution3D(ops_dat* fDest, const ops_dat* fSrc) {
@@ -292,7 +318,7 @@ void CopyDistribution3D(ops_dat* fDest, const ops_dat* fSrc) {
     }
 }
 
-void CopyBlockEnvelopDistribution3D(ops_dat* fDest, const ops_dat* fSrc) {
+void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngImin());
         ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
@@ -407,17 +433,10 @@ void CalcResidualError3D() {
     for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
         ops_reduction_result(g_ResidualErrorHandle[macroVarIdx],
                              (double*)&g_ResidualError[2 * macroVarIdx + 1]);
-        // ops_printf("\n macro id = %i, abs res error = %.28f, rel abs
-        // error =
-        // %.28f", macroVarIdx, g_ResidualError[2 * macroVarIdx]*10E21,
-        // g_ResidualError[2 * macroVarIdx+1]*10E21); ops_printf("\n macro
-        // id = %i, displayed error = %.28f \n",macroVarIdx,
-        // g_ResidualError[2 * macroVarIdx]/g_ResidualError[2 *
-        // macroVarIdx+1]);
     }
 }
 
-void DispResidualError3D(const int iter, const Real checkPeriod) {
+void DispResidualError3D(const int iter, const SizeType checkPeriod) {
     ops_printf("##########Residual Error at %i time step##########\n", iter);
     for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
         Real residualError = g_ResidualError[2 * macroVarIdx] /
@@ -428,21 +447,21 @@ void DispResidualError3D(const int iter, const Real checkPeriod) {
     }
 }
 
-void Iterate(const SizeType steps, const SizeType checkPointPeriod) {
+void Iterate(const SizeType steps, const SizeType checkPointPeriod,
+             const SizeType start) {
     const SchemeType scheme = Scheme();
     ops_printf("Starting the iteration...\n");
     switch (scheme) {
         case Scheme_StreamCollision: {
-            for (int iter = 0; iter < steps; iter++) {
+            for (int iter = start; iter < start + steps; iter++) {
                 const Real time{iter * TimeStep()};
                 StreamCollision3D(time);
-                if ((iter % checkPointPeriod) == 0 && iter != 0) {
+                if (((iter + 1) % checkPointPeriod) == 0) {
+                    ops_printf("%d iterations!\n", iter + 1);
                     UpdateMacroVars3D();
-                    CalcResidualError3D();
-                    DispResidualError3D(iter, checkPointPeriod * TimeStep());
-                    WriteFlowfieldToHdf5(iter);
-                    WriteDistributionsToHdf5(iter);
-                    WriteNodePropertyToHdf5(iter);
+                    WriteFlowfieldToHdf5((iter + 1));
+                    WriteDistributionsToHdf5((iter + 1));
+                    WriteNodePropertyToHdf5((iter + 1));
                 }
             }
         } break;
@@ -454,28 +473,28 @@ void Iterate(const SizeType steps, const SizeType checkPointPeriod) {
     DestroyFlowfield();
 }
 
-void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod) {
+void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
+             const SizeType start) {
     const SchemeType scheme = Scheme();
     ops_printf("Starting the iteration...\n");
     switch (scheme) {
         case Scheme_StreamCollision: {
-            int iter{0};
+            int iter{start};
             Real residualError{1};
             do {
                 const Real time{iter * TimeStep()};
                 StreamCollision3D(time);
+                iter = iter + 1;
                 if ((iter % checkPointPeriod) == 0) {
                     UpdateMacroVars3D();
                     CalcResidualError3D();
                     residualError =
-                        GetMaximumResidual(checkPointPeriod * TimeStep());
-                    DispResidualError3D(iter, checkPointPeriod * TimeStep());
+                        GetMaximumResidual(checkPointPeriod);
+                    DispResidualError3D(iter, checkPointPeriod);
                     WriteFlowfieldToHdf5(iter);
                     WriteDistributionsToHdf5(iter);
                     WriteNodePropertyToHdf5(iter);
                 }
-
-                iter = iter + 1;
             } while (residualError >= convergenceCriteria);
         } break;
         default:
@@ -493,10 +512,19 @@ void TransferHalos(const std::vector<ops_halo_group>& haloGroups) {
         }
     }
 }
-void PrepareSimulation() {
-    PrepareFlowField();
-    PrepareBoundary();
+
+void RestartMacroVars4SteadySim() {
+    for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
+        int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
+        ops_par_loop(KerCopyMacroVars, "KerCopyMacroVars3D", g_Block[blockIdx],
+                     SPACEDIM, iterRng,
+                     ops_arg_dat(g_MacroVars[blockIdx], NUMMACROVAR,
+                                 LOCALSTENCIL, "double", OPS_READ),
+                     ops_arg_dat(g_MacroVarsCopy[blockIdx], NUMMACROVAR,
+                                 LOCALSTENCIL, "double", OPS_RW));
+    }
 }
+
 void StreamCollision3D(const Real time) {
 #if DebugLevel >= 1
     ops_printf("Calculating the macroscopic variables...\n");
@@ -526,7 +554,7 @@ void StreamCollision3D(const Real time) {
 #endif
     // TODO This function shall be inside evolution3D.cpp
     // TODO The data structure for BCs shall be inside boundary module
-    ImplementBoundaryConditions();
+    ImplementBoundary3D();
 }
 
 

@@ -39,6 +39,7 @@
 
 #include "flowfield.h"
 std::string CASENAME;
+bool TRANSIENT{false};
 int BLOCKNUM{1};
 /*!
  * SPACEDIM=2 for 2D 3 for three 3D
@@ -49,13 +50,13 @@ int SPACEDIM{2};
  */
 int HALODEPTH{0};
 ops_block* g_Block{nullptr};
-ops_dat* g_f{nullptr};
-ops_dat* g_fStage{nullptr};
-ops_dat* g_MacroVars{nullptr};
-ops_dat* g_MacroVarsCopy{nullptr};
+Field<Real> g_f{"f"};
+Field<Real> g_fStage{"fStage"};
+Field<Real> g_MacroVars{"MacroVars"};
+Field<Real> g_MacroVarsCopy{"MacroVars_Copy"};
 Real* g_ResidualError{nullptr};
 ops_reduction* g_ResidualErrorHandle{nullptr};
-ops_dat* g_MacroBodyforce{nullptr};
+Field<Real> g_MacroBodyforce{"MacroBodyForce"};
 /**
  * DT: time step
  */
@@ -66,16 +67,11 @@ Real DT{1};
  * It must be a constant during the run time
  */
 Real* TAUREF{nullptr};
-ops_dat* g_DiscreteConvectionTerm{nullptr};
-ops_dat* g_CoordinateXYZ{nullptr};
+Field<Real> g_CoordinateXYZ{"CoordinateXYZ"};
 std::vector<std::vector<std::vector<Real>>> COORDINATES;
-/*!
- *metrics for 2D: 0 xi_x 1 xi_y  2 eta_x  3 eta_y
- *metrics for 3D:
- */
-ops_dat* g_Metrics{nullptr};
-ops_dat* g_NodeType{nullptr};
-ops_dat* g_GeometryProperty{nullptr};
+
+Field<int> g_NodeType{"NodeType"};
+Field<int> g_GeometryProperty{"GeometryProperty"};
 
 /*!
  * Formal collection of halo relations required by the OPS library
@@ -95,611 +91,39 @@ int* BlockIterRngBulk{nullptr};
  */
 int* BLOCKSIZE{nullptr};
 
+
+
 const int HaloPtNum() { return std::max(SchemeHaloNum(), BoundaryHaloNum()); }
 
-void DefineCase(std::string caseName, const int spaceDim) {
+void DefineCase(const std::string& caseName, const int spaceDim, const bool transient) {
     SetCaseName(caseName);
     SPACEDIM = spaceDim;
-}
-/*!
- * Manually setting up all the variables necessary for the simulation
- * This function has not been updated for 3D problems.
- */
-/*
-void DefineVariables() {
-    void* temp = NULL;
-    g_Block = new ops_block[BLOCKNUM];
-    g_f = new ops_dat[BLOCKNUM];
-    g_Bodyforce = new ops_dat[BLOCKNUM];
-    g_fStage = new ops_dat[BLOCKNUM];
-    g_MacroVars = new ops_dat[BLOCKNUM];
-    g_CoordinateXYZ = new ops_dat[BLOCKNUM];
-    BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngJmax = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngImax = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngImin = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngBulk = new int[BLOCKNUM * 2 * SPACEDIM];
-    // if steady flow
-    g_MacroVarsCopy = new ops_dat[BLOCKNUM];
-    g_ResidualErrorHandle = new ops_reduction[MacroVarsNum()];
-    g_ResidualError = new Real[2 * MacroVarsNum()];
-    // end if steady flow
-    int haloDepth = HaloDepth();
-#ifdef debug
-    ops_printf("%s%i\n", "DefineVariable: haloDepth=", haloDepth);
-#endif
-    // max halo depths for the dat in the positive direction
-    int d_p[2] = {haloDepth, haloDepth};
-    // max halo depths for the dat in the negative direction
-    int d_m[2] = {-haloDepth, -haloDepth};
-    int base[2] = {0, 0};
-    // problem specific
-    // if boundary fitting scheme
-    // g_Metrics= new ops_dat[BLOCKNUM];
-    // calculate the g_Metrics;
-    // if cutting cell method
-    g_NodeType = new ops_dat[BLOCKNUM];
-    g_GeometryProperty = new ops_dat[BLOCKNUM];
-    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
-        std::string label(std::to_string(blockIndex));
-        std::string blockName("Block_" + label);
-        // The name parameter is not properly typed in the definition of
-        // ops_decl_block, so there is a minor warning here.
-        g_Block[blockIndex] =
-            ops_decl_block(SPACEDIM, (char*)blockName.c_str());
-        int size[2] = {BlockSize(blockIndex)[0],
-                       BlockSize(blockIndex)[1]};  // size of the dat
-
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
-
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
-
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        std::string dataName("f_");
-        dataName += label;
-        g_f[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        dataName = "fStage_" + label;
-        g_fStage[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        dataName = "MacroBodyForce_" + label;
-        g_Bodyforce[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        dataName = "MacroVars_" + label;
-        g_MacroVars[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        dataName = "Nodetype_" + label;
-        // problem specific -- cut cell method
-        g_NodeType[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], 1, size, base, d_m, d_p,
-                         (int*)temp, "int", dataName.c_str());
-        dataName = "GeometryProperty_" + label;
-        g_GeometryProperty[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], 1, size, base, d_m, d_p,
-                         (int*)temp, "int", dataName.c_str());
-        dataName = "CoordinateXYZ_" + label;
-        g_CoordinateXYZ[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], 2, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        // if steady flow
-        // in the future, we may consider to add an option for the "if"
-        dataName = "MacroVars_Copy" + label;
-        g_MacroVarsCopy[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        for (int localIdx = 0; localIdx < MacroVarsNum(); localIdx++) {
-            g_ResidualErrorHandle[localIdx] = ops_decl_reduction_handle(
-                // this is double
-                sizeof(double), "double", MacroVarName()[localIdx].c_str());
-        }
-        // end if steady flow
-    }
-}
-*/
-
-void AllocateMemory() {
-    void* temp = NULL;
-    g_Block = new ops_block[BLOCKNUM];
-    g_f = new ops_dat[BLOCKNUM];
-    g_MacroBodyforce = new ops_dat[BLOCKNUM];
-    g_fStage = new ops_dat[BLOCKNUM];
-    g_MacroVars = new ops_dat[BLOCKNUM];
-    g_CoordinateXYZ = new ops_dat[BLOCKNUM];
-    BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngJmax = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngImax = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngImin = new int[BLOCKNUM * 2 * SPACEDIM];
-    if (3 == SPACEDIM) {
-        BlockIterRngKmax = new int[BLOCKNUM * 2 * SPACEDIM];
-        BlockIterRngKmin = new int[BLOCKNUM * 2 * SPACEDIM];
-    }
-    BlockIterRngBulk = new int[BLOCKNUM * 2 * SPACEDIM];
-    // if steady flow
-    g_MacroVarsCopy = new ops_dat[BLOCKNUM];
-    g_ResidualErrorHandle = new ops_reduction[MacroVarsNum()];
-    g_ResidualError = new Real[2 * MacroVarsNum()];
-    // end if steady flow
-
-
-    int haloDepth{HaloPtNum()};
-    HALODEPTH = HaloPtNum();
-
-    // max halo depths for the dat in the positive direction
-    // int d_p[2] = {haloDepth, haloDepth};
-    // max halo depths for the dat in the negative direction
-    // int d_m[2] = {-haloDepth, -haloDepth};
-    // int base[2] = {0, 0};
-
-    // max halo depths for the dat in the positive direction
-    int* d_p = new int[SPACEDIM];
-    // max halo depths for the dat in the negative direction
-    int* d_m = new int[SPACEDIM];
-    int* base = new int[SPACEDIM];
-    for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
-        d_p[cordIdx] = haloDepth;
-        d_m[cordIdx] = -haloDepth;
-        base[cordIdx] = 0;
-    }
-
-    // problem specific
-    // if boundary fitting scheme
-    // g_Metrics= new ops_dat[BLOCKNUM];
-    // calculate the g_Metrics;
-    // if cutting cell method
-    g_NodeType = new ops_dat[BLOCKNUM];
-    g_GeometryProperty = new ops_dat[BLOCKNUM];
-    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
-        std::string label(std::to_string(blockIndex));
-        std::string blockName("Block_" + label);
-        // The name parameter is not properly typed in the definition of
-        // ops_decl_block, so there is a minor warning here.
-        g_Block[blockIndex] =
-            ops_decl_block(SPACEDIM, (char*)blockName.c_str());
-
-        int* size = new int[SPACEDIM];  // size of the dat
-        for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
-            size[cordIdx] = BlockSize(blockIndex)[cordIdx];
-        }
-        // int size[2] = {BlockSize(blockIndex)[0],BlockSize(blockIndex)[1]}; //
-        // size of the dat
-
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
-
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
-
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
-
-        if (3 == SPACEDIM) {
-            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 4] = 1;
-            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 5] = size[2] - 1;
-
-            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM] = 0;
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 2] = 0;
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 4] = size[2] - 1;
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM] = 0;
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 3] = size[1];
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 5] = 1;
-        }
-
-        std::string dataName("f_");
-        dataName += label;
-        g_f[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        dataName = "fStage_" + label;
-        g_fStage[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        dataName = "MacroBodyForce_" + label;
-        const int bodyForceSize{SPACEDIM * NUMCOMPONENTS};
-        g_MacroBodyforce[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], bodyForceSize, size, base, d_m,
-                         d_p, (Real*)temp, RealC, dataName.c_str());
-        dataName = "MacroVars_" + label;
-        g_MacroVars[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        dataName = "Nodetype_" + label;
-        // problem specific -- cut cell method
-        g_NodeType[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMCOMPONENTS, size, base, d_m,
-                         d_p, (int*)temp, "int", dataName.c_str());
-        dataName = "GeometryProperty_" + label;
-        g_GeometryProperty[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], 1, size, base, d_m, d_p,
-                         (int*)temp, "int", dataName.c_str());
-        dataName = "CoordinateXYZ_" + label;
-        g_CoordinateXYZ[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], SPACEDIM, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        // if steady flow
-        // in the future, we may consider to add an option for the "if"
-        dataName = "MacroVars_Copy" + label;
-        g_MacroVarsCopy[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        for (int localIdx = 0; localIdx < MacroVarsNum(); localIdx++) {
-            g_ResidualErrorHandle[localIdx] = ops_decl_reduction_handle(
-                // this is double
-                sizeof(double), "double", MacroVarName()[localIdx].c_str());
-        }
-        // end if steady flow
-        delete[] size;
-    }
-    delete[] d_p;
-    delete[] d_m;
-    delete[] base;
+    TRANSIENT = transient;
 }
 
-/*!
- * setting up all the variables necessary for the simulation from a HDF5 file
- * This function can be used for both 2D and 3D cases
- */
-void DefineVariablesFromHDF5() {
-    void* temp = NULL;
-    g_Block = new ops_block[BLOCKNUM];
-    g_f = new ops_dat[BLOCKNUM];
-    g_MacroBodyforce = new ops_dat[BLOCKNUM];
-    g_fStage = new ops_dat[BLOCKNUM];
-    g_MacroVars = new ops_dat[BLOCKNUM];
-    g_CoordinateXYZ = new ops_dat[BLOCKNUM];
-    BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngJmax = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngImax = new int[BLOCKNUM * 2 * SPACEDIM];
-    BlockIterRngImin = new int[BLOCKNUM * 2 * SPACEDIM];
-    if (3 == SPACEDIM) {
-        BlockIterRngKmax = new int[BLOCKNUM * 2 * SPACEDIM];
-        BlockIterRngKmin = new int[BLOCKNUM * 2 * SPACEDIM];
-    }
-    BlockIterRngBulk = new int[BLOCKNUM * 2 * SPACEDIM];
-    // if steady flow
-    g_MacroVarsCopy = new ops_dat[BLOCKNUM];
-    g_ResidualErrorHandle = new ops_reduction[MacroVarsNum()];
-    g_ResidualError = new Real[2 * MacroVarsNum()];
-    // end if steady flow
-    int haloDepth = HaloDepth();
-    // max halo depths for the dat in the positive direction
-    int* d_p = new int[SPACEDIM];
-    // max halo depths for the dat in the negative direction
-    int* d_m = new int[SPACEDIM];
-    int* base = new int[SPACEDIM];
-    for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
-        d_p[cordIdx] = haloDepth;
-        d_m[cordIdx] = -haloDepth;
-        base[cordIdx] = 0;
-    }
-    // problem specific
-    // if boundary fitting scheme
-    // g_Metrics= new ops_dat[BLOCKNUM];
-    // calculate the g_Metrics;
-    // if cutting cell method
-    g_NodeType = new ops_dat[BLOCKNUM];
-    g_GeometryProperty = new ops_dat[BLOCKNUM];
-    for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-        std::string label(std::to_string(blockIndex));
-        std::string blockName("Block_" + label);
-        std::string fileName = CASENAME + "_" + "Block" + label + ".h5";
-        // The name parameter is not properly typed in the definition of
-        // ops_decl_block, so there is a minor warning here.
-        g_Block[blockIndex] =
-            ops_decl_block(SPACEDIM, (char*)blockName.c_str());
-        int* size = new int[SPACEDIM];  // size of the dat
-        for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
-            size[cordIdx] = BlockSize(blockIndex)[cordIdx];
-        }
-        // we assume a problem is at least 2D
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
-        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
-        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
-        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
-        if (3 == SPACEDIM) {
-            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 4] = 1;
-            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 5] = size[2] - 1;
-            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM] = 0;
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 2] = 0;
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 4] = size[2] - 1;
-            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM] = 0;
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 2] = 0;
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 3] = size[1];
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 4] = 0;
-            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 5] = 1;
-        }
-        std::string dataName("f_");
-        dataName += label;
-        g_f[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        dataName = "fStage_" + label;
-        g_fStage[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMXI, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        dataName = "MacroBodyForce_" + label;
-        const int bodyForceSize{SPACEDIM * NUMCOMPONENTS};
-        g_MacroBodyforce[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], bodyForceSize, size, base, d_m,
-                         d_p, (Real*)temp, RealC, dataName.c_str());
-        dataName = "MacroVars_" + label;
-        g_MacroVars[blockIndex] =
-            ops_decl_dat_hdf5(g_Block[blockIndex], NUMMACROVAR, "double",
-                              dataName.c_str(), fileName.c_str());
-        dataName = "Nodetype_" + label;
-        // problem specific -- cut cell method
-        g_NodeType[blockIndex] = ops_decl_dat_hdf5(
-            g_Block[blockIndex], NUMCOMPONENTS, "int", dataName.c_str(), fileName.c_str());
-        dataName = "GeometryProperty_" + label;
-        g_GeometryProperty[blockIndex] = ops_decl_dat_hdf5(
-            g_Block[blockIndex], 1, "int", dataName.c_str(), fileName.c_str());
-        dataName = "CoordinateXYZ_" + label;
-        g_CoordinateXYZ[blockIndex] =
-            ops_decl_dat_hdf5(g_Block[blockIndex], SPACEDIM, RealC,
-                              dataName.c_str(), fileName.c_str());
-        // if steady flow
-        // in the future, we may consider to add an option for the "if"
-        dataName = "MacroVars_Copy" + label;
-        g_MacroVarsCopy[blockIndex] =
-            ops_decl_dat(g_Block[blockIndex], NUMMACROVAR, size, base, d_m, d_p,
-                         (Real*)temp, RealC, dataName.c_str());
-        for (int localIdx = 0; localIdx < MacroVarsNum(); localIdx++) {
-            g_ResidualErrorHandle[localIdx] = ops_decl_reduction_handle(
-                // this is double
-                sizeof(double), "double", MacroVarName()[localIdx].c_str());
-        }
-        // end if steady flow
-        delete[] size;
-    }
-    delete[] d_p;
-    delete[] d_m;
-    delete[] base;
-}
-/*!
- * Manually define the halo relation between blocks.
- * When using
- */
-void DefineHaloTransfer() {
-    /*! @brief Defining the halo relationship
-     *  @details Currently we need to manually define them,
-     *  will be modified to read CGNF format in the future
-     **/
-    //     HaloRelationNum = 8;
-    //     HaloRelations = new ops_halo[HaloRelationNum];
-    //     int haloDepth = HaloDepth();
-    //     int d_p[2] =
-    //     { haloDepth, haloDepth }; //max halo depths for the dat in the
-    //     positive
-    //     direction
-    //     int d_m[2] =
-    //     { -haloDepth, -haloDepth }; //max halo depths for the dat in the
-    //     negative direction
-    //     int nx = BlockSize ( 0 ) [0];
-    //     int ny = BlockSize ( 0 ) [0];
-    //     int dir[] =
-    //     { 1, 2 };
-    //     {
-    //         int halo_iter[] =
-    //         { 1, ny[0] + d_p[1] - d_m[1] };
-    //         int base_from[] =
-    //         { 0, d_m[1] };
-    //         int base_to[] =
-    //         { nx, d_m[1] };
-    //         HaloRelations[0] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
-    //         base_from,
-    //                                      base_to, dir, dir );
-    //         base_from[0] = nx - 1; // need to be changed
-    //         base_to[0] = d_m[0];
-    //         HaloRelations[1] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
-    //         base_from,
-    //                                      base_to, dir, dir );
-    //     }
-    //     {
-    //         int halo_iter[] =
-    //         { nx + d_p[0] - d_m[0], 1 };
-    //         int base_from[] =
-    //         { d_m[0], 0 };
-    //         int base_to[] =
-    //         { d_m[0], ny };
-    //         HaloRelations[2] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
-    //         base_from,
-    //                                      base_to, dir, dir );
-    //         base_from[1] = ny - 1; //need to be changed
-    //         base_to[1] = d_m[1];
-    //         HaloRelations[3] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
-    //         base_from,
-    //                                      base_to, dir, dir );
-    //     }
-    //     // corner points
-    //     {
-    //         //
-    //         int halo_iter[] =
-    //         { 1, 1 };
-    //         int base_from[] =
-    //         { 0, 0 };
-    //         int base_to[] =
-    //         { nx, ny };
-    //         HaloRelations[4] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
-    //         base_from,
-    //                                      base_to, dir, dir );
-    //         base_from[0] = nx - 1; // need to be changed
-    //         base_from[1] = ny - 1;
-    //         base_to[0] = d_m[0];
-    //         base_to[1] = d_m[1];
-    //         HaloRelations[5] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
-    //         base_from,
-    //                                      base_to, dir, dir );
-    //     }
-    //     {
-    //         //
-    //         int halo_iter[] =
-    //         { 1, 1 };
-    //         int base_from[] =
-    //         { 0, ny - 1 };
-    //         int base_to[] =
-    //         { nx, d_m[1] };
-    //         HaloRelations[6] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
-    //         base_from,
-    //                                      base_to, dir, dir );
-    //         base_from[0] = nx - 1; // need to be changed
-    //         base_from[1] = 0;
-    //         base_to[0] = d_m[0];
-    //         base_to[1] = ny;
-    //         HaloRelations[7] = ops_decl_halo ( g_f[0], g_f[0], halo_iter,
-    //         base_from,
-    //                                      base_to, dir, dir );
-    //     }
-    //     HaloGroups = ops_decl_halo_group ( HaloRelationNum,
-    //     HaloRelations );
+bool IsTransient() { return TRANSIENT; }
 
-    // HaloRelationNum = 2;
-    // HaloRelations = new ops_halo[HaloRelationNum];
-    // int haloDepth = HaloDepth();
-    // // max halo depths for the dat in the positive direction
-    // int d_p[2] = {haloDepth, haloDepth};
-    // // max halo depths for the dat in the negative direction
-    // int d_m[2] = {-haloDepth, -haloDepth};
-    // // The domain size in the Block 0
-    // int nx = BlockSize(0)[0];
-    // int ny = BlockSize(0)[1];
-    // int dir[] = {1, 2};
-    // {
-    //     int halo_iter[] = {nx + d_p[0] - d_m[0], 1};
-    //     int base_from[] = {d_m[0], 0};
-    //     int base_to[] = {d_m[0], ny};
-    //     HaloRelations[0] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    //     base_from[1] = ny - 1;  // need to be changed
-    //     base_to[1] = d_m[1];
-    //     HaloRelations[1] = ops_decl_halo(g_f[0], g_f[0], halo_iter, base_from,
-    //                                      base_to, dir, dir);
-    // }
-
-    // HaloGroups = ops_decl_halo_group(HaloRelationNum, HaloRelations);
-}
 //This version is for the distribution function
 //Other version to follow.
+//TODO this function only suitable for single halo
 #ifdef OPS_3D
 void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair) {
-    if (g_f == nullptr) {
-        ops_printf("Distribution function must be allocated first!");
-        assert(g_f == nullptr);
-    }
+    DefinePeriodicHaloPair3D(haloPair, g_f[0], g_f.HaloDepth());
+}
+
+void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair, ops_dat dat, const int haloDepth) {
     if (BlockNum() > 1) {
         ops_printf(
             "Periodic boundary conditions are only valid for single-block "
             "applications!");
         assert(BlockNum() > 1);
     }
-    int haloDepth = HaloDepth();
+    if (dat==nullptr){
+        ops_printf(
+            "Data must be allocated before defining halo relations!");
+        assert(dat==nullptr);
+
+    }
     // max halo depths for the dat in the positive direction
     int d_p[3] = {haloDepth, haloDepth, haloDepth};
     // max halo depths for the dat in the negative direction
@@ -712,45 +136,48 @@ void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair) {
     for (auto& pair : haloPair) {
         if (0 == pair) {
             // left and right pair
-            int halo_iter[] = {1, ny + d_p[0] - d_m[0], nz + d_p[0] - d_m[0]};
+            int halo_iter[] = {haloDepth, ny + d_p[0] - d_m[0],
+                               nz + d_p[0] - d_m[0]};
             int base_from[] = {0, d_m[0], d_m[0]};
             int base_to[] = {nx, d_m[0], d_m[0]};
-            ops_halo leftToRight = ops_decl_halo(g_f[0], g_f[0], halo_iter,
-                                                 base_from, base_to, dir, dir);
-            base_from[0] = nx - 1;
+            ops_halo leftToRight = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            base_from[0] = nx + d_m[1];
             base_to[0] = d_m[1];
-            ops_halo rightToLeft = ops_decl_halo(g_f[0], g_f[0], halo_iter,
-                                                 base_from, base_to, dir, dir);
+            ops_halo rightToLeft = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
             ops_halo group[]{leftToRight, rightToLeft};
             HALOGROUPS.push_back(ops_decl_halo_group(2, group));
         }
 
         if (1 == pair) {
             // top and bottom pair
-            int halo_iter[] = {nx + d_p[0] - d_m[0], 1, nz + d_p[0] - d_m[0]};
+            int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth,
+                               nz + d_p[0] - d_m[0]};
             int base_from[] = {d_m[0], 0, d_m[0]};
             int base_to[] = {d_m[0], ny, d_m[0]};
-            ops_halo botToTop = ops_decl_halo(g_f[0], g_f[0], halo_iter,
-                                              base_from, base_to, dir, dir);
-            base_from[1] = ny - 1;
+            ops_halo botToTop = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                              base_to, dir, dir);
+            base_from[1] = ny + d_m[1];
             base_to[1] = d_m[1];
-            ops_halo topToBot = ops_decl_halo(g_f[0], g_f[0], halo_iter,
-                                              base_from, base_to, dir, dir);
+            ops_halo topToBot = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                              base_to, dir, dir);
             ops_halo group[]{botToTop, topToBot};
             HALOGROUPS.push_back(ops_decl_halo_group(2, group));
         }
 
         if (2 == pair) {
             // front and back pair
-            int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0], 1};
+            int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0],
+                               haloDepth};
             int base_from[] = {d_m[0], d_m[0], 0};
             int base_to[] = {d_m[0], d_m[0], nz};
-            ops_halo backToFront = ops_decl_halo(g_f[0], g_f[0], halo_iter,
-                                                 base_from, base_to, dir, dir);
-            base_from[2] = nz - 1;
-            base_to[2] = d_m[1];
-            ops_halo frontToBack = ops_decl_halo(g_f[0], g_f[0], halo_iter,
-                                                 base_from, base_to, dir, dir);
+            ops_halo backToFront = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            base_from[2] = nz + d_m[2];
+            base_to[2] = d_m[2];
+            ops_halo frontToBack = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
             ops_halo group[]{backToFront, frontToBack};
             HALOGROUPS.push_back(ops_decl_halo_group(2, group));
         }
@@ -760,19 +187,15 @@ void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair) {
 #endif //OPS_3D
 void Partition() {
     ops_partition((char*)"LBM Solver");
+    PrepareFlowField();
 }
 
-void DefineHaloTransfer3D() {
-    // This is a hard coded version
-    // could be used as an example for user-defined routines.
-
-}
 /*
  * We need a name to specify which file to input
  * To be decided: a single filename or an array of filenames
  */
 
-void WriteFlowfieldToHdf5(const long timeStep) {
+void WriteFlowfieldToHdf5(const SizeType timeStep) {
     for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
         std::string blockName("Block_");
         std::string label(std::to_string(blockIndex));
@@ -786,7 +209,7 @@ void WriteFlowfieldToHdf5(const long timeStep) {
     }
 }
 
-void WriteDistributionsToHdf5(const long timeStep) {
+void WriteDistributionsToHdf5(const SizeType timeStep) {
     for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
         std::string blockName("Block_");
         std::string label(std::to_string(blockIndex));
@@ -798,7 +221,7 @@ void WriteDistributionsToHdf5(const long timeStep) {
     }
 }
 
-void WriteNodePropertyToHdf5(const long timeStep) {
+void WriteNodePropertyToHdf5(const SizeType timeStep) {
     for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
         std::string blockName("Block_");
         std::string label(std::to_string(blockIndex));
@@ -810,38 +233,6 @@ void WriteNodePropertyToHdf5(const long timeStep) {
                                 fileName.c_str());
         ops_fetch_dat_hdf5_file(g_NodeType[blockIndex], fileName.c_str());
     }
-}
-
-void DefineHaloTransferFromHdf5() {}
-/*
- * Importing geometry from an external HDF5 file
- */
-void SetupFlowfieldfromHdf5() {
-    CASENAME = "Cavity3D";  // Input parameter
-    SPACEDIM = 3;
-    BLOCKNUM = 1;  // Input parameter
-    BLOCKSIZE = new int[BLOCKNUM * SPACEDIM];
-    BLOCKSIZE[0] = 101;  // Input parameters
-    BLOCKSIZE[1] = 101;  // Input parameters
-    BLOCKSIZE[2] = 3;    // Input parameters
-
-    TAUREF = new Real[ComponentNum()];
-    TAUREF[0] = 0.001;  // Input parameters
-    // All above parameters should be written down by the python script
-    Real minDx{1. / 100};  // Input parameters at this moment
-    Real minDy{1. / 100};  // Input parameters at this moment
-    // DT = 0.01 * fmin(minDx, minDy) / MaximumSpeed();  // finite difference
-    // scheme
-    // DT = 0.0001414;
-    // DT = fmin(fmin(minDx, minDy) / MaximumSpeed(),
-    //              0.5 * TAUREF[0]);  // finite difference scheme
-    DT = minDx / SoundSpeed();  // stream-collision
-    HALODEPTH = HaloPtNum();
-    ops_printf("%s\n", "Starting to allocate...");
-    DefineVariablesFromHDF5();
-    DefineHaloTransfer3D();
-    // above calls must be before the ops_partition call
-    ops_partition((char*)"LBM");
 }
 
 const std::string CaseName() { return CASENAME; }
@@ -858,15 +249,8 @@ const int HaloDepth() { return HALODEPTH; }
 void SetHaloDepth(const int haloDepth) { HALODEPTH = haloDepth; }
 
 void DestroyFlowfield() {
-    FreeArrayMemory(g_f);
-    FreeArrayMemory(g_fStage);
-    FreeArrayMemory(g_MacroBodyforce);
     FreeArrayMemory(g_Block);
-    FreeArrayMemory(g_MacroVars);
     FreeArrayMemory(TAUREF);
-    FreeArrayMemory(g_CoordinateXYZ);
-    FreeArrayMemory(g_NodeType);
-    FreeArrayMemory(g_GeometryProperty);
     FreeArrayMemory(BlockIterRngWhole);
     FreeArrayMemory(BlockIterRngBulk);
     FreeArrayMemory(BlockIterRngImax);
@@ -875,7 +259,7 @@ void DestroyFlowfield() {
     FreeArrayMemory(BlockIterRngJmin);
     FreeArrayMemory(BLOCKSIZE);
     // if steady flow
-    FreeArrayMemory(g_MacroVarsCopy);
+    // FreeArrayMemory(g_MacroVarsCopy);
     FreeArrayMemory(g_ResidualErrorHandle);
     FreeArrayMemory(g_ResidualError);
     if (3 == SPACEDIM) {
@@ -960,7 +344,7 @@ void SetBlockNum(const SizeType blockNum) {
     }
 }
 
-Real GetMaximumResidual(const Real checkPeriod) {
+Real GetMaximumResidual(const SizeType checkPeriod) {
     Real maxResError{0};
     Real relResErrorMacroVar{0};
     for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
@@ -1301,11 +685,26 @@ void  SetBlockGeometryProperty(int blockIndex) {
                                  LOCALSTENCIL, "int", OPS_WRITE));
     }
 }
-
+void SetBoundaryNodeType(){
+    for (auto boundary : BlockBoundaries()){
+    const int boundaryType{(int)boundary.boundaryType};
+    int* iterRange{
+        BoundarySurfaceRange(boundary.blockIndex, boundary.boundarySurface)};
+    const int compoId{boundary.componentID};
+    const int blockIndex{boundary.blockIndex};
+    // Specify general boundary type
+    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
+                 SPACEDIM, iterRange,
+                 ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
+                             LOCALSTENCIL, "int", OPS_WRITE),
+                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
+    }
+}
 void SetBulkandHaloNodesType(int blockIndex, int compoId) {
-    const int fluidType{(int)Vertex_Fluid};
-    const int immersedSolidType{(int)Vertex_ImmersedSolid};
-    const int boundaryType{(int)Vertex_Boundary};
+    const int fluidType{(int)VertexType::Fluid};
+    const int immersedSolidType{(int)VertexType::ImmersedSolid};
+
     int* iterRange = BlockIterRng(blockIndex, IterRngBulk());
     ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
                  SPACEDIM, iterRange,
@@ -1315,13 +714,6 @@ void SetBulkandHaloNodesType(int blockIndex, int compoId) {
                  ops_arg_gbl(&compoId, 1, "int", OPS_READ));
 
     iterRange = BlockIterRng(blockIndex, IterRngJmin());
-    // Specify general boundary type
-    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
-                 SPACEDIM, iterRange,
-                 ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
-                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                             LOCALSTENCIL, "int", OPS_WRITE),
-                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
     // Specify halo points
     int* haloIterRng = new int[2 * SPACEDIM];
     haloIterRng[0] = iterRange[0] - 1;
@@ -1340,13 +732,6 @@ void SetBulkandHaloNodesType(int blockIndex, int compoId) {
                  ops_arg_gbl(&compoId, 1, "int", OPS_READ));
 
     iterRange = BlockIterRng(blockIndex, IterRngJmax());
-    // Specify general boundary type
-    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
-                 SPACEDIM, iterRange,
-                 ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
-                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                             LOCALSTENCIL, "int", OPS_WRITE),
-                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
     haloIterRng[0] = iterRange[0] - 1;
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] + 1;
@@ -1364,13 +749,6 @@ void SetBulkandHaloNodesType(int blockIndex, int compoId) {
                  ops_arg_gbl(&compoId, 1, "int", OPS_READ));
 
     iterRange = BlockIterRng(blockIndex, IterRngImin());
-    // Specify general boundary type
-    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
-                 SPACEDIM, iterRange,
-                 ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
-                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                             LOCALSTENCIL, "int", OPS_WRITE),
-                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
     haloIterRng[0] = iterRange[0] - 1;
     haloIterRng[1] = iterRange[1] - 1;
     haloIterRng[2] = iterRange[2] - 1;
@@ -1388,13 +766,6 @@ void SetBulkandHaloNodesType(int blockIndex, int compoId) {
                  ops_arg_gbl(&compoId, 1, "int", OPS_READ));
 
     iterRange = BlockIterRng(blockIndex, IterRngImax());
-    // Specify general boundary type
-    ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
-                 SPACEDIM, iterRange,
-                 ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
-                 ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                             LOCALSTENCIL, "int", OPS_WRITE),
-                 ops_arg_gbl(&compoId, 1, "int", OPS_READ));
     haloIterRng[0] = iterRange[0] + 1;
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] - 1;
@@ -1413,13 +784,6 @@ void SetBulkandHaloNodesType(int blockIndex, int compoId) {
 
     if (3 == SPACEDIM) {
         iterRange = BlockIterRng(blockIndex, IterRngKmin());
-        // Specify general boundary type
-        ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
-                     SPACEDIM, iterRange,
-                     ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                                 LOCALSTENCIL, "int", OPS_WRITE),
-                     ops_arg_gbl(&compoId, 1, "int", OPS_READ));
         haloIterRng[0] = iterRange[0] - 1;
         haloIterRng[1] = iterRange[1] + 1;
         haloIterRng[2] = iterRange[2] - 1;
@@ -1435,13 +799,6 @@ void SetBulkandHaloNodesType(int blockIndex, int compoId) {
                      ops_arg_gbl(&compoId, 1, "int", OPS_READ));
 
         iterRange = BlockIterRng(blockIndex, IterRngKmax());
-        // Specify general boundary type
-        ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
-                     SPACEDIM, iterRange,
-                     ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
-                                 LOCALSTENCIL, "int", OPS_WRITE),
-                     ops_arg_gbl(&compoId, 1, "int", OPS_READ));
         haloIterRng[0] = iterRange[0] - 1;
         haloIterRng[1] = iterRange[1] + 1;
         haloIterRng[2] = iterRange[2] - 1;
@@ -1460,9 +817,8 @@ void SetBulkandHaloNodesType(int blockIndex, int compoId) {
 }
 
 void DefineBlocks(const SizeType blockNum,
-                         const std::vector<SizeType>& blockSize,
-                         const Real meshSize,
-                         const std::vector<Real>& startPos) {
+                  const std::vector<SizeType>& blockSize, const Real meshSize,
+                  const std::vector<Real>& startPos) {
     SetBlockNum(blockNum);
     SetBlockSize(blockSize);
     COORDINATES.resize(blockNum);
@@ -1491,8 +847,99 @@ void DefineBlocks(const SizeType blockNum,
             SPACEDIM * blockNum, numBlockStartPos);
         assert(numBlockStartPos == blockNum * SPACEDIM);
     }
-}
 
+    g_Block = new ops_block[BLOCKNUM];
+    BlockIterRngWhole = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmin = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngJmax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImax = new int[BLOCKNUM * 2 * SPACEDIM];
+    BlockIterRngImin = new int[BLOCKNUM * 2 * SPACEDIM];
+    if (3 == SPACEDIM) {
+        BlockIterRngKmax = new int[BLOCKNUM * 2 * SPACEDIM];
+        BlockIterRngKmin = new int[BLOCKNUM * 2 * SPACEDIM];
+    }
+    BlockIterRngBulk = new int[BLOCKNUM * 2 * SPACEDIM];
+    for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
+        std::string label(std::to_string(blockIndex));
+        std::string blockName("Block_" + label);
+        // The name parameter is not properly typed in the definition of
+        // ops_decl_block, so there is a minor warning here.
+        int* size = new int[SPACEDIM];  // size of the dat
+        for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
+            size[cordIdx] = BlockSize(blockIndex)[cordIdx];
+        }
+        g_Block[blockIndex] =
+            ops_decl_block(SPACEDIM, (char*)blockName.c_str());
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 1] = size[0] - 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 2] = 1;
+        BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 3] = size[1] - 1;
+
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 2] = size[1] - 1;
+        BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 3] = 1;
+
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM] = size[0] - 1;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 1] = 1;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 2] = 0;
+        BlockIterRngImin[blockIndex * 2 * SPACEDIM + 3] = size[1];
+
+        if (3 == SPACEDIM) {
+            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngWhole[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 4] = 1;
+            BlockIterRngBulk[blockIndex * 2 * SPACEDIM + 5] = size[2] - 1;
+
+            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngJmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngJmin[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngImax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngImin[blockIndex * 2 * SPACEDIM + 5] = size[2];
+
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM] = 0;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 1] = size[0];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 2] = 0;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 3] = size[1];
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 4] = size[2] - 1;
+            BlockIterRngKmax[blockIndex * 2 * SPACEDIM + 5] = size[2];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 1] = size[0];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 2] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 3] = size[1];
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 4] = 0;
+            BlockIterRngKmin[blockIndex * 2 * SPACEDIM + 5] = 1;
+        }
+        delete[] size;
+    }
+    //TODO temporialy here, later we shall have a define geometry
+    g_NodeType.CreateFieldFromScratch();
+    g_CoordinateXYZ.SetDataDim(SPACEDIM);
+    g_CoordinateXYZ.CreateFieldFromScratch();
+    g_GeometryProperty.CreateFieldFromScratch();
+}
 
 void AssignCoordinates(int blockIndex,
                        const std::vector<std::vector<Real>>& blockCoordinates) {
@@ -1545,4 +992,5 @@ void PrepareFlowField() {
         }
         AssignCoordinates(blockId, COORDINATES.at(blockId));
     }
+    SetBoundaryNodeType();
 }
