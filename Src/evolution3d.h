@@ -160,7 +160,6 @@ void Iterate(void (*cycle)(T), const Real convergenceCriteria,
     DestroyFlowfield();
 }
 void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc);
-void TransferHalos(const std::vector<ops_halo_group>& haloGroups);
 void RestartMacroVars4SteadySim();
 #endif /* OPS_3D */
 #endif /* EVOLUTION3D_H_ */

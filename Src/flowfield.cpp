@@ -76,7 +76,7 @@ Field<int> g_GeometryProperty{"GeometryProperty"};
 /*!
  * Formal collection of halo relations required by the OPS library
  */
-std::vector<ops_halo_group> HALOGROUPS;
+std::map<std::string,ops_halo_group> HALOGROUPS;
 
 int* BlockIterRngWhole{nullptr};
 int* BlockIterRngJmin{nullptr};
@@ -107,22 +107,21 @@ bool IsTransient() { return TRANSIENT; }
 //Other version to follow.
 //TODO this function only suitable for single halo
 #ifdef OPS_3D
-void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair) {
+void DefinePeriodicHaloPair3D(const std::map<int,std::string>& haloPair) {
     DefinePeriodicHaloPair3D(haloPair, g_f[0], g_f.HaloDepth());
 }
 
-void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair, ops_dat dat, const int haloDepth) {
+void DefinePeriodicHaloPair3D(const std::map<int,std::string>& haloPair, ops_dat dat,
+                              const int haloDepth) {
     if (BlockNum() > 1) {
         ops_printf(
             "Periodic boundary conditions are only valid for single-block "
             "applications!");
         assert(BlockNum() > 1);
     }
-    if (dat==nullptr){
-        ops_printf(
-            "Data must be allocated before defining halo relations!");
-        assert(dat==nullptr);
-
+    if (dat == nullptr) {
+        ops_printf("Data must be allocated before defining halo relations!");
+        assert(dat == nullptr);
     }
     // max halo depths for the dat in the positive direction
     int d_p[3] = {haloDepth, haloDepth, haloDepth};
@@ -134,28 +133,28 @@ void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair, ops_dat dat, con
     int nz = BlockSize(0)[2];
     int dir[] = {1, 2, 3};
     for (auto& pair : haloPair) {
-        if (0 == pair) {
+        if (0 == pair.first) {
             // left and right pair
-            int halo_iter[] = {haloDepth, ny + d_p[0] - d_m[0],
-                               nz + d_p[0] - d_m[0]};
-            int base_from[] = {0, d_m[0], d_m[0]};
-            int base_to[] = {nx, d_m[0], d_m[0]};
+            int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1],
+                               nz + d_p[2] - d_m[2]};
+            int base_from[] = {0, d_m[1], d_m[2]};
+            int base_to[] = {nx, d_m[1], d_m[2]};
             ops_halo leftToRight = ops_decl_halo(dat, dat, halo_iter, base_from,
                                                  base_to, dir, dir);
-            base_from[0] = nx + d_m[1];
-            base_to[0] = d_m[1];
+            base_from[0] = nx + d_m[0];
+            base_to[0] = d_m[0];
             ops_halo rightToLeft = ops_decl_halo(dat, dat, halo_iter, base_from,
                                                  base_to, dir, dir);
             ops_halo group[]{leftToRight, rightToLeft};
-            HALOGROUPS.push_back(ops_decl_halo_group(2, group));
+            HALOGROUPS.emplace(pair.second,ops_decl_halo_group(2, group));
         }
 
-        if (1 == pair) {
+        if (1 == pair.first) {
             // top and bottom pair
             int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth,
-                               nz + d_p[0] - d_m[0]};
-            int base_from[] = {d_m[0], 0, d_m[0]};
-            int base_to[] = {d_m[0], ny, d_m[0]};
+                               nz + d_p[2] - d_m[2]};
+            int base_from[] = {d_m[0], 0, d_m[2]};
+            int base_to[] = {d_m[0], ny, d_m[2]};
             ops_halo botToTop = ops_decl_halo(dat, dat, halo_iter, base_from,
                                               base_to, dir, dir);
             base_from[1] = ny + d_m[1];
@@ -163,15 +162,15 @@ void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair, ops_dat dat, con
             ops_halo topToBot = ops_decl_halo(dat, dat, halo_iter, base_from,
                                               base_to, dir, dir);
             ops_halo group[]{botToTop, topToBot};
-            HALOGROUPS.push_back(ops_decl_halo_group(2, group));
+            HALOGROUPS.emplace(pair.second,ops_decl_halo_group(2, group));
         }
 
-        if (2 == pair) {
+        if (2 == pair.first) {
             // front and back pair
-            int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[0] - d_m[0],
+            int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[1] - d_m[1],
                                haloDepth};
-            int base_from[] = {d_m[0], d_m[0], 0};
-            int base_to[] = {d_m[0], d_m[0], nz};
+            int base_from[] = {d_m[0], d_m[1], 0};
+            int base_to[] = {d_m[0], d_m[1], nz};
             ops_halo backToFront = ops_decl_halo(dat, dat, halo_iter, base_from,
                                                  base_to, dir, dir);
             base_from[2] = nz + d_m[2];
@@ -179,12 +178,13 @@ void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair, ops_dat dat, con
             ops_halo frontToBack = ops_decl_halo(dat, dat, halo_iter, base_from,
                                                  base_to, dir, dir);
             ops_halo group[]{backToFront, frontToBack};
-            HALOGROUPS.push_back(ops_decl_halo_group(2, group));
+            HALOGROUPS.emplace(pair.second, ops_decl_halo_group(2, group));
         }
     }
 }
 
 #endif //OPS_3D
+
 void Partition() {
     ops_partition((char*)"LBM Solver");
     PrepareFlowField();
@@ -359,7 +359,27 @@ Real GetMaximumResidual(const SizeType checkPeriod) {
     return maxResError;
 }
 
-const std::vector<ops_halo_group>& HaloGroups() { return HALOGROUPS; }
+const std::map<std::string,ops_halo_group>& HaloGroups() { return HALOGROUPS; }
+
+void TransferHalos() {
+    if (HALOGROUPS.size() > 0) {
+        for (auto haloGroup : HALOGROUPS){
+             ops_halo_transfer(haloGroup.second);
+        }
+    }
+}
+
+void TransferHalos(const std::string key) {
+    ops_halo_transfer(HALOGROUPS[key]);
+}
+
+void TransferHalos(const std::vector<std::string> keys) {
+    if (keys.size() > 0) {
+        for (auto key : keys) {
+            ops_halo_transfer(HALOGROUPS[key]);
+        }
+    }
+}
 
 void  SetBlockGeometryProperty(int blockIndex) {
     int geometryProperty = (int)VG_Fluid;
