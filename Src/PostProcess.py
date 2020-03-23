@@ -157,6 +157,44 @@ def ReadOPSDataHDF5(nx, ny, blockIndex, haloNum, spaceDim, macroVarNum, macroVar
     return res
 
 
+def ReadVariableWithHaloFromHDF53D(nx, ny, nz, blockIndex, haloNum, spaceDim, varName, varLen, fileName):
+    if ((not h5Loaded) or (not numpyLoaded)):
+        print("The h5py or numpy is not installed!")
+        res = "The h5py or numpy is not installed!"
+        return res
+    strBlockIdx = str(blockIndex)
+    dataFile = h5.File(fileName)
+    blockKey = 'Block_' + strBlockIdx
+    dataKey = varName+'_'+strBlockIdx
+    if (varLen == 1):
+        data = dataFile[blockKey][dataKey][:, :, :]
+        res = data.transpose(2, 1, 0)
+    if (varLen > 1):
+        data = ChangeShape3D(
+                dataFile[blockKey][dataKey][:, :, :], nx, ny, nz, varLen, haloNum)
+        res = data[:, :, :, :]
+    dataFile.close()
+    return res
+
+def ReadVariableFromHDF53D(nx, ny, nz, blockIndex, haloNum, spaceDim, varName, varLen, fileName):
+    if ((not h5Loaded) or (not numpyLoaded)):
+        print("The h5py or numpy is not installed!")
+        res = "The h5py or numpy is not installed!"
+        return res
+    strBlockIdx = str(blockIndex)
+    dataFile = h5.File(fileName)
+    blockKey = 'Block_' + strBlockIdx
+    dataKey = varName+'_'+strBlockIdx
+    if (varLen == 1):
+        data = dataFile[blockKey][dataKey][haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum]
+        res = data.transpose(2, 1, 0)
+    if (varLen > 1):
+        data = ChangeShape3D(
+                dataFile[blockKey][dataKey][:, :, :], nx, ny, nz, varLen, haloNum)
+        res = data[haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
+    dataFile.close()
+    return res
+
 def ReadOPSDataHDF53D(nx, ny, nz, blockIndex, haloNum, spaceDim, macroVarNum, macroVarNames, xiNum, fileName):
     """Converting a 3D result file into a single dictionary enclosing two sub-dictionaries, MacroVars and Distributions. In particular, all vectors or tensors will be accessed through components. """
     if ((not h5Loaded) or (not numpyLoaded)):
