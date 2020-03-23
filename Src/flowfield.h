@@ -91,7 +91,7 @@ const Real* TauRef();
 const std::string CaseName();
 const int HaloPtNum();
 Real TotalMeshSize();
-const std::vector<ops_halo_group>& HaloGroups();
+const std::map<std::string,ops_halo_group>& HaloGroups();
 void SetTimeStep(Real dt);
 void SetCaseName(const std::string caseName);
 void setCaseName(const char* caseName);
@@ -185,7 +185,6 @@ void Field<T>::CreateFieldFromScratch() {
         std::string dataName{name + "_" + std::to_string(blockIdx)};
         for (int cordIdx = 0; cordIdx < SPACEDIM; cordIdx++) {
             size[cordIdx] = BlockSize(blockIdx)[cordIdx];
-            base[cordIdx] = 0;
         }
         ops_dat localDat =
             ops_decl_dat(g_Block[blockIdx], dim, size, base, d_m, d_p, temp,
@@ -275,11 +274,33 @@ void SetupFlowfieldfromHdf5();
 void WriteFlowfieldToHdf5(const  SizeType timeStep);
 void WriteDistributionsToHdf5(const  SizeType timeStep);
 void WriteNodePropertyToHdf5(const  SizeType timeStep);
+template <typename T>
+//Write a Field variable to HDF5 file
+void WriteVariableToHdf5(const SizeType timeStep,Field<T>& var ) {
+    for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
+        std::string blockName("Block_");
+        std::string label(std::to_string(blockIndex));
+        std::string time(std::to_string(timeStep));
+        blockName += (label + "_" + time);
+        std::string fileName = CaseName() + "_" + blockName + ".h5";
+        ops_fetch_block_hdf5_file(g_Block[blockIndex], fileName.c_str());
+        ops_fetch_dat_hdf5_file(var[blockIndex], fileName.c_str());
+    }
+}
 void DestroyFlowfield();
-void DefineHaloTransfer();
-void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair);
-void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair, ops_dat dat,
-                              const int haloDepth);
+//Define the halo pair of implementing periodic boundary condition for
+//distribution function itself
+void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair);
+//Define the halo pair of implementing periodic boundary condition for a
+//specfied ops_dat variable
+void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair,
+                              ops_dat dat, const int haloDepth);
+// Transfer all defined halo pair at once
+void TransferHalos();
+// Transfer the halo pair specified by the key
+void TransferHalos(const std::string key);
+// Transfer a group of halo pairs specified by the keys
+void TransferHalos(const std::vector<std::string> keys);
 void SetHaloDepth(const int haloDepth);
 void Partition();
 void PrepareFlowField();
@@ -298,10 +319,12 @@ void DefineBlocks(const SizeType blockNum,
 
 bool IsTransient();
 template <typename T>
-void DefinePeriodicHaloPair3D(const std::vector<int>& haloPair,
+//Define the halo pair of implementing periodic boundary condition for a
+//specfied Field variable
+void DefinePeriodicHaloPair3D(const std::map<int,std::string>& haloPair,
                               Field<T>& data) {
 #ifdef OPS_3D
-    DefinePeriodicHaloPair3D(haloPair, data[0], data.HaloDepth);
+    DefinePeriodicHaloPair3D(haloPair, data[0], data.HaloDepth());
 #endif  // OPS_3D
 }
 #endif

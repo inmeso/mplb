@@ -223,7 +223,7 @@ void TreatBlockBoundary3D(const int blockIndex, const int componentID,
                 ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
                 ops_arg_gbl(&componentID, 1, "int", OPS_READ));
         } break;
-        case BoundaryScheme::Periodic: {
+        case BoundaryScheme::FDPeriodic:  {
             ops_par_loop(KerCutCellPeriodic3D, "KerCutCellPeriodic3D",
                          g_Block[blockIndex], SPACEDIM, range,
                          ops_arg_dat(g_f[blockIndex], NUMXI, LOCALSTENCIL,
@@ -318,9 +318,26 @@ void CopyDistribution3D(ops_dat* fDest, const ops_dat* fSrc) {
     }
 }
 
+//This routine is necessary now due to the following reason:
+// 1. the collision process might not be implemented at some kind of boundary
+// points so that f_stage will not be updated.
+// 2. The periodic boundary is acccutally implemented in the stream process now,
+// which needs the information at halo points.
+// The routine shall be removed if the stream process can be implemented in a
+// way that f_stage is not necessary.
 void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
+    // int haloIterRng[]{0, 0, 0, 0, 0, 0};
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngImin());
+        // haloIterRng[0] = iterRng[0] - 1;
+        // haloIterRng[1] = iterRng[1];
+        // haloIterRng[2] = iterRng[2] - 1;
+        // haloIterRng[3] = iterRng[3] + 1;
+        // haloIterRng[4] = iterRng[4] - 1;
+        // haloIterRng[5] = iterRng[5] + 1;
+        // ops_printf("IterRngImin= %d %d %d %d %d %d\n", haloIterRng[0],
+        //            haloIterRng[1], haloIterRng[2], haloIterRng[3],
+        //            haloIterRng[4], haloIterRng[5]);
         ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
                      iterRng,
                      ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
@@ -329,6 +346,15 @@ void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
                                  "double", OPS_READ));
 
         iterRng = BlockIterRng(blockIndex, IterRngImax());
+        // haloIterRng[0] = iterRng[0];
+        // haloIterRng[1] = iterRng[1] + 1;
+        // haloIterRng[2] = iterRng[2] - 1;
+        // haloIterRng[3] = iterRng[3] + 1;
+        // haloIterRng[4] = iterRng[4] - 1;
+        // haloIterRng[5] = iterRng[5] + 1;
+        // ops_printf("IterRngImax= %d %d %d %d %d %d\n", haloIterRng[0],
+        //            haloIterRng[1], haloIterRng[2], haloIterRng[3],
+        //            haloIterRng[4], haloIterRng[5]);
         ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
                      iterRng,
                      ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
@@ -336,6 +362,15 @@ void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
                      ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_READ));
         iterRng = BlockIterRng(blockIndex, IterRngJmin());
+        // haloIterRng[0] = iterRng[0] - 1;
+        // haloIterRng[1] = iterRng[1] + 1;
+        // haloIterRng[2] = iterRng[2] - 1;
+        // haloIterRng[3] = iterRng[3];
+        // haloIterRng[4] = iterRng[4] - 1;
+        // haloIterRng[5] = iterRng[5] + 1;
+        // ops_printf("IterRngJmin= %d %d %d %d %d %d\n", haloIterRng[0],
+        //            haloIterRng[1], haloIterRng[2], haloIterRng[3],
+        //            haloIterRng[4], haloIterRng[5]);
         ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
                      iterRng,
                      ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
@@ -343,6 +378,15 @@ void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
                      ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_READ));
         iterRng = BlockIterRng(blockIndex, IterRngJmax());
+        // haloIterRng[0] = iterRng[0] - 1;
+        // haloIterRng[1] = iterRng[1] + 1;
+        // haloIterRng[2] = iterRng[2];
+        // haloIterRng[3] = iterRng[3] + 1;
+        // haloIterRng[4] = iterRng[4] - 1;
+        // haloIterRng[5] = iterRng[5] + 1;
+        // ops_printf("IterRngJmax= %d %d %d %d %d %d\n", haloIterRng[0],
+        //            haloIterRng[1], haloIterRng[2], haloIterRng[3],
+        //            haloIterRng[4], haloIterRng[5]);
         ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
                      iterRng,
                      ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
@@ -350,6 +394,15 @@ void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
                      ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_READ));
         iterRng = BlockIterRng(blockIndex, IterRngKmin());
+        // haloIterRng[0] = iterRng[0] - 1;
+        // haloIterRng[1] = iterRng[1] + 1;
+        // haloIterRng[2] = iterRng[2] - 1;
+        // haloIterRng[3] = iterRng[3] + 1;
+        // haloIterRng[4] = iterRng[4] - 1;
+        // haloIterRng[5] = iterRng[5];
+        // ops_printf("IterRngKmin= %d %d %d %d %d %d\n", haloIterRng[0],
+        //            haloIterRng[1], haloIterRng[2], haloIterRng[3],
+        //            haloIterRng[4], haloIterRng[5]);
         ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
                      iterRng,
                      ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
@@ -357,6 +410,15 @@ void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
                      ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_READ));
         iterRng = BlockIterRng(blockIndex, IterRngKmax());
+        // haloIterRng[0] = iterRng[0] - 1;
+        // haloIterRng[1] = iterRng[1] + 1;
+        // haloIterRng[2] = iterRng[2] - 1;
+        // haloIterRng[3] = iterRng[3] + 1;
+        // haloIterRng[4] = iterRng[4];
+        // haloIterRng[5] = iterRng[5] + 1;
+        // ops_printf("IterRngKmax= %d %d %d %d %d %d\n", haloIterRng[0],
+        //            haloIterRng[1], haloIterRng[2], haloIterRng[3],
+        //            haloIterRng[4], haloIterRng[5]);
         ops_par_loop(KerCopyf, "KerCopyf", g_Block[blockIndex], SPACEDIM,
                      iterRng,
                      ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
@@ -505,14 +567,6 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
     DestroyFlowfield();
 }
 
-void TransferHalos(const std::vector<ops_halo_group>& haloGroups) {
-    if (haloGroups.size() > 0) {
-        for (auto haloGroup : haloGroups){
-             ops_halo_transfer(haloGroup);
-        }
-    }
-}
-
 void RestartMacroVars4SteadySim() {
     for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
         int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
@@ -548,7 +602,7 @@ void StreamCollision3D(const Real time) {
 #if DebugLevel >= 1
     ops_printf("Updating the halos...\n");
 #endif
-    TransferHalos(HaloGroups());
+    TransferHalos();
 #if DebugLevel >= 1
     ops_printf("Implementing the boundary conditions...\n");
 #endif
