@@ -710,8 +710,8 @@ void SetBoundaryNodeType(){
     const int boundaryType{(int)boundary.boundaryType};
     int* iterRange{
         BoundarySurfaceRange(boundary.blockIndex, boundary.boundarySurface)};
-    const int compoId{boundary.componentID};
-    const int blockIndex{boundary.blockIndex};
+    const SizeType compoId{boundary.componentID};
+    const SizeType blockIndex{boundary.blockIndex};
     // Specify general boundary type
     ops_par_loop(KerSetNodeType, "KerSetNodeType", g_Block[blockIndex],
                  SPACEDIM, iterRange,

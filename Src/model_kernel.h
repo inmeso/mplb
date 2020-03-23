@@ -593,8 +593,7 @@ void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
 #ifdef OPS_3D
     const int compoIndex{*componentId};
     VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
-    if (vt == VertexType::Fluid) {
-        const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
+    if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
             fStage(xiIndex, 0, 0, 0) = 0;

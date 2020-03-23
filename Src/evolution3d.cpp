@@ -515,7 +515,7 @@ void Iterate(const SizeType steps, const SizeType checkPointPeriod,
     ops_printf("Starting the iteration...\n");
     switch (scheme) {
         case Scheme_StreamCollision: {
-            for (int iter = start; iter < start + steps; iter++) {
+            for (SizeType iter = start; iter < start + steps; iter++) {
                 const Real time{iter * TimeStep()};
                 StreamCollision3D(time);
                 if (((iter + 1) % checkPointPeriod) == 0) {
@@ -541,7 +541,7 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
     ops_printf("Starting the iteration...\n");
     switch (scheme) {
         case Scheme_StreamCollision: {
-            int iter{start};
+            SizeType iter{start};
             Real residualError{1};
             do {
                 const Real time{iter * TimeStep()};
