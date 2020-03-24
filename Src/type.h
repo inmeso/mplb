@@ -78,13 +78,27 @@ enum PointPosition {
     RelativelyInteriorToFace = 5
 };
 #ifdef NEWVERTEX
+// Notes on periodic boundary condition
+// There could be two types of implementation, one is same to finite difference
+// scheme, the other one is same to the molecular dynamics.
+// We provide both methods.
+// Finite difference way:
+// Using the kernel function  KerCutCellPeriodic3D when treating the boundary
+// condition. A halo transfer for g_f is required before treating boundary
+// condition. In this case, the grid is treated as if a wall node
+// Molecular dynamics:
+// In this way, nothing is needed when treating the boundary condition. However,
+// a halo transfer is needed for g_fStage before the stream step following the
+// current implementation stream-collision. In this case, the grid is treated
+// as if a fluid node
 enum class VertexType {
     // vtfluid is the general type of node
     // All specific fluid types should be started as vtft
     Fluid = 10,
     Inlet = 11,
     OutLet = 12,
-    Periodic = 13,
+    MDPeriodic = 13,
+    FDPeriodic = 15,
     Symmetry = 14,
     Wall = 1000,
     // Bulk node but with immersed solid nodes
@@ -271,7 +285,8 @@ enum class BoundaryScheme {
     KineticSpelluarWall = 12,
     ExtrapolPressure1ST = 16,
     ExtrapolPressure2ND = 17,
-    Periodic = 18,
+    MDPeriodic = 18,
+    FDPeriodic = 19,
     BounceBack = 20,
     FreeFlux = 21,
     ZouHeVelocity = 22,

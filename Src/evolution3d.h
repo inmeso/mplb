@@ -119,7 +119,7 @@ template <typename T>
 void Iterate(void (*cycle)(T), const SizeType steps,
              const SizeType checkPointPeriod, const SizeType start = 0) {
     ops_printf("Starting the iteration...\n");
-    for (int iter = start; iter < start + steps; iter++) {
+    for (SizeType iter = start; iter < start + steps; iter++) {
         const Real time{iter * TimeStep()};
         cycle(time);
         if (((iter + 1) % checkPointPeriod) == 0) {
@@ -138,7 +138,7 @@ void Iterate(void (*cycle)(T), const SizeType steps,
 template <typename T>
 void Iterate(void (*cycle)(T), const Real convergenceCriteria,
              const SizeType checkPointPeriod, const SizeType start = 0) {
-    int iter{start};
+    SizeType iter{start};
     Real residualError{1};
     do {
         const Real time{iter * TimeStep()};
@@ -160,7 +160,6 @@ void Iterate(void (*cycle)(T), const Real convergenceCriteria,
     DestroyFlowfield();
 }
 void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc);
-void TransferHalos(const std::vector<ops_halo_group>& haloGroups);
 void RestartMacroVars4SteadySim();
 #endif /* OPS_3D */
 #endif /* EVOLUTION3D_H_ */
