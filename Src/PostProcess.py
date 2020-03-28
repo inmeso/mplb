@@ -297,27 +297,79 @@ def WriteMacroVarsTecplotHDF5(res, fileName):
     dataFile.flush()
     dataFile.close()
 
+def contourPlot(x,y,var,lineNum, imgSize=1,labels=('x','y')):
+    if ((not mplLoaded) or (not numpyLoaded)):
+        print("The matplotlib or numpy is not installed!")
+        return
+    ratio = (np.max(x) - np.min(x)) / (np.max(y) - np.min(y))
+    #var = (var - np.min(var)) / (np.max(var) - np.min(var))
+    plt.figure(figsize=(imgSize * ratio, imgSize))
+    varMin = np.min(var)
+    varMax = np.max(var)
+    step = (varMax - varMin) / lineNum
+    conPlot = plt.contour(x, y, var, levels=np.arange(
+        varMin, varMax, step), colors='black')
+    plt.clabel(conPlot, inline=True, fontsize=10)
+    plt.imshow(var, extent=[np.min(x), np.max(x), np.min(y), np.max(y)], origin='lower',
+           cmap='plasma', alpha=0.5)
+    plt.colorbar();
+    plt.ylabel(labels[1])
+    plt.xlabel(labels[0])
+    plt.show()
+
 def ContourPlot(res, varName, lineNum, imgSize=1):
-    """Plot the Contour of a scalar.
-       Note: for better results, the minimal value is taken away from the data, and the data normalised by its maximal difference. """
+    """Plot the Contour of a scalar."""
     if ((not mplLoaded) or (not numpyLoaded)):
         print("The matplotlib or numpy is not installed!")
         return
     x = res['MacroVars']['X']
     y = res['MacroVars']['Y']
-    ratio = (np.max(x) - np.min(x)) / (np.max(y) - np.min(y))
-    plt.figure(figsize=(imgSize * ratio, imgSize))
     var = res['MacroVars'][varName]
-    var = (var - np.min(var)) / (np.max(var) - np.min(var))
-    varMin = np.min(var)
-    varMax = np.max(var)
-    step = (varMax - varMin) / lineNum
-    conPlot = plt.contour(x, y, var, levels=np.arange(
-        varMin, varMax, step), colors='greenyellow')
-    conPlot.ax.set_facecolor('k')
-    plt.clabel(conPlot, inline=1, fontsize=10)
-    plt.show()
+    contourPlot(x,y,var,lineNum, imgSize)
 
+def SliceContourPlot(res, varName, slice, lineNum, imgSize=1):
+    """
+        ContourPlot for a slice (dir,pos) perpendicular to dir='x','y','z'
+        corrdinate at a pos, e.g., ('x',20)
+    """
+    labels=['x','y']
+    if (slice[0] == 'x'):
+        x = res['MacroVars']['Z'][slice[1],:,:]
+        y = res['MacroVars']['Y'][slice[1],:,:]
+        var = res['MacroVars'][varName][slice[1], :, :]
+        labels=['z','y']
+
+
+    if (slice[0] == 'y'):
+        x = res['MacroVars']['X'][:,slice[1],:]
+        y = res['MacroVars']['Z'][:,slice[1],:]
+        var = res['MacroVars'][varName][:, slice[1], :]
+        labels=['x','z']
+
+    if (slice[0] == 'z'):
+        x = res['MacroVars']['X'][:,:,slice[1]]
+        y = res['MacroVars']['Y'][:,:,slice[1]]
+        var = res['MacroVars'][varName][:, :, slice[1]]
+
+    contourPlot(x,y,var,lineNum, imgSize,labels)
+
+def vectorPlot(X,Y,U,V,imgSize=1,labels=('x','y')):
+    if ((not mplLoaded) or (not numpyLoaded) or (not mathLoaded)):
+        print("The matplotlib, math or numpy is not installed!")
+        return
+    ratio = (np.max(X) - np.min(X)) / (np.max(Y) - np.min(Y))
+    plt.figure(figsize=(imgSize * ratio, imgSize))
+    varMax = max(np.max(np.abs(U)), np.max(np.abs(V)))
+    U = U / varMax
+    V = V / varMax
+    nx, ny = X.shape
+    skip = math.ceil(min(nx, ny) / 15 / math.sqrt(imgSize))
+    vecPlot = plt.quiver(X[::skip, ::skip].transpose(), Y[::skip, ::skip].transpose(), U[::skip, ::skip].transpose(
+    ), V[::skip, ::skip].transpose(), facecolor='greenyellow', edgecolor='greenyellow')
+    vecPlot.axes.set_facecolor('k')
+    plt.ylabel(labels[1])
+    plt.xlabel(labels[0])
+    plt.show()
 
 def VectorPlot(res, varName, imgSize=1):
     if ((not mplLoaded) or (not numpyLoaded) or (not mathLoaded)):
@@ -325,19 +377,39 @@ def VectorPlot(res, varName, imgSize=1):
         return
     x = res['MacroVars']['X']
     y = res['MacroVars']['Y']
-    ratio = (np.max(x) - np.min(x)) / (np.max(y) - np.min(y))
-    plt.figure(figsize=(imgSize * ratio, imgSize))
     varX = res['MacroVars'][varName[0]]
     varY = res['MacroVars'][varName[1]]
-    varMax = max(np.max(np.abs(varX)), np.max(np.abs(varY)))
-    varX = varX / varMax
-    varY = varY / varMax
-    nx, ny = x.shape
-    skip = math.ceil(min(nx, ny) / 15 / math.sqrt(imgSize))
-    vecPlot = plt.quiver(x[::skip, ::skip].transpose(), y[::skip, ::skip].transpose(), varX[::skip, ::skip].transpose(
-    ), varY[::skip, ::skip].transpose(), facecolor='greenyellow', edgecolor='greenyellow')
-    vecPlot.axes.set_facecolor('k')
-    plt.show()
+    vectorPlot(x,y,varX,varY,imgSize)
+
+def SliceVectorPlot(res, varName, slice, imgSize=1):
+    """
+        VectorPlot for a slice (dir,pos) perpendicular to dir='x','y','z'
+        corrdinate at a pos, e.g., ('x',20)
+    """
+    labels=['x','y']
+    if (slice[0] == 'x'):
+        x = res['MacroVars']['Z'][slice[1],:,:]
+        y = res['MacroVars']['Y'][slice[1],:,:]
+        varX = res['MacroVars'][varName[2]][slice[1],:,:]
+        varY = res['MacroVars'][varName[1]][slice[1], :, :]
+        labels=['z','y']
+
+    if (slice[0] == 'y'):
+        x = res['MacroVars']['X'][:,slice[1],:]
+        y = res['MacroVars']['Z'][:,slice[1],:]
+        varX = res['MacroVars'][varName[0]][:,slice[1],:]
+        varY = res['MacroVars'][varName[2]][:, slice[1], :]
+        labels=['x','z']
+
+    if (slice[0] == 'z'):
+        x = res['MacroVars']['X'][:,:,slice[1]]
+        y = res['MacroVars']['Y'][:,:,slice[1]]
+        varX = res['MacroVars'][varName[0]][:,:,slice[1]]
+        varY = res['MacroVars'][varName[1]][:,:,slice[1]]
+
+    vectorPlot(x,y,varX,varY,imgSize,labels)
+
+
 
 def VectorPlot3D(res, varName):
     if ((not mlabLoaded)):
@@ -364,31 +436,33 @@ def ContourPlot3D(res, varName, contours):
     mlab.show()
 
 def CornerValues(res, varName):
-    """get the variable value at corners. """
+    """Get the macroscopic variable value at corners. """
     var = res['MacroVars'][varName]
-    spaceDim = len(var.shape)
     corner = {}
-    if (2 == spaceDim):
-        nx, ny = var.shape
-        corner["left bottom"] = var[0, 0]
-        corner["left top"] = var[0, ny-1]
-        corner["right bottom"] = var[nx-1, 0]
-        corner["right top"] = var[nx-1, 0]
-    if (3 == spaceDim):
-        nx, ny, nz = var.shape
-        corner["left bottom back"] = var[0, 0, 0]
-        corner["left bottom front"] = var[0, 0, nz-1]
-        corner["left top back"] = var[0, ny-1, 0]
-        corner["left top front"] = var[0, ny-1, nz-1]
-        corner["right bottom back"] = var[nx-1, 0, 0]
-        corner["right bottom front"] = var[nx-1, 0, nz-1]
-        corner["right top back"] = var[nx-1, ny-1, 0]
-        corner["right top front"] = var[nx-1, ny-1, nz-1]
+    nx, ny = var.shape
+    corner["left bottom"] = var[0, 0]
+    corner["left top"] = var[0, ny-1]
+    corner["right bottom"] = var[nx-1, 0]
+    corner["right top"] = var[nx-1, 0]
     return corner
 
+def CornerValues3D(res, varName):
+    """Get the macroscopic variable value at corners. """
+    var = res['MacroVars'][varName]
+    corner = {}
+    nx, ny, nz = var.shape
+    corner["left bottom back"] = var[0, 0, 0]
+    corner["left bottom front"] = var[0, 0, nz-1]
+    corner["left top back"] = var[0, ny-1, 0]
+    corner["left top front"] = var[0, ny-1, nz-1]
+    corner["right bottom back"] = var[nx-1, 0, 0]
+    corner["right bottom front"] = var[nx-1, 0, nz-1]
+    corner["right top back"] = var[nx-1, ny-1, 0]
+    corner["right top front"] = var[nx-1, ny-1, nz-1]
+    return corner
 
-def EdgeValue(res, varName, edge):
-    """ get the variable value at a edge : 3D only """
+def EdgeValue3D(res, varName, edge):
+    """ Get macroscopic variable value at a edge:3D only """
     var = res['MacroVars'][varName]
     if ('left bottom' == edge):
         return var[0, 0, :]
@@ -398,7 +472,6 @@ def EdgeValue(res, varName, edge):
         return var[-1, 0, :]
     if ('right top' == edge):
         return var[-1, -1, :]
-
     if ('left back' == edge):
             return var[0, :, 0]
     if ('left front' == edge):
@@ -407,7 +480,6 @@ def EdgeValue(res, varName, edge):
         return var[-1, :, 0]
     if ('right front' == edge):
         return var[-1, :, -1]
-
     if ('bottom back' == edge):
             return var[:, 0, 0]
     if ('bottom front' == edge):
@@ -417,31 +489,30 @@ def EdgeValue(res, varName, edge):
     if ('top front' == edge):
         return var[:, -1, -1]
 
-
 def FaceValue(res, varName, face):
-    """ get the variable value at a edge : 3D only """
+    """ Get macroscopic variable value at a face"""
     var = res['MacroVars'][varName]
-    spaceDim = len(var.shape)
-    if (2 == spaceDim):
-        if ('left' == face):
-            return var[0, :]
-        if ('right' == face):
-            return var[-1, :]
-        if ('bottom' == face):
-            return var[:, 0]
-        if ('top' == face):
-            return var[:, -1]
+    if ('left' == face):
+        return var[0, :]
+    if ('right' == face):
+        return var[-1, :]
+    if ('bottom' == face):
+        return var[:, 0]
+    if ('top' == face):
+        return var[:, -1]
 
-    if (3 == spaceDim):
-        if ('left' == face):
-            return var[0, :, :]
-        if ('right' == face):
-            return var[-1, :, :]
-        if ('bottom' == face):
-            return var[:, 0, :]
-        if ('top' == face):
-            return var[:, -1, :]
-        if ('back' == face):
-            return var[:, :, 0]
-        if ('front' == face):
-            return var[:,:, -1]
+def FaceValue3D(res, varName, face):
+    """ Get macroscopic variable value at a face:3D"""
+    var = res['MacroVars'][varName]
+    if ('left' == face):
+        return var[0, :, :]
+    if ('right' == face):
+        return var[-1, :, :]
+    if ('bottom' == face):
+        return var[:, 0, :]
+    if ('top' == face):
+        return var[:, -1, :]
+    if ('back' == face):
+        return var[:, :, 0]
+    if ('front' == face):
+        return var[:, :, -1]
