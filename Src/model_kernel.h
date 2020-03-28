@@ -481,24 +481,23 @@ void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
             const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
-            if (vt == VertexType::Fluid) {
+            if (vt == VertexType::Fluid || vt==VertexType::MDPeriodic) {
                 fStage(xiIndex, 0, 0, 0) =
-                    f(xiIndex, 0, 0, 0) -
-                    dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq) +
+                    feq + (1 - dtOvertauPlusdt) * (f(xiIndex, 0, 0, 0) - feq) +
                     tau * dtOvertauPlusdt * fStage(xiIndex, 0, 0, 0);
             } else {
                 fStage(xiIndex, 0, 0, 0) =
-                    f(xiIndex, 0, 0, 0) -
-                    dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq);
+                    feq + (1 - dtOvertauPlusdt) * (f(xiIndex, 0, 0, 0) - feq);
             }
 #ifdef CPU
             const Real res{fStage(xiIndex, 0, 0, 0)};
             if (isnan(res) || res <= 0 || isinf(res)) {
                 ops_printf(
-                    "Error! Distribution function %f becomes "
+                    "Error! Distribution function = %e becomes "
                     "invalid for the component %i at  the lattice "
-                    "%i\n",
-                    res, compoIndex, xiIndex);
+                    "%i where feq=%e\n",
+                    res, compoIndex, xiIndex, feq);
+                //ops_printf()
                 assert(!(isnan(res) || res <= 0 || isinf(res)));
             }
 #endif  // CPU
@@ -531,7 +530,7 @@ void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
             const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
-            if (vt == VertexType::Fluid) {
+            if (vt == VertexType::Fluid || vt==VertexType::MDPeriodic) {
                 fStage(xiIndex, 0, 0, 0) =
                     f(xiIndex, 0, 0, 0) -
                     dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq) +
@@ -563,7 +562,7 @@ void KerCalcBodyForce1ST3D(ACC<Real>& fStage, const ACC<Real>& acceration,
 #ifdef OPS_3D
     const int compoIndex{*componentId};
     VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
-    if (vt == VertexType::Fluid) {
+    if (vt == VertexType::Fluid || vt==VertexType::MDPeriodic) {
         const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
         Real rho{macroVars(startPos, 0, 0, 0)};
         Real g[]{acceration(3 * compoIndex, 0, 0, 0),
@@ -594,8 +593,7 @@ void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
 #ifdef OPS_3D
     const int compoIndex{*componentId};
     VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
-    if (vt == VertexType::Fluid) {
-        const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
+    if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
         for (int xiIndex = COMPOINDEX[2 * compoIndex];
              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
             fStage(xiIndex, 0, 0, 0) = 0;
@@ -948,7 +946,8 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                                     f(xiIdx, 0, 0, 0);
                             }
                             macroVars(m, 0, 0, 0) /= rho;
-                            if (VertexType::Fluid == vt) {
+                            if (VertexType::Fluid == vt ||
+                                VertexType::MDPeriodic == vt) {
                                 macroVars(m, 0, 0, 0) +=
                                     ((*dt) *
                                      acceleration(3* compoIndex,0,0,0) / 2);
@@ -990,7 +989,8 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                                     f(xiIdx, 0, 0, 0);
                             }
                             macroVars(m, 0, 0, 0) /= rho;
-                            if (VertexType::Fluid == vt) {
+                            if (VertexType::Fluid == vt ||
+                                VertexType::MDPeriodic == vt) {
                                 macroVars(m, 0, 0, 0) +=
                                     ((*dt) *
                                      acceleration(3* compoIndex + 1,0,0,0) /
@@ -1030,10 +1030,11 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
                                     f(xiIdx, 0, 0, 0);
                             }
                             macroVars(m, 0, 0, 0) /= rho;
-                            if (VertexType::Fluid == vt) {
+                            if (VertexType::Fluid == vt ||
+                                VertexType::MDPeriodic == vt) {
                                 macroVars(m, 0, 0, 0) +=
                                     ((*dt) *
-                                     acceleration(3*compoIndex + 2,0,0,0) /
+                                     acceleration(3 * compoIndex + 2, 0, 0, 0) /
                                      2);
                             }
                             velo[2] = macroVars(m, 0, 0, 0);

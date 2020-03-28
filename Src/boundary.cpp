@@ -8,7 +8,7 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * 1. Redistributions of source code must retain the above copyright notice,    
+ * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice
  *    this list of conditions and the following disclaimer in the documentation
@@ -93,7 +93,7 @@ void DefineBlockBoundary(int blockIndex, int componentID,
                          BoundaryScheme boundaryScheme,
                          const std::vector<VariableTypes>& macroVarTypes,
                          const std::vector<Real>& macroVarValues,
-                         const VertexType boundaryType) {   
+                         const VertexType boundaryType) {
     // Set the number of halo point required by the boundary condition
     // So far all boundary conditions are implemented in a way that requires no
     // halos so we leave it as the initial value 1
@@ -107,7 +107,7 @@ void DefineBlockBoundary(int blockIndex, int componentID,
     // in 3D or  [\rho,u,v,T] in 2D. For a kernel function for dealing with
     // a boundary condition, these parameters shall be passed in a fixed order
     // as shown.
-    const int numMacroVarTypes{macroVarTypes.size()};
+    const SizeType numMacroVarTypes{macroVarTypes.size()};
     const SizeType numMacroVarValues{macroVarValues.size()};
 
     std::vector<Real> macroVarsAtBoundary;

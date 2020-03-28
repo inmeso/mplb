@@ -61,7 +61,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(
     {
         {VertexType::Inlet, "Inlet"},
         {VertexType::OutLet, "OutLet"},
-        {VertexType::Periodic, "Periodic"},
+        {VertexType::MDPeriodic, "MDPeriodic"},
+        {VertexType::FDPeriodic, "FDPeriodic"},
         {VertexType::Symmetry, "Symmetry"},
         {VertexType::Wall, "Wall"},
         {VertexType::ImmersedSolid, "ImmersedSolid"},
@@ -74,7 +75,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(
         {BoundaryScheme::KineticDiffuseWall, "KineticDiffuseWall"},
         {BoundaryScheme::ExtrapolPressure1ST, "ExtrapolPressure1ST"},
         {BoundaryScheme::ExtrapolPressure2ND, "ExtrapolPressure2ND"},
-        {BoundaryScheme::Periodic, "Periodic"},
+        {BoundaryScheme::MDPeriodic, "MDPeriodic"},
+        {BoundaryScheme::FDPeriodic, "FDPeriodic"},
         {BoundaryScheme::BounceBack, "BounceBack"},
         {BoundaryScheme::FreeFlux, "FreeFlux"},
         {BoundaryScheme::ZouHeVelocity, "ZouHeVelocity"},
@@ -305,7 +307,7 @@ void ParseJson() {
 
             if (jsonConfig[bcName]["BoundaryScheme"].is_null()) {
                 ops_printf(
-                    "Error! Please insert the BoundaryType item into %s\n",
+                    "Error! Please insert the BoundaryScheme item into %s\n",
                     bcName.c_str());
                 assert(jsonConfig[bcName]["BoundaryScheme"].is_null());
             } else {

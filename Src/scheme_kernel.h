@@ -945,8 +945,9 @@ void KerStream3D(ACC<Real> & f, const ACC<Real>& fStage,
             int cy = (int)XI[xiIndex * LATTDIM + 1];
             int cz = (int)XI[xiIndex * LATTDIM + 2];
 
-            if (vt == VertexType::Fluid) {
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
                 f(xiIndex, 0, 0, 0) = fStage(xiIndex, -cx, -cy, -cz);
+                continue;
             }
 
             if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
