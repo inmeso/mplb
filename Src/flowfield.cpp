@@ -91,7 +91,7 @@ int* BlockIterRngBulk{nullptr};
  */
 int* BLOCKSIZE{nullptr};
 
-
+std::vector<std::string> BLOCKNAMES;
 
 const int HaloPtNum() { return std::max(SchemeHaloNum(), BoundaryHaloNum()); }
 
@@ -107,6 +107,236 @@ bool IsTransient() { return TRANSIENT; }
 //Other version to follow.
 //TODO this function only suitable for single halo
 #ifdef OPS_3D
+
+void DefineBlockConnectionPair3D(
+    const std::string& pairName, const ops_dat& data,
+    const std::pair<SizeType, SizeType>& blockPair,
+    const std::pair<BoundarySurface,BoundarySurface>& surfacePair,
+    const std::pair<std::vector<SizeType>, std::vector<SizeType>>& rangePair) {
+
+    if ( g_Block[blockPair.first]== nullptr) {
+        ops_printf(
+            "The first block must be allocated first! "
+            "relations!");
+        assert(g_Block[blockPair.first]== nullptr);
+    }
+
+    if (data[] == nullptr) {
+        ops_printf(
+            "The first variable must be allocated before defining halo "
+            "relations!");
+        assert(data == nullptr);
+    }
+
+    auto search = HALOGROUPS.find(pairName);
+    if (search != HALOGROUPS.end()) {
+        ops_printf("Pair name cannot be used twice!");
+        assert(search != HALOGROUPS.end());
+    }
+
+
+
+
+
+
+
+    // max halo depths for the dat in the positive direction
+    int d_p[3] = {haloDepth, haloDepth, haloDepth};
+    // max halo depths for the dat in the negative direction
+    int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
+    // The domain size in the Block 0
+    int nx = BlockSize(0)[0];
+    int ny = BlockSize(0)[1];
+    int nz = BlockSize(0)[2];
+    int dir[] = {1, 2, 3};
+    for (auto& pair : haloPair) {
+        if (0 == pair.first) {
+            // left and right pair
+            int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1],
+                               nz + d_p[2] - d_m[2]};
+            int base_from[] = {0, d_m[1], d_m[2]};
+            int base_to[] = {nx, d_m[1], d_m[2]};
+            ops_halo leftToRight = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            base_from[0] = nx + d_m[0];
+            base_to[0] = d_m[0];
+            ops_halo rightToLeft = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            ops_halo group[]{leftToRight, rightToLeft};
+            HALOGROUPS.emplace(pair.second,ops_decl_halo_group(2, group));
+        }
+
+        if (1 == pair.first) {
+            // top and bottom pair
+            int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth,
+                               nz + d_p[2] - d_m[2]};
+            int base_from[] = {d_m[0], 0, d_m[2]};
+            int base_to[] = {d_m[0], ny, d_m[2]};
+            ops_halo botToTop = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                              base_to, dir, dir);
+            base_from[1] = ny + d_m[1];
+            base_to[1] = d_m[1];
+            ops_halo topToBot = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                              base_to, dir, dir);
+            ops_halo group[]{botToTop, topToBot};
+            HALOGROUPS.emplace(pair.second,ops_decl_halo_group(2, group));
+        }
+
+        if (2 == pair.first) {
+            // front and back pair
+            int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[1] - d_m[1],
+                               haloDepth};
+            int base_from[] = {d_m[0], d_m[1], 0};
+            int base_to[] = {d_m[0], d_m[1], nz};
+            ops_halo backToFront = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            base_from[2] = nz + d_m[2];
+            base_to[2] = d_m[2];
+            ops_halo frontToBack = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            ops_halo group[]{backToFront, frontToBack};
+            HALOGROUPS.emplace(pair.second, ops_decl_halo_group(2, group));
+        }
+    }
+}
+
+void DefineBlockConnectionPair3D(
+
+    const std::string& pairName, const std::pair<ops_dat,ops_dat>& dataPair,
+    const std::pair<BoundarySurface,BoundarySurface>& surfacePair,
+    const std::pair<std::vector<SizeType>, std::vector<SizeType>>& rangePair) {
+
+    auto search = HALOGROUPS.find(pairName);
+    if (search != HALOGROUPS.end()) {
+        ops_printf("Pair name cannot be used twice!\n");
+        assert(search != HALOGROUPS.end());
+    }
+
+    if (dataPair.first == nullptr) {
+        ops_printf(
+            "The first variable must be allocated!\n");
+        assert(dataPair.first == nullptr);
+    }
+
+    if (dataPair.second == nullptr) {
+        ops_printf(
+            "The second variable must be allocated!\n");
+        assert(dataPair.second == nullptr);
+    }
+
+    if (rangePair.first.size < 2*SPACEDIM) {
+         ops_printf(
+            "The first range must be specified as {x0,x1,y0,y1,z0,z1}!\n");
+        assert(rangePair.first.size < 2*SPACEDIM);
+    }
+
+    if (rangePair.second.size < 2*SPACEDIM) {
+         ops_printf(
+            "The second range must be specified as {x0,x1,y0,y1,z0,z1}!\n");
+        assert(rangePair.second.size < 2*SPACEDIM);
+    }
+    const SizeType halo_iter[] = {
+        rangePair.first.at[1] - rangePair.first.at[0] + 1,
+        rangePair.first.at[3] - rangePair.first.at[2] + 1,
+        rangePair.first.at[5] - rangePair.first.at[4] + 1};
+
+    //Dealing with the first surface
+    switch (surfacePair.first) {
+        case BoundarySurface_Back: {
+            int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[1] - d_m[1],
+                               haloDepth};
+            int base_from[] = {d_m[0], d_m[1], 0};
+            int base_to[] = {d_m[0], d_m[1], nz};
+            ops_halo backToFront = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            base_from[2] = nz + d_m[2];
+            base_to[2] = d_m[2];
+            ops_halo frontToBack = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            ops_halo group[]{backToFront, frontToBack};
+            HALOGROUPS.emplace(pair.second, ops_decl_halo_group(2, group));
+        }
+
+        break;
+        case BoundarySurface_Front:
+            // code block
+            break;
+        case BoundarySurface_Left:
+            // code block
+            break;
+        case BoundarySurface_Right:
+            // code block
+            break;
+        case BoundarySurface_Top:
+            // code block
+            break;
+        case BoundarySurface_Bottom:
+            // code block
+            break;
+        default:
+            // code block
+    }
+
+    // max halo depths for the dat in the positive direction
+    int d_p[3] = {haloDepth, haloDepth, haloDepth};
+    // max halo depths for the dat in the negative direction
+    int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
+    // The domain size in the Block 0
+    int nx = BlockSize(0)[0];
+    int ny = BlockSize(0)[1];
+    int nz = BlockSize(0)[2];
+    int dir[] = {1, 2, 3};
+    for (auto& pair : haloPair) {
+        if (0 == pair.first) {
+            // left and right pair
+            int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1],
+                               nz + d_p[2] - d_m[2]};
+            int base_from[] = {0, d_m[1], d_m[2]};
+            int base_to[] = {nx, d_m[1], d_m[2]};
+            ops_halo leftToRight = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            base_from[0] = nx + d_m[0];
+            base_to[0] = d_m[0];
+            ops_halo rightToLeft = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            ops_halo group[]{leftToRight, rightToLeft};
+            HALOGROUPS.emplace(pair.second,ops_decl_halo_group(2, group));
+        }
+
+        if (1 == pair.first) {
+            // top and bottom pair
+            int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth,
+                               nz + d_p[2] - d_m[2]};
+            int base_from[] = {d_m[0], 0, d_m[2]};
+            int base_to[] = {d_m[0], ny, d_m[2]};
+            ops_halo botToTop = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                              base_to, dir, dir);
+            base_from[1] = ny + d_m[1];
+            base_to[1] = d_m[1];
+            ops_halo topToBot = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                              base_to, dir, dir);
+            ops_halo group[]{botToTop, topToBot};
+            HALOGROUPS.emplace(pair.second,ops_decl_halo_group(2, group));
+        }
+
+        if (2 == pair.first) {
+            // front and back pair
+            int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[1] - d_m[1],
+                               haloDepth};
+            int base_from[] = {d_m[0], d_m[1], 0};
+            int base_to[] = {d_m[0], d_m[1], nz};
+            ops_halo backToFront = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            base_from[2] = nz + d_m[2];
+            base_to[2] = d_m[2];
+            ops_halo frontToBack = ops_decl_halo(dat, dat, halo_iter, base_from,
+                                                 base_to, dir, dir);
+            ops_halo group[]{backToFront, frontToBack};
+            HALOGROUPS.emplace(pair.second, ops_decl_halo_group(2, group));
+        }
+    }
+}
+
 void DefinePeriodicHaloPair3D(const std::map<int,std::string>& haloPair) {
     DefinePeriodicHaloPair3D(haloPair, g_f[0], g_f.HaloDepth());
 }
@@ -123,6 +353,15 @@ void DefinePeriodicHaloPair3D(const std::map<int,std::string>& haloPair, ops_dat
         ops_printf("Data must be allocated before defining halo relations!");
         assert(dat == nullptr);
     }
+
+    for (auto& pair : haloPair) {
+        auto search = HALOGROUPS.find(pair.second);
+        if (search != HALOGROUPS.end()) {
+            ops_printf("Pair name cannot be used twice!");
+            assert(search != HALOGROUPS.end());
+        }
+    }
+
     // max halo depths for the dat in the positive direction
     int d_p[3] = {haloDepth, haloDepth, haloDepth};
     // max halo depths for the dat in the negative direction
@@ -836,16 +1075,17 @@ void SetBulkandHaloNodesType(int blockIndex, int compoId) {
     FreeArrayMemory(haloIterRng);
 }
 
-void DefineBlocks(const SizeType blockNum,
+void DefineBlocks(const std::vector<std::string>& blockNames,
                   const std::vector<SizeType>& blockSize, const Real meshSize,
                   const std::vector<Real>& startPos) {
-    SetBlockNum(blockNum);
+    SetBlockNum(blockNames.size());
+    BLOCKNAMES = blockNames;
     SetBlockSize(blockSize);
-    COORDINATES.resize(blockNum);
+    COORDINATES.resize(BLOCKNUM);
     SizeType numBlockStartPos;
     numBlockStartPos = startPos.size();
-    if (numBlockStartPos == blockNum * SPACEDIM) {
-        for (int blockIndex = 0; blockIndex < blockNum; blockIndex++) {
+    if (numBlockStartPos == BLOCKNUM * SPACEDIM) {
+        for (int blockIndex = 0; blockIndex < BLOCKNUM; blockIndex++) {
             COORDINATES.at(blockIndex).resize(SPACEDIM);
             for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) {
                 int numOfGridPoints =
@@ -864,8 +1104,8 @@ void DefineBlocks(const SizeType blockNum,
         ops_printf(
             "Error! Expected %i coordinates of three starting points %i, but "
             "received only =%i \n",
-            SPACEDIM * blockNum, numBlockStartPos);
-        assert(numBlockStartPos == blockNum * SPACEDIM);
+            SPACEDIM * BLOCKNUM, numBlockStartPos);
+        assert(numBlockStartPos == BLOCKNUM * SPACEDIM);
     }
 
     g_Block = new ops_block[BLOCKNUM];
@@ -954,11 +1194,23 @@ void DefineBlocks(const SizeType blockNum,
         }
         delete[] size;
     }
-    //TODO temporialy here, later we shall have a define geometry
+    // TODO temporaily here, later we shall have a define geometry
     g_NodeType.CreateFieldFromScratch();
     g_CoordinateXYZ.SetDataDim(SPACEDIM);
     g_CoordinateXYZ.CreateFieldFromScratch();
     g_GeometryProperty.CreateFieldFromScratch();
+}
+
+void DefineBlocks(const SizeType blockNum,
+                  const std::vector<SizeType>& blockSize, const Real meshSize,
+                  const std::vector<Real>& startPos) {
+    std::vector<std::string> blockNames;
+    for (int blockIndex = 0; blockIndex < blockNum; blockIndex++) {
+        std::string label(std::to_string(blockIndex));
+        std::string blockName("Block_" + label);
+        blockNames.push_back(blockName);
+    }
+    DefineBlocks(blockNames, blockSize, meshSize, startPos);
 }
 
 void AssignCoordinates(int blockIndex,

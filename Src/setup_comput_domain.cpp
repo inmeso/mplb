@@ -244,6 +244,7 @@ void SetupDomainNodeType(int blockIndex, VertexType* faceType,
     nodeType = (int)VertexType::ImmersedSolid;
     iterRange = BlockIterRng(blockIndex, BlockIterRngJmin);
     int* haloIterRng = new int[2 * SPACEDIM];
+    //TODO this is wrong for halo deeper than 1 may affect hilemms
     haloIterRng[0] = iterRange[0] - 1;
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] - 1;

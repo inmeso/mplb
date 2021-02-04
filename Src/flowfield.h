@@ -57,6 +57,7 @@
  *    distribution functions.
  * 3. Provide some tools for accessing variables.
  */
+
 extern int SPACEDIM;
 extern ops_block* g_Block;
 // Cutting cell
