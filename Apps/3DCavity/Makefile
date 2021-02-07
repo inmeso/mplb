@@ -1,4 +1,4 @@
-OPS_INSTALL_PATH := $(OPS_INSTALL_PATH)/c
+#OPS_INSTALL_PATH := $(OPS_INSTALL_PATH)/c
 OPS_INC   = -I$(OPS_INSTALL_PATH)/include
 OPS_LIB   = -L$(OPS_INSTALL_PATH)/lib
 CUDA_LIB = -L$(CUDA_INSTALL_PATH)/lib
@@ -12,14 +12,13 @@ ifdef MPLB_DIR
 	MPLB_LIB  = -L$(MPLB_DIR)
 endif
 
-ifdef HDF5_INCLUDE_PATH
-  HDF5_INC 	  	:= -I$(HDF5_INCLUDE_PATH)
+
+ifdef HDF5_INSTALL_PATH
+  HDF5_INC 	  	:= -I$(HDF5_INSTALL_PATH)/include
+  HDF5_LIB 	  	:= -L$(HDF5_INSTALL_PATH)/lib -lhdf5_hl -lhdf5 -lz
+endif
 ifdef CHECKPOINTING
   HDF5_INC              := $(HDF5_INC) -DCHECKPOINTING
-endif
-endif
-ifdef HDF5_LIB_PATH
-  HDF5_LIB 	  	:= -L$(HDF5_LIB_PATH) -lhdf5_hl -lhdf5 -lz
 endif
 
 ifeq ($(OPS_COMPILER),clang)
@@ -167,7 +166,7 @@ env:
 	@echo "Compiler = $(OPS_COMPILER)"
 
 lbm3d_dev_seq :
-	$(CPP) $(CPPFLAGS) $(MAINCPP) $(shell find $(MPLB_DIR) -type f \( -iname "*.cpp" ! -iname "setup*"  !  -iname "evolution.cpp" \))  $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq
+	$(CPP) $(CPPFLAGS) $(MAINCPP) $(shell find $(MPLB_DIR) -type f \( -iname "*.cpp" ! -iname "setup*"  !  -iname "evolution.cpp" ! -iname hilemms_ops.cpp \))  $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq
 
 lbm3d_dev_seq_lib :
 	$(CPP) $(CPPFLAGS) $(MAINCPP) $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lmplb3d_seq -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq

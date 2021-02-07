@@ -170,7 +170,6 @@ void simulate(const Configuration & config, const SizeType timeStep=0) {
                             bcConfig.macroVarTypesatBoundary,
                             bcConfig.givenVars, bcConfig.boundaryType);
     }
-    DefinePeriodicHaloPair3D({0});
     Partition();
     if (timeStep == 0) {
         SetInitialMacrosVars();
@@ -209,13 +208,13 @@ int main(int argc, const char** argv) {
     if (argc>2 && argc <=3){
         std::string configFileName(argv[1]);
         ReadConfiguration(configFileName);
-        const SizeType timeStep{std::stoi(argv[2])};
+        const SizeType timeStep{static_cast<SizeType>(std::stoi(argv[2]))};
         simulate(Config(),timeStep);
     }
 
     ops_timers(&ct1, &et1);
     ops_printf("\nTotal Wall time %lf\n", et1 - et0);
     //Print OPS performance details to output stream
-    ops_timing_output(stdout);
+    ops_timing_output(std::cout);
     ops_exit();
 }
