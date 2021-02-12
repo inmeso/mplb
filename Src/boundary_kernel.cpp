@@ -34,8 +34,6 @@
  * @author  Jianping Meng
  * @details Defining kernel functions for various boundary conditions.
  */
-#ifndef BOUNDARY_KERNEL_H
-#define BOUNDARY_KERNEL_H
 #include "boundary.h"
 // As we are using update-halo method for the discretisation,
 // we need to deal with halo points when treating boundary
@@ -2197,4 +2195,3 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
 
 #endif  // OPS_3D
 }
-#endif /* BOUNDARY_KERNEL_H */

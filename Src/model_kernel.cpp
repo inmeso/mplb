@@ -36,8 +36,6 @@
  * the relaxation time, body force term, and macroscopic variables.
  */
 
-#ifndef MODEL_KERNEL_H
-#define MODEL_KERNEL_H
 #include "model.h"
 
 /*!
@@ -1071,4 +1069,3 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
 #endif // OPS_3D
 }
 #endif //OPS_3D outter
-#endif  // MODEL_KERNEL_H

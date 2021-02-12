@@ -1093,4 +1093,3 @@ void BoundaryNormal3D(const VertexGeometryType vg, int* unitNormal) {
         }
     }
 }
-#include "boundary_kernel.h"

@@ -189,6 +189,8 @@ Real CalcBGKFeq(const int l, const Real rho = 1, const Real u = 0,
 Real CalcSWEFeq(const int l, const Real h = 1, const Real u = 0,
                 const Real v = 0, const int polyOrder = 2);
 
+Real CalcBodyForce(const int xiIndex, const Real rho, const Real* acceleration);
+
 // Kernel functions that will be called by ops_par_loop
 /*!
  * Calculate the equilibrium function for normal fluids

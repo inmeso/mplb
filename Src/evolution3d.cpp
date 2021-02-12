@@ -37,6 +37,7 @@
  * cycle
  */
 #include "evolution3d.h"
+#include "ops_seq_v2.h"
 
 /*
  * In the following routines, there are some variables are defined

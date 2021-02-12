@@ -38,8 +38,7 @@
  *  For the finite-difference scheme, only the cut-cell mesh technique is
  *  supported currently
  **/
-#ifndef SCHEME_KERNEL_H
-#define SCHEME_KERNEL_H
+
 #include "scheme.h"
 
 #ifdef OPS_2D  // two dimensional code
@@ -1760,4 +1759,3 @@ void KerSetCoordinates3D(ACC<Real>& coordinates, const int* idx,
     coordinates(2, 0, 0, 0) = coordZ[idx[2]];
 #endif
 }
-#endif  // SCHEME_KERNEL_H

@@ -625,4 +625,3 @@ void SetLatticeName(const std::vector<std::string> &latticeName) {
 }
 const std::vector<std::string> LatticeName() { return LATTICENAME; }
 const std::vector<std::string> MacroVarName() { return MACROVARNAME; }
-#include "model_kernel.h"

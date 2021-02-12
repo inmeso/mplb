@@ -38,13 +38,19 @@
  */
 
 #include "flowfield.h"
+#include "ops_seq_v2.h"
 std::string CASENAME;
 bool TRANSIENT{false};
 int BLOCKNUM{1};
 /*!
  * SPACEDIM=2 for 2D 3 for three 3D
  */
+#ifdef OPS_3D
+int SPACEDIM{3};
+#endif  //  OPS_3D
+#ifdef OPS_2D
 int SPACEDIM{2};
+#endif // ops_2D
 /**
  * Layers of halos
  */
@@ -97,7 +103,10 @@ const int HaloPtNum() { return std::max(SchemeHaloNum(), BoundaryHaloNum()); }
 
 void DefineCase(const std::string& caseName, const int spaceDim, const bool transient) {
     SetCaseName(caseName);
-    SPACEDIM = spaceDim;
+    if (SPACEDIM != spaceDim){
+        ops_printf("Error! The SPACEDIM here is inconsistent with the\n");
+        assert(SPACEDIM == spaceDim);
+    }
     TRANSIENT = transient;
 }
 

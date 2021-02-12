@@ -166,7 +166,7 @@ env:
 	@echo "Compiler = $(OPS_COMPILER)"
 
 lbm3d_dev_seq :
-	$(CPP) $(CPPFLAGS) $(MAINCPP) $(shell find $(MPLB_DIR) -type f \( -iname "*.cpp" ! -iname "setup*"  !  -iname "evolution.cpp" ! -iname hilemms_ops.cpp \))  $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq
+	$(CPP) $(CPPFLAGS)  $(MAINCPP) ${MPLB_DIR}/boundary.cpp ${MPLB_DIR}/evolution3d.cpp ${MPLB_DIR}/scheme.cpp ${MPLB_DIR}/configuration.cpp ${MPLB_DIR}/model.cpp ${MPLB_DIR}/flowfield.cpp  ${MPLB_DIR}/type.cpp ${MPLB_DIR}/boundary_kernel.cpp ${MPLB_DIR}/model_kernel.cpp ${MPLB_DIR}/scheme_kernel.cpp  $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq
 
 lbm3d_dev_seq_lib :
 	$(CPP) $(CPPFLAGS) $(MAINCPP) $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lmplb3d_seq -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq
@@ -221,6 +221,8 @@ lbm2d_openmp: Makefile type_ops.cpp boundary_ops.cpp scheme_ops.cpp flowfield_op
 #
 # Sequential version
 #
+lbm3d_seq :
+	$(CPP) $(CPPFLAGS) ./MPI_OpenMP/lbm3d_cavity_cpu_kernels.cpp boundary.cpp evolution3d_ops.cpp scheme.cpp configuration.cpp model.cpp flowfield_ops.cpp lbm3d_cavity_ops.cpp type.cpp  $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_seq
 
 lbm2d_seq: Makefile type_ops.cpp boundary_ops.cpp scheme_ops.cpp flowfield_ops.cpp  model_ops.cpp evolution_ops.cpp lbm2d_ops.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
 	$(MPICPP) $(MPIFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -I. ./MPI/$(SEQ_KERNELS) type_ops.cpp boundary_ops.cpp scheme_ops.cpp flowfield_ops.cpp  model_ops.cpp evolution_ops.cpp lbm2d_ops.cpp -lops_seq  $(HDF5_LIB) -o lbm2d_seq
