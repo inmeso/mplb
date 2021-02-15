@@ -37,15 +37,10 @@
 #include <iostream>
 #include <ostream>
 #include <string>
-#include "boundary.h"
-#include "evolution3d.h"
-#include "flowfield.h"
-#include "hilemms.h"
-#include "model.h"
+
 #include "ops_seq_v2.h"
-#include "scheme.h"
-#include "type.h"
-#include "configuration.h"
+#include "mplb.h"
+
 #include "cavity3d.h"
 //Provide macroscopic initial conditions
 void SetInitialMacrosVars() {
@@ -54,9 +49,9 @@ void SetInitialMacrosVars() {
         ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
                      g_Block[blockIdx], SPACEDIM, iterRng,
                      ops_arg_dat(g_MacroVars[blockIdx], NUMMACROVAR,
-                                 LOCALSTENCIL, "double", OPS_RW),
+                                 LOCALSTENCIL, "Real", OPS_RW),
                      ops_arg_dat(g_CoordinateXYZ[blockIdx], SPACEDIM,
-                                 LOCALSTENCIL, "double", OPS_READ),
+                                 LOCALSTENCIL, "Real", OPS_READ),
                      ops_arg_idx());
     }
 }

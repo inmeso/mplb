@@ -30,9 +30,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef CAVITY3D_H
-#define CAVITY3D_H
-#include "mplb.h"
+#include "cavity3d.h"
+
 void KerSetInitialMacroVars(ACC<Real>& macroVars, const ACC<Real>& coordinates,
-                            const int* idx);
-#endif
+                            const int* idx) {
+    macroVars(0, 0, 0, 0) = 1;
+    macroVars(1, 0, 0, 0) = 0;
+    macroVars(2, 0, 0, 0) = 0;
+    macroVars(3, 0, 0, 0) = 0;
+}
