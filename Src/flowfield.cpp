@@ -975,32 +975,37 @@ void AssignCoordinates(int blockIndex,
 #ifdef OPS_2D
     if (SPACEDIM == 2) {
         int* range = BlockIterRng(blockIndex, IterRngWhole());
+        const Real* coordinateX{blockCoordinates.at(0).data()};
+        const SizeType sizeX{BlockSize(blockIndex)[0]};
+        const Real* coordinateY{blockCoordinates.at(1).data()};
+        const SizeType sizeY{BlockSize(blockIndex)[1]};
         ops_par_loop(KerSetCoordinates, "KerSetCoordinates",
                      g_Block[blockIndex], SPACEDIM, range,
                      ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
                                  LOCALSTENCIL, "double", OPS_WRITE),
                      ops_arg_idx(),
-                     ops_arg_gbl(blockCoordinates.at(0).data(),
-                                 BlockSize(blockIndex)[0], "double", OPS_READ),
-                     ops_arg_gbl(blockCoordinates.at(1).data(),
-                                 BlockSize(blockIndex)[1], "double", OPS_READ));
+                     ops_arg_gbl(coordinateX, sizeX, "double", OPS_READ),
+                     ops_arg_gbl(coordinateY, sizeY, "double", OPS_READ));
     }
 #endif
 
 #ifdef OPS_3D
     if (SPACEDIM == 3) {
         int* range = BlockIterRng(blockIndex, IterRngWhole());
+        const Real* coordinateX{blockCoordinates.at(0).data()};
+        const SizeType sizeX{BlockSize(blockIndex)[0]};
+        const Real* coordinateY{blockCoordinates.at(1).data()};
+        const SizeType sizeY{BlockSize(blockIndex)[1]};
+        const Real* coordinateZ{blockCoordinates.at(2).data()};
+        const SizeType sizeZ{BlockSize(blockIndex)[2]};
         ops_par_loop(KerSetCoordinates3D, "KerSetCoordinates3D",
                      g_Block[blockIndex], SPACEDIM, range,
                      ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
                                  LOCALSTENCIL, "double", OPS_WRITE),
                      ops_arg_idx(),
-                     ops_arg_gbl(blockCoordinates.at(0).data(),
-                                 BlockSize(blockIndex)[0], "double", OPS_READ),
-                     ops_arg_gbl(blockCoordinates.at(1).data(),
-                                 BlockSize(blockIndex)[1], "double", OPS_READ),
-                     ops_arg_gbl(blockCoordinates.at(2).data(),
-                                 BlockSize(blockIndex)[2], "double", OPS_READ)
+                     ops_arg_gbl(coordinateX, sizeX, "double", OPS_READ),
+                     ops_arg_gbl(coordinateY, sizeY, "double", OPS_READ),
+                     ops_arg_gbl(coordinateZ, sizeZ, "double", OPS_READ)
 
         );
     }

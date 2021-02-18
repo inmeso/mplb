@@ -55,6 +55,7 @@ void PreDefinedCollision3D() {
             const SizeType compoId{pair.first};
             const CollisionType collisionType{pair.second};
             const Real tau{TauRef()[compoId]};
+            const Real* pdt{pTimeStep()};
 
             switch (collisionType) {
                 case Collision_BGKIsothermal2nd:
@@ -70,7 +71,7 @@ void PreDefinedCollision3D() {
                         ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                                     LOCALSTENCIL, "int", OPS_READ),
                         ops_arg_gbl(&tau, 1, "double", OPS_READ),
-                        ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(&compoId, 1, "int", OPS_READ));
                     break;
                 case Collision_BGKThermal4th:
@@ -86,7 +87,7 @@ void PreDefinedCollision3D() {
                         ops_arg_dat(g_NodeType[blockIndex], NUMCOMPONENTS,
                                     LOCALSTENCIL, "int", OPS_READ),
                         ops_arg_gbl(&tau, 1, "double", OPS_READ),
-                        ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(&compoId, 1, "int", OPS_READ));
                     break;
                 default:
@@ -117,6 +118,7 @@ void UpdateMacroVars3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
         const int forceSize{SPACEDIM * NUMCOMPONENTS};
+        const Real* pdt{pTimeStep()};
         ops_par_loop(KerCalcMacroVars3D, "KerCalcMacroVars3D",
                      g_Block[blockIndex], SPACEDIM, iterRng,
                      ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
@@ -129,7 +131,7 @@ void UpdateMacroVars3D() {
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_dat(g_MacroBodyforce[blockIndex], forceSize,
                                  LOCALSTENCIL, "double", OPS_READ),
-                     ops_arg_gbl(pTimeStep(), 1, "double", OPS_READ));
+                     ops_arg_gbl(pdt, 1, "double", OPS_READ));
     }
 }
 
