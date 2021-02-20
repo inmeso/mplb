@@ -107,6 +107,7 @@ void DefineCase(const std::string& caseName, const int spaceDim, const bool tran
         ops_printf("Error! The SPACEDIM here is inconsistent with the\n");
         assert(SPACEDIM == spaceDim);
     }
+    ops_decl_const("SPACEDIM", 1, "int", &SPACEDIM);
     TRANSIENT = transient;
 }
 

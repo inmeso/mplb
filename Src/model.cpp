@@ -392,7 +392,7 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
     ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);
     ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int", VARIABLECOMPINDEX);
-    ops_decl_const("VARIABLECOMPPOS", NUMCOMPONENTS, "int", VARIABLECOMPPOS);
+    ops_decl_const("VARIABLECOMPPOS", 2*NUMCOMPONENTS, "int", VARIABLECOMPPOS);
     g_MacroVars.SetDataDim(NUMMACROVAR);
     if (timeStep == 0) {
         g_MacroVars.CreateFieldFromScratch();

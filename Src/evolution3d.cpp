@@ -117,7 +117,6 @@ void Stream3D() {
 void UpdateMacroVars3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        const int forceSize{SPACEDIM * NUMCOMPONENTS};
         const Real* pdt{pTimeStep()};
         ops_par_loop(KerCalcMacroVars3D, "KerCalcMacroVars3D",
                      g_Block[blockIndex], SPACEDIM, iterRng,
@@ -129,7 +128,7 @@ void UpdateMacroVars3D() {
                                  LOCALSTENCIL, "int", OPS_READ),
                      ops_arg_dat(g_CoordinateXYZ[blockIndex], SPACEDIM,
                                  LOCALSTENCIL, "double", OPS_READ),
-                     ops_arg_dat(g_MacroBodyforce[blockIndex], forceSize,
+                     ops_arg_dat(g_MacroBodyforce[blockIndex], SPACEDIM*NUMCOMPONENTS,
                                  LOCALSTENCIL, "double", OPS_READ),
                      ops_arg_gbl(pdt, 1, "double", OPS_READ));
     }
@@ -138,7 +137,6 @@ void UpdateMacroVars3D() {
 void PreDefinedBodyForce3D() {
     for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
         int* iterRng = BlockIterRng(blockIndex, IterRngWhole());
-        const int forceSize{SPACEDIM * NUMCOMPONENTS};
         for (auto& pair : BodyForceTerms()) {
             const SizeType compoId{pair.first};
             const BodyForceType forceType{pair.second};
@@ -149,7 +147,7 @@ void PreDefinedBodyForce3D() {
                         g_Block[blockIndex], SPACEDIM, iterRng,
                         ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
-                        ops_arg_dat(g_MacroBodyforce[blockIndex], forceSize,
+                        ops_arg_dat(g_MacroBodyforce[blockIndex], SPACEDIM * NUMCOMPONENTS,
                                     LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
                                     LOCALSTENCIL, "double", OPS_RW),
@@ -163,7 +161,7 @@ void PreDefinedBodyForce3D() {
                         g_Block[blockIndex], SPACEDIM, iterRng,
                         ops_arg_dat(g_fStage[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
-                        ops_arg_dat(g_MacroBodyforce[blockIndex], forceSize,
+                        ops_arg_dat(g_MacroBodyforce[blockIndex], SPACEDIM * NUMCOMPONENTS,
                                     LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_MacroVars[blockIndex], NUMMACROVAR,
                                     LOCALSTENCIL, "double", OPS_RW),
