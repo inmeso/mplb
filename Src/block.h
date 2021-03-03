@@ -42,7 +42,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <assert.h>
+#include <cassert>
 
 #include "ops_seq_v2.h"
 #include "type.h"
@@ -74,7 +74,9 @@ class Block {
     SizeType ID() const { return id; };
     const std::string& Name() const { return name; };
     const ops_block& Get() const { return block; };
+    ops_block& Get() { return block; };
     const std::vector<SizeType>& Size() const { return size; };
+    const SizeType* pSize() const { return size.data(); };
     const std::vector<SizeType>& WholeRange() const { return wholeRange; };
     const std::vector<SizeType>& BulkRange() const { return bulkRange; };
     const std::vector<SizeType>& ImaxRange() const { return imaxRange; };
@@ -99,6 +101,7 @@ Block::Block(const SizeType blockId, const std::string& blockName,
         assert(spaceDim == blockSize.size());
     }
     size = blockSize;
+    block = ops_decl_block(spaceDim, blockName.c_str());
     wholeRange.reserve(2 * spaceDim);
     wholeRange.at(0) = 0;
     wholeRange.at(1) = size.at(0);
