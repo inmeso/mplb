@@ -36,8 +36,11 @@
  */
 #ifndef BOUNDARY_H
 #define BOUNDARY_H
-#include "flowfield.h"
-#include "model.h"
+//#include "flowfield.h"
+//#include "model.h"
+#include "type.h"
+#include <vector>
+#include "block.h"
 /*!
  * Discrete velocity type at a solid wall boundary
  */
@@ -164,15 +167,16 @@ void KerCutCellPeriodic3D(ACC<Real>& f, const ACC<int>& nodeType,
                           const int* componentId, const int* surface);
 #endif /* OPS_3D*/
 
-const int BoundaryHaloNum();
+int BoundaryHaloNum();
 void SetBoundaryHaloNum(const int boundaryhaloNum);
 void BoundaryNormal3D(const VertexGeometryType vg, int* unitNormal);
-int* BoundarySurfaceRange(const int blockId, BoundarySurface surface);
+std::vector<int> BoundarySurfaceRange(const Block& block,
+                                      BoundarySurface surface);
 void DefineBlockBoundary(int blockIndex, int componentID,
                          BoundarySurface boundarySurface,
                          BoundaryScheme boundaryScheme,
                          const std::vector<VariableTypes>& macroVarTypes,
                          const std::vector<Real>& macroVarValues,
-                         const VertexType boundaryType=VertexType::Wall);
+                         const VertexType boundaryType = VertexType::Wall);
 const std::vector<BlockBoundary>& BlockBoundaries();
 #endif  // BOUNDARY_H
