@@ -69,6 +69,7 @@ RealField& g_f() { return f; };
 RealField& g_fStage() { return fStage; };
 RealField& g_MacroVars() { return MacroVars; };
 RealField& g_MacroVarsCopy() { return MacroVarsCopy; };
+RealField& g_MacroBodyforce() { return MacroBodyforce; };
 /**
  * DT: time step
  */

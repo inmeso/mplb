@@ -38,12 +38,13 @@
 
 #ifndef EVOLUTION3D_H_
 #define EVOLUTION3D_H_
-#include "boundary.h"
-#include "flowfield.h"
-#include "hilemms.h"
-#include "model.h"
-#include "scheme.h"
+//#include "boundary.h"
+//#include "flowfield.h"
+//#include "model.h"
+//#include "scheme.h"
 #include "type.h"
+#include "field.h"
+#include "flowfield.h"
 
 /*!
  * In this module, we provide subroutines that implement a update system over
@@ -100,9 +101,9 @@ void UpdateMacroVars3D();
 void PreDefinedBodyForce3D();
 void UpdateHalos3D();
 void ImplementBoundary3D();
-void CopyDistribution3D(ops_dat* fDest, const ops_dat* fSrc);
+void CopyDistribution3D(RealField& fDest, RealField& fSrc);
 
-void TreatBlockBoundary3D(const int blockIndex, const int componentID,
+void TreatBlockBoundary3D(Block& block, const int componentID,
                           const Real* givenVars, int* range,
                           const BoundaryScheme boundaryScheme,
                           const BoundarySurface boundarySurface);

@@ -63,6 +63,9 @@ RealField& g_f();
 RealField& g_fStage();
 RealField& g_MacroVars();
 RealField& g_MacroVarsCopy();
+
+RealField& g_MacroBodyforce();
+
 const RealField& g_CoordinateXYZ();
 IntField& g_NodeType();
 IntField& g_GeometryProperty();
