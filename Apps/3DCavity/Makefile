@@ -166,7 +166,7 @@ env:
 	@echo "Compiler = $(OPS_COMPILER)"
 
 lbm3d_dev_seq :
-	$(CPP) $(CPPFLAGS)  $(MAINCPP) ${MPLB_DIR}/boundary.cpp ${MPLB_DIR}/evolution3d.cpp ${MPLB_DIR}/scheme.cpp ${MPLB_DIR}/configuration.cpp ${MPLB_DIR}/model.cpp ${MPLB_DIR}/flowfield.cpp  ${MPLB_DIR}/type.cpp ${MPLB_DIR}/boundary_kernel.cpp ${MPLB_DIR}/model_kernel.cpp ${MPLB_DIR}/scheme_kernel.cpp  $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq
+	$(MPICPP) $(CPPFLAGS)  $(MAINCPP) ${MPLB_DIR}/evolution3d.cpp ${MPLB_DIR}/scheme.cpp ${MPLB_DIR}/scheme_loop.cpp ${MPLB_DIR}/configuration.cpp ${MPLB_DIR}/model.cpp ${MPLB_DIR}/model_loop.cpp ${MPLB_DIR}/block.cpp ${MPLB_DIR}/flowfield.cpp ${MPLB_DIR}/flowfield_loop.cpp ${MPLB_DIR}/type.cpp ${MPLB_DIR}/boundary.cpp ${MPLB_DIR}/boundary_loop.cpp $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq
 
 lbm3d_dev_seq_lib :
 	$(CPP) $(CPPFLAGS) $(MAINCPP) $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lmplb3d_seq -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq

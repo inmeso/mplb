@@ -37,20 +37,21 @@
 #include <iostream>
 #include <ostream>
 #include <string>
-
-#include "ops_seq_v2.h"
 #include "mplb.h"
-
-#include "cavity3d.h"
+#include "ops_seq_v2.h"
+#include "cavity3d_kernel.inc"
 //Provide macroscopic initial conditions
 void SetInitialMacrosVars() {
-    for (int blockIdx = 0; blockIdx < BlockNum(); blockIdx++) {
-        int* iterRng = BlockIterRng(blockIdx, IterRngWhole());
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const SizeType blockIdx{block.ID()};
         ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
-                     g_Block[blockIdx], SPACEDIM, iterRng,
-                     ops_arg_dat(g_MacroVars[blockIdx], NUMMACROVAR,
+                     block.Get(), SpaceDim(), iterRng.data(),
+                     ops_arg_dat(g_MacroVars()[blockIdx], NUMMACROVAR,
                                  LOCALSTENCIL, "Real", OPS_RW),
-                     ops_arg_dat(g_CoordinateXYZ[blockIdx], SPACEDIM,
+                     ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
                                  LOCALSTENCIL, "Real", OPS_READ),
                      ops_arg_idx());
     }
@@ -63,11 +64,12 @@ void simulate() {
     std::string caseName{"3D_lid_Driven_cavity"};
     SizeType spaceDim{3};
     DefineCase(caseName, spaceDim);
-    SizeType blockNum{1};
-    std::vector<SizeType> blockSize{33, 33, 33};
+    std::vector<SizeType> blockIds{0};
+    std::vector<std::string> blockNames{"Cavity"};
+    std::vector<int> blockSize{33, 33, 33};
     Real meshSize{1. / 32};
-    std::vector<Real> startPos{0.0, 0.0, 0.0};
-    DefineBlocks(blockNum, blockSize, meshSize, startPos);
+    std::map<SizeType, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
+    DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
     std::vector<std::string> compoNames{"Fluid"};
     std::vector<SizeType> compoid{0};
@@ -140,48 +142,48 @@ void simulate() {
 }
 
 void simulate(const Configuration & config, const SizeType timeStep=0) {
-    DefineCase(config.caseName, config.spaceDim);
-    DefineBlocks(config.blockNum, config.blockSize, config.meshSize,
-                        config.startPos);
-    if (timeStep == 0) {
-        DefineComponents(config.compoNames, config.compoIds, config.lattNames);
-        DefineMacroVars(config.macroVarTypes, config.macroVarNames,
-                        config.macroVarIds, config.macroCompoIds);
-    } else {
-        // restart from a time step
-        DefineComponents(config.compoNames, config.compoIds, config.lattNames,
-                         timeStep);
-        DefineMacroVars(config.macroVarTypes, config.macroVarNames,
-                        config.macroVarIds, config.macroCompoIds,timeStep);
-    }
+    // DefineCase(config.caseName, config.spaceDim);
+    // DefineBlocks(config.blockNum, config.blockSize, config.meshSize,
+    //                     config.startPos);
+    // if (timeStep == 0) {
+    //     DefineComponents(config.compoNames, config.compoIds, config.lattNames);
+    //     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
+    //                     config.macroVarIds, config.macroCompoIds);
+    // } else {
+    //     // restart from a time step
+    //     DefineComponents(config.compoNames, config.compoIds, config.lattNames,
+    //                      timeStep);
+    //     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
+    //                     config.macroVarIds, config.macroCompoIds,timeStep);
+    // }
 
-    DefineCollision(config.CollisionTypes, config.CollisionCompoIds);
-    DefineBodyForce(config.bodyForceTypes, config.bodyForceCompoIds);
-    DefineScheme(config.schemeType);
-    DefineInitialCondition(config.initialTypes,config.initialConditionCompoId);
-    for (auto& bcConfig : config.blockBoundaryConfig) {
-        DefineBlockBoundary(bcConfig.blockIndex, bcConfig.componentID,
-                            bcConfig.boundarySurface, bcConfig.boundaryScheme,
-                            bcConfig.macroVarTypesatBoundary,
-                            bcConfig.givenVars, bcConfig.boundaryType);
-    }
-    Partition();
-    if (timeStep == 0) {
-        SetInitialMacrosVars();
-        PreDefinedInitialCondition3D();
-    } else{
-        //Help function for restart a steady simulation
-        //Mainly make the residual calculation correct at first iteration.
-        RestartMacroVars4SteadySim();
-    }
+    // DefineCollision(config.CollisionTypes, config.CollisionCompoIds);
+    // DefineBodyForce(config.bodyForceTypes, config.bodyForceCompoIds);
+    // DefineScheme(config.schemeType);
+    // DefineInitialCondition(config.initialTypes,config.initialConditionCompoId);
+    // for (auto& bcConfig : config.blockBoundaryConfig) {
+    //     DefineBlockBoundary(bcConfig.blockIndex, bcConfig.componentID,
+    //                         bcConfig.boundarySurface, bcConfig.boundaryScheme,
+    //                         bcConfig.macroVarTypesatBoundary,
+    //                         bcConfig.givenVars, bcConfig.boundaryType);
+    // }
+    // Partition();
+    // if (timeStep == 0) {
+    //     SetInitialMacrosVars();
+    //     PreDefinedInitialCondition3D();
+    // } else{
+    //     //Help function for restart a steady simulation
+    //     //Mainly make the residual calculation correct at first iteration.
+    //     RestartMacroVars4SteadySim();
+    // }
 
-    SetTauRef(config.tauRef);
-    SetTimeStep(config.meshSize / SoundSpeed());
-    if (config.transient){
-        Iterate(config.timeSteps, config.checkPeriod,timeStep);
-    } else{
-        Iterate(config.convergenceCriteria, config.checkPeriod,timeStep);
-    }
+    // SetTauRef(config.tauRef);
+    // SetTimeStep(config.meshSize / SoundSpeed());
+    // if (config.transient){
+    //     Iterate(config.timeSteps, config.checkPeriod,timeStep);
+    // } else{
+    //     Iterate(config.convergenceCriteria, config.checkPeriod,timeStep);
+    // }
 }
 
 int main(int argc, const char** argv) {
