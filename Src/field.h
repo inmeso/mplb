@@ -42,7 +42,6 @@
 #include <map>
 #include <string>
 #include <vector>
-
 #include "block.h"
 #include "ops_seq_v2.h"
 #include "type.h"
@@ -52,7 +51,7 @@ class Field {
     std::map<SizeType, ops_dat> data;
     std::map<SizeType, const Block*> dataBlock;
     std::string name;
-    SizeType dim{1};
+    int dim{1};
     SizeType haloDepth{1};
 #ifdef OPS_3D
     SizeType spaceDim{3};
@@ -61,33 +60,33 @@ class Field {
     SizeType spaceDim{2};
 #endif
     std::string type;
-    void CreateFieldFromFile(const std::string& fileName, const Block& block);
 
    public:
-    Field(const std::string& varName, const SizeType dataDim = 1,
-          const SizeType halo = 1);
-    Field(const char* varName, const SizeType dataDim = 1,
-          const SizeType halo = 1);
+    Field(const std::string& varName, const int dataDim = 1,
+          const int halo = 1);
+    Field(const char* varName, const int dataDim = 1,
+          const int halo = 1);
     void CreateFieldFromScratch(const BlockGroup& blocks);
     void CreateFieldFromScratch(const Block& block);
+    void CreateFieldFromFile(const std::string& fileName, const Block& block);
     void CreateFieldFromFile(const std::string& caseName, const Block& block,
-                             const SizeType timeStep = 0);
+                             const SizeType timeStep);
     void CreateFieldFromFile(const std::string& caseName,
                              const BlockGroup& blocks,
-                             const SizeType timeStep = 0);
-    void SetDataDim(const SizeType dataDim) { dim = dataDim; };
-    void SetDataHalo(const SizeType halo) { haloDepth = halo; };
+                             const SizeType timeStep);
+    void SetDataDim(const int dataDim) { dim = dataDim; };
+    void SetDataHalo(const int halo) { haloDepth = halo; };
     void WriteToHDF5(const std::string& caseName, const SizeType timeStep) const;
-    SizeType HaloDepth() const { return haloDepth; };
-    SizeType DataDim() const { return dim; };
+    int HaloDepth() const { return haloDepth; };
+    int DataDim() const { return dim; };
     ~Field(){};
     ops_dat at(SizeType blockIdx) { return data.at(blockIdx); };
-    ops_dat operator[](SizeType blockIdx) { return data.at(blockIdx); };
+    ops_dat operator[](SizeType blockIdx) { return this->at(blockIdx); };
 };
 
 template <typename T>
-Field<T>::Field(const std::string& varName, const SizeType dataDim,
-                const SizeType halo) {
+Field<T>::Field(const std::string& varName, const int dataDim,
+                const int halo) {
     name = varName;
     dim = dataDim;
     haloDepth = halo;
@@ -103,8 +102,8 @@ Field<T>::Field(const std::string& varName, const SizeType dataDim,
     }
 }
 template <typename T>
-Field<T>::Field(const char* varName, const SizeType dataDim,
-                const SizeType halo) {
+Field<T>::Field(const char* varName, const int dataDim,
+                const int halo) {
     name = std::string{varName};
     dim = dataDim;
     haloDepth = halo;
@@ -133,9 +132,10 @@ void Field<T>::CreateFieldFromScratch(const Block& block) {
     }
     const SizeType blockId{block.ID()};
     std::string dataName{name + "_" + block.Name()};
+    std::vector<int> size{block.Size()};
     ops_dat localDat =
-        ops_decl_dat(block.Get(), dim, block.Size().data(), base, d_m, d_p,
-                     temp, type.c_str(), dataName.c_str());
+        ops_decl_dat((ops_block)block.Get(), dim, size.data(), base,
+                     d_m, d_p, temp, type.c_str(), dataName.c_str());
     data.emplace(blockId, localDat);
     dataBlock.emplace(blockId, &block);
     delete[] d_p;
@@ -180,17 +180,17 @@ void Field<T>::CreateFieldFromFile(const std::string& caseName,
     }
 }
 template <typename T>
-void Field<T>::WriteToHDF5(const std::string& caseName,const SizeType timeStep) const {
-     for (const auto& idData : data) {
-         const SizeType blockId{idData.first};
-         const Block* block{dataBlock.at(blockId)};
-         std::string fileName = caseName + "_" + block->Name() + "_" +
-                                std::to_string(timeStep) + ".h5";
-         ops_fetch_block_hdf5_file(block->Get(), fileName.c_str());
-         ops_fetch_dat_hdf5_file(idData.second, fileName.c_str());
-     }
+void Field<T>::WriteToHDF5(const std::string& caseName,
+                           const SizeType timeStep) const {
+    for (const auto& idData : data) {
+        const SizeType blockId{idData.first};
+        const Block* block{dataBlock.at(blockId)};
+        std::string fileName = caseName + "_" + block->Name() + "_" +
+                               std::to_string(timeStep) + ".h5";
+        ops_fetch_block_hdf5_file(block->Get(), fileName.c_str());
+        ops_fetch_dat_hdf5_file(idData.second, fileName.c_str());
+    }
 }
-
 typedef Field<Real> RealField;
 typedef Field<int> IntField;
 #endif
