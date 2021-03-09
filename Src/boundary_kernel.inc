@@ -34,9 +34,18 @@
  * @author  Jianping Meng
  * @details Defining kernel functions for various boundary conditions.
  */
-#include "boundary.h"
+
 // As we are using update-halo method for the discretisation,
 // we need to deal with halo points when treating boundary
+#ifndef BOUNDARY_KERNEL_INC
+#define BOUNDARY_KERNEL_INC
+#include "ops_seq_v2.h"
+#include "type.h"
+#include "model.h"
+#include "model_host_device.h"
+#include "boundary.h"
+#include "flowfield_host_device.h"
+#include "boundary_host_device.h"
 
 #ifdef OPS_2D// Boundary conditions for two-dimensional problems
 
@@ -1647,13 +1656,14 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
                                 const ACC<int> &geometryProperty,
                                 const Real *givenMacroVars,
                                 const int *componentId) {
+#ifdef OPS_3D
     // This kernel is suitable for any single-speed lattice
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
     const int equilibriumOrder{2};
     const int compoIdx{*componentId};
 
-    VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0, 0);
+    const VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0, 0);
     Real u = givenMacroVars[1];
     Real v = givenMacroVars[2];
     Real w = givenMacroVars[3];
@@ -1738,6 +1748,7 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
     delete[] outgoing;
     delete[] incoming;
     delete[] parallel;
+#endif //OPS_3D
 }
 
 void KerCutCellNoslipEQN3D(ACC<Real> &f, const ACC<int> &nodeType,
@@ -2195,3 +2206,4 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
 
 #endif  // OPS_3D
 }
+#endif // BOUNDARY_KERNEL_INC

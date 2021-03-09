@@ -47,6 +47,11 @@
 #include <type_traits>
 #include "json.hpp"
 #include "type.h"
+#include "ops_seq_v2.h"
+#include "model.h"
+#include "model_host_device.h"
+#include "flowfield_host_device.h"
+#include "boundary.h"
 
 /** Structure for holding various input parameters
 */

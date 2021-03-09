@@ -45,6 +45,7 @@
 #include "type.h"
 #include "field.h"
 #include "flowfield.h"
+#include "model.h"
 
 /*!
  * In this module, we provide subroutines that implement a update system over
@@ -68,53 +69,12 @@
  * Overall wrap for stream-collision scheme
  */
 void StreamCollision3D(const Real time);
-/*!
- * Ops_par_loop for the stream step
- */
-void Stream3D();
-/*!
- * Ops_par_loop for the collision step
- */
-void PreDefinedCollision3D();
-// finite-difference scheme with cutting-cell technique related
-/*!
- * Overall wrap for a finite difference scheme
- */
-void TimeMarching3D();
-void ForwardEuler3D();
-// Common routines
-/*!
- * Calculating the residual errors for each macroscopic variables
- */
-void CalcResidualError3D();
-/*!
- * Calculating the total mass of the whole problem domain (all the blocks)
- */
-void CalcTotalMass3D(Real* totalMass);
-void PreDefinedInitialCondition3D();
-/*!
- * Mainly for a steady simulation
- */
-void DispResidualError3D(const int iter, const SizeType checkPeriod);
-void NormaliseF3D(Real* ratio);
-void UpdateMacroVars3D();
-void PreDefinedBodyForce3D();
-void UpdateHalos3D();
-void ImplementBoundary3D();
-void CopyDistribution3D(RealField& fDest, RealField& fSrc);
 
-void TreatBlockBoundary3D(Block& block, const int componentID,
-                          const Real* givenVars, int* range,
-                          const BoundaryScheme boundaryScheme,
-                          const BoundarySurface boundarySurface);
 
 void Iterate(const SizeType steps, const SizeType checkPointPeriod,
              const SizeType start = 0);
 void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
              const SizeType start = 0);
-
-void UpdateMacroscopicBodyForce(const Real time);
-void SetInitialMacrosVars();
 
 template <typename T>
 void Iterate(void (*cycle)(T), const SizeType steps,
@@ -160,7 +120,6 @@ void Iterate(void (*cycle)(T), const Real convergenceCriteria,
     DestroyModel();
     DestroyFlowfield();
 }
-void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc);
-void RestartMacroVars4SteadySim();
+
 #endif /* OPS_3D */
 #endif /* EVOLUTION3D_H_ */

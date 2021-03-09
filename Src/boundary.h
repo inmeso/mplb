@@ -36,136 +36,38 @@
  */
 #ifndef BOUNDARY_H
 #define BOUNDARY_H
-//#include "flowfield.h"
-//#include "model.h"
 #include "type.h"
 #include <vector>
 #include "block.h"
-/*!
- * Discrete velocity type at a solid wall boundary
- */
-enum BndryDvType {
-    BndryDv_Incoming = 1,
-    BndryDv_Outgoing = 2,
-    BndryDv_Parallel = 3,
-    BndryDv_Invalid = -1
+#include "flowfield_host_device.h"
+#include "boundary_host_device.h"
+#include "model.h"
+#include "model_host_device.h"
+
+enum class BoundaryScheme {
+    KineticDiffuseWall = 11,
+    KineticSpelluarWall = 12,
+    ExtrapolPressure1ST = 16,
+    ExtrapolPressure2ND = 17,
+    MDPeriodic = 18,
+    FDPeriodic = 19,
+    BounceBack = 20,
+    FreeFlux = 21,
+    ZouHeVelocity = 22,
+    EQN = 23,
+    EQMDiffuseRefl = 24
 };
-/*!
- * @brief Determining discrete velocity type a solid wall boundary: 3D
- * @param vg Geometry property, e.g., corner type
- * @param discreteVelocity components of a discrete velocity
- * @return BndryDvType discrete velocity type
- */
-BndryDvType FindBdyDvType3D(const VertexGeometryType vg,
-                            const Real* discreteVelocity);
-/*!
- * @brief Determining discrete velocity type a solid wall boundary
- * @param vg Geometry property, e.g., corner type
- * @param discreteVelocity components of a discrete velocity
- * @return BndryDvType discrete velocity type
- */
-BndryDvType FindBdyDvType(const VertexGeometryType vg,
-                          const Real* discreteVelocity);
-#ifdef OPS_2D
-// CutCell block boundary condition
-/*!
- * @brief  Equilibrium diffuse reflection boundary condition
- * @param givenMacroVars  specified velocity
- * @param nodeType if the current node is set to be EDR node
- * @param geometryProperty e.g., corner types
- * @param f distribution function
- * see Meng, Gu Emerson, Peng and Zhang, https://arxiv.org/abs/1803.00390.
- */
-void KerCutCellEQMDiffuseRefl(const Real* givenMacroVars,
-                              const ACC<int>& nodeType,
-                              const ACC<int>& geometryProperty, ACC<Real>& f,
-                              const int* componentId);
-void KerCutCellPeriodic(const ACC<int>& nodeType,
-                        const ACC<int>& geometryProperty, ACC<Real>& f);
-/*!
- * Standard bounce back boundary condition for block boundaries
- * As discussed by Meng, Gu and Emerson, Journal of Computational Science
- * 2018 (28): 476-482, its definition is incomplete which will induc
- * non-physical slip velocity at wall
- */
-void KerCutCellBounceBack(const ACC<int>& nodeType,
-                          const ACC<int>& geometryProperty, ACC<Real>& f);
 
-void KerCutCellKinetic(const Real* givenMacroVars, const int* nodeType,
-                       const int* geometryProperty, Real* f);
-void KerCutCellCorrectedKinetic(const Real* givenMacroVars, const Real* dt,
-                                const ACC<int>& nodeType,
-                                const ACC<int>& geometryProperty,
-                                const ACC<Real>& tau, const ACC<Real>& feq,
-                                ACC<Real>& f);
-void KerCutCellExtrapolPressure1ST(const Real* givenBoundaryVars,
-                                   const ACC<int>& nodeType,
-                                   const ACC<int>& geometryProperty,
-                                   ACC<Real>& f);
-void KerCutCellExtrapolPressure2ND(const Real* givenBoundaryVars,
-                                   const ACC<int>& nodeType,
-                                   const ACC<int>& geometryProperty,
-                                   ACC<Real>& f);
+struct BlockBoundary {
+    SizeType blockIndex;
+    SizeType componentID;
+    std::vector<Real> givenVars;
+    BoundarySurface boundarySurface;
+    BoundaryScheme boundaryScheme;
+    std::vector<VariableTypes> macroVarTypesatBoundary;
+    VertexType boundaryType;
+};
 
-
-/*!
- * The Zou-He boundary condition can only be valid for the D2Q9 lattice and
- * the second order equilibrium function
- */
-void KerCutCellZouHeVelocity(const Real* givenMacroVars,
-                             const ACC<int>& nodeType,
-                             const ACC<int>& geometryProperty,
-                             const ACC<Real>& macroVars, ACC<Real>& f);
-void KerCutCellZeroFlux(const ACC<int>& nodeType,
-                        const ACC<int>& geometryProperty, ACC<Real>& f);
-/*
- * @givenMacroVars:given macroscopic variables for the boundary condition.
- */
-
-// CutCell immersed solid boundary condition
-void KerCutCellEmbeddedBoundary(const ACC<int>& nodeType,
-                                const ACC<int>& geometryProperty, ACC<Real>& f);
-
-#endif /* OPS_2D  */
-#ifdef OPS_3D
-// CutCell block boundary condition
-/*!
- * @brief First order extrapolation pressure flow boundary:3D
- * @param givenBoundaryVars specified pressure
- * @param nodeType if the current node is set to be pressure flow boundary node
- * @param geometryProperty e.g., corner types
- * @param f distribution
- */
-void KerCutCellExtrapolPressure1ST3D(ACC<Real>& f, const ACC<int>& nodeType,
-                                     const ACC<int>& geometryProperty,
-                                     const Real* givenBoundaryVars,
-                                     const int* componentId,
-                                     const int* surface);
-/*!
- * @brief  Equilibrium diffuse reflection boundary condition: 3D
- * @param givenMacroVars  specified velocity
- * @param nodeType if the current node is set to be EDR node
- * @param geometryProperty e.g., corner types
- * @param f distribution function
- */
-void KerCutCellEQMDiffuseRefl3D(ACC<Real>& f, const ACC<int>& nodeType,
-                                const ACC<int>& geometryProperty,
-                                const Real* givenMacroVars,
-                                const int* componentId);
-
-/*!
- * @brief  The 3D no-slip boundary condition using EQN scheme
- * @param givenMacroVars  Values of macroscopic variables
- * @param nodeType if the current node is a Dirichlet node
- * @param f distribution function
- */
-void KerCutCellNoslipEQN3D(ACC<Real>& f, const ACC<int>& nodeType,
-                           const Real* givenMacroVars, const int* componentId);
-
-void KerCutCellPeriodic3D(ACC<Real>& f, const ACC<int>& nodeType,
-                          const ACC<int>& geometryProperty,
-                          const int* componentId, const int* surface);
-#endif /* OPS_3D*/
 
 int BoundaryHaloNum();
 void SetBoundaryHaloNum(const int boundaryhaloNum);
@@ -179,4 +81,11 @@ void DefineBlockBoundary(int blockIndex, int componentID,
                          const std::vector<Real>& macroVarValues,
                          const VertexType boundaryType = VertexType::Wall);
 const std::vector<BlockBoundary>& BlockBoundaries();
+#ifdef OPS_3D
+void TreatBlockBoundary3D(Block& block, const int componentID,
+                          const Real* givenVars, int* range,
+                          const BoundaryScheme boundaryScheme,
+                          const BoundarySurface boundarySurface);
+void ImplementBoundary3D();
+#endif // OPS_3D
 #endif  // BOUNDARY_H

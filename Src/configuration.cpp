@@ -35,6 +35,7 @@
  * @details Define the functions for Json configuration input
  */
 #include "configuration.h"
+#include "ops_seq_v2.h"
 Configuration config;
 using json = nlohmann::json;
 json jsonConfig;

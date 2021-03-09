@@ -36,7 +36,13 @@
  * the relaxation time, body force term, and macroscopic variables.
  */
 
+#ifndef MODEL_KERNEL_INC
+#define MODEL_KERNEL_INC
+#include "ops_seq_v2.h"
+#include "type.h"
 #include "model.h"
+#include "flowfield_host_device.h"
+#include "model_host_device.h"
 
 /*!
  * We assume that the layout of MacroVars is rho, u, v, w, T, ...
@@ -1069,3 +1075,4 @@ void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
 #endif // OPS_3D
 }
 #endif //OPS_3D outter
+#endif //MODEL_KERNEL_INC

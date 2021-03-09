@@ -38,11 +38,8 @@
  */
 #ifndef FLOWFIELD_H
 #define FLOWFIELD_H
-#include <algorithm>
-#include <cmath>
 #include <map>
 #include <string>
-#include "ops_seq_v2.h"
 #include "type.h"
 #include "block.h"
 #include "field.h"
@@ -66,7 +63,7 @@ RealField& g_MacroVarsCopy();
 
 RealField& g_MacroBodyforce();
 
-const RealField& g_CoordinateXYZ();
+RealField& g_CoordinateXYZ();
 IntField& g_NodeType();
 IntField& g_GeometryProperty();
 int SpaceDim();
@@ -80,8 +77,6 @@ void SetTimeStep(Real dt);
 void SetCaseName(const std::string& caseName);
 void setCaseName(const char* caseName);
 void SetTauRef(const std::vector<Real>& tauRef);
-void InitiliseDistribtuion();
-void InitialiseMacroVars();
 /*!
  * the residual error for steady flows
  * for each macroscopic variable, there are two values: the absolute
@@ -124,11 +119,30 @@ Real GetMaximumResidual(const SizeType checkPeriod);
 // blockSize: array of integers specifying the block blocksize.
 // meshSize: The size of mesh i.e. dx (At present dx = dy = dz).
 // startPos: Starting position of each block.
-void DefineBlocks(const SizeType blockNum,
-                  const std::vector<SizeType>& blockSize, const Real meshSize,
-                  const std::vector<Real>& startPos);
+// void DefineBlocks(const SizeType blockNum,
+//                   const std::vector<int>& blockSize, const Real meshSize,
+//                   const std::vector<Real>& startPos);
 
+void DefineBlocks(const std::vector<SizeType>& blockIds,
+                  const std::vector<std::string>& blockNames,
+                  const std::vector<int>& blockSizes, const Real meshSize,
+                  const std::map<SizeType, std::vector<Real>>& startPos);
 bool IsTransient();
+#ifdef OPS_3D
+void CalcResidualError3D();
+void DispResidualError3D(const int iter, const SizeType checkPeriod);
+void CalcTotalMass3D(double* totalMass);
+void CopyDistribution3D(RealField& fDest, RealField& fSrc);
+void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc);
+void NormaliseF3D(Real* ratio);
+#endif  // OPS_3D
 
-
+void CopyCurrentMacroVar();
+void SetBulkandHaloNodesType(Block& block, int compoId);
+void SetBoundaryNodeType();
+void SetBlockGeometryProperty(Block& block);
+void AssignCoordinates(Block& block,
+                       const std::vector<std::vector<Real>>& blockCoordinates);
+void UpdateMacroscopicBodyForce(const Real time);
+void SetInitialMacrosVars();
 #endif
