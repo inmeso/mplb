@@ -188,7 +188,7 @@ void simulate(const Configuration & config, const SizeType timeStep=0) {
 
 int main(int argc, const char** argv) {
     // OPS initialisation
-    ops_init(argc, argv, 1);
+    ops_init(argc, argv, 4);
     double ct0, ct1, et0, et1;
     ops_timers(&ct0, &et0);
     // start a simulation by hard-coding
