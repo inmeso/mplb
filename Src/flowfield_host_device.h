@@ -1,5 +1,8 @@
 #ifndef FLOWFIELD_HOST_DEVICE_H
 #define FLOWFIELD_HOST_DEVICE_H
+#ifndef OPS_FUN_PREFIX
+#define OPS_FUN_PREFIX
+#endif
 #define NEWVERTEX
 #ifdef NEWVERTEX
 // Notes on periodic boundary condition
@@ -137,4 +140,11 @@ enum VertexGeometryType {
     VG_IMJMKM_O = 1121311,
 
 };  // vg
+#ifdef OPS_3D
+static inline OPS_FUN_PREFIX int SpaceDim(){return 3;};
+#endif
+#ifdef OPS_2D
+static inline OPS_FUN_PREFIX int SpaceDim(){return 2;};
+#endif
+
 #endif // FLOWFIELD_HOST_DEVICE_H

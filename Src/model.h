@@ -40,8 +40,6 @@
 #include <vector>
 #include <list>
 #include "type.h"
-#include "flowfield.h"
-
 
 /*!
  * Most of variables in this module will not change when the code is running.

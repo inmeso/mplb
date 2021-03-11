@@ -66,7 +66,6 @@ RealField& g_MacroBodyforce();
 RealField& g_CoordinateXYZ();
 IntField& g_NodeType();
 IntField& g_GeometryProperty();
-int SpaceDim();
 Real TimeStep();
 const Real* pTimeStep();
 const Real* TauRef();

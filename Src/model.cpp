@@ -35,8 +35,11 @@
  *  @details Define the discrete velocity structure, the macroscopic variables,
  *   and necessary constants
  **/
+#include "ops_seq_v2.h"
 #include "model.h"
 #include "model_host_device.h"
+#include "flowfield.h"
+#include "flowfield_host_device.h"
 
 #include <map>
 int NUMXI{9};
@@ -394,8 +397,7 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
     ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);
     ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int", VARIABLECOMPINDEX);
-    ops_decl_const("VARIABLECOMPPOS", 2 * NUMCOMPONENTS, "int",
-                   VARIABLECOMPPOS);
+    ops_decl_const("VARIABLECOMPPOS", 2 * NUMCOMPONENTS, "int",VARIABLECOMPPOS);
     g_MacroVars().SetDataDim(NUMMACROVAR);
     if (timeStep == 0) {
         g_MacroVars().CreateFieldFromScratch(g_Block());

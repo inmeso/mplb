@@ -1,6 +1,7 @@
 #include <vector>
 #include <map>
 #include "flowfield.h"
+#include "flowfield_host_device.h"
 #include "model.h"
 #include "scheme.h"
 #include "ops_seq_v2.h"

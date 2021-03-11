@@ -248,7 +248,6 @@ void setCaseName(const char* caseName) {
     std::string tmp(caseName);
     CASENAME = tmp;
 }
-int SpaceDim() { return SPACEDIM; }
 
 void DestroyFlowfield() {
 
