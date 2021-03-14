@@ -172,7 +172,7 @@ lbm3d_dev_seq_lib :
 	$(CPP) $(CPPFLAGS) $(MAINCPP) $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lmplb3d_seq -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq
 
 lbm3d_dev_mpi :
-	$(MPICPP) $(CPPFLAGS)  $(MAINCPP) ${MPLB_DIR}/evolution3d.cpp ${MPLB_DIR}/scheme.cpp ${MPLB_DIR}/scheme_wrapper.cpp ${MPLB_DIR}/configuration.cpp ${MPLB_DIR}/model.cpp ${MPLB_DIR}/model_wrapper.cpp ${MPLB_DIR}/block.cpp ${MPLB_DIR}/flowfield.cpp ${MPLB_DIR}/flowfield_wrapper.cpp ${MPLB_DIR}/type.cpp ${MPLB_DIR}/boundary.cpp ${MPLB_DIR}/boundary_wrapper.cpp $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) $(HDF5_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lops_hdf5_mpi -lops_mpi -lhdf5_hl -lhdf5 -lz  -o lbm3d_dev_mpi
+	$(MPICPP) $(CPPFLAGS)  $(MAINCPP) ${MPLB_DIR}/evolution3d.cpp ${MPLB_DIR}/scheme.cpp ${MPLB_DIR}/scheme_wrapper.cpp ${MPLB_DIR}/configuration.cpp ${MPLB_DIR}/model.cpp ${MPLB_DIR}/model_wrapper.cpp ${MPLB_DIR}/block.cpp ${MPLB_DIR}/flowfield.cpp ${MPLB_DIR}/flowfield_wrapper.cpp ${MPLB_DIR}/type.cpp ${MPLB_DIR}/boundary.cpp ${MPLB_DIR}/boundary_wrapper.cpp $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) $(HDF5_LIB) -DOPS_3D -DOPS_MPI -DCPU -D$(LEVEL)  -lops_hdf5_mpi -lops_mpi -lhdf5_hl -lhdf5 -lz  -o lbm3d_dev_mpi
 
 lbm3d_dev_mpi_lib :
 	$(MPICPP) $(MPIFLAGS) $(MAINCPP) $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_MPI -DOPS_3D -DCPU -D$(LEVEL)  -lmplb3d_mpi -lops_mpi -lops_hdf5_mpi  $(HDF5_LIB)  -o lbm3d_dev_mpi
