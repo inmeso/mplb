@@ -44,7 +44,10 @@
 #include <vector>
 #include <cassert>
 
-#include "ops_seq_v2.h"
+#include "ops_lib_core.h"
+#ifdef OPS_MPI
+#include "ops_mpi_core.h"
+#endif
 #include "type.h"
 class Block {
    private:

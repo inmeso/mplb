@@ -47,7 +47,11 @@
 #include <type_traits>
 #include "json.hpp"
 #include "type.h"
-#include "ops_seq_v2.h"
+#include "ops_lib_core.h"
+
+#ifdef OPS_MPI
+#include "ops_mpi_core.h"
+#endif
 #include "model.h"
 #include "model_host_device.h"
 #include "flowfield_host_device.h"

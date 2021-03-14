@@ -39,7 +39,10 @@
 // we need to deal with halo points when treating boundary
 #ifndef BOUNDARY_KERNEL_INC
 #define BOUNDARY_KERNEL_INC
-#include "ops_seq_v2.h"
+#include "ops_lib_core.h"
+#ifdef OPS_MPI
+#include "ops_mpi_core.h"
+#endif
 #include "type.h"
 #include "model.h"
 #include "model_host_device.h"

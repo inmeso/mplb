@@ -35,7 +35,11 @@
  *  @details Define the discrete velocity structure, the macroscopic variables,
  *   and necessary constants
  **/
-#include "ops_seq_v2.h"
+#include "ops_lib_core.h"
+
+#ifdef OPS_MPI
+#include "ops_mpi_core.h"
+#endif
 #include "model.h"
 #include "model_host_device.h"
 #include "flowfield.h"

@@ -57,11 +57,9 @@ const int zaxis = 3;
 // ZERO is the zero constant with the desired precision, i.e., float or double
 const Real ZERO{(Real)((int)0)};
 typedef std::size_t SizeType;
-//#define debug
 #include "assert.h"
 #include <vector>
 #include <cmath>
-//#include "ops_seq_v2.h"
 
 // It looks that OPS always fills the uninitialised storage with 0 so
 // we try to avoid 0 value for these types

@@ -31,7 +31,10 @@
  */
 #ifndef FLOWFIELD_KERNEL_INC
 #define FLOWFIELD_KERNEL_INC
-#include "ops_seq_v2.h"
+#include "ops_lib_core.h"
+#ifdef OPS_MPI
+#include "ops_mpi_core.h"
+#endif
 #include "type.h"
 
 void KerSetNodeType(const int* value, ACC<int>& var, const int* compoId) {
