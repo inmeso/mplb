@@ -30,49 +30,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*! @brief Declare functions for numerical schemes.
- *  @author Jianping Meng
- *  @details Declare functions for implementing various numerical
- *  schemes, including the kernels
- **/
-#ifndef SCHEME_H
-#define SCHEME_H
-#include "flowfield.h"
-#include "model.h"
-#include "type.h"
+#ifndef CAVITY3D_KERNEL_INC
+#define CAVITY3D_KERNEL_INC
 
-// Define common stencils for implementing numerical schemes
-/*!
- * LOCALSTENCIL: the current node, suitable for mainly the collision process
- */
-extern ops_stencil LOCALSTENCIL;
-
-/*!
- * ONEPTREGULARSTENCIL: the standard rectangular stencil, mainly suitable for a
- * first order finite difference scheme
- */
-extern ops_stencil ONEPTREGULARSTENCIL;
-
-/*!
- * TWOPTREGULARSTENCIL: the standard rectangular stencil, mainly suitable for a
- * second order finite difference scheme
- */
-extern ops_stencil TWOPTREGULARSTENCIL;
-
-/*!
- * ONEPTLATTICESTENCIL: the standard stencil for the stream scheme
- */
-extern ops_stencil ONEPTLATTICESTENCIL;
-
-void SetupCommonStencils();
-// End Define common stencils
-
-//HiLeMMS interface see https://gitlab.com/jpmeng/hilemms
-void DefineScheme(const SchemeType scheme);
-const int SchemeHaloNum();
-void SetSchemeHaloNum(const int schemeHaloNum);
-const SchemeType Scheme();
-#ifdef OPS_3D
-void Stream3D();
-#endif //OPS_3D
-#endif
+void KerSetInitialMacroVars(ACC<Real>& macroVars, const ACC<Real>& coordinates,
+                            const int* idx) {
+    macroVars(0, 0, 0, 0) = 1;
+    macroVars(1, 0, 0, 0) = 0;
+    macroVars(2, 0, 0, 0) = 0;
+    macroVars(3, 0, 0, 0) = 0;
+}
+#endif // CAVITY3D_KERNEL_INC

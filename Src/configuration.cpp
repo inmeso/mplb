@@ -35,6 +35,10 @@
  * @details Define the functions for Json configuration input
  */
 #include "configuration.h"
+#include "ops_lib_core.h"
+#ifdef OPS_MPI
+#include "ops_mpi_core.h"
+#endif
 Configuration config;
 using json = nlohmann::json;
 json jsonConfig;

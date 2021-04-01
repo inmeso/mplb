@@ -92,62 +92,60 @@ def ChangeShape3D(data, nx, ny, nz, dataLength, haloNum):
     return data.transpose((2, 1, 0, 3))
 
 
-def ReadOPSDataHDF5(nx, ny, blockIndex, haloNum, spaceDim, macroVarNum, macroVarNames, xiNum, fileName):
+def ReadOPSDataHDF5(nx, ny, blockName, haloNum, spaceDim, macroVarNum, macroVarNames, xiNum, fileName):
     """Converting a 2D result file into a single dictionary enclosing two sub-dictionaries, MacroVars and Distributions. In particular, all vectors or tensors will be accessed through components. """
     if ((not h5Loaded) or (not numpyLoaded)):
         print("The h5py or numpy is not installed!")
         res = "The h5py or numpy is not installed!"
         return res
-    strBlockIdx = str(blockIndex)
     dataFile = h5.File(fileName)
-    blockKey = 'Block_' + strBlockIdx
     macroVars = {}
     distributions = {}
 
-    for dataKey in dataFile[blockKey].keys():
-        if 'Bodyforce_' + strBlockIdx == dataKey:
+    for dataKey in dataFile[blockName].keys():
+        if 'Bodyforce_' + blockName == dataKey:
             tmpvars = ChangeShape(
-                dataFile[blockKey][dataKey][:, :], nx, ny, xiNum, haloNum)
+                dataFile[blockName][dataKey][:, :], nx, ny, xiNum, haloNum)
             distributions['Force'] = tmpvars[haloNum:-
                                              haloNum, haloNum:-haloNum, :]
-        if 'MacroVars_' + strBlockIdx == dataKey:
+        if 'MacroVars_' + blockName == dataKey:
             tmpvars = ChangeShape(
-                dataFile[blockKey][dataKey][:, :], nx, ny, macroVarNum, haloNum)
+                dataFile[blockName][dataKey][:, :], nx, ny, macroVarNum, haloNum)
             for i in range(len(macroVarNames)):
                 macroVars[macroVarNames[i]] = tmpvars[haloNum:-
                                                       haloNum, haloNum:-haloNum, i]
-        if 'Tau_' + strBlockIdx == dataKey:
-            data = dataFile[blockKey][dataKey][haloNum:-
+        if 'Tau_' + blockName == dataKey:
+            data = dataFile[blockName][dataKey][haloNum:-
                                                haloNum, haloNum:-haloNum]
             macroVars['Tau'] = data.transpose()
-        if 'Nodetype_' + strBlockIdx == dataKey:
-            data = dataFile[blockKey][dataKey][haloNum:-
+        if 'Nodetype_' + blockName == dataKey:
+            data = dataFile[blockName][dataKey][haloNum:-
                                                haloNum, haloNum:-haloNum]
             macroVars['NT'] = data.transpose()
-        if 'GeometryProperty_' + strBlockIdx == dataKey:
-            data = dataFile[blockKey][dataKey][haloNum:-
+        if 'GeometryProperty_' + blockName == dataKey:
+            data = dataFile[blockName][dataKey][haloNum:-
                                                haloNum, haloNum:-haloNum]
             macroVars['GP'] = data.transpose()
-        if 'CoordinateXYZ_' + strBlockIdx == dataKey:
+        if 'CoordinateXYZ_' + blockName == dataKey:
             tmpvars = ChangeShape(
-                dataFile[blockKey][dataKey][:, :], nx, ny, spaceDim, haloNum)
+                dataFile[blockName][dataKey][:, :], nx, ny, spaceDim, haloNum)
             macroVars['X'] = tmpvars[haloNum:-haloNum, haloNum:-haloNum, 0]
             macroVars['Y'] = tmpvars[haloNum:-haloNum, haloNum:-haloNum, 1]
             distributions['X'] = tmpvars[haloNum:-haloNum, haloNum:-haloNum, 0]
             distributions['Y'] = tmpvars[haloNum:-haloNum, haloNum:-haloNum, 1]
-        if 'fStage_' + strBlockIdx == dataKey:
+        if 'fStage_' + blockName == dataKey:
             tmpvars = ChangeShape(
-                dataFile[blockKey][dataKey][:, :], nx, ny, xiNum, haloNum)
+                dataFile[blockName][dataKey][:, :], nx, ny, xiNum, haloNum)
             distributions['Fstage'] = tmpvars[haloNum:-
                                               haloNum, haloNum:-haloNum, :]
-        if 'f_' + strBlockIdx == dataKey:
+        if 'f_' + blockName == dataKey:
             tmpvars = ChangeShape(
-                dataFile[blockKey][dataKey][:, :], nx, ny, xiNum, haloNum)
+                dataFile[blockName][dataKey][:, :], nx, ny, xiNum, haloNum)
             distributions['F'] = tmpvars[haloNum:-
                                          haloNum, haloNum:-haloNum, :]
-        if 'feq_' + strBlockIdx == dataKey:
+        if 'feq_' + blockName == dataKey:
             tmpvars = ChangeShape(
-                dataFile[blockKey][dataKey][:, :], nx, ny, xiNum, haloNum)
+                dataFile[blockName][dataKey][:, :], nx, ny, xiNum, haloNum)
             distributions['Feq'] = tmpvars[haloNum:-
                                            haloNum, haloNum:-haloNum, :]
     res = {}
@@ -157,82 +155,76 @@ def ReadOPSDataHDF5(nx, ny, blockIndex, haloNum, spaceDim, macroVarNum, macroVar
     return res
 
 
-def ReadVariableWithHaloFromHDF53D(nx, ny, nz, blockIndex, haloNum, spaceDim, varName, varLen, fileName):
+def ReadVariableWithHaloFromHDF53D(nx, ny, nz, blockName, haloNum, spaceDim, varName, varLen, fileName):
     if ((not h5Loaded) or (not numpyLoaded)):
         print("The h5py or numpy is not installed!")
         res = "The h5py or numpy is not installed!"
         return res
-    strBlockIdx = str(blockIndex)
     dataFile = h5.File(fileName)
-    blockKey = 'Block_' + strBlockIdx
-    dataKey = varName+'_'+strBlockIdx
+    dataKey = varName+'_'+blockName
     if (varLen == 1):
-        data = dataFile[blockKey][dataKey][:, :, :]
+        data = dataFile[blockName][dataKey][:, :, :]
         res = data.transpose(2, 1, 0)
     if (varLen > 1):
         data = ChangeShape3D(
-                dataFile[blockKey][dataKey][:, :, :], nx, ny, nz, varLen, haloNum)
+                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, varLen, haloNum)
         res = data[:, :, :, :]
     dataFile.close()
     return res
 
-def ReadVariableFromHDF53D(nx, ny, nz, blockIndex, haloNum, spaceDim, varName, varLen, fileName):
+def ReadVariableFromHDF53D(nx, ny, nz, blockName, haloNum, spaceDim, varName, varLen, fileName):
     if ((not h5Loaded) or (not numpyLoaded)):
         print("The h5py or numpy is not installed!")
         res = "The h5py or numpy is not installed!"
         return res
-    strBlockIdx = str(blockIndex)
     dataFile = h5.File(fileName)
-    blockKey = 'Block_' + strBlockIdx
-    dataKey = varName+'_'+strBlockIdx
+    dataKey = varName+'_'+blockName
     if (varLen == 1):
-        data = dataFile[blockKey][dataKey][haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum]
+        data = dataFile[blockName][dataKey][haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum]
         res = data.transpose(2, 1, 0)
     if (varLen > 1):
         data = ChangeShape3D(
-                dataFile[blockKey][dataKey][:, :, :], nx, ny, nz, varLen, haloNum)
+                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, varLen, haloNum)
         res = data[haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
     dataFile.close()
     return res
 
-def ReadOPSDataHDF53D(nx, ny, nz, blockIndex, haloNum, spaceDim, macroVarNum, macroVarNames, xiNum, fileName):
+def ReadOPSDataHDF53D(nx, ny, nz, blockName, haloNum, spaceDim, macroVarNum, macroVarNames, xiNum, fileName):
     """Converting a 3D result file into a single dictionary enclosing two sub-dictionaries, MacroVars and Distributions. In particular, all vectors or tensors will be accessed through components. """
     if ((not h5Loaded) or (not numpyLoaded)):
         print("The h5py or numpy is not installed!")
         res = "The h5py or numpy is not installed!"
         return res
-    strBlockIdx = str(blockIndex)
     dataFile = h5.File(fileName)
-    blockKey = 'Block_' + strBlockIdx
     macroVars = {}
     distributions = {}
-    for dataKey in dataFile[blockKey].keys():
-        if 'Bodyforce_' + strBlockIdx == dataKey:
+    for dataKey in dataFile[blockName].keys():
+        if 'Bodyforce_' + blockName == dataKey:
             tmpvars = ChangeShape3D(
-                dataFile[blockKey][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
+                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
             distributions['Force'] = tmpvars[haloNum:-
                                              haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
-        if 'MacroVars_' + strBlockIdx == dataKey:
+        if 'MacroVars_' + blockName == dataKey:
             tmpvars = ChangeShape3D(
-                dataFile[blockKey][dataKey][:, :, :], nx, ny, nz, macroVarNum, haloNum)
+                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, macroVarNum, haloNum)
             for i in range(len(macroVarNames)):
                 macroVars[macroVarNames[i]] = tmpvars[haloNum:-
                                                       haloNum, haloNum:-haloNum, haloNum:-haloNum, i]
-        if 'Tau_' + strBlockIdx == dataKey:
-            data = dataFile[blockKey][dataKey][haloNum:-
+        if 'Tau_' + blockName == dataKey:
+            data = dataFile[blockName][dataKey][haloNum:-
                                                haloNum, haloNum:-haloNum, haloNum:-haloNum]
             macroVars['Tau'] = data.transpose(2, 1, 0)
-        if 'Nodetype_' + strBlockIdx == dataKey:
-            data = dataFile[blockKey][dataKey][haloNum:-
+        if 'Nodetype_' + blockName == dataKey:
+            data = dataFile[blockName][dataKey][haloNum:-
                                                haloNum, haloNum:-haloNum, haloNum:-haloNum]
             macroVars['NT'] = data.transpose(2, 1, 0)
-        if 'GeometryProperty_' + strBlockIdx == dataKey:
-            data = dataFile[blockKey][dataKey][haloNum:-
+        if 'GeometryProperty_' + blockName == dataKey:
+            data = dataFile[blockName][dataKey][haloNum:-
                                                haloNum, haloNum:-haloNum, haloNum:-haloNum]
             macroVars['GP'] = data.transpose(2, 1, 0)
-        if 'CoordinateXYZ_' + strBlockIdx == dataKey:
+        if 'CoordinateXYZ_' + blockName == dataKey:
             tmpvars = ChangeShape3D(
-                dataFile[blockKey][dataKey][:, :, :], nx, ny, nz, spaceDim, haloNum)
+                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, spaceDim, haloNum)
             macroVars['X'] = tmpvars[haloNum:-
                                      haloNum, haloNum:-haloNum, haloNum:-haloNum, 0]
             macroVars['Y'] = tmpvars[haloNum:-
@@ -245,19 +237,19 @@ def ReadOPSDataHDF53D(nx, ny, nz, blockIndex, haloNum, spaceDim, macroVarNum, ma
                                          haloNum, haloNum:-haloNum, haloNum:-haloNum, 1]
             distributions['Z'] = tmpvars[haloNum:-
                                          haloNum, haloNum:-haloNum, haloNum:-haloNum, 2]
-        if 'fStage_' + strBlockIdx == dataKey:
+        if 'fStage_' + blockName == dataKey:
             tmpvars = ChangeShape3D(
-                dataFile[blockKey][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
+                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
             distributions['Fstage'] = tmpvars[haloNum:-
                                               haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
-        if 'f_' + strBlockIdx == dataKey:
+        if 'f_' + blockName == dataKey:
             tmpvars = ChangeShape3D(
-                dataFile[blockKey][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
+                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
             distributions['F'] = tmpvars[haloNum:-
                                          haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
-        if 'feq_' + strBlockIdx == dataKey:
+        if 'feq_' + blockName == dataKey:
             tmpvars = ChangeShape3D(
-                dataFile[blockKey][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
+                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
             distributions['Feq'] = tmpvars[haloNum:-
                                            haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
     res = {}

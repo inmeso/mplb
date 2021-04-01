@@ -40,9 +40,6 @@
 #include <vector>
 #include <list>
 #include "type.h"
-#include "flowfield.h"
-#include "typeinfo"
-
 
 /*!
  * Most of variables in this module will not change when the code is running.
@@ -109,6 +106,18 @@ extern int* VARIABLECOMPINDEX;
  */
 extern int* VARIABLECOMPPOS;
 
+#include "model_host_device.h"
+
+enum CollisionType {
+    Collision_BGKIsothermal2nd = 0,
+    Collision_BGKThermal4th = 1,
+    Collision_BGKSWE4th = 2,
+};
+
+enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };
+
+enum InitialType {Initial_BGKFeq2nd = 1};
+
 // Convenient functions
 void SetLatticeName(const std::vector<std::string>& latticeName);
 const std::vector<std::string> LatticeName();
@@ -166,95 +175,14 @@ void DefineBodyForce(std::vector<BodyForceType> types,
 
 void DefineInitialCondition(std::vector<InitialType> types,
                             std::vector<SizeType> compoId);
-/*
- * Local function for calculating the equilibrium
- * 2D BGK model including up to fourth order terms
- * Please refer to Shan, Yuan and Chen JFM 2006(550):413-441
- */
-Real CalcBGKFeq(const int l, const Real rho = 1, const Real u = 0,
-                const Real v = 0, const Real T = 1, const int polyOrder = 2);
-/*
- * Local function for calculating the equilibrium
- * 3D BGK model including up to fourth order terms
- * Please refer to Shan, Yuan and Chen JFM 2006(550):413-441
- */
-Real CalcBGKFeq(const int l, const Real rho = 1, const Real u = 0,
-                const Real v = 0, const Real w = 0, const Real T = 1,
-                const int polyOrder = 2);
-/*
- * Local function for calculating the SWE equilibrium
- * Including up to fourth order terms
- * Please refer to Meng, Gu Emerson, Peng and Zhang, IJMPC 2018(29):1850080
- */
-Real CalcSWEFeq(const int l, const Real h = 1, const Real u = 0,
-                const Real v = 0, const int polyOrder = 2);
-
-// Kernel functions that will be called by ops_par_loop
-/*!
- * Calculate the equilibrium function for normal fluids
- * Polynomial equilibrium function: upto the fourth order
- */
-// Two-dimensional version
-#ifdef OPS_2D
-void KerCalcFeq(const int* nodeType, const Real* macroVars, Real* feq);
-void KerCalcMacroVars(const ACC<int>& nodeType, const ACC<Real>& f,
-                      ACC<Real>& macroVars);
-void KerCalcBodyForce(const Real* time, const int* nodeType,
-                      const Real* coordinates, const Real* macroVars,
-                      Real* bodyForce);
-#endif
-// Three-dimensional version
-// We have to create 2D and 3D version because of the difference
-// of 2D and 3D OPS_ACC_MD2 macro
 #ifdef OPS_3D
-void KerCalcBodyForce1ST3D(ACC<Real>& fStage, const ACC<Real>& acceration,
-                         const ACC<Real>& macroVars, const ACC<int>& nodeType,
-                         const int* componentId);
-
-void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
-                          const ACC<Real>& macroVars, const ACC<int>& nodeType,
-                          const int* componentId);
-
-void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
-                        const ACC<int>& nodeType, const ACC<Real>& coordinates,
-                        const ACC<Real>& acceleration, const Real* dt);
-
-void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<Real>& macroVars,
-                           const ACC<int>& nodeType, const int* componentId);
-
-/**
- * @brief Implement the BGK isothermal collision model
- *
- * @param fStage the temporary variable storing distribution after collision
- * @param f distribution
- * @param macroVars macroscopic variables
- * @param nodeType
- * @param tauRef relaxation time
- * @param dt time step
- * @param componentId the component to be working on
- * Assumptions:
- * 1. fStage before collision is body force distribution
- * 2. The layout of macroVars is "rho, u, v, w"
+void UpdateMacroVars3D();
+void PreDefinedBodyForce3D();
+void PreDefinedInitialCondition3D();
+/*!
+ * Ops_par_loop for the collision step
  */
-void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
-                  const ACC<Real>& macroVars, const ACC<int>& nodeType,
-                  const Real* tauRef, const Real* dt, const int* componentId);
+void PreDefinedCollision3D();
 
-/**
- * @brief Implement the BGK thermal collision model
- *
- * @param fStage the temporary variable storing distribution after collision
- * @param f distribution
- * @param macroVars macroscopic variables
- * @param nodeType
- * @param tauRef relaxation time
- * @param dt time step
- * @param componentId componentId the component to be working on
- * 1. fStage before collision is body force distribution
- * 2. The layout of macroVars is "rho, u, v, w, T"
-*/
-void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
-                  const ACC<Real>& macroVars, const ACC<int>& nodeType,
-                  const Real* tauRef, const Real* dt, const int* componentId);
-#endif // OPS_3D
+#endif //OPS_3D
 #endif

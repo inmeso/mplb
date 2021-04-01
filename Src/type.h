@@ -4,7 +4,7 @@
  *
  * Authors: See AUTHORS
  *
- * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]s
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -57,11 +57,9 @@ const int zaxis = 3;
 // ZERO is the zero constant with the desired precision, i.e., float or double
 const Real ZERO{(Real)((int)0)};
 typedef std::size_t SizeType;
-//#define debug
 #include "assert.h"
 #include <vector>
-#include "ops_seq_v2.h"
-#define NEWVERTEX
+#include <cmath>
 
 // It looks that OPS always fills the uninitialised storage with 0 so
 // we try to avoid 0 value for these types
@@ -77,167 +75,8 @@ enum PointPosition {
     RelativelyInteriorToEdge = 4,
     RelativelyInteriorToFace = 5
 };
-#ifdef NEWVERTEX
-// Notes on periodic boundary condition
-// There could be two types of implementation, one is same to finite difference
-// scheme, the other one is same to the molecular dynamics.
-// We provide both methods.
-// Finite difference way:
-// Using the kernel function  KerCutCellPeriodic3D when treating the boundary
-// condition. A halo transfer for g_f is required before treating boundary
-// condition. In this case, the grid is treated as if a wall node
-// Molecular dynamics:
-// In this way, nothing is needed when treating the boundary condition. However,
-// a halo transfer is needed for g_fStage before the stream step following the
-// current implementation stream-collision. In this case, the grid is treated
-// as if a fluid node
-enum class VertexType {
-    // vtfluid is the general type of node
-    // All specific fluid types should be started as vtft
-    Fluid = 10,
-    Inlet = 11,
-    OutLet = 12,
-    MDPeriodic = 13,
-    FDPeriodic = 15,
-    Symmetry = 14,
-    Wall = 1000,
-    // Bulk node but with immersed solid nodes
-    ImmersedSolid = -1,
-    // Immersed solid but surface
-    ImmersedBoundary = -2
-};  // vt
-#endif
-#ifndef NEWVERTEX
-enum VertexType {
-    // vtfluid is the general type of node
-    // All specific fluid types should be started as vtft
-    VertexType::Fluid = 10,
-    Vertex_Boundary = 1000,
-    // Vertex_Boundary is the general type of node
-    // All specific boundary types should be started as vtbt
-    Vertex_KineticDiffuseWall = 1001,
-    Vertex_KineticSpelluarWall = 1002,
-    Vertex_SlipWall = 1003,
-    Vertex_VelocityInlet = 1004,
-    Vertex_VelocityOutlet = 1005,
-    Vertex_ExtrapolPressure1ST = 1006,
-    Vertex_ExtrapolPressure2ND = 1007,
-    Vertex_Periodic = 1008,
-    Vertex_Uniform = 1009,
-    Vertex_BounceBackWall = 1010,
-    Vertex_FreeFlux = 1011,
-    Vertex_ZouHeVelocity = 1012,
-    Vertex_EQMDiffuseRefl = 1014,
-    Vertex_NoslipEQN = 1020,
-    // Vertex_BoundaryCorner is the general corner type of node
-    // All specific corner types should be started as vtbtco
-    // for example, a corner of bounceback wall and inlet may be named as
-    // vtbtbbinlet
-    // It is unlikely to be used.
-    Vertex_BoundaryCorner = 2000,
-    // Bulk node but with immersed solid nodes
-    VertexType::ImmersedSolid = -1
-};  // vt
-#endif
-// Use this type to describe the geometry property of a node in terms of surface
-// for example, it is i=0, j=0, or i=imax,j=jmax
-// Rule i(x)=1 j(y)=2 k(z)=3, start(min)=0 end(max)=1
-// So the surface i=0 is 10
-// in the 2D case, we suppose that there are only i,j planes.
-//
-enum VertexGeometryType {
-    // boundary node which usually a envelop of the region
-    // boundary surface
-    // VertexGeometry= VG
-    // a normal fluid node, no need to specify geometry property
-    VG_Fluid = 0,
-    // a normal immersed solid node, no need to specify geometry property
-    VG_ImmersedSolid = -1,
-    // surface property, the normal direction
-    // the normal direction pointing to the Positive (P) X(I) direction
-    VG_IP = 10,
-    // the normal direction pointing to the Minor (M) X(I) direction
-    VG_IM = 11,
-    VG_JP = 20,
-    VG_JM = 21,
-    VG_KP = 30,  // 3D
-    VG_KM = 31,  // 3D
-    // for inner corners
-    // boundary cross line for 3D and corner point for 2D
-    // only meaningful for 3D lines
-    VG_IPKP_I = 10300,
-    VG_IPKM_I = 10310,
-    VG_IMKP_I = 11300,
-    VG_IMKM_I = 11310,
-    VG_JPKP_I = 20300,
-    VG_JPKM_I = 20310,
-    VG_JMKP_I = 21300,
-    VG_JMKM_I = 21310,
-    // for both 3D lines and 2D points
-    VG_IPJP_I = 10200,
-    VG_IPJM_I = 10210,
-    VG_IMJP_I = 11200,
-    VG_IMJM_I = 11210,
-    // boundary corner point for 3D
-    VG_IPJPKP_I = 1020300,
-    VG_IPJPKM_I = 1020310,
-    VG_IPJMKP_I = 1021300,
-    VG_IPJMKM_I = 1021310,
-    VG_IMJPKP_I = 1120300,
-    VG_IMJPKM_I = 1120310,
-    VG_IMJMKP_I = 1121300,
-    VG_IMJMKM_I = 1121310,
-    // for outer corners
-    // only meaningful for 3D lines
-    VG_IPKP_O = 10301,
-    VG_IPKM_O = 10311,
-    VG_IMKP_O = 11301,
-    VG_IMKM_O = 11311,
-    VG_JPKP_O = 20301,
-    VG_JPKM_O = 20311,
-    VG_JMKP_O = 21301,
-    VG_JMKM_O = 21311,
-    // for both 3D lines and 2D points
-    VG_IPJP_O = 10201,
-    VG_IPJM_O = 10211,
-    VG_IMJP_O = 11201,
-    VG_IMJM_O = 11211,
-    // boundary corner point for 3D
-    VG_IPJPKP_O = 1020301,
-    VG_IPJPKM_O = 1020311,
-    VG_IPJMKP_O = 1021301,
-    VG_IPJMKM_O = 1021311,
-    VG_IMJPKP_O = 1120301,
-    VG_IMJPKM_O = 1120311,
-    VG_IMJMKP_O = 1121301,
-    VG_IMJMKM_O = 1121311,
 
-};  // vg
 
-enum VariableTypes {
-    Variable_Rho = 0,
-    Variable_U = 1,
-    Variable_V = 2,
-    Variable_W = 3,
-    Variable_T = 4,
-    Variable_Qx = 5,
-    Variable_Qy = 6,
-    Variable_Qz = 7,
-    // This is for the force correction needed by using He1998 scheme.
-    Variable_U_Force = 8,
-    Variable_V_Force = 9,
-    Variable_W_Force = 10,
-};
-
-enum CollisionType {
-    Collision_BGKIsothermal2nd = 0,
-    Collision_BGKThermal4th = 1,
-    Collision_BGKSWE4th = 2,
-};
-
-enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };
-
-enum InitialType {Initial_BGKFeq2nd = 1};
 
 enum SolidBodyType { SolidBody_circle = 0, SolidBody_ellipse = 1 };
 
@@ -271,38 +110,6 @@ typedef enum {
     ftmaxwellgas = 1,
 } FluidType;
 
-enum BoundarySurface {
-    BoundarySurface_Left = 0,
-    BoundarySurface_Right = 1,
-    BoundarySurface_Top = 2,
-    BoundarySurface_Bottom = 3,
-    BoundarySurface_Front = 4,
-    BoundarySurface_Back = 5,
-};
-
-enum class BoundaryScheme {
-    KineticDiffuseWall = 11,
-    KineticSpelluarWall = 12,
-    ExtrapolPressure1ST = 16,
-    ExtrapolPressure2ND = 17,
-    MDPeriodic = 18,
-    FDPeriodic = 19,
-    BounceBack = 20,
-    FreeFlux = 21,
-    ZouHeVelocity = 22,
-    EQN = 23,
-    EQMDiffuseRefl = 24
-};
-
-struct BlockBoundary {
-    SizeType blockIndex;
-    SizeType componentID;
-    std::vector<Real> givenVars;
-    BoundarySurface boundarySurface;
-    BoundaryScheme boundaryScheme;
-    std::vector<VariableTypes> macroVarTypesatBoundary;
-    VertexType boundaryType;
-};
 
 typedef enum {
     bpanormal = 0,

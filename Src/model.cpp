@@ -28,14 +28,23 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 /*! @brief Define discrete model
  *  @author Jianping Meng
  *  @details Define the discrete velocity structure, the macroscopic variables,
  *   and necessary constants
  **/
+#include "ops_lib_core.h"
+
+#ifdef OPS_MPI
+#include "ops_mpi_core.h"
+#endif
 #include "model.h"
+#include "model_host_device.h"
+#include "flowfield.h"
+#include "flowfield_host_device.h"
+
 #include <map>
 int NUMXI{9};
 int FEQORDER{2};
@@ -54,15 +63,15 @@ std::list<std::pair<SizeType, CollisionType>> COLLISIONTERMS;
 std::list<std::pair<SizeType, BodyForceType>> FORCETERMS;
 std::list<std::pair<SizeType, InitialType>> INITIALTERMS;
 
-const std::list<std::pair<SizeType,CollisionType >> & CollisionTerms(){
+const std::list<std::pair<SizeType, CollisionType>>& CollisionTerms() {
     return COLLISIONTERMS;
 }
 
-const std::list<std::pair<SizeType,BodyForceType>> & BodyForceTerms(){
+const std::list<std::pair<SizeType, BodyForceType>>& BodyForceTerms() {
     return FORCETERMS;
 }
 
-const std::list<std::pair<SizeType,InitialType>> & InitialTerms(){
+const std::list<std::pair<SizeType, InitialType>>& InitialTerms() {
     return INITIALTERMS;
 }
 
@@ -75,6 +84,7 @@ std::vector<std::string> MACROVARNAME;
  *Name of all Lattices.
  */
 std::vector<std::string> LATTICENAME;
+
 
 struct lattice {
     int lattDim;
@@ -167,7 +177,7 @@ void SetupD3Q15Latt(const int startPos) {
 }
 
 void SetupD2Q16Latt(const int startPos) {
-    //Gauss-Hermite quadrature from the fourth order polynomial
+    // Gauss-Hermite quadrature from the fourth order polynomial
     const int nc16{16};
     const int nc1d{4};
     const Real roots[nc1d] = {-2.3344142183389773, -0.7419637843027259,
@@ -187,7 +197,7 @@ void SetupD2Q16Latt(const int startPos) {
 }
 
 void SetupD2Q36Latt(const int startPos) {
-    //Gauss-Hermite quadrature from the sixth order polynomial
+    // Gauss-Hermite quadrature from the sixth order polynomial
     const int nc36{36};
     const int nc1d{6};
     const Real roots[nc1d] = {-0.3324257433552119e1, -0.1889175877753711e1,
@@ -207,7 +217,6 @@ void SetupD2Q36Latt(const int startPos) {
     }
     FindReverseXi(startPos, nc36);
 }
-
 
 void AllocateComponentIndex(const int compoNum) {
     if (compoNum == NUMCOMPONENTS) {
@@ -332,14 +341,14 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     ops_decl_const("XI", NUMXI * LATTDIM, "double", XI);
     ops_decl_const("WEIGHTS", NUMXI, "double", WEIGHTS);
     ops_decl_const("OPP", NUMXI, "int", OPP);
-    g_f.SetDataDim(NUMXI);
-    if (timeStep == 0){
-    g_f.CreateFieldFromScratch();}
-    else {
-        g_f.CreateFieldFromCheckPoint(timeStep);
+    g_f().SetDataDim(NUMXI);
+    if (timeStep == 0) {
+        g_f().CreateFieldFromScratch(g_Block());
+    } else {
+        g_f().CreateFieldFromFile(CaseName(), g_Block(), timeStep);
     }
-    g_fStage.SetDataDim(NUMXI);
-    g_fStage.CreateFieldFromScratch();
+    g_fStage().SetDataDim(NUMXI);
+    g_fStage().CreateFieldFromScratch(g_Block());
 }
 
 void DefineMacroVars(std::vector<VariableTypes> types,
@@ -392,16 +401,16 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
     ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);
     ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int", VARIABLECOMPINDEX);
-    ops_decl_const("VARIABLECOMPPOS", NUMCOMPONENTS, "int", VARIABLECOMPPOS);
-    g_MacroVars.SetDataDim(NUMMACROVAR);
+    ops_decl_const("VARIABLECOMPPOS", 2 * NUMCOMPONENTS, "int",VARIABLECOMPPOS);
+    g_MacroVars().SetDataDim(NUMMACROVAR);
     if (timeStep == 0) {
-        g_MacroVars.CreateFieldFromScratch();
+        g_MacroVars().CreateFieldFromScratch(g_Block());
     } else {
-        g_MacroVars.CreateFieldFromCheckPoint(timeStep);
+        g_MacroVars().CreateFieldFromFile(CaseName(), g_Block(), timeStep);
     }
     if (!IsTransient()) {
-        g_MacroVarsCopy.SetDataDim(NUMMACROVAR);
-        g_MacroVarsCopy.CreateFieldFromScratch();
+        g_MacroVarsCopy().SetDataDim(NUMMACROVAR);
+        g_MacroVarsCopy().CreateFieldFromScratch(g_Block());
         g_ResidualErrorHandle = new ops_reduction[MacroVarsNum()];
         g_ResidualError = new Real[2 * MacroVarsNum()];
         for (int localIdx = 0; localIdx < MacroVarsNum(); localIdx++) {
@@ -424,7 +433,7 @@ void DefineCollision(std::vector<CollisionType> types,
         assert(typeSize == compoSize);
     }
 
-    if (compoSize > NUMCOMPONENTS){
+    if (compoSize > NUMCOMPONENTS) {
         ops_printf(
             "Error! There are %i collision types defined but only %i "
             "components\n",
@@ -441,7 +450,7 @@ void DefineCollision(std::vector<CollisionType> types,
         std::pair<int, CollisionType> pair(compoId.at(idx), types.at(idx));
         COLLISIONTERMS.push_back(pair);
     }
-     if (compoSize < NUMCOMPONENTS) {
+    if (compoSize < NUMCOMPONENTS) {
         ops_printf(
             "Warning! Kernel functions are required for components without "
             "pre-defined collision terms!\n");
@@ -482,8 +491,8 @@ void DefineBodyForce(std::vector<BodyForceType> types,
             "Warning! Kernel functions are required for components without "
             "pre-defined body force terms!\n");
     }
-    g_MacroBodyforce.SetDataDim(SPACEDIM * NUMCOMPONENTS);
-    g_MacroBodyforce.CreateFieldFromScratch();
+    g_MacroBodyforce().SetDataDim(SpaceDim() * NUMCOMPONENTS);
+    g_MacroBodyforce().CreateFieldFromScratch(g_Block());
 }
 void DefineInitialCondition(std::vector<InitialType> types,
                             std::vector<SizeType> compoId) {
@@ -530,99 +539,8 @@ void DestroyModel() {
     FreeArrayMemory(WEIGHTS);
     FreeArrayMemory(OPP);
 }
-/*
-* Calculate the first-order force term
-* Author: Jianping Meng  22-Feb-2019
-*/
-Real CalcBodyForce(const int xiIndex, const Real rho,
-                   const Real* acceleration) {
-    Real cf{0};
-    for (int i = 0; i < LATTDIM; i++) {
-        cf += CS * XI[xiIndex * LATTDIM + i] * acceleration[i];
-    }
-    return WEIGHTS[xiIndex] * rho * cf;
-}
-
-Real CalcBGKFeq(const int l, const Real rho, const Real u, const Real v,
-                const Real T, const int polyOrder) {
-    Real cu{(CS * XI[l * LATTDIM] * u + CS * XI[l * LATTDIM + 1] * v)};
-    Real c2{(CS * XI[l * LATTDIM] * CS * XI[l * LATTDIM] +
-             CS * XI[l * LATTDIM + 1] * CS * XI[l * LATTDIM + 1])};
-    Real cu2{cu * cu};
-    Real u2{u * u + v * v};
-    Real res = 1.0 + cu + 0.5 * (cu2 - u2 + (T - 1.0) * (c2 - LATTDIM));
-    if ((polyOrder) >= 3) {
-        res = res +
-              cu * (cu2 - 3.0 * u2 + 3.0 * (T - 1.0) * (c2 - LATTDIM - 2.0)) /
-                  6.0;
-    }
-    if ((polyOrder) >= 4) {
-        res =
-            res + (cu2 * cu2 - 6.0 * cu2 * u2 + 3.0 * u2 * u2) / 24.0 +
-            (T - 1.0) * ((c2 - (LATTDIM + 2)) * (cu2 - u2) - 2.0 * cu2) / 4.0 +
-            (T - 1.0) * (T - 1.0) *
-                (c2 * c2 - 2.0 * (LATTDIM + 2) * c2 + LATTDIM * (LATTDIM + 2)) /
-                8.0;
-    }
-    return WEIGHTS[l] * rho * res;
-}
-
-Real CalcBGKFeq(const int l, const Real rho, const Real u, const Real v,
-                const Real w, const Real T, const int polyOrder) {
-    Real cu{(CS * XI[l * LATTDIM] * u + CS * XI[l * LATTDIM + 1] * v +
-             CS * XI[l * LATTDIM + 2] * w)};
-    Real c2{(CS * XI[l * LATTDIM] * CS * XI[l * LATTDIM] +
-             CS * XI[l * LATTDIM + 1] * CS * XI[l * LATTDIM + 1] +
-             CS * XI[l * LATTDIM + 2] * CS * XI[l * LATTDIM + 2])};
-    Real cu2{cu * cu};
-    Real u2{u * u + v * v + w * w};
-    Real res = 1.0 + cu + 0.5 * (cu2 - u2 + (T - 1.0) * (c2 - LATTDIM));
-    if ((polyOrder) >= 3) {
-        res = res +
-              cu * (cu2 - 3.0 * u2 + 3.0 * (T - 1.0) * (c2 - LATTDIM - 2.0)) /
-                  6.0;
-    }
-    if ((polyOrder) >= 4) {
-        res =
-            res + (cu2 * cu2 - 6.0 * cu2 * u2 + 3.0 * u2 * u2) / 24.0 +
-            (T - 1.0) * ((c2 - (LATTDIM + 2)) * (cu2 - u2) - 2.0 * cu2) / 4.0 +
-            (T - 1.0) * (T - 1.0) *
-                (c2 * c2 - 2.0 * (LATTDIM + 2) * c2 + LATTDIM * (LATTDIM + 2)) /
-                8.0;
-    }
-    return WEIGHTS[l] * rho * res;
-}
-
-Real CalcSWEFeq(const int l, const Real h, const Real u, const Real v,
-                const int polyOrder) {
-    // Implementing the model derived in Please refer to Meng, Gu Emerson, Peng
-    // and Zhang, IJMPC 2018(29):1850080
-
-    Real cu{(CS * XI[l * LATTDIM] * u + CS * XI[l * LATTDIM + 1] * v)};
-    Real c2{(CS * XI[l * LATTDIM] * CS * XI[l * LATTDIM] +
-             CS * XI[l * LATTDIM + 1] * CS * XI[l * LATTDIM + 1])};
-    Real cu2{cu * cu};
-    Real u2{u * u + v * v};
-    Real res = 1.0 + cu + 0.5 * (cu2 - u2 + (h - 1.0) * (c2 - LATTDIM));
-    if (polyOrder >= 3) {
-        res = res +
-              cu * (cu2 - 3.0 * u2 + 3.0 * (h - 1.0) * (c2 - LATTDIM - 2.0)) /
-                  6.0;
-    }
-    if (polyOrder >= 4) {
-        res =
-            res + (cu2 * cu2 - 6.0 * cu2 * u2 + 3.0 * u2 * u2) / 24.0 +
-            (h - 1.0) * ((c2 - (LATTDIM + 2)) * (cu2 - u2) - 2.0 * cu2) / 4.0 +
-            (h - 1.0) * (h - 1.0) *
-                (c2 * c2 - 2.0 * (LATTDIM + 2) * c2 + LATTDIM * (LATTDIM + 2)) /
-                8.0;
-    }
-    return WEIGHTS[l] * h * res;
-}
-
-void SetLatticeName(const std::vector<std::string> &latticeName) {
+void SetLatticeName(const std::vector<std::string>& latticeName) {
     LATTICENAME = latticeName;
 }
 const std::vector<std::string> LatticeName() { return LATTICENAME; }
 const std::vector<std::string> MacroVarName() { return MACROVARNAME; }
-#include "model_kernel.h"
