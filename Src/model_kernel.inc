@@ -610,14 +610,231 @@ void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
 #endif  // OPS_3D
 }
 
-/*!
- * If a Newton-Cotes quadrature is used, it can be converted to the way
- * similar to the Gauss-Hermite quadrature
- *
- */
-void KerCalcMacroVars3D(ACC<Real>& macroVars, const ACC<Real>& f,
-                        const ACC<int>& nodeType, const ACC<Real>& coordinates,
-                        const ACC<Real>& acceleration, const Real* dt) {
+void KerCalcDensity3D(ACC<Real>& macroVars, const ACC<Real>& f,
+                      const ACC<int>& nodeType, const int* component,
+                      const int* lattIdx, const int* rhoIdx) {
+    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+    if (vt != VertexType::ImmersedSolid) {
+        macroVars((*rhoIdx), 0, 0, 0) = 0;
+        for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+            macroVars((*rhoIdx), 0, 0, 0) += f(xiIdx, 0, 0, 0);
+        }
+#ifdef CPU
+        Real rho = macroVars(m, 0, 0, 0);
+        if (isnan(rho) || rho <= 0 || isinf(rho)) {
+            ops_printf(
+                "Error! Density %f becomes invalid！Something "
+                "wrong...",
+                rho);
+            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
+                       x, y, z);
+            assert(!(isnan(rho) || rho <= 0 || isinf(rho)));
+        }
+
+#endif
+    }
+}
+
+void KerCalcU3D(ACC<Real>& macroVars, const ACC<Real>& f,
+                const ACC<int>& nodeType, const int* component,
+                const int* lattIdx, const int* rhoIdx, const int* UIdx) {
+    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+    if (vt != VertexType::ImmersedSolid) {
+        macroVars((*UIdx), 0, 0, 0) = 0;
+        for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+            macroVars((*UIdx), 0, 0, 0) +=
+                CS * XI[xiIdx * LATTDIM] * f(xiIdx, 0, 0, 0);
+        }
+        macroVars((*UIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+#ifdef CPU
+        Real U = macroVars((*UIdx), 0, 0, 0);
+        if (isnan(U) || isinf(U)) {
+            ops_printf(
+                "Error! Velocity U=%f becomes invalid! "
+                "Maybe something wrong...\n",
+                U);
+            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
+                       x, y, z);
+            assert(!(isnan(U) || isinf(U)));
+        }
+
+#endif
+    }
+}
+
+void KerCalcV3D(ACC<Real>& macroVars, const ACC<Real>& f,
+                const ACC<int>& nodeType, const int* component,
+                const int* lattIdx, const int* rhoIdx, const int* VIdx) {
+    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+    if (vt != VertexType::ImmersedSolid) {
+        macroVars((*VIdx), 0, 0, 0) = 0;
+        for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+            macroVars((*VIdx), 0, 0, 0) +=
+                CS * XI[xiIdx * LATTDIM + 1] * f(xiIdx, 0, 0, 0);
+        }
+        macroVars((*VIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+#ifdef CPU
+        Real V = macroVars((*VIdx), 0, 0, 0);
+        if (isnan(V) || isinf(V)) {
+            ops_printf(
+                "Error! Velocity V=%f becomes invalid! "
+                "Maybe something wrong...\n",
+                V);
+            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
+                       x, y, z);
+            assert(!(isnan(V) || isinf(V)));
+        }
+
+#endif
+    }
+}
+
+void KerCalcW3D(ACC<Real>& macroVars, const ACC<Real>& f,
+                const ACC<int>& nodeType, const int* component,
+                const int* lattIdx, const int* rhoIdx, const int* WIdx) {
+    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+    if (vt != VertexType::ImmersedSolid) {
+        macroVars((*WIdx), 0, 0, 0) = 0;
+        for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+            macroVars((*WIdx), 0, 0, 0) +=
+                CS * XI[xiIdx * LATTDIM + 2] * f(xiIdx, 0, 0, 0);
+        }
+        macroVars((*WIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+#ifdef CPU
+        Real W = macroVars((*WIdx), 0, 0, 0);
+        if (isnan(W) || isinf(W)) {
+            ops_printf(
+                "Error! Velocity W=%f becomes invalid! "
+                "Maybe something wrong...\n",
+                W);
+            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
+                       x, y, z);
+            assert(!(isnan(W) || isinf(W)));
+        }
+
+#endif
+    }
+}
+
+void KerCalcUForce3D(ACC<Real>& macroVars, const ACC<Real>& f,
+                     const ACC<int>& nodeType, const ACC<Real>& coordinates,
+                     const ACC<Real>& acceleration, const Real* dt,
+                     const int* component, const int* lattIdx,
+                     const int* rhoIdx, const int* UIdx) {
+    const Real x{coordinates(0, 0, 0, 0)};
+    const Real y{coordinates(1, 0, 0, 0)};
+    const Real z{coordinates(2, 0, 0, 0)};
+    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+    if (vt != VertexType::ImmersedSolid) {
+        macroVars((*UIdx), 0, 0, 0) = 0;
+        for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+            macroVars((*UIdx), 0, 0, 0) +=
+                CS * XI[xiIdx * LATTDIM] * f(xiIdx, 0, 0, 0);
+        }
+        macroVars((*UIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+        if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt) {
+            macroVars((*UIdx), 0, 0, 0) +=
+                ((*dt) * acceleration(3 * (*component), 0, 0, 0) / 2);
+        }
+#ifdef CPU
+        Real U = macroVars((*UIdx), 0, 0, 0);
+        if (isnan(U) || isinf(U)) {
+            ops_printf(
+                "Error! Velocity U=%f becomes invalid! "
+                "Maybe something wrong...\n",
+                U);
+            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
+                       x, y, z);
+            assert(!(isnan(U) || isinf(U)));
+        }
+
+#endif
+    }
+}
+
+void KerCalcVForce3D(ACC<Real>& macroVars, const ACC<Real>& f,
+                     const ACC<int>& nodeType, const ACC<Real>& coordinates,
+                     const ACC<Real>& acceleration, const Real* dt,
+                     const int* component, const int* lattIdx,
+                     const int* rhoIdx, const int* VIdx) {
+    const Real x{coordinates(0, 0, 0, 0)};
+    const Real y{coordinates(1, 0, 0, 0)};
+    const Real z{coordinates(2, 0, 0, 0)};
+    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+    if (vt != VertexType::ImmersedSolid) {
+        macroVars((*VIdx), 0, 0, 0) = 0;
+        for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+            macroVars((*VIdx), 0, 0, 0) +=
+                CS * XI[xiIdx * LATTDIM + 1] * f(xiIdx, 0, 0, 0);
+        }
+        macroVars((*VIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+        if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt) {
+            macroVars((*VIdx), 0, 0, 0) +=
+                ((*dt) * acceleration(3 * (*component) + 1, 0, 0, 0) / 2);
+        }
+
+#ifdef CPU
+        Real V = macroVars((*VIdx), 0, 0, 0);
+        if (isnan(V) || isinf(V)) {
+            ops_printf(
+                "Error! Velocity V=%f becomes invalid! "
+                "Maybe something wrong...\n",
+                V);
+            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
+                       x, y, z);
+            assert(!(isnan(V) || isinf(V)));
+        }
+
+#endif
+    }
+}
+
+void KerCalcWForce3D(ACC<Real>& macroVars, const ACC<Real>& f,
+                     const ACC<int>& nodeType, const ACC<Real>& coordinates,
+                     const ACC<Real>& acceleration, const Real* dt,
+                     const int* component, const int* lattIdx,
+                     const int* rhoIdx, const int* WIdx) {
+    const Real x{coordinates(0, 0, 0, 0)};
+    const Real y{coordinates(1, 0, 0, 0)};
+    const Real z{coordinates(2, 0, 0, 0)};
+    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+    if (vt != VertexType::ImmersedSolid) {
+        macroVars((*WIdx), 0, 0, 0) = 0;
+        for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+            macroVars((*WIdx), 0, 0, 0) +=
+                CS * XI[xiIdx * LATTDIM + 2] * f(xiIdx, 0, 0, 0);
+        }
+        macroVars((*WIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+        if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt) {
+            macroVars((*WIdx), 0, 0, 0) +=
+                ((*dt) * acceleration(3 * (*component) + 2, 0, 0, 0) / 2);
+        }
+
+#ifdef CPU
+        Real W = macroVars((*WIdx), 0, 0, 0);
+        if (isnan(W) || isinf(W)) {
+            ops_printf(
+                "Error! Velocity W=%f becomes invalid! "
+                "Maybe something wrong...\n",
+                W);
+            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
+                       x, y, z);
+            assert(!(isnan(W) || isinf(W)));
+        }
+
+#endif
+    }
+}
+
+        /*!
+         * If a Newton-Cotes quadrature is used, it can be converted to the way
+         * similar to the Gauss-Hermite quadrature
+         *
+         */
+void KerCalcMacroVars3D(ACC<Real> & macroVars, const ACC<Real>& f,
+                                const ACC<int>& nodeType,
+                                const ACC<Real>& coordinates,
+                                const ACC<Real>& acceleration, const Real* dt) {
 #ifdef OPS_3D
     const Real x{coordinates(0, 0, 0, 0)};
     const Real y{coordinates(1, 0, 0, 0)};
