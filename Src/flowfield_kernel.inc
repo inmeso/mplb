@@ -37,16 +37,7 @@
 #endif
 #include "type.h"
 
-void KerSetNodeType(const int* value, ACC<int>& var, const int* compoId) {
-#ifdef OPS_2D
-    var((*compoId), 0, 0) = (*value);
-#endif
-#ifdef OPS_3D
-    var((*compoId), 0, 0, 0) = (*value);
-#endif
-}
-
-void KerSetGeometryProperty(const int* value, ACC<int>& var) {
+void KerSetIntField(const int* value, ACC<int>& var) {
 #ifdef OPS_2D
     var(0, 0) = (*value);
 #endif
@@ -73,25 +64,6 @@ void KerSetCoordinates3D(ACC<Real>& coordinates, const int* idx,
 #endif
 }
 
-void KerCalcSumofDensity(const ACC<Real>& macroVars, double* densitySum) {
-#ifdef OPS_2D
-    *densitySum = *densitySum + (macroVars(0, 0, 0));
-#endif
-#ifdef OPS_3D
-    *densitySum = *densitySum + (macroVars(0, 0, 0, 0));
-#endif
-}
-
-void KerSetMacroVarToConst(const Real* value, ACC<Real>& macroVar) {
-    for (int macroVarIndex = 0; macroVarIndex < NUMMACROVAR; macroVarIndex++) {
-#ifdef OPS_2D
-        macroVar(macroVarIndex, 0, 0) = value[macroVarIndex];
-#endif
-#ifdef OPS_3D
-        macroVar(macroVarIndex, 0, 0, 0) = value[macroVarIndex];
-#endif
-    }
-}
 void KerCopyf(ACC<Real>& dest, const ACC<Real>& src) {
     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
 #ifdef OPS_2D
@@ -103,7 +75,7 @@ void KerCopyf(ACC<Real>& dest, const ACC<Real>& src) {
     }
 }
 
-void KerCopyProperty(const ACC<int>& src, ACC<int>& dest) {
+void KerCopyIntField(const ACC<int>& src, ACC<int>& dest) {
 #ifdef OPS_2D
     dest(0, 0) = src(0, 0);
 #endif
@@ -111,16 +83,16 @@ void KerCopyProperty(const ACC<int>& src, ACC<int>& dest) {
     dest(0, 0, 0) = src(0, 0, 0);
 #endif
 }
+
 void KerCopyMacroVars(const ACC<Real>& src, ACC<Real>& dest) {
-    for (int idx = 0; idx < NUMMACROVAR; idx++) {
 #ifdef OPS_2D
-        dest(idx, 0, 0) = src(idx, 0, 0);
+    dest(0, 0) = src(0, 0);
 #endif
 #ifdef OPS_3D
-        dest(idx, 0, 0, 0) = src(idx, 0, 0, 0);
+    dest(0, 0, 0) = src(0, 0, 0);
 #endif
-    }
 }
+
 void KerCopyCoordinateXYZ(const ACC<Real>& src, ACC<Real>& dest) {
 #ifdef OPS_2D
     for (int idx = 0; idx < 2; idx++) {
@@ -143,6 +115,7 @@ void KerCopyDispf(const ACC<Real>& src, ACC<Real>& dest, const int* disp) {
 #endif
     }
 }
+
 void KerNormaliseF(const Real* ratio, ACC<Real>& f) {
     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
 #ifdef OPS_2D
@@ -153,32 +126,28 @@ void KerNormaliseF(const Real* ratio, ACC<Real>& f) {
 #endif
     }
 }
+
 void KerCalcMacroVarSquareofDifference(const ACC<Real>& macroVars,
                                        const ACC<Real>& macroVarsCopy,
-                                       const int* varId,
                                        double* sumSquareDiff) {
 #ifdef OPS_2D
     *sumSquareDiff =
-        *sumSquareDiff +
-        (macroVars(*varId, 0, 0) - macroVarsCopy(*varId, 0, 0)) *
-            (macroVars(*varId, 0, 0) - macroVarsCopy(*varId, 0, 0));
+        *sumSquareDiff + (macroVars(0, 0) - macroVarsCopy(0, 0)) *
+                             (macroVars(0, 0) - macroVarsCopy(0, 0));
 #endif
 #ifdef OPS_3D
     *sumSquareDiff =
-        *sumSquareDiff +
-        (macroVars(*varId, 0, 0, 0) - macroVarsCopy(*varId, 0, 0, 0)) *
-            (macroVars(*varId, 0, 0, 0) - macroVarsCopy(*varId, 0, 0, 0));
+        *sumSquareDiff + (macroVars(0, 0, 0) - macroVarsCopy(0, 0, 0)) *
+                             (macroVars(0, 0, 0) - macroVarsCopy(0, 0, 0));
 #endif
 }
-void KerCalcMacroVarSquare(const ACC<Real>& macroVars, const int* varId,
-                           double* sumSquare) {
+
+void KerCalcMacroVarSquare(const ACC<Real>& macroVars, double* sumSquare) {
 #ifdef OPS_2D
-    *sumSquare =
-        *sumSquare + (macroVars(*varId, 0, 0)) * (macroVars(*varId, 0, 0));
+    *sumSquare = *sumSquare + (macroVars(0, 0)) * (macroVars(0, 0));
 #endif
 #ifdef OPS_3D
-    *sumSquare = *sumSquare +
-                 (macroVars(*varId, 0, 0, 0)) * (macroVars(*varId, 0, 0, 0));
+    *sumSquare = *sumSquare + (macroVars(0, 0, 0)) * (macroVars(0, 0, 0));
 #endif
 }
 
@@ -192,28 +161,5 @@ void KerSetfFixValue(const Real* value, ACC<Real>& f) {
 #endif
     }
 }
-
-void KerSetfFixValue(ACC<Real>& f, const Real* value, const int* componentId) {
-    const int compoIndex{*componentId};
-    for (int xiIndex = COMPOINDEX[2 * compoIndex];
-         xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-#ifdef OPS_2D
-        f(xiIndex, 0, 0) = (*value);
-#endif
-#ifdef OPS_3D
-        f(xiIndex, 0, 0, 0) = (*value);
-#endif
-    }
-}
-
-void KerGetPointMacroVarValue(const ACC<Real>& macroVars, Real* pointValue) {
-#ifdef OPS_2D
-    *pointValue = *pointValue + macroVars(1, 0, 0) / macroVars(0, 0, 0);
-#endif
-#ifdef OPS_3D
-    *pointValue = *pointValue + macroVars(1, 0, 0, 0) / macroVars(0, 0, 0, 0);
-#endif
-}
-
 
 #endif //FLOWFIELD_KERNEL_INC

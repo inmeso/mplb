@@ -58,39 +58,38 @@
 const BlockGroup& g_Block();
 RealField& g_f();
 RealField& g_fStage();
-RealField& g_MacroVars();
-RealField& g_MacroVarsCopy();
+RealFieldGroup& g_MacroVars();
+RealFieldGroup& g_MacroVarsCopy();
 
-RealField& g_MacroBodyforce();
+RealFieldGroup& g_MacroBodyforce();
 
 RealField& g_CoordinateXYZ();
-IntField& g_NodeType();
+IntFieldGroup& g_NodeType();
 IntField& g_GeometryProperty();
 Real TimeStep();
 const Real* pTimeStep();
-const Real* TauRef();
 const std::string& CaseName();
 Real TotalMeshSize();
 const std::map<std::string,ops_halo_group>& HaloGroups();
 void SetTimeStep(Real dt);
 void SetCaseName(const std::string& caseName);
 void setCaseName(const char* caseName);
-void SetTauRef(const std::vector<Real>& tauRef);
+
 /*!
  * the residual error for steady flows
  * for each macroscopic variable, there are two values: the absolute
  * and relative
  * for each component of a vector, two values are allocated
  */
-extern Real* g_ResidualError;
-extern ops_reduction* g_ResidualErrorHandle;
+std::map<int, Real>& g_ResidualError();
+std::map<int, ops_reduction>& g_ResidualErrorHandle();
 
 // TODO This function is temporary, will be removed in the near future
 //void AllocateMemory();
 void WriteFlowfieldToHdf5(const SizeType timeStep);
 void WriteDistributionsToHdf5(const SizeType timeStep);
 void WriteNodePropertyToHdf5(const SizeType timeStep);
-void DestroyFlowfield();
+
 //Define the halo pair of implementing periodic boundary condition for
 //distribution function itself
 void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair);
@@ -130,7 +129,6 @@ bool IsTransient();
 #ifdef OPS_3D
 void CalcResidualError3D();
 void DispResidualError3D(const int iter, const SizeType checkPeriod);
-void CalcTotalMass3D(double* totalMass);
 void CopyDistribution3D(RealField& fDest, RealField& fSrc);
 void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc);
 void NormaliseF3D(Real* ratio);

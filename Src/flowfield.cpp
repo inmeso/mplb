@@ -58,18 +58,22 @@ int SPACEDIM{2};
 BlockGroup BLOCKS;
 RealField f{"f"};
 RealField fStage{"fStage"};
-RealField MacroVars{"MacroVars"};
-RealField MacroVarsCopy{"MacroVars_Copy"};
-Real* g_ResidualError{nullptr};
-ops_reduction* g_ResidualErrorHandle{nullptr};
-RealField MacroBodyforce{"MacroBodyForce"};
+RealFieldGroup MacroVars;
+RealFieldGroup MacroVarsCopy;
+std::map<int,Real> ResidualError;
+std::map<int, ops_reduction> ResidualErrorHandle;
+std::map<int, Real>& g_ResidualError() { return ResidualError; };
+std::map<int, ops_reduction>& g_ResidualErrorHandle() {
+    return ResidualErrorHandle;
+};
 
+RealFieldGroup MacroBodyforce;
 const BlockGroup& g_Block() { return BLOCKS; };
 RealField& g_f() { return f; };
 RealField& g_fStage() { return fStage; };
-RealField& g_MacroVars() { return MacroVars; };
-RealField& g_MacroVarsCopy() { return MacroVarsCopy; };
-RealField& g_MacroBodyforce() { return MacroBodyforce; };
+RealFieldGroup& g_MacroVars() { return MacroVars; };
+RealFieldGroup& g_MacroVarsCopy() { return MacroVarsCopy; };
+RealFieldGroup& g_MacroBodyforce() { return MacroBodyforce; };
 /**
  * DT: time step
  */
@@ -80,14 +84,15 @@ Real DT{1};
  * In appropriate non-dimensional system, it is the Knudsen number
  * It must be a constant during the run time
  */
-Real* TAUREF{nullptr};
+
 RealField CoordinateXYZ{"CoordinateXYZ"};
 RealField& g_CoordinateXYZ() { return CoordinateXYZ; };
 std::map<SizeType, std::vector<std::vector<Real>>> COORDINATES;
 
-IntField NodeType{"NodeType"};
+//IntField NodeType{"NodeType"};
+IntFieldGroup NodeType;
 IntField GeometryProperty{"GeometryProperty"};
-IntField& g_NodeType() { return NodeType; };
+IntFieldGroup& g_NodeType() { return NodeType; };
 IntField& g_GeometryProperty() { return GeometryProperty; };
 
 /*!
@@ -227,19 +232,24 @@ void Partition() {
  */
 
 void WriteFlowfieldToHdf5(const SizeType timeStep) {
-    MacroVars.WriteToHDF5(CASENAME, timeStep);
+    for (auto& macroVar : MacroVars) {
+        macroVar.second.WriteToHDF5(CASENAME, timeStep);
+    }
     CoordinateXYZ.WriteToHDF5(CASENAME, timeStep);
-    MacroBodyforce.WriteToHDF5(CASENAME, timeStep);
+    for (auto& force : MacroBodyforce) {
+        force.second.WriteToHDF5(CASENAME, timeStep);
+    }
 }
 
 void WriteDistributionsToHdf5(const SizeType timeStep) {
     f.WriteToHDF5(CASENAME, timeStep);
-
 }
 
 void WriteNodePropertyToHdf5(const SizeType timeStep) {
     GeometryProperty.WriteToHDF5(CASENAME, timeStep);
-    NodeType.WriteToHDF5(CASENAME, timeStep);
+    for (auto& pair : NodeType) {
+        pair.second.WriteToHDF5(CASENAME, timeStep);
+    }
 }
 
 const std::string& CaseName() { return CASENAME; }
@@ -249,49 +259,17 @@ void setCaseName(const char* caseName) {
     CASENAME = tmp;
 }
 
-void DestroyFlowfield() {
-
-    FreeArrayMemory(TAUREF);
-    // if steady flow
-    // FreeArrayMemory(g_MacroVarsCopy);
-    FreeArrayMemory(g_ResidualErrorHandle);
-    FreeArrayMemory(g_ResidualError);
-    // end if steady flow
-    // delete[] halos;
-}
-
 Real TotalMeshSize() { return 0; }
 
 Real TimeStep() { return DT; }
 const Real* pTimeStep() { return &DT; }
 void SetTimeStep(Real dt) { DT = dt; }
-const Real* TauRef() { return TAUREF; }
-
-void SetTauRef(const std::vector<Real>& tauRef) {
-    const int tauNum = SizeofTau();
-    if (tauRef.size() == tauNum) {
-        if (nullptr == TAUREF) {
-            TAUREF = new Real[tauNum];
-        }
-        for (int idx = 0; idx < tauNum; idx++) {
-            TAUREF[idx] = tauRef[idx];
-            // ops_printf("\n tau is %f \n",TAUREF[idx]);
-        }
-    } else {
-        ops_printf("Error! %i taus are required but there are %i!\n", tauNum,
-                   tauRef.size());
-        assert(tauRef.size() == tauNum);
-    }
-}
 
 Real GetMaximumResidual(const SizeType checkPeriod) {
     Real maxResError{0};
     Real relResErrorMacroVar{0};
-    for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
-        relResErrorMacroVar = g_ResidualError[2 * macroVarIdx] /
-                              g_ResidualError[2 * macroVarIdx + 1] /
-                              (checkPeriod * TimeStep());
-
+    for (auto& error: ResidualError) {
+        relResErrorMacroVar = error.second / (checkPeriod * TimeStep());
         if (maxResError <= relResErrorMacroVar) {
             maxResError = relResErrorMacroVar;
         }
@@ -379,7 +357,7 @@ void DefineBlocks(const std::vector<SizeType>& blockIds,
             blockNum, numBlockStartPos);
         assert(numBlockStartPos == blockNum);
     }
-    NodeType.CreateFieldFromScratch(BLOCKS);
+    //NodeType.CreateFieldFromScratch(BLOCKS);
     CoordinateXYZ.SetDataDim(SPACEDIM);
     CoordinateXYZ.CreateFieldFromScratch(BLOCKS);
     GeometryProperty.CreateFieldFromScratch(BLOCKS);
@@ -410,11 +388,12 @@ void PrepareFlowField() {
 
 void DispResidualError3D(const int iter, const SizeType checkPeriod) {
     ops_printf("##########Residual Error at %i time step##########\n", iter);
-    for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
-        Real residualError = g_ResidualError[2 * macroVarIdx] /
-                             g_ResidualError[2 * macroVarIdx + 1] /
-                             (checkPeriod * TimeStep());
-        ops_printf("Residual of %s = %.17g\n",
-                   MacroVarName()[macroVarIdx].c_str(), residualError);
+    for (auto& compo : g_Components()) {
+        for (auto& macroVar : compo.second.macroVars) {
+            Real residualError = ResidualError.at(macroVar.second.id) /
+                                 (checkPeriod * TimeStep());
+            ops_printf("Residual of %s = %.17g\n", macroVar.second.name.c_str(),
+                       residualError);
+        }
     }
 }
