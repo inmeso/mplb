@@ -14,7 +14,7 @@ void TreatBlockBoundary3D(Block& block, const int componentID,
                           const BoundaryScheme boundaryScheme,
                           const BoundarySurface boundarySurface) {
     const int surface{(int)boundarySurface};
-    const SizeType blockIndex{block.ID()};
+    const int blockIndex{block.ID()};
     switch (boundaryScheme) {
         case BoundaryScheme::ExtrapolPressure1ST: {
             ops_par_loop(
@@ -23,13 +23,14 @@ void TreatBlockBoundary3D(Block& block, const int componentID,
                 range,
                 ops_arg_dat(g_f()[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
                             "double", OPS_RW),
-                ops_arg_dat(g_NodeType()[blockIndex], NUMCOMPONENTS,
+                ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,
                             ONEPTREGULARSTENCIL, "int", OPS_READ),
                 ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
                             "int", OPS_READ),
-                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_gbl(&componentID, 1, "int", OPS_READ),
-                ops_arg_gbl(&surface, 1, "int", OPS_READ));
+                ops_arg_gbl(givenVars, 1, "double", OPS_READ),
+                ops_arg_gbl(&surface, 1, "int", OPS_READ),
+                ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
+                            OPS_READ));
         } break;
         case BoundaryScheme::EQMDiffuseRefl: {
             ops_par_loop(
@@ -37,35 +38,39 @@ void TreatBlockBoundary3D(Block& block, const int componentID,
                 block.Get(), SpaceDim(), range,
                 ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
                             OPS_RW),
-                ops_arg_dat(g_NodeType()[blockIndex], NUMCOMPONENTS,
+                ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,
                             LOCALSTENCIL, "int", OPS_READ),
                 ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
                             "int", OPS_READ),
-                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_gbl(&componentID, 1, "int", OPS_READ));
+                ops_arg_gbl(givenVars, 3, "double", OPS_READ),
+                ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
+                            OPS_READ));
         } break;
-        case BoundaryScheme::EQN: {
+        case BoundaryScheme::EQMDiffuseRefl: {
             ops_par_loop(
                 KerCutCellNoslipEQN3D, "KerCutCellNoslipEQN3D", block.Get(),
                 SpaceDim(), range,
                 ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
                             OPS_RW),
-                ops_arg_dat(g_NodeType()[blockIndex], NUMCOMPONENTS,
+                ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,
                             LOCALSTENCIL, "int", OPS_READ),
-                ops_arg_gbl(givenVars, NUMMACROVAR, "double", OPS_READ),
-                ops_arg_gbl(&componentID, 1, "int", OPS_READ));
+                ops_arg_gbl(givenVars, 3, "double", OPS_READ),
+                ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
+                            OPS_READ));
         } break;
         case BoundaryScheme::FDPeriodic: {
-            ops_par_loop(KerCutCellPeriodic3D, "KerCutCellPeriodic3D",
-                         block.Get(), SpaceDim(), range,
-                         ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
-                                     "double", OPS_RW),
-                         ops_arg_dat(g_NodeType()[blockIndex], NUMCOMPONENTS,
-                                     LOCALSTENCIL, "int", OPS_READ),
-                         ops_arg_dat(g_GeometryProperty()[blockIndex], 1,
-                                     LOCALSTENCIL, "int", OPS_READ),
-                         ops_arg_gbl(&componentID, 1, "int", OPS_READ),
-                         ops_arg_gbl(&surface, 1, "int", OPS_READ));
+            ops_par_loop(
+                KerCutCellPeriodic3D, "KerCutCellPeriodic3D", block.Get(),
+                SpaceDim(), range,
+                ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
+                            OPS_RW),
+                ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,
+                            LOCALSTENCIL, "int", OPS_READ),
+                ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
+                            "int", OPS_READ),
+                ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
+                            OPS_READ),
+                ops_arg_gbl(&surface, 1, "int", OPS_READ));
         } break;
         default:
             break;
