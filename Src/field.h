@@ -194,6 +194,8 @@ void Field<T>::WriteToHDF5(const std::string& caseName,
         ops_fetch_dat_hdf5_file(idData.second, fileName.c_str());
     }
 }
-typedef Field<Real> RealField;
-typedef Field<int> IntField;
+using RealField = Field<Real>;
+using IntField = Field<int>;
+using IntFieldGroup = std::map<int, IntField>;
+using RealFieldGroup = std::map<int, RealField>;
 #endif

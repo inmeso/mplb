@@ -59,7 +59,7 @@ class Block {
     const int spaceDim{2};
 #endif
     std::string name;
-    SizeType id;
+    int id;
     std::vector<int> size;
     std::vector<int> wholeRange;
     std::vector<int> bulkRange;
@@ -74,7 +74,7 @@ class Block {
    public:
     Block(const SizeType blockId, const std::string& blockName,
           const std::vector<int> & blockSize);
-    SizeType ID() const { return id; };
+    int ID() const { return id; };
     const std::string& Name() const { return name; };
     const ops_block& Get() const { return block; };
     ops_block& Get() { return block; };
@@ -92,5 +92,5 @@ class Block {
 #endif
 };
 
-typedef std::map<SizeType, Block> BlockGroup;
+using BlockGroup = std::map<SizeType, Block>;
 #endif  // BLOCK_H
