@@ -42,11 +42,12 @@
 #define TYPE_H
 #include <limits>
 #define DP
-extern const char* RealC;
 #ifdef DP
 typedef double Real;
+const char* RealC = "double";
 #else
 typedef float Real;
+const char* RealC = "float";
 #endif
 const Real PI{3.1415926535897932384626433832795};
 const Real EPS{std::numeric_limits<Real>::epsilon()};
