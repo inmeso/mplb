@@ -362,11 +362,6 @@ void DefineBlocks(const std::vector<SizeType>& blockIds,
     CoordinateXYZ.CreateFieldFromScratch(BLOCKS);
     GeometryProperty.CreateFieldFromScratch(BLOCKS);
 }
-
-
-
-
-
 void PrepareFlowField() {
     ops_printf("The coordinates are assigned!\n");
     for (auto& idBlock: BLOCKS) {
