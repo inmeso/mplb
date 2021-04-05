@@ -83,8 +83,10 @@ class Field {
     int HaloDepth() const { return haloDepth; };
     int DataDim() const { return dim; };
     ~Field(){};
-    ops_dat at(int blockIdx) { return data.at(blockIdx); };
-    ops_dat operator[](int blockIdx) { return this->at(blockIdx); };
+    ops_dat& at(int blockIdx) { return data.at(blockIdx); };
+    const ops_dat& at(int blockIdx) const { return data.at(blockIdx); };
+    ops_dat& operator[](int blockIdx) { return this->at(blockIdx); };
+    const ops_dat& operator[](int blockIdx) const { return this->at(blockIdx); };
 };
 
 template <typename T>
