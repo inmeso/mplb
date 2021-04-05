@@ -941,655 +941,655 @@ void KerCutCellExplicitTimeMach(
 #ifdef OPS_3D  // three dimensional code
 
 void KerStream3D(ACC<Real> & f, const ACC<Real>& fStage,
-                 const ACC<int>& nodeType, const ACC<int>& geometry) {
+                 const ACC<int>& nodeType, const ACC<int>& geometry,
+                 const int* lattIdx) {
 #ifdef OPS_3D
     VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
-        for (int xiIndex = COMPOINDEX[2 * compoIndex];
-             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-            int cx = (int)XI[xiIndex * LATTDIM];
-            int cy = (int)XI[xiIndex * LATTDIM + 1];
-            int cz = (int)XI[xiIndex * LATTDIM + 2];
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
 
-            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
-                f(xiIndex, 0, 0, 0) = fStage(xiIndex, -cx, -cy, -cz);
-                continue;
+    for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
+        int cx = (int)XI[xiIndex * LATTDIM];
+        int cy = (int)XI[xiIndex * LATTDIM + 1];
+        int cz = (int)XI[xiIndex * LATTDIM + 2];
+
+        if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
+            f(xiIndex, 0, 0, 0) = fStage(xiIndex, -cx, -cy, -cz);
+            continue;
+        }
+
+        if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
+            // TODO te be determined if necessary
+            bool streamRequired{true};
+            if (streamRequired) {
+                if ((cx == 0) && (cy == 0) && (cz == 0)) {
+                    f(xiIndex, 0, 0, 0) = fStage(xiIndex, 0, 0, 0);
+                    continue;
+                }
             }
 
-            if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
-                // TODO te be determined if necessary
-                bool streamRequired{true};
-                if (streamRequired) {
-                    if ((cx == 0) && (cy == 0) && (cz == 0)) {
-                        f(xiIndex, 0, 0, 0) = fStage(xiIndex, 0, 0, 0);
-                        continue;
+            switch (vg) {
+                    // faces six types
+                case VG_IP:
+                    // (cx=0 means stream is implemented at i=0,so here we
+                    //  disable the step at boundary)
+                    if (streamRequired) {
+                        if (cx <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
                     }
-                }
+                    break;
+                case VG_IM:
+                    if (streamRequired) {
+                        if (cx >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_JP:
+                    if (streamRequired) {
+                        if (cy <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cy < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_JM:
+                    if (streamRequired) {
+                        if (cy >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cy > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_KP:
+                    // (cx=0 means stream is implemented at i=0,so here we
+                    //  disable the step at boundary)
+                    if (streamRequired) {
+                        if (cz <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cz < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_KM:
+                    if (streamRequired) {
+                        if (cz >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
 
-                switch (vg) {
-                        // faces six types
-                    case VG_IP:
-                        // (cx=0 means stream is implemented at i=0,so here we
-                        //  disable the step at boundary)
-                        if (streamRequired) {
-                            if (cx <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IM:
-                        if (streamRequired) {
-                            if (cx >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                // faces six types end
+                // 12 edges
+                case VG_IPJP_I:
+                    if (streamRequired) {
+                        if (cy <= 0 && cx <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_JP:
-                        if (streamRequired) {
-                            if (cy <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cy < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cy < 0 && cx < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_JM:
-                        if (streamRequired) {
-                            if (cy >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cy > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IPJM_I:
+                    if (streamRequired) {
+                        if (cy >= 0 && cx <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_KP:
-                        // (cx=0 means stream is implemented at i=0,so here we
-                        //  disable the step at boundary)
-                        if (streamRequired) {
-                            if (cz <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cy > 0 && cx < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_KM:
-                        if (streamRequired) {
-                            if (cz >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-
-                        } else {
-                            if (cz > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IMJP_I:
+                    if (streamRequired) {
+                        if (cy <= 0 && cx >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    // faces six types end
-                    // 12 edges
-                    case VG_IPJP_I:
-                        if (streamRequired) {
-                            if (cy <= 0 && cx <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cy < 0 && cx < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cy < 0 && cx > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IPJM_I:
-                        if (streamRequired) {
-                            if (cy >= 0 && cx <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cy > 0 && cx < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IMJM_I:
+                    if (streamRequired) {
+                        if (cy >= 0 && cx >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJP_I:
-                        if (streamRequired) {
-                            if (cy <= 0 && cx >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cy < 0 && cx > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cy > 0 && cx > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJM_I:
-                        if (streamRequired) {
-                            if (cy >= 0 && cx >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cy > 0 && cx > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                // k
+                case VG_IPKP_I:
+                    if (streamRequired) {
+                        if (cz <= 0 && cx <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    // k
-                    case VG_IPKP_I:
-                        if (streamRequired) {
-                            if (cz <= 0 && cx <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz < 0 && cx < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz < 0 && cx < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IPKM_I:
-                        if (streamRequired) {
-                            if (cz >= 0 && cx <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz > 0 && cx < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IPKM_I:
+                    if (streamRequired) {
+                        if (cz >= 0 && cx <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMKP_I:
-                        if (streamRequired) {
-                            if (cz <= 0 && cx >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz < 0 && cx > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz > 0 && cx < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMKM_I:
-                        if (streamRequired) {
-                            if (cz >= 0 && cx >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz > 0 && cx > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IMKP_I:
+                    if (streamRequired) {
+                        if (cz <= 0 && cx >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_JPKP_I:
-                        if (streamRequired) {
-                            if (cz <= 0 && cy <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz < 0 && cy < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz < 0 && cx > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_JPKM_I:
-                        if (streamRequired) {
-                            if (cz >= 0 && cy <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz > 0 && cy < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IMKM_I:
+                    if (streamRequired) {
+                        if (cz >= 0 && cx >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_JMKP_I:
-                        if (streamRequired) {
-                            if (cz <= 0 && cy >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz < 0 && cy > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz > 0 && cx > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_JMKM_I:
-                        if (streamRequired) {
-                            if (cz >= 0 && cy >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz > 0 && cy > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_JPKP_I:
+                    if (streamRequired) {
+                        if (cz <= 0 && cy <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    // K
-                    // k_out
-                    case VG_IPJP_O:
-                        if (streamRequired) {
-                            if (cy <= 0 || cx <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cy < 0 || cx < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz < 0 && cy < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IPJM_O:
-                        if (streamRequired) {
-                            if (cy >= 0 || cx <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cy > 0 || cx < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_JPKM_I:
+                    if (streamRequired) {
+                        if (cz >= 0 && cy <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJP_O:
-                        if (streamRequired) {
-                            if (cy <= 0 || cx >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cy < 0 || cx > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz > 0 && cy < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJM_O:
-                        if (streamRequired) {
-                            if (cy >= 0 || cx >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cy > 0 || cx > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_JMKP_I:
+                    if (streamRequired) {
+                        if (cz <= 0 && cy >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                        // IK
-                    case VG_IPKP_O:
-                        if (streamRequired) {
-                            if (cz <= 0 || cx <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz < 0 || cx < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz < 0 && cy > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IPKM_O:
-                        if (streamRequired) {
-                            if (cz >= 0 || cx <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz > 0 || cx < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_JMKM_I:
+                    if (streamRequired) {
+                        if (cz >= 0 && cy >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMKP_O:
-                        if (streamRequired) {
-                            if (cz <= 0 || cx >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz < 0 || cx > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz > 0 && cy > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMKM_O:
-                        if (streamRequired) {
-                            if (cz >= 0 || cx >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz > 0 || cx > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                // K
+                // k_out
+                case VG_IPJP_O:
+                    if (streamRequired) {
+                        if (cy <= 0 || cx <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                        // JK
-                    case VG_JPKP_O:
-                        if (streamRequired) {
-                            if (cz <= 0 || cy <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz < 0 || cy < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cy < 0 || cx < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_JPKM_O:
-                        if (streamRequired) {
-                            if (cz >= 0 || cy <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz > 0 || cy < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IPJM_O:
+                    if (streamRequired) {
+                        if (cy >= 0 || cx <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_JMKP_O:
-                        if (streamRequired) {
-                            if (cz <= 0 || cy >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz < 0 || cy > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cy > 0 || cx < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_JMKM_O:
-                        if (streamRequired) {
-                            if (cz >= 0 || cy >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cz > 0 || cy > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IMJP_O:
+                    if (streamRequired) {
+                        if (cy <= 0 || cx >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    // k_out end
-                    // 12 edges end
-                    // 8 corners
-                    // inner corners
-                    case VG_IPJPKP_I:
-                        if (streamRequired) {
-                            if (cx <= 0 && cy <= 0 && cz <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx < 0 && cy < 0 && cz < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cy < 0 || cx > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IPJPKM_I:
-                        if (streamRequired) {
-                            if (cx <= 0 && cy <= 0 && cz >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx < 0 && cy < 0 && cz > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IMJM_O:
+                    if (streamRequired) {
+                        if (cy >= 0 || cx >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IPJMKP_I:
-                        if (streamRequired) {
-                            if (cx <= 0 && cy >= 0 && cz <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx < 0 && cy > 0 && cz < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cy > 0 || cx > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IPJMKM_I:
-                        if (streamRequired) {
-                            if (cx <= 0 && cy >= 0 && cz >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx < 0 && cy > 0 && cz > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                    // IK
+                case VG_IPKP_O:
+                    if (streamRequired) {
+                        if (cz <= 0 || cx <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJPKP_I:
-                        if (streamRequired) {
-                            if (cx >= 0 && cy <= 0 && cz <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx > 0 && cy < 0 && cz < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz < 0 || cx < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJPKM_I:
-                        if (streamRequired) {
-                            if (cx >= 0 && cy <= 0 && cz >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx > 0 && cy < 0 && cz > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IPKM_O:
+                    if (streamRequired) {
+                        if (cz >= 0 || cx <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJMKP_I:
-                        if (streamRequired) {
-                            if (cx >= 0 && cy >= 0 && cz <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx > 0 && cy > 0 && cz < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz > 0 || cx < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJMKM_I:
-                        if (streamRequired) {
-                            if (cx >= 0 && cy >= 0 && cz >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx > 0 && cy > 0 && cz > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IMKP_O:
+                    if (streamRequired) {
+                        if (cz <= 0 || cx >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    // out corner
-                    case VG_IPJPKP_O:
-                        if (streamRequired) {
-                            if (cx <= 0 || cy <= 0 || cz <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx < 0 || cy < 0 || cz < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz < 0 || cx > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IPJPKM_O:
-                        if (streamRequired) {
-                            if (cx <= 0 || cy <= 0 || cz >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx < 0 || cy < 0 || cz > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_IMKM_O:
+                    if (streamRequired) {
+                        if (cz >= 0 || cx >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IPJMKP_O:
-                        if (streamRequired) {
-                            if (cx <= 0 || cy >= 0 || cz <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx < 0 || cy > 0 || cz < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz > 0 || cx > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IPJMKM_O:
-                        if (streamRequired) {
-                            if (cx <= 0 || cy >= 0 || cz >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx < 0 || cy > 0 || cz > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                    // JK
+                case VG_JPKP_O:
+                    if (streamRequired) {
+                        if (cz <= 0 || cy <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJPKP_O:
-                        if (streamRequired) {
-                            if (cx >= 0 || cy <= 0 || cz <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx > 0 || cy < 0 || cz < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz < 0 || cy < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJPKM_O:
-                        if (streamRequired) {
-                            if (cx >= 0 || cy <= 0 || cz >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx > 0 || cy < 0 || cz > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_JPKM_O:
+                    if (streamRequired) {
+                        if (cz >= 0 || cy <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJMKP_O:
-                        if (streamRequired) {
-                            if (cx >= 0 || cy >= 0 || cz <= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx > 0 || cy > 0 || cz < 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    } else {
+                        if (cz > 0 || cy < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    case VG_IMJMKM_O:
-                        if (streamRequired) {
-                            if (cx >= 0 || cy >= 0 || cz >= 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
-                        } else {
-                            if (cx > 0 || cy > 0 || cz > 0) {
-                                f(xiIndex, 0, 0, 0) =
-                                    fStage(xiIndex, -cx, -cy, -cz);
-                            }
+                    }
+                    break;
+                case VG_JMKP_O:
+                    if (streamRequired) {
+                        if (cz <= 0 || cy >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
                         }
-                        break;
-                    default:
-                        break;
-                }
+                    } else {
+                        if (cz < 0 || cy > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_JMKM_O:
+                    if (streamRequired) {
+                        if (cz >= 0 || cy >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cz > 0 || cy > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                // k_out end
+                // 12 edges end
+                // 8 corners
+                // inner corners
+                case VG_IPJPKP_I:
+                    if (streamRequired) {
+                        if (cx <= 0 && cy <= 0 && cz <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx < 0 && cy < 0 && cz < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IPJPKM_I:
+                    if (streamRequired) {
+                        if (cx <= 0 && cy <= 0 && cz >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx < 0 && cy < 0 && cz > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IPJMKP_I:
+                    if (streamRequired) {
+                        if (cx <= 0 && cy >= 0 && cz <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx < 0 && cy > 0 && cz < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IPJMKM_I:
+                    if (streamRequired) {
+                        if (cx <= 0 && cy >= 0 && cz >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx < 0 && cy > 0 && cz > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IMJPKP_I:
+                    if (streamRequired) {
+                        if (cx >= 0 && cy <= 0 && cz <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx > 0 && cy < 0 && cz < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IMJPKM_I:
+                    if (streamRequired) {
+                        if (cx >= 0 && cy <= 0 && cz >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx > 0 && cy < 0 && cz > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IMJMKP_I:
+                    if (streamRequired) {
+                        if (cx >= 0 && cy >= 0 && cz <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx > 0 && cy > 0 && cz < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IMJMKM_I:
+                    if (streamRequired) {
+                        if (cx >= 0 && cy >= 0 && cz >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx > 0 && cy > 0 && cz > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                // out corner
+                case VG_IPJPKP_O:
+                    if (streamRequired) {
+                        if (cx <= 0 || cy <= 0 || cz <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx < 0 || cy < 0 || cz < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IPJPKM_O:
+                    if (streamRequired) {
+                        if (cx <= 0 || cy <= 0 || cz >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx < 0 || cy < 0 || cz > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IPJMKP_O:
+                    if (streamRequired) {
+                        if (cx <= 0 || cy >= 0 || cz <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx < 0 || cy > 0 || cz < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IPJMKM_O:
+                    if (streamRequired) {
+                        if (cx <= 0 || cy >= 0 || cz >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx < 0 || cy > 0 || cz > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IMJPKP_O:
+                    if (streamRequired) {
+                        if (cx >= 0 || cy <= 0 || cz <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx > 0 || cy < 0 || cz < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IMJPKM_O:
+                    if (streamRequired) {
+                        if (cx >= 0 || cy <= 0 || cz >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx > 0 || cy < 0 || cz > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IMJMKP_O:
+                    if (streamRequired) {
+                        if (cx >= 0 || cy >= 0 || cz <= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx > 0 || cy > 0 || cz < 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                case VG_IMJMKM_O:
+                    if (streamRequired) {
+                        if (cx >= 0 || cy >= 0 || cz >= 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    } else {
+                        if (cx > 0 || cy > 0 || cz > 0) {
+                            f(xiIndex, 0, 0, 0) =
+                                fStage(xiIndex, -cx, -cy, -cz);
+                        }
+                    }
+                    break;
+                default:
+                    break;
             }
         }
     }
+
 #endif  // OPS_3D
 }
 
