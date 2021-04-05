@@ -248,7 +248,7 @@ void PreDefinedBodyForce3D() {
         Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
-        const SizeType blockIndex{block.ID()};
+        const int blockIndex{block.ID()};
         for (auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
             const BodyForceType forceType{compo.bodyForceType};

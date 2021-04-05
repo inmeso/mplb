@@ -272,7 +272,7 @@ void DefineComponents(const std::vector<std::string>& compoNames,
                       const std::vector<int>& compoId,
                       const std::vector<std::string>& lattNames,
                       const std::vector<Real> tauRef,
-                      const SizeType timeStep=0) {
+                      const SizeType timeStep) {
     if (g_Block().size() < 1) {
         ops_printf("Error:please call DefineBlock first!\n");
         assert(g_Block().size() == 0);
@@ -289,7 +289,7 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     }
     bool isLattDimSame{true};
     bool isCsSame{true};
-    int posCompo{0};
+    //int posCompo{0};
     int totalSize{0};
     int latticeDimension{latticeSet[lattNames[0]].lattDim};
     Real currentCs{latticeSet[lattNames[0]].cs};
@@ -299,7 +299,6 @@ void DefineComponents(const std::vector<std::string>& compoNames,
         component.name = compoNames.at(idx);
         component.latticeName = lattNames.at(idx);
         component.tauRef = tauRef.at(idx);
-        component.number = idx;
         if (latticeSet.find(lattNames[idx]) != latticeSet.end()) {
             lattice currentLattice{latticeSet[lattNames[idx]]};
             component.index[0] = totalSize;
@@ -407,7 +406,6 @@ void DefineMacroVars(std::vector<VariableTypes> types,
         macroVar.name = names.at(idx);
         macroVar.id = varId.at(idx);
         macroVar.type = types.at(idx);
-        macroVar.pos = idx;
         components.at(compoId.at(idx))
             .macroVars.emplace(macroVar.type, macroVar);
         ops_printf("The macroscopic variable %s defined for Component %s.\n",
@@ -471,7 +469,7 @@ void DefineMacroVars(std::vector<VariableTypes> types,
         for (auto compo : components) {
             for (auto var : compo.second.macroVars) {
                 ops_reduction handle{ops_decl_reduction_handle(
-                    sizeof(Real), RealC, var.second.name.c_str())};
+                    sizeof(Real), "double", var.second.name.c_str())};
                 g_ResidualErrorHandle().emplace(var.second.id, handle);
                 Real error;
                 g_ResidualError().emplace(var.second.id, error);

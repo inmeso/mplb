@@ -10,7 +10,7 @@ void Stream3D() {
         Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
-        const SizeType blockIndex{block.ID()};
+        const int blockIndex{block.ID()};
         for (auto& compo : g_Components()) {
             ops_par_loop(
                 KerStream3D, "KerStream3D", block.Get(), SpaceDim(),

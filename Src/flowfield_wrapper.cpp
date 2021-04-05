@@ -17,7 +17,7 @@ void CopyCurrentMacroVar() {
             std::vector<int> iterRng;
             iterRng.assign(block.WholeRange().begin(),
                            block.WholeRange().end());
-            const SizeType blockIdx{block.ID()};
+            const int blockIdx{block.ID()};
             ops_par_loop(KerCopyMacroVars, "KerCopyMacroVars", block.Get(),
                          SpaceDim(), iterRng.data(),
                          ops_arg_dat(macroVar.at(blockIdx), 1, LOCALSTENCIL,
@@ -41,7 +41,7 @@ void CalcResidualError3D() {
             std::vector<int> iterRng;
             iterRng.assign(block.WholeRange().begin(),
                            block.WholeRange().end());
-            const SizeType blockIdx{block.ID()};
+            const int blockIdx{block.ID()};
             ops_par_loop(KerCalcMacroVarSquareofDifference,
                          "KerCalcMacroVarSquareofDifference", block.Get(),
                          SpaceDim(), iterRng.data(),
@@ -65,13 +65,12 @@ void CalcResidualError3D() {
     for (auto pair : g_MacroVars()) {
         const int varId{pair.first};
         RealField& macroVar{pair.second};
-        RealField& macroVarCopy{g_MacroVarsCopy().at(varId)};
         for (auto idBlock : g_Block()) {
             Block& block{idBlock.second};
             std::vector<int> iterRng;
             iterRng.assign(block.WholeRange().begin(),
                            block.WholeRange().end());
-            const SizeType blockIdx{block.ID()};
+            const int blockIdx{block.ID()};
             ops_par_loop(KerCalcMacroVarSquare, "KerCalcMacroVarSquare3D",
                          block.Get(), SpaceDim(), iterRng.data(),
                          ops_arg_dat(macroVar.at(blockIdx), 1, LOCALSTENCIL,
@@ -94,7 +93,7 @@ void CopyDistribution3D(RealField& fDest, RealField& fSrc) {
         Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
-        const SizeType blockIndex{block.ID()};
+        const int blockIndex{block.ID()};
         ops_par_loop(KerCopyf, "KerCopyf", block.Get(), SpaceDim(),
                      iterRng.data(),
                      ops_arg_dat(fDest[blockIndex], NUMXI, LOCALSTENCIL,
@@ -117,7 +116,7 @@ void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
         Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.IminRange().begin(), block.IminRange().end());
-        const SizeType blockIndex{block.ID()};
+        const int blockIndex{block.ID()};
         // haloIterRng[0] = iterRng.data()[0] - 1;
         // haloIterRng[1] = iterRng.data()[1];
         // haloIterRng[2] = iterRng.data()[2] - 1;
@@ -223,7 +222,7 @@ void NormaliseF3D(Real* ratio) {
         Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
-        const SizeType blockIdx{block.ID()};
+        const int blockIdx{block.ID()};
         ops_par_loop(KerNormaliseF, "KerNormaliseF", block.Get(), SpaceDim(),
                      iterRng.data(), ops_arg_gbl(ratio, 1, "double", OPS_READ),
                      ops_arg_dat(g_f()[blockIdx], NUMXI, LOCALSTENCIL, "double",
@@ -607,7 +606,7 @@ void SetBoundaryNodeType() {
         const Block& block{g_Block().at(boundary.blockIndex)};
         std::vector<int> iterRange{
             BoundarySurfaceRange(block, boundary.boundarySurface)};
-        const SizeType compoId{boundary.componentID};
+        const int compoId{boundary.componentID};
         // Specify general boundary type
         ops_par_loop(
             KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),

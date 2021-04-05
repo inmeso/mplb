@@ -191,7 +191,7 @@ void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair) {
             "applications!");
         assert(BLOCKS.size() == 1);
     }
-    const SizeType blockId{BLOCKS.begin()->first};
+    const int blockId{BLOCKS.begin()->first};
     DefinePeriodicHaloPair3D(haloPair, f[blockId], f.HaloDepth());
 }
 
@@ -203,7 +203,7 @@ void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair,
             "applications!");
         assert(BLOCKS.size() == 1);
     }
-    const SizeType blockId{BLOCKS.begin()->first};
+    const int blockId{BLOCKS.begin()->first};
     DefinePeriodicHaloPair3D(haloPair, data[blockId], data.HaloDepth());
 }
 
@@ -215,7 +215,7 @@ void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair,
             "applications!");
         assert(BLOCKS.size() == 1);
     }
-    const SizeType blockId{BLOCKS.begin()->first};
+    const int blockId{BLOCKS.begin()->first};
     DefinePeriodicHaloPair3D(haloPair, data[blockId], data.HaloDepth());
 }
 
@@ -298,7 +298,7 @@ void TransferHalos(const std::vector<std::string> keys) {
         }
     }
 }
-void DefineBlocks(const std::vector<SizeType>& blockIds,
+void DefineBlocks(const std::vector<int>& blockIds,
                   const std::vector<std::string>& blockNames,
                   const std::vector<int>& blockSizes) {
     const SizeType blockNum{blockIds.size()};
@@ -316,8 +316,8 @@ void DefineBlocks(const std::vector<SizeType>& blockIds,
             blockNum, blockSizes.size());
         assert(blockNum == blockSizes.size());
     }
-    for (SizeType i = 0; i < blockNum; i++) {
-        const SizeType blockId{blockIds.at(i)};
+    for (int i = 0; i < blockNum; i++) {
+        const int blockId{blockIds.at(i)};
         std::vector<int> blockSize(SPACEDIM);
         for (int j = 0; j < SPACEDIM; j++) {
             blockSize.at(j) = blockSizes.at(i * SPACEDIM + j);
@@ -327,17 +327,17 @@ void DefineBlocks(const std::vector<SizeType>& blockIds,
     }
 }
 
-void DefineBlocks(const std::vector<SizeType>& blockIds,
+void DefineBlocks(const std::vector<int>& blockIds,
                   const std::vector<std::string>& blockNames,
                   const std::vector<int>& blockSizes, const Real meshSize,
-                  const std::map<SizeType, std::vector<Real>>& startPos) {
+                  const std::map<int, std::vector<Real>>& startPos) {
     DefineBlocks(blockIds, blockNames, blockSizes);
     const SizeType blockNum{BLOCKS.size()};
     SizeType numBlockStartPos{startPos.size()};
     if (numBlockStartPos == (blockNum)) {
         for (auto& idStartPos : startPos) {
             std::vector<std::vector<Real>> blockCoordinates(SPACEDIM);
-            const SizeType id{idStartPos.first};
+            const int id{idStartPos.first};
             const std::vector<Real> blockStartPos{idStartPos.second};
             for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) {
                 const int numOfGridPoints{BLOCKS.at(id).Size().at(coordIndex)};
@@ -366,15 +366,15 @@ void PrepareFlowField() {
     ops_printf("The coordinates are assigned!\n");
     for (auto& idBlock: BLOCKS) {
         Block& block{idBlock.second};
-        const SizeType blockId{idBlock.first};
+        const int blockId{idBlock.first};
         SetBlockGeometryProperty(block);
         ops_printf("The geometry property for Block %i is set!\n", blockId);
-        for (int compoId = 0; compoId < NUMCOMPONENTS; compoId++) {
-            SetBulkandHaloNodesType(block, compoId);
+        for (auto& idCompo:g_Components()) {
+            SetBulkandHaloNodesType(block, idCompo.first);
             ops_printf(
                 "The bulk and halo node property are set for Component %i at "
                 "Block %i\n",
-                compoId, blockId);
+                idCompo.first, blockId);
         }
         AssignCoordinates(block, COORDINATES.at(blockId));
     }

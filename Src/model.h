@@ -177,12 +177,12 @@ void DefineComponents(const std::vector<std::string>& compoNames,
                       const std::vector<int>& compoId,
                       const std::vector<std::string>& lattNames,
                       const std::vector<Real> tauRef,
-                      const SizeType timeStep=0);
+                      const SizeType timeStep = 0);
 
 
 void DefineMacroVars(std::vector<VariableTypes> types,
                      std::vector<std::string> names,
-                     std::vector<SizeType> varId, std::vector<SizeType> compoId,
+                     std::vector<int> varId, std::vector<int> compoId,
                      const SizeType timeStep=0);
 
 /*!
@@ -191,7 +191,7 @@ void DefineMacroVars(std::vector<VariableTypes> types,
 * HiLeMMS interface, , https://gitlab.com/jpmeng/hilemms
 */
 void DefineCollision(std::vector<CollisionType> types,
-                       std::vector<SizeType> compoId);
+                       std::vector<int> compoId);
 
 void DefineBodyForce(std::vector<BodyForceType> types,
                      std::vector<SizeType> compoId);

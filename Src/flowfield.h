@@ -121,10 +121,10 @@ Real GetMaximumResidual(const SizeType checkPeriod);
 //                   const std::vector<int>& blockSize, const Real meshSize,
 //                   const std::vector<Real>& startPos);
 
-void DefineBlocks(const std::vector<SizeType>& blockIds,
+void DefineBlocks(const std::vector<int>& blockIds,
                   const std::vector<std::string>& blockNames,
                   const std::vector<int>& blockSizes, const Real meshSize,
-                  const std::map<SizeType, std::vector<Real>>& startPos);
+                  const std::map<int, std::vector<Real>>& startPos);
 bool IsTransient();
 #ifdef OPS_3D
 void CalcResidualError3D();

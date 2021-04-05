@@ -721,7 +721,7 @@ void KerCalcVForce3D(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
             v += CS * XI[xiIdx * LATTDIM + 1] * f(xiIdx, 0, 0, 0);
         }
-        u /= Rho(0, 0, 0);
+        v /= Rho(0, 0, 0);
         if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt) {
             v += ((*dt) * acceleration(1, 0, 0, 0) / 2);
         }
@@ -730,7 +730,7 @@ void KerCalcVForce3D(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
             ops_printf(
                 "Error! Velocity V=%f becomes invalid! Maybe something wrong "
                 "at x=%f y=%f z=%f\n",
-                u, x, y, z);
+                v, x, y, z);
             assert(!(isnan(v) || isinf(v)));
         }
 #endif
@@ -760,7 +760,7 @@ void KerCalcWForce3D(ACC<Real>& W, const ACC<Real>& f, const ACC<int>& nodeType,
             ops_printf(
                 "Error! Velocity W=%f becomes invalid! Maybe something wrong "
                 "at x=%f y=%f z=%f\n",
-                u, x, y, z);
+                w, x, y, z);
             assert(!(isnan(w) || isinf(w)));
         }
 #endif

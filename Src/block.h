@@ -72,7 +72,7 @@ class Block {
     std::vector<int> kmaxRange;
 #endif
    public:
-    Block(const SizeType blockId, const std::string& blockName,
+    Block(const int blockId, const std::string& blockName,
           const std::vector<int> & blockSize);
     int ID() const { return id; };
     const std::string& Name() const { return name; };
@@ -92,5 +92,5 @@ class Block {
 #endif
 };
 
-using BlockGroup = std::map<SizeType, Block>;
+using BlockGroup = std::map<int, Block>;
 #endif  // BLOCK_H

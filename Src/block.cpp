@@ -7,7 +7,7 @@
 #include "ops_mpi_core.h"
 #endif
 
-Block::Block(const SizeType blockId, const std::string& blockName,
+Block::Block(const int blockId, const std::string& blockName,
              const std::vector<int>& blockSize) {
     id = blockId;
     name = blockName;

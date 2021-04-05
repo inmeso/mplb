@@ -74,11 +74,11 @@ void simulate() {
     std::string caseName{"3D_lid_Driven_cavity"};
     SizeType spaceDim{3};
     DefineCase(caseName, spaceDim);
-    std::vector<SizeType> blockIds{0};
+    std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
     std::vector<int> blockSize{33, 33, 33};
     Real meshSize{1. / 32};
-    std::map<SizeType, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
+    std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
     std::vector<std::string> compoNames{"Fluid"};
@@ -90,12 +90,12 @@ void simulate() {
     std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
                                              Variable_V, Variable_W};
     std::vector<std::string> macroVarNames{"rho", "u", "v", "w"};
-    std::vector<SizeType> macroVarId{0, 1, 2, 3};
-    std::vector<SizeType> macroCompoId{0, 0, 0, 0};
+    std::vector<int> macroVarId{0, 1, 2, 3};
+    std::vector<int> macroCompoId{0, 0, 0, 0};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
     std::vector<CollisionType> collisionTypes{Collision_BGKIsothermal2nd};
-    std::vector<SizeType> collisionCompoId{0};
+    std::vector<int> collisionCompoId{0};
     DefineCollision(collisionTypes, collisionCompoId);
 
     std::vector<BodyForceType> bodyForceTypes{BodyForce_None};

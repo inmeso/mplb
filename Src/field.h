@@ -51,16 +51,16 @@
 template <typename T>
 class Field {
    private:
-    std::map<SizeType, ops_dat> data;
-    std::map<SizeType, const Block*> dataBlock;
+    std::map<int, ops_dat> data;
+    std::map<int, const Block*> dataBlock;
     std::string name;
     int dim{1};
-    SizeType haloDepth{1};
+    int haloDepth{1};
 #ifdef OPS_3D
-    SizeType spaceDim{3};
+    int spaceDim{3};
 #endif
 #ifdef OPS_2D
-    SizeType spaceDim{2};
+    int spaceDim{2};
 #endif
     std::string type;
 
@@ -83,8 +83,8 @@ class Field {
     int HaloDepth() const { return haloDepth; };
     int DataDim() const { return dim; };
     ~Field(){};
-    ops_dat at(SizeType blockIdx) { return data.at(blockIdx); };
-    ops_dat operator[](SizeType blockIdx) { return this->at(blockIdx); };
+    ops_dat at(int blockIdx) { return data.at(blockIdx); };
+    ops_dat operator[](int blockIdx) { return this->at(blockIdx); };
 };
 
 template <typename T>
@@ -133,7 +133,7 @@ void Field<T>::CreateFieldFromScratch(const Block& block) {
         d_m[cordIdx] = -haloDepth;
         base[cordIdx] = 0;
     }
-    const SizeType blockId{block.ID()};
+    const int blockId{block.ID()};
     std::string dataName{name + "_" + block.Name()};
     std::vector<int> size{block.Size()};
     ops_dat localDat =
@@ -186,7 +186,7 @@ template <typename T>
 void Field<T>::WriteToHDF5(const std::string& caseName,
                            const SizeType timeStep) const {
     for (const auto& idData : data) {
-        const SizeType blockId{idData.first};
+        const int blockId{idData.first};
         const Block* block{dataBlock.at(blockId)};
         std::string fileName = caseName + "_" + block->Name() + "_" +
                                std::to_string(timeStep) + ".h5";
