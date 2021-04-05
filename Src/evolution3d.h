@@ -93,7 +93,6 @@ void Iterate(void (*cycle)(T), const SizeType steps,
     }
     ops_printf("Simulation finished! Exiting...\n");
     DestroyModel();
-    DestroyFlowfield();
 }
 
 template <typename T>
@@ -118,7 +117,6 @@ void Iterate(void (*cycle)(T), const Real convergenceCriteria,
 
     ops_printf("Simulation finished! Exiting...\n");
     DestroyModel();
-    DestroyFlowfield();
 }
 
 #endif /* OPS_3D */
