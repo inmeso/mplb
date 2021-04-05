@@ -40,10 +40,12 @@
 #ifdef OPS_MPI
 #include "ops_mpi_core.h"
 #endif
+#include "block.h"
 #include "model.h"
 #include "model_host_device.h"
 #include "flowfield.h"
 #include "flowfield_host_device.h"
+#include "type.h"
 
 #include <map>
 int NUMXI{9};
@@ -54,28 +56,31 @@ Real* XI{nullptr};
 Real* WEIGHTS{nullptr};
 int* OPP{nullptr};
 int NUMMACROVAR{3};
-int* VARIABLETYPE{nullptr};
-int* VARIABLECOMPINDEX{nullptr};
+//int* VARIABLETYPE{nullptr};
+//int* VARIABLECOMPINDEX{nullptr};
 int NUMCOMPONENTS{1};
-int* COMPOINDEX{nullptr};
+//int* COMPOINDEX{nullptr};
 Real XIMAXVALUE{1};
-std::list<std::pair<SizeType, CollisionType>> COLLISIONTERMS;
-std::list<std::pair<SizeType, BodyForceType>> FORCETERMS;
-std::list<std::pair<SizeType, InitialType>> INITIALTERMS;
+std::map<int,Component> components;
+const std::map<int, Component>& g_Components() { return components; };
 
-const std::list<std::pair<SizeType, CollisionType>>& CollisionTerms() {
-    return COLLISIONTERMS;
-}
+// std::list<std::pair<SizeType, CollisionType>> COLLISIONTERMS;
+// std::list<std::pair<SizeType, BodyForceType>> FORCETERMS;
+// std::list<std::pair<SizeType, InitialType>> INITIALTERMS;
 
-const std::list<std::pair<SizeType, BodyForceType>>& BodyForceTerms() {
-    return FORCETERMS;
-}
+// const std::list<std::pair<SizeType, CollisionType>>& CollisionTerms() {
+//     return COLLISIONTERMS;
+// }
 
-const std::list<std::pair<SizeType, InitialType>>& InitialTerms() {
-    return INITIALTERMS;
-}
+// const std::list<std::pair<SizeType, BodyForceType>>& BodyForceTerms() {
+//     return FORCETERMS;
+// }
 
-int* VARIABLECOMPPOS{nullptr};
+// const std::list<std::pair<SizeType, InitialType>>& InitialTerms() {
+//     return INITIALTERMS;
+// }
+
+// int* VARIABLECOMPPOS{nullptr};
 /*!
  *Name of all macroscopic variables
  */
@@ -218,16 +223,16 @@ void SetupD2Q36Latt(const int startPos) {
     FindReverseXi(startPos, nc36);
 }
 
-void AllocateComponentIndex(const int compoNum) {
-    if (compoNum == NUMCOMPONENTS) {
-        if (nullptr == COMPOINDEX) {
-            COMPOINDEX = new int[2 * compoNum];
-        }
-        if (nullptr == VARIABLECOMPPOS) {
-            VARIABLECOMPPOS = new int[2 * compoNum];
-        }
-    }
-}
+// void AllocateComponentIndex(const int compoNum) {
+//     if (compoNum == NUMCOMPONENTS) {
+//         if (nullptr == COMPOINDEX) {
+//             COMPOINDEX = new int[2 * compoNum];
+//         }
+//         if (nullptr == VARIABLECOMPPOS) {
+//             VARIABLECOMPPOS = new int[2 * compoNum];
+//         }
+//     }
+// }
 
 void AllocateXi(const int length) {
     if (length == NUMXI) {
@@ -243,33 +248,38 @@ void AllocateXi(const int length) {
     }
 }
 
-void AllocateMacroVarProperty(const int macroVarNum) {
-    if (macroVarNum == NUMMACROVAR) {
-        if (nullptr == VARIABLETYPE) {
-            VARIABLETYPE = new int[NUMMACROVAR];
-        } else {
-            ops_printf("%s\n", "Warning! VARIABLETYPE has been allocated!");
-        }
-        if (nullptr == VARIABLECOMPINDEX) {
-            VARIABLECOMPINDEX = new int[NUMMACROVAR];
-        } else {
-            ops_printf("%s\n",
-                       "Warning! VARIABLECOMPINDEX has been allocated!");
-        }
-    } else {
-        ops_printf("%s\n",
-                   "Error! The macroVarNum must be equal to NUMMACROVAR");
-        assert(macroVarNum == NUMMACROVAR);
-    }
-}
+// void AllocateMacroVarProperty(const int macroVarNum) {
+//     if (macroVarNum == NUMMACROVAR) {
+//         if (nullptr == VARIABLETYPE) {
+//             VARIABLETYPE = new int[NUMMACROVAR];
+//         } else {
+//             ops_printf("%s\n", "Warning! VARIABLETYPE has been allocated!");
+//         }
+//         if (nullptr == VARIABLECOMPINDEX) {
+//             VARIABLECOMPINDEX = new int[NUMMACROVAR];
+//         } else {
+//             ops_printf("%s\n",
+//                        "Warning! VARIABLECOMPINDEX has been allocated!");
+//         }
+//     } else {
+//         ops_printf("%s\n",
+//                    "Error! The macroVarNum must be equal to NUMMACROVAR");
+//         assert(macroVarNum == NUMMACROVAR);
+//     }
+// }
 
 void DefineComponents(const std::vector<std::string>& compoNames,
-                      const std::vector<SizeType>& compoId,
+                      const std::vector<int>& compoId,
                       const std::vector<std::string>& lattNames,
-                      const SizeType timeStep) {
+                      const std::vector<Real> tauRef,
+                      const SizeType timeStep=0) {
+    if (g_Block().size() < 1) {
+        ops_printf("Error:please call DefineBlock first!\n");
+        assert(g_Block().size() == 0);
+    }
     NUMCOMPONENTS = compoNames.size();
     if (NUMCOMPONENTS > 0) {
-        AllocateComponentIndex(NUMCOMPONENTS);
+        // AllocateComponentIndex(NUMCOMPONENTS);
         ops_printf("There are %i components defined.\n", NUMCOMPONENTS);
     } else {
         ops_printf(
@@ -284,12 +294,20 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     int latticeDimension{latticeSet[lattNames[0]].lattDim};
     Real currentCs{latticeSet[lattNames[0]].cs};
     for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
+        Component component;
+        component.id = compoId.at(idx);
+        component.name = compoNames.at(idx);
+        component.latticeName = lattNames.at(idx);
+        component.tauRef = tauRef.at(idx);
+        component.number = idx;
         if (latticeSet.find(lattNames[idx]) != latticeSet.end()) {
             lattice currentLattice{latticeSet[lattNames[idx]]};
-            COMPOINDEX[posCompo] = totalSize;
-            COMPOINDEX[posCompo + 1] = totalSize + currentLattice.length - 1;
+            component.index[0] = totalSize;
+            component.index[1] = totalSize + currentLattice.length - 1;
+            // COMPOINDEX[posCompo] = totalSize;
+            // COMPOINDEX[posCompo + 1] = totalSize + currentLattice.length - 1;
             totalSize += currentLattice.length;
-            posCompo += 2;
+            // posCompo += 2;
             isLattDimSame =
                 isLattDimSame && (latticeDimension == currentLattice.lattDim);
             isCsSame = isCsSame && (currentCs == currentLattice.cs);
@@ -298,6 +316,7 @@ void DefineComponents(const std::vector<std::string>& compoNames,
                        lattNames[idx].c_str());
             assert(latticeSet.find(lattNames[idx]) != latticeSet.end());
         }
+        components.emplace(component.id, component);
     }
     if (!isLattDimSame) {
         ops_printf("%s\n", "Error! The lattice dimension is inconsistent!");
@@ -311,7 +330,7 @@ void DefineComponents(const std::vector<std::string>& compoNames,
         CS = currentCs;
         LATTDIM = latticeDimension;
         AllocateXi(totalSize);
-        SetLatticeName(lattNames);
+        // SetLatticeName(lattNames);
         int startPos{0};
         for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
             if ("d3q15" == lattNames[idx]) {
@@ -334,32 +353,49 @@ void DefineComponents(const std::vector<std::string>& compoNames,
         XIMAXVALUE = CS * maxValue;
     }
     ops_decl_const("NUMCOMPONENTS", 1, "int", &NUMCOMPONENTS);
-    ops_decl_const("COMPOINDEX", 2 * NUMCOMPONENTS, "int", COMPOINDEX);
+    // ops_decl_const("COMPOINDEX", 2 * NUMCOMPONENTS, "int", COMPOINDEX);
     ops_decl_const("NUMXI", 1, "int", &NUMXI);
     ops_decl_const("CS", 1, "double", &CS);
     ops_decl_const("LATTDIM", 1, "int", &LATTDIM);
     ops_decl_const("XI", NUMXI * LATTDIM, "double", XI);
     ops_decl_const("WEIGHTS", NUMXI, "double", WEIGHTS);
     ops_decl_const("OPP", NUMXI, "int", OPP);
+
+    for (auto pair : components) {
+        IntField nodeType{"NodeType" + pair.second.name};
+        g_NodeType().emplace(pair.second.id, nodeType);
+    }
+
     g_f().SetDataDim(NUMXI);
     if (timeStep == 0) {
         g_f().CreateFieldFromScratch(g_Block());
+        for (auto pair : g_NodeType()) {
+            pair.second.CreateFieldFromScratch(g_Block());
+        }
     } else {
         g_f().CreateFieldFromFile(CaseName(), g_Block(), timeStep);
+        for (auto pair : g_NodeType()) {
+            pair.second.CreateFieldFromFile(CaseName(), g_Block(), timeStep);
+        }
     }
     g_fStage().SetDataDim(NUMXI);
     g_fStage().CreateFieldFromScratch(g_Block());
 }
 
 void DefineMacroVars(std::vector<VariableTypes> types,
-                     std::vector<std::string> names,
-                     std::vector<SizeType> varId, std::vector<SizeType> compoId,
-                     const SizeType timeStep) {
+                     std::vector<std::string> names, std::vector<int> varId,
+                     std::vector<int> compoId, const SizeType timeStep) {
     // It seems varId is not necessary at this moment
+    if (components.size() < 1) {
+        ops_printf("Error:please call DefineComponent first!\n");
+        assert(components.size() == 0);
+    }
     NUMMACROVAR = names.size();
+    ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
+    // TODO:could be removed later
     MACROVARNAME = names;
     if (NUMMACROVAR > 0) {
-        AllocateMacroVarProperty(NUMMACROVAR);
+        // AllocateMacroVarProperty(NUMMACROVAR);
         ops_printf("There are %i macroscopic variables defined.\n",
                    NUMMACROVAR);
     } else {
@@ -367,63 +403,92 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     }
 
     for (int idx = 0; idx < NUMMACROVAR; idx++) {
-        VARIABLETYPE[idx] = (int)types[idx];
-        VARIABLECOMPINDEX[idx] = (int)compoId[idx];
-        ops_printf("The macroscopic variable %s defined for Component %i.\n",
-                   names[idx].c_str(), compoId[idx]);
-
-        if (nullptr != VARIABLECOMPPOS) {
-            int startPos{0};
-            for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
-                if (startPos >= NUMMACROVAR) {
-                    ops_printf(
-                        "Error! There are something wrong in specifying IDs of "
-                        "macroscopic variables!");
-                    assert(startPos >= NUMMACROVAR);
-                }
-                VARIABLECOMPPOS[2 * idx] = startPos;
-                while (idx == compoId.at(startPos)) {
-                    startPos++;
-                    if (startPos >= NUMMACROVAR) {
-                        break;
-                    }
-                }
-                VARIABLECOMPPOS[2 * idx + 1] = startPos - 1;
-            }
-        } else {
-            ops_printf(
-                "Error! It appears that the DefineComponents routine has not "
-                "been "
-                "called!\n");
-            assert(nullptr != VARIABLECOMPPOS);
+        MacroVariable macroVar;
+        macroVar.name = names.at(idx);
+        macroVar.id = varId.at(idx);
+        macroVar.type = types.at(idx);
+        macroVar.pos = idx;
+        components.at(compoId.at(idx))
+            .macroVars.emplace(macroVar.type, macroVar);
+        ops_printf("The macroscopic variable %s defined for Component %s.\n",
+                   names[idx].c_str(),
+                   components.at(compoId.at(idx)).name.c_str());
+        RealField macroVarField{macroVar.name};
+        g_MacroVars().emplace(macroVar.id, macroVarField);
+        if (!IsTransient()) {
+            RealField macroVarFieldCopy{macroVar.name + "Copy"};
+            g_MacroVarsCopy().emplace(macroVar.id, macroVarFieldCopy);
         }
     }
-    ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
-    ops_decl_const("VARIABLETYPE", NUMMACROVAR, "int", VARIABLETYPE);
-    ops_decl_const("VARIABLECOMPINDEX", NUMMACROVAR, "int", VARIABLECOMPINDEX);
-    ops_decl_const("VARIABLECOMPPOS", 2 * NUMCOMPONENTS, "int",VARIABLECOMPPOS);
-    g_MacroVars().SetDataDim(NUMMACROVAR);
-    if (timeStep == 0) {
-        g_MacroVars().CreateFieldFromScratch(g_Block());
-    } else {
-        g_MacroVars().CreateFieldFromFile(CaseName(), g_Block(), timeStep);
+
+    for (auto& idCompo : components) {
+        Component& compo{idCompo.second};
+        const std::map<VariableTypes, MacroVariable>& macroVars{
+            compo.macroVars};
+        int uId, vId;
+        if (macroVars.find(Variable_U) != macroVars.end()) {
+            uId = macroVars.at(Variable_U).id;
+        }
+        if (macroVars.find(Variable_V) != macroVars.end()) {
+            vId = macroVars.at(Variable_V).id;
+        }
+
+        if (macroVars.find(Variable_U_Force) != macroVars.end()) {
+            uId = macroVars.at(Variable_U_Force).id;
+        }
+        if (macroVars.find(Variable_V_Force) != macroVars.end()) {
+            vId = macroVars.at(Variable_V_Force).id;
+        }
+        compo.uId = uId;
+        compo.vId = vId;
+#ifdef OPS_3D
+        int wId;
+        if (macroVars.find(Variable_W) != macroVars.end()) {
+            wId = macroVars.at(Variable_W).id;
+        }
+        if (macroVars.find(Variable_W_Force) != macroVars.end()) {
+            wId = macroVars.at(Variable_W_Force).id;
+        }
+        compo.wId = wId;
+#endif
     }
+
+    if (timeStep == 0) {
+        for (auto pair : g_MacroVars()) {
+            pair.second.CreateFieldFromScratch(g_Block());
+        }
+
+    } else {
+        for (auto pair : g_MacroVars()) {
+            pair.second.CreateFieldFromFile(CaseName(), g_Block(), timeStep);
+        }
+    }
+
     if (!IsTransient()) {
-        g_MacroVarsCopy().SetDataDim(NUMMACROVAR);
-        g_MacroVarsCopy().CreateFieldFromScratch(g_Block());
-        g_ResidualErrorHandle = new ops_reduction[MacroVarsNum()];
-        g_ResidualError = new Real[2 * MacroVarsNum()];
-        for (int localIdx = 0; localIdx < MacroVarsNum(); localIdx++) {
-            g_ResidualErrorHandle[localIdx] = ops_decl_reduction_handle(
-                sizeof(Real), "double", MacroVarName()[localIdx].c_str());
+        for (auto pair : g_MacroVarsCopy()) {
+            pair.second.CreateFieldFromScratch(g_Block());
+        }
+        for (auto compo : components) {
+            for (auto var : compo.second.macroVars) {
+                ops_reduction handle{ops_decl_reduction_handle(
+                    sizeof(Real), RealC, var.second.name.c_str())};
+                g_ResidualErrorHandle().emplace(var.second.id, handle);
+                Real error;
+                g_ResidualError().emplace(var.second.id, error);
+            }
         }
     }
 }
 
 void DefineCollision(std::vector<CollisionType> types,
-                     std::vector<SizeType> compoId) {
-    const std::size_t typeSize{types.size()};
-    const std::size_t compoSize{compoId.size()};
+                     std::vector<int> compoId) {
+    if (components.size() < 1) {
+        ops_printf("Error:please call DefineComponent first!\n");
+        assert(components.size() == 0);
+    }
+
+    const SizeType typeSize{types.size()};
+    const SizeType compoSize{compoId.size()};
 
     if (typeSize != compoSize) {
         ops_printf(
@@ -443,66 +508,75 @@ void DefineCollision(std::vector<CollisionType> types,
 
     for (int idx = 0; idx < typeSize; idx++) {
         ops_printf(
-            "The equilibrium function type %i is chosen for "
+            "The collision type %i is chosen for "
             "Component "
             "%i\n",
             types.at(idx), compoId.at(idx));
-        std::pair<int, CollisionType> pair(compoId.at(idx), types.at(idx));
-        COLLISIONTERMS.push_back(pair);
+        components.at(compoId.at(idx)).collisionType = types.at(idx);
     }
     if (compoSize < NUMCOMPONENTS) {
         ops_printf(
-            "Warning! Kernel functions are required for components without "
-            "pre-defined collision terms!\n");
+            "Warning! User kernel functions are required for components "
+            "without pre-defined collision terms!\n");
     }
 }
 
 void DefineBodyForce(std::vector<BodyForceType> types,
                      std::vector<SizeType> compoId) {
+    if (components.size() < 1) {
+        ops_printf("Error:please call DefineComponent first!\n");
+        assert(components.size() == 0);
+    }
+
     const SizeType typeSize{types.size()};
     const SizeType compoSize{compoId.size()};
 
     if (typeSize != compoSize) {
         ops_printf(
-            "Error! There are %i force types defined for  %i "
-            "components\n",
+            "Error! There are %i force types defined for  %i components\n",
             typeSize, compoSize);
         assert(typeSize == compoSize);
     }
 
     if (compoSize > NUMCOMPONENTS) {
         ops_printf(
-            "Error! There are %i forces types defined but only %i "
-            "components\n",
+            "Error! There are %i forces types defined but only %i components\n",
             compoSize, NUMCOMPONENTS);
         assert(compoSize < NUMCOMPONENTS);
     }
 
     for (int idx = 0; idx < typeSize; idx++) {
         ops_printf(
-            "The body force function type %i is chosen for Component "
-            "%i\n",
+            "The body force function type %i is chosen for Component %i\n",
             types.at(idx), compoId.at(idx));
-        std::pair<SizeType, BodyForceType> pair(compoId.at(idx), types.at(idx));
-        FORCETERMS.push_back(pair);
+        components.at(compoId.at(idx)).bodyForceType = types.at(idx);
+        RealField force{"Force" + std::to_string(compoId.at(idx))};
+        g_MacroBodyforce().emplace(compoId.at(idx), force);
     }
     if (compoSize < NUMCOMPONENTS) {
         ops_printf(
-            "Warning! Kernel functions are required for components without "
+            "Warning! User kernel functions are required for components "
+            "without "
             "pre-defined body force terms!\n");
     }
-    g_MacroBodyforce().SetDataDim(SpaceDim() * NUMCOMPONENTS);
-    g_MacroBodyforce().CreateFieldFromScratch(g_Block());
+    for (auto pair : g_MacroBodyforce()) {
+        pair.second.SetDataDim(SpaceDim());
+        pair.second.CreateFieldFromScratch(g_Block());
+    }
 }
+
 void DefineInitialCondition(std::vector<InitialType> types,
                             std::vector<SizeType> compoId) {
+    if (components.size() < 1) {
+        ops_printf("Error:please call DefineComponent first!\n");
+        assert(components.size() == 0);
+    }
     const SizeType typeSize{types.size()};
     const SizeType compoSize{compoId.size()};
 
     if (typeSize != compoSize) {
         ops_printf(
-            "Error! There are %i initial types defined for  %i "
-            "components\n",
+            "Error! There are %i initial types defined for  %i components\n",
             typeSize, compoSize);
         assert(typeSize == compoSize);
     }
@@ -516,31 +590,28 @@ void DefineInitialCondition(std::vector<InitialType> types,
     }
 
     for (int idx = 0; idx < typeSize; idx++) {
-        ops_printf(
-            "The initial condition type %i is chosen for Component "
-            "%i\n",
-            types.at(idx), compoId.at(idx));
-        std::pair<SizeType, InitialType> pair(compoId.at(idx), types.at(idx));
-        INITIALTERMS.push_back(pair);
+        ops_printf("The initial condition type %i is chosen for Component %i\n",
+                   types.at(idx), compoId.at(idx));
+        components.at(compoId.at(idx)).initialType = types.at(idx);
     }
     if (compoSize < NUMCOMPONENTS) {
         ops_printf(
-            "Warning! Kernel functions are required for components without "
+            "Warning! User kernel functions are required for components without "
             "pre-defined initial contiditions!\n");
     }
 }
 
 void DestroyModel() {
-    FreeArrayMemory(VARIABLETYPE);
-    FreeArrayMemory(VARIABLECOMPINDEX);
-    FreeArrayMemory(COMPOINDEX);
-    FreeArrayMemory(VARIABLECOMPPOS);
+    //FreeArrayMemory(VARIABLETYPE);
+    //FreeArrayMemory(VARIABLECOMPINDEX);
+    //FreeArrayMemory(COMPOINDEX);
+    //FreeArrayMemory(VARIABLECOMPPOS);
     FreeArrayMemory(XI);
     FreeArrayMemory(WEIGHTS);
     FreeArrayMemory(OPP);
 }
-void SetLatticeName(const std::vector<std::string>& latticeName) {
-    LATTICENAME = latticeName;
-}
-const std::vector<std::string> LatticeName() { return LATTICENAME; }
-const std::vector<std::string> MacroVarName() { return MACROVARNAME; }
+// void SetLatticeName(const std::vector<std::string>& latticeName) {
+//     LATTICENAME = latticeName;
+// }
+// const std::vector<std::string> LatticeName() { return LATTICENAME; }
+// const std::vector<std::string> MacroVarName() { return MACROVARNAME; }

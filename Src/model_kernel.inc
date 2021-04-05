@@ -431,32 +431,28 @@ void KerCalcBodyForce(const Real* time, const ACC<int>& nodeType,
 #endif //OPS_2D outter
 #ifdef OPS_3D
 
-void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<Real>& macroVars,
-                           const ACC<int>& nodeType, const int* componentId) {
+void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<int>& nodeType,
+                           const ACC<Real>& Rho, const ACC<Real>& U,
+                           const ACC<Real>& V, const ACC<Real>& W,
+                           const int* lattIdx) {
 #ifdef OPS_3D
-    const int compoIndex{*componentId};
-    VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
-
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
     if (vt != VertexType::ImmersedSolid) {
-        const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-        Real rho{macroVars(startPos, 0, 0, 0)};
-        Real u{macroVars(startPos + 1, 0, 0, 0)};
-        Real v{macroVars(startPos + 2, 0, 0, 0)};
-        Real w{macroVars(startPos + 3, 0, 0, 0)};
+        Real rho{Rho(0, 0, 0)};
+        Real u{U(0, 0, 0)};
+        Real v{V(0, 0, 0)};
+        Real w{W(0, 0, 0)};
         const Real T{1};
         const int polyOrder{2};
-        for (int xiIndex = COMPOINDEX[2 * compoIndex];
-             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-            f(xiIndex, 0, 0, 0) =
-                CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder);
+        for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+            f(xiIdx, 0, 0, 0) = CalcBGKFeq(xiIdx, rho, u, v, w, T, polyOrder);
 #ifdef CPU
-            const Real res{f(xiIndex, 0, 0, 0)};
+            const Real res{f(xiIdx, 0, 0, 0)};
             if (isnan(res) || res <= 0 || isinf(res)) {
                 ops_printf(
-                    "Error! Distribution function %f becomes "
-                    "invalid for the component %i at  the lattice "
-                    "%i\n",
-                    res, compoIndex, xiIndex);
+                    "Error! Distribution function %f becomes invalid at the "
+                    "lattice %i\n",
+                    res, xiIdx);
                 assert(!(isnan(res) || res <= 0 || isinf(res)));
             }
 #endif  // CPU
@@ -466,30 +462,27 @@ void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<Real>& macroVars,
 }
 
 void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
-                               const ACC<Real>& macroVars,
-                               const ACC<int>& nodeType, const Real* tauRef,
-                               const Real* dt, const int* componentId) {
+                               const ACC<int>& nodeType, const ACC<Real>& Rho,
+                               const ACC<Real>& U, const ACC<Real>& V,
+                               const ACC<Real>& W, const Real* tauRef,
+                               const Real* dt, const int* lattIdx) {
 #ifdef OPS_3D
-    const int compoIndex{*componentId};
-    VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
     // collisionRequired: means if collision is required at boundary
     // e.g., the ZouHe boundary condition explicitly requires collision
-    bool collisionRequired =
-        (vt != VertexType::ImmersedSolid);
+    bool collisionRequired = (vt != VertexType::ImmersedSolid);
     if (collisionRequired) {
-        const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-        Real rho{macroVars(startPos, 0, 0, 0)};
-        Real u{macroVars(startPos + 1, 0, 0, 0)};
-        Real v{macroVars(startPos + 2, 0, 0, 0)};
-        Real w{macroVars(startPos + 3, 0, 0, 0)};
+        Real rho{Rho(0, 0, 0)};
+        Real u{U(0, 0, 0)};
+        Real v{V(0, 0, 0)};
+        Real w{W(0, 0, 0)};
         const Real T{1};
         const int polyOrder{2};
         Real tau = (*tauRef);
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
-        for (int xiIndex = COMPOINDEX[2 * compoIndex];
-             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+        for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
-            if (vt == VertexType::Fluid || vt==VertexType::MDPeriodic) {
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
                 fStage(xiIndex, 0, 0, 0) =
                     feq + (1 - dtOvertauPlusdt) * (f(xiIndex, 0, 0, 0) - feq) +
                     tau * dtOvertauPlusdt * fStage(xiIndex, 0, 0, 0);
@@ -501,11 +494,9 @@ void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
             const Real res{fStage(xiIndex, 0, 0, 0)};
             if (isnan(res) || res <= 0 || isinf(res)) {
                 ops_printf(
-                    "Error! Distribution function = %e becomes "
-                    "invalid for the component %i at  the lattice "
-                    "%i where feq=%e\n",
-                    res, compoIndex, xiIndex, feq);
-                //ops_printf()
+                    "Error! Distribution function = %e becomes invalid at  "
+                    "the lattice %i where feq=%e\n",
+                    res, xiIndex, feq);
                 assert(!(isnan(res) || res <= 0 || isinf(res)));
             }
 #endif  // CPU
@@ -515,30 +506,28 @@ void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
 }
 
 void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
-                            const ACC<Real>& macroVars,
-                            const ACC<int>& nodeType, const Real* tauRef,
-                            const Real* dt, const int* componentId) {
+                            const ACC<int>& nodeType, const ACC<Real>& Rho,
+                            const ACC<Real>& U, const ACC<Real>& V,
+                            const ACC<Real>& W, const ACC<Real>& Temperature,
+                            const Real* tauRef, const Real* dt,
+                            const int* lattIdx) {
 #ifdef OPS_3D
-    const int compoIndex{*componentId};
-    VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
     // collisionRequired: means if collision is required at boundary
     // e.g., the ZouHe boundary condition explicitly requires collision
-    bool collisionRequired =
-        (vt != VertexType::ImmersedSolid);
+    bool collisionRequired = (vt != VertexType::ImmersedSolid);
     if (collisionRequired) {
-        const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-        Real rho{macroVars(startPos, 0, 0, 0)};
-        Real u{macroVars(startPos + 1, 0, 0, 0)};
-        Real v{macroVars(startPos + 2, 0, 0, 0)};
-        Real w{macroVars(startPos + 3, 0, 0, 0)};
-        Real T{macroVars(startPos + 4, 0, 0, 0)};
+        Real rho{Rho(0, 0, 0)};
+        Real u{U(0, 0, 0)};
+        Real v{V(0, 0, 0)};
+        Real w{W(0, 0, 0)};
+        Real T{Temperature(0, 0, 0)};
         const int polyOrder{4};
         Real tau = (*tauRef) / (rho * sqrt(T));
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
-        for (int xiIndex = COMPOINDEX[2 * compoIndex];
-             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+        for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
-            if (vt == VertexType::Fluid || vt==VertexType::MDPeriodic) {
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
                 fStage(xiIndex, 0, 0, 0) =
                     f(xiIndex, 0, 0, 0) -
                     dtOvertauPlusdt * (f(xiIndex, 0, 0, 0) - feq) +
@@ -552,10 +541,9 @@ void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
             const Real res{fStage(xiIndex, 0, 0, 0)};
             if (isnan(res) || res <= 0 || isinf(res)) {
                 ops_printf(
-                    "Error! Distribution function %f becomes "
-                    "invalid for the component %i at  the lattice "
-                    "%i\n",
-                    res, compoIndex, xiIndex);
+                    "Error! Distribution function %f becomes invalid at the "
+                    "lattice %i\n",
+                    res, xiIndex);
                 assert(!(isnan(res) || res <= 0 || isinf(res)));
             }
 #endif  // CPU
@@ -565,27 +553,23 @@ void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
 }
 
 void KerCalcBodyForce1ST3D(ACC<Real>& fStage, const ACC<Real>& acceration,
-                        const ACC<Real>& macroVars, const ACC<int>& nodeType,
-                        const int* componentId) {
+                           const ACC<Real>& Rho, const ACC<int>& nodeType,
+                           const int* lattIdx) {
 #ifdef OPS_3D
-    const int compoIndex{*componentId};
-    VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
-    if (vt == VertexType::Fluid || vt==VertexType::MDPeriodic) {
-        const int startPos{VARIABLECOMPPOS[2 * compoIndex]};
-        Real rho{macroVars(startPos, 0, 0, 0)};
-        Real g[]{acceration(3 * compoIndex, 0, 0, 0),
-                 acceration(3 * compoIndex + 1, 0, 0, 0),
-                 acceration(3 * compoIndex + 2, 0, 0, 0)};
-        for (int xiIndex = COMPOINDEX[2 * compoIndex];
-             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
+        Real rho{Rho(0, 0, 0)};
+        Real g[]{acceration(0, 0, 0, 0), acceration(1, 0, 0, 0),
+                 acceration(2, 0, 0, 0)};
+        for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real bodyForce{CalcBodyForce(xiIndex, rho, g)};
 #ifdef CPU
             if (isnan(bodyForce) || isinf(bodyForce)) {
                 ops_printf(
-                    "Error! Body force  %f becomes "
-                    "invalid for the component %i at  the lattice "
+                    "Error! Body force  %f becomes invalid  at  the lattice "
                     "%i\n",
-                    bodyForce, compoIndex, xiIndex);
+                    bodyForce, xiIndex);
                 assert(!(isnan(bodyForce) || isinf(bodyForce)));
             }
 #endif
@@ -596,704 +580,661 @@ void KerCalcBodyForce1ST3D(ACC<Real>& fStage, const ACC<Real>& acceration,
 }
 
 void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
-                          const ACC<Real>& macroVars, const ACC<int>& nodeType,
-                          const int* componentId) {
+                            const ACC<int>& nodeType, const int* lattIdx) {
 #ifdef OPS_3D
-    const int compoIndex{*componentId};
-    VertexType vt = (VertexType)nodeType(compoIndex, 0, 0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
     if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
-        for (int xiIndex = COMPOINDEX[2 * compoIndex];
-             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+        for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             fStage(xiIndex, 0, 0, 0) = 0;
         }
     }
 #endif  // OPS_3D
 }
 
-void KerCalcDensity3D(ACC<Real>& macroVars, const ACC<Real>& f,
-                      const ACC<int>& nodeType, const int* component,
-                      const int* lattIdx, const int* rhoIdx) {
-    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+void KerCalcDensity3D(ACC<Real>& Rho, const ACC<Real>& f,
+                      const ACC<int>& nodeType, const int* lattIdx) {
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
     if (vt != VertexType::ImmersedSolid) {
-        macroVars((*rhoIdx), 0, 0, 0) = 0;
+        Real rho{0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            macroVars((*rhoIdx), 0, 0, 0) += f(xiIdx, 0, 0, 0);
+            rho += f(xiIdx, 0, 0, 0);
         }
 #ifdef CPU
-        Real rho = macroVars(m, 0, 0, 0);
         if (isnan(rho) || rho <= 0 || isinf(rho)) {
             ops_printf(
                 "Error! Density %f becomes invalid！Something "
                 "wrong...",
                 rho);
-            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
-                       x, y, z);
             assert(!(isnan(rho) || rho <= 0 || isinf(rho)));
         }
-
 #endif
+        Rho(0, 0, 0) = rho;
     }
 }
 
-void KerCalcU3D(ACC<Real>& macroVars, const ACC<Real>& f,
-                const ACC<int>& nodeType, const int* component,
-                const int* lattIdx, const int* rhoIdx, const int* UIdx) {
-    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+void KerCalcU3D(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
+                const ACC<Real>& Rho, const int* lattIdx) {
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
     if (vt != VertexType::ImmersedSolid) {
-        macroVars((*UIdx), 0, 0, 0) = 0;
+        Real u{0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            macroVars((*UIdx), 0, 0, 0) +=
-                CS * XI[xiIdx * LATTDIM] * f(xiIdx, 0, 0, 0);
+            u += CS * XI[xiIdx * LATTDIM] * f(xiIdx, 0, 0, 0);
         }
-        macroVars((*UIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+        u /= Rho(0, 0, 0);
 #ifdef CPU
-        Real U = macroVars((*UIdx), 0, 0, 0);
-        if (isnan(U) || isinf(U)) {
+        if (isnan(u) || isinf(u)) {
             ops_printf(
                 "Error! Velocity U=%f becomes invalid! "
                 "Maybe something wrong...\n",
-                U);
-            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
-                       x, y, z);
-            assert(!(isnan(U) || isinf(U)));
+                u);
+            assert(!(isnan(u) || isinf(u)));
         }
-
 #endif
+        U(0, 0, 0) = u;
     }
 }
 
-void KerCalcV3D(ACC<Real>& macroVars, const ACC<Real>& f,
-                const ACC<int>& nodeType, const int* component,
-                const int* lattIdx, const int* rhoIdx, const int* VIdx) {
-    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+void KerCalcV3D(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
+                const ACC<Real>& Rho, const int* lattIdx) {
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
     if (vt != VertexType::ImmersedSolid) {
-        macroVars((*VIdx), 0, 0, 0) = 0;
+        Real v{0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            macroVars((*VIdx), 0, 0, 0) +=
-                CS * XI[xiIdx * LATTDIM + 1] * f(xiIdx, 0, 0, 0);
+            v += CS * XI[xiIdx * LATTDIM + 1] * f(xiIdx, 0, 0, 0);
         }
-        macroVars((*VIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+        v /= Rho(0, 0, 0);
 #ifdef CPU
-        Real V = macroVars((*VIdx), 0, 0, 0);
-        if (isnan(V) || isinf(V)) {
+        if (isnan(v) || isinf(v)) {
             ops_printf(
                 "Error! Velocity V=%f becomes invalid! "
                 "Maybe something wrong...\n",
-                V);
-            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
-                       x, y, z);
-            assert(!(isnan(V) || isinf(V)));
+                v);
+            assert(!(isnan(v) || isinf(v)));
         }
-
 #endif
+        V(0, 0, 0) = v;
     }
 }
 
-void KerCalcW3D(ACC<Real>& macroVars, const ACC<Real>& f,
-                const ACC<int>& nodeType, const int* component,
-                const int* lattIdx, const int* rhoIdx, const int* WIdx) {
-    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+void KerCalcW3D(ACC<Real>& W, const ACC<Real>& f, const ACC<int>& nodeType,
+                const ACC<Real>& Rho, const int* lattIdx) {
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
     if (vt != VertexType::ImmersedSolid) {
-        macroVars((*WIdx), 0, 0, 0) = 0;
+        Real w{0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            macroVars((*WIdx), 0, 0, 0) +=
-                CS * XI[xiIdx * LATTDIM + 2] * f(xiIdx, 0, 0, 0);
+            w += CS * XI[xiIdx * LATTDIM + 2] * f(xiIdx, 0, 0, 0);
         }
-        macroVars((*WIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+        w /= Rho(0, 0, 0);
 #ifdef CPU
-        Real W = macroVars((*WIdx), 0, 0, 0);
-        if (isnan(W) || isinf(W)) {
+        if (isnan(w) || isinf(w)) {
             ops_printf(
                 "Error! Velocity W=%f becomes invalid! "
                 "Maybe something wrong...\n",
-                W);
-            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
-                       x, y, z);
-            assert(!(isnan(W) || isinf(W)));
+                w);
+            assert(!(isnan(w) || isinf(w)));
         }
-
 #endif
+        W(0, 0, 0) = w;
     }
 }
 
-void KerCalcUForce3D(ACC<Real>& macroVars, const ACC<Real>& f,
-                     const ACC<int>& nodeType, const ACC<Real>& coordinates,
-                     const ACC<Real>& acceleration, const Real* dt,
-                     const int* component, const int* lattIdx,
-                     const int* rhoIdx, const int* UIdx) {
+void KerCalcUForce3D(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
+                     const ACC<Real>& coordinates,
+                     const ACC<Real>& acceleration, const ACC<Real>& Rho,
+                     const Real* dt, const int* lattIdx) {
     const Real x{coordinates(0, 0, 0, 0)};
     const Real y{coordinates(1, 0, 0, 0)};
     const Real z{coordinates(2, 0, 0, 0)};
-    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
     if (vt != VertexType::ImmersedSolid) {
-        macroVars((*UIdx), 0, 0, 0) = 0;
+        Real u{0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            macroVars((*UIdx), 0, 0, 0) +=
-                CS * XI[xiIdx * LATTDIM] * f(xiIdx, 0, 0, 0);
+            u += CS * XI[xiIdx * LATTDIM] * f(xiIdx, 0, 0, 0);
         }
-        macroVars((*UIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+        u /= Rho(0, 0, 0);
         if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt) {
-            macroVars((*UIdx), 0, 0, 0) +=
-                ((*dt) * acceleration(3 * (*component), 0, 0, 0) / 2);
+            u += ((*dt) * acceleration(0, 0, 0, 0) / 2);
         }
 #ifdef CPU
-        Real U = macroVars((*UIdx), 0, 0, 0);
-        if (isnan(U) || isinf(U)) {
+        if (isnan(u) || isinf(u)) {
             ops_printf(
-                "Error! Velocity U=%f becomes invalid! "
-                "Maybe something wrong...\n",
-                U);
-            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
-                       x, y, z);
-            assert(!(isnan(U) || isinf(U)));
+                "Error! Velocity U=%f becomes invalid! Maybe something wrong "
+                "at x=%f y=%f z=%f\n",
+                u, x, y, z);
+            assert(!(isnan(u) || isinf(u)));
         }
-
 #endif
+        U(0, 0, 0) = u;
     }
 }
 
-void KerCalcVForce3D(ACC<Real>& macroVars, const ACC<Real>& f,
-                     const ACC<int>& nodeType, const ACC<Real>& coordinates,
-                     const ACC<Real>& acceleration, const Real* dt,
-                     const int* component, const int* lattIdx,
-                     const int* rhoIdx, const int* VIdx) {
+void KerCalcVForce3D(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
+                     const ACC<Real>& coordinates,
+                     const ACC<Real>& acceleration, const ACC<Real>& Rho,
+                     const Real* dt, const int* lattIdx) {
     const Real x{coordinates(0, 0, 0, 0)};
     const Real y{coordinates(1, 0, 0, 0)};
     const Real z{coordinates(2, 0, 0, 0)};
-    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
     if (vt != VertexType::ImmersedSolid) {
-        macroVars((*VIdx), 0, 0, 0) = 0;
+        Real v{0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            macroVars((*VIdx), 0, 0, 0) +=
-                CS * XI[xiIdx * LATTDIM + 1] * f(xiIdx, 0, 0, 0);
+            v += CS * XI[xiIdx * LATTDIM + 1] * f(xiIdx, 0, 0, 0);
         }
-        macroVars((*VIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+        u /= Rho(0, 0, 0);
         if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt) {
-            macroVars((*VIdx), 0, 0, 0) +=
-                ((*dt) * acceleration(3 * (*component) + 1, 0, 0, 0) / 2);
+            v += ((*dt) * acceleration(1, 0, 0, 0) / 2);
         }
-
 #ifdef CPU
-        Real V = macroVars((*VIdx), 0, 0, 0);
-        if (isnan(V) || isinf(V)) {
+        if (isnan(v) || isinf(v)) {
             ops_printf(
-                "Error! Velocity V=%f becomes invalid! "
-                "Maybe something wrong...\n",
-                V);
-            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
-                       x, y, z);
-            assert(!(isnan(V) || isinf(V)));
+                "Error! Velocity V=%f becomes invalid! Maybe something wrong "
+                "at x=%f y=%f z=%f\n",
+                u, x, y, z);
+            assert(!(isnan(v) || isinf(v)));
         }
-
 #endif
+        V(0, 0, 0) = v;
     }
 }
 
-void KerCalcWForce3D(ACC<Real>& macroVars, const ACC<Real>& f,
-                     const ACC<int>& nodeType, const ACC<Real>& coordinates,
-                     const ACC<Real>& acceleration, const Real* dt,
-                     const int* component, const int* lattIdx,
-                     const int* rhoIdx, const int* WIdx) {
+void KerCalcWForce3D(ACC<Real>& W, const ACC<Real>& f, const ACC<int>& nodeType,
+                     const ACC<Real>& coordinates,
+                     const ACC<Real>& acceleration, const ACC<Real>& Rho,
+                     const Real* dt, const int* lattIdx) {
     const Real x{coordinates(0, 0, 0, 0)};
     const Real y{coordinates(1, 0, 0, 0)};
     const Real z{coordinates(2, 0, 0, 0)};
-    VertexType vt = (VertexType)nodeType(*component, 0, 0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
     if (vt != VertexType::ImmersedSolid) {
-        macroVars((*WIdx), 0, 0, 0) = 0;
+        Real w{0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            macroVars((*WIdx), 0, 0, 0) +=
-                CS * XI[xiIdx * LATTDIM + 2] * f(xiIdx, 0, 0, 0);
+            w += CS * XI[xiIdx * LATTDIM + 2] * f(xiIdx, 0, 0, 0);
         }
-        macroVars((*WIdx), 0, 0, 0) /= macroVars((*rhoIdx), 0, 0, 0);
+        w /= Rho(0, 0, 0);
         if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt) {
-            macroVars((*WIdx), 0, 0, 0) +=
-                ((*dt) * acceleration(3 * (*component) + 2, 0, 0, 0) / 2);
+            w += ((*dt) * acceleration(2, 0, 0, 0) / 2);
         }
-
 #ifdef CPU
-        Real W = macroVars((*WIdx), 0, 0, 0);
-        if (isnan(W) || isinf(W)) {
+        if (isnan(w) || isinf(w)) {
             ops_printf(
-                "Error! Velocity W=%f becomes invalid! "
-                "Maybe something wrong...\n",
-                W);
-            ops_printf("For the component %i at x=%f y=%f z=%f\n", compoIndex,
-                       x, y, z);
-            assert(!(isnan(W) || isinf(W)));
+                "Error! Velocity W=%f becomes invalid! Maybe something wrong "
+                "at x=%f y=%f z=%f\n",
+                u, x, y, z);
+            assert(!(isnan(w) || isinf(w)));
         }
-
 #endif
+        W(0, 0, 0) = w;
     }
 }
-
-        /*!
-         * If a Newton-Cotes quadrature is used, it can be converted to the way
-         * similar to the Gauss-Hermite quadrature
-         *
-         */
-void KerCalcMacroVars3D(ACC<Real> & macroVars, const ACC<Real>& f,
-                                const ACC<int>& nodeType,
-                                const ACC<Real>& coordinates,
-                                const ACC<Real>& acceleration, const Real* dt) {
-#ifdef OPS_3D
-    const Real x{coordinates(0, 0, 0, 0)};
-    const Real y{coordinates(1, 0, 0, 0)};
-    const Real z{coordinates(2, 0, 0, 0)};
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        VertexType vt =
-            (VertexType)nodeType(compoIndex, 0, 0, 0);
-        if (vt != VertexType::ImmersedSolid) {
-            bool rhoCalculated{false};
-            Real rho{0};
-            bool* veloCalculated = new bool[LATTDIM];
-            Real* velo = new Real[LATTDIM];
-            for (int lattIdx = 0; lattIdx < LATTDIM; lattIdx++) {
-                veloCalculated[lattIdx] = false;
-                velo[lattIdx] = 0;
-            }
-            for (int m = VARIABLECOMPPOS[2 * compoIndex];
-                 m <= VARIABLECOMPPOS[2 * compoIndex + 1]; m++) {
-                macroVars(m, 0, 0, 0) = 0;
-                VariableTypes varType = (VariableTypes)VARIABLETYPE[m];
-                switch (varType) {
-                    case Variable_Rho: {
-                        rhoCalculated = true;
-                        for (int xiIdx = COMPOINDEX[2 * compoIndex];
-                             xiIdx <= COMPOINDEX[2 * compoIndex + 1]; xiIdx++) {
-                            macroVars(m, 0, 0, 0) +=
-                                f(xiIdx, 0, 0, 0);
-                        }
-                        rho = macroVars(m, 0, 0, 0);
-#ifdef CPU
-                        if (isnan(rho) || rho <= 0 || isinf(rho)) {
-                            ops_printf(
-                                "Error! Density %f becomes invalid！Something "
-                                "wrong...",
-                                rho);
-                            ops_printf(
-                                "For the component %i at x=%f y=%f z=%f\n",
-                                compoIndex, x, y, z);
-                            assert(!(isnan(rho) || rho <= 0 || isinf(rho)));
-                        }
- #endif
-                    } break;
-                    case Variable_U: {
-                        if (rhoCalculated) {
-                            veloCalculated[0] = true;
-                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
-                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
-                                 xiIdx++) {
-                                macroVars(m, 0, 0, 0) +=
-                                    CS * XI[xiIdx * LATTDIM] *
-                                    f(xiIdx, 0, 0, 0);
-                            }
-                            macroVars(m, 0, 0, 0) /= rho;
-                            velo[0] = macroVars(m, 0, 0, 0);
-#ifdef CPU
-                            if (isnan(velo[0]) || isinf(velo[0])) {
-                                ops_printf(
-                                    "Error! Velocity U=%f becomes invalid! "
-                                    "Maybe something wrong...\n",
-                                    velo[0]);
-                                ops_printf(
-                                    "For the component %i at x=%f y=%f z=%f\n",
-                                    compoIndex, x, y, z);
-                                assert(!(isnan(velo[0]) || isinf(velo[0])));
-                            }
-#endif
-                        } else {
-#ifdef CPU
-                            ops_printf(
-                                "Error! Density has not be calculated before "
-                                "calculating U! Macroscopic variables shall be "
-                                "defined in the order of [rho,u,v,w,...]\n");
-                            assert(rhoCalculated);
-#endif
-                        }
-                    } break;
-                    case Variable_V: {
-                        if (rhoCalculated) {
-                            veloCalculated[1] = true;
-                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
-                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
-                                 xiIdx++) {
-                                macroVars(m, 0, 0, 0) +=
-                                    CS * XI[xiIdx * LATTDIM + 1] *
-                                    f(xiIdx, 0, 0, 0);
-                            }
-                            macroVars(m, 0, 0, 0) /= rho;
-                            velo[1] = macroVars(m, 0, 0, 0);
-#ifdef CPU
-                            if (isnan(velo[1]) || isinf(velo[1])) {
-                                ops_printf(
-                                    "Error! Velocity V=%f becomes invalid! "
-                                    "Maybe something wrong...\n",
-                                    velo[1]);
-                                ops_printf(
-                                    "For the component %i at x=%f y=%f z=%f\n",
-                                    compoIndex, x, y, z);
-                                assert(!(isnan(velo[1]) || isinf(velo[1])));
-                            }
-#endif
-                        } else {
-#ifdef CPU
-                            ops_printf(
-                                "Error! Density has not be calculated before "
-                                "calculating V! Macroscopic variables shall be "
-                                "defined in the order of [rho,u,v,w,...]\n");
-                            assert(rhoCalculated);
-#endif
-                        }
-                    } break;
-                    case Variable_W: {
-                        if (rhoCalculated) {
-                            veloCalculated[2] = true;
-                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
-                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
-                                 xiIdx++) {
-                                macroVars(m, 0, 0, 0) +=
-                                    CS * XI[xiIdx * LATTDIM + 2] *
-                                    f(xiIdx, 0, 0, 0);
-                            }
-                            macroVars(m, 0, 0, 0) /= rho;
-                            velo[2] = macroVars(m, 0, 0, 0);
-#ifdef CPU
-                            if (isnan(velo[2]) || isinf(velo[2])) {
-                                ops_printf(
-                                    "Error! Velocity W=%f becomes invalid! "
-                                    "Maybe something wrong...\n",
-                                    velo[2]);
-                                ops_printf(
-                                    "For the component %i at x=%f y=%f z=%f\n",
-                                    compoIndex, x, y, z);
-                                assert(!(isnan(velo[2]) || isinf(velo[2])));
-                            }
-#endif
-                        } else {
-#ifdef CPU
-                           ops_printf(
-                                "Error! Density has not be calculated before "
-                                "calculating W! Macroscopic variables shall be "
-                                "defined in the order of [rho,u,v,w,...]\n");
-                            assert(rhoCalculated);
-#endif
-                        }
-                    } break;
-                    case Variable_Qx: {
-                        bool ifCalc = true;
-                        for (int d = 0; d < LATTDIM; d++) {
-                            ifCalc = ifCalc && veloCalculated[d];
-                        }
-                        if (ifCalc) {
-                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
-                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
-                                 xiIdx++) {
-                                Real T = 0;
-                                for (int d = 0; d < LATTDIM; d++) {
-                                    T += (CS * XI[xiIdx * LATTDIM + d] -
-                                          velo[d]) *
-                                         (CS * XI[xiIdx * LATTDIM + d] -
-                                          velo[d]) *
-                                         f(xiIdx, 0, 0, 0);
-                                }
-                                macroVars(m, 0, 0, 0) +=
-                                    (0.5 *
-                                     (CS * XI[xiIdx * LATTDIM] - velo[0]) * T);
-                            }
-#ifdef CPU
-                            Real qx{macroVars(m, 0, 0, 0)};
-                            if (isnan(qx) || isinf(qx)) {
-                                ops_printf(
-                                    "Error!Heat flux  qx=%f becomes invalid! "
-                                    "Maybe something wrong...\n",
-                                    qx);
-                                ops_printf(
-                                    "For the component %i at x=%f y=%f z=%f\n",
-                                    compoIndex, x, y, z);
-                                assert(!(isnan(qx) || isinf(qx)));
-                            }
-#endif
-                        } else {
-#ifdef CPU
-                            ops_printf(
-                                "Error! The density and macroscopic velocity "
-                                "have not been calculated! Macroscopic "
-                                "variables shall be defined in the order of "
-                                "[rho,u,v,w,T,Qx,Qy...]\n");
-                            assert(ifCalc);
-#endif
-                        }
-                    } break;
-                    case Variable_Qy: {
-                        bool ifCalc = true;
-                        for (int d = 0; d < LATTDIM; d++) {
-                            ifCalc = ifCalc && veloCalculated[d];
-                        }
-                        if (ifCalc) {
-                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
-                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
-                                 xiIdx++) {
-                                Real T = 0;
-                                for (int d = 0; d < LATTDIM; d++) {
-                                    T += (CS * XI[xiIdx * LATTDIM + d] -
-                                          velo[d]) *
-                                         (CS * XI[xiIdx * LATTDIM + d] -
-                                          velo[d]) *
-                                         f(xiIdx, 0, 0, 0);
-                                }
-                                macroVars(m, 0, 0, 0) +=
-                                    (0.5 *
-                                     (CS * XI[xiIdx * LATTDIM + 1] - velo[1]) *
-                                     T);
-                            }
-#ifdef CPU
-                            Real qy{macroVars(m, 0, 0, 0)};
-                            if (isnan(qy) || isinf(qy)) {
-                                ops_printf(
-                                    "Error! Heat flux  qy=%f becomes invalid! "
-                                    "Maybe something wrong...\n",
-                                    qy);
-                                ops_printf(
-                                    "For the component %i at x=%f y=%f z=%f\n",
-                                    compoIndex, x, y, z);
-                                assert(!(isnan(qy) || isinf(qy)));
-                            }
-#endif
-                        } else {
-#ifdef CPU
-                             ops_printf(
-                                "Error! The density and macroscopic velocity "
-                                "have not been calculated! Macroscopic "
-                                "variables shall be defined in the order of "
-                                "[rho,u,v,w,T,Qx,Qy...]\n");
-                            assert(ifCalc);
-#endif
-                        }
-                    } break;
-                    case Variable_Qz: {
-                        bool ifCalc = true;
-                        for (int d = 0; d < LATTDIM; d++) {
-                            ifCalc = ifCalc && veloCalculated[d];
-                        }
-                        if (ifCalc) {
-                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
-                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
-                                 xiIdx++) {
-                                Real T = 0;
-                                for (int d = 0; d < LATTDIM; d++) {
-                                    T += (CS * XI[xiIdx * LATTDIM + d] -
-                                          velo[d]) *
-                                         (CS * XI[xiIdx * LATTDIM + d] -
-                                          velo[d]) *
-                                         f(xiIdx, 0, 0, 0);
-                                }
-                                macroVars(m, 0, 0, 0) +=
-                                    (0.5 *
-                                     (CS * XI[xiIdx * LATTDIM + 2] - velo[2]) *
-                                     T);
-                            }
-#ifdef CPU
-                            Real qz{macroVars(m, 0, 0, 0)};
-                            if (isnan(qz) || isinf(qz)) {
-                                ops_printf(
-                                    "Error! Heat flux qz=%f becomes invalid! "
-                                    "Maybe something wrong...\n",
-                                    qz);
-                                ops_printf(
-                                    "For the component %i at x=%f y=%f z=%f\n",
-                                    compoIndex, x, y, z);
-                                assert(!(isnan(qz) || isinf(qz)));
-                            }
-#endif
-                        } else {
-#ifdef CPU
-                            ops_printf(
-                                "Error! The density and macroscopic velocity "
-                                "have not been calculated! Macroscopic "
-                                "variables shall be defined in the order of "
-                                "[rho,u,v,w,T,Qx,Qy...]\n");
-                            assert(ifCalc);
-#endif
-                        }
-                    } break;
-                    case Variable_T: {
-                        bool ifCalc = rhoCalculated;
-                        for (int d = 0; d < LATTDIM; d++) {
-                            ifCalc = ifCalc && veloCalculated[d];
-                        }
-                        if (ifCalc) {
-                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
-                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
-                                 xiIdx++) {
-                                for (int d = 0; d < LATTDIM; d++) {
-                                    macroVars(m, 0, 0, 0) +=
-                                        (CS * XI[xiIdx * LATTDIM + d] -
-                                         velo[d]) *
-                                        (CS * XI[xiIdx * LATTDIM + d] -
-                                         velo[d]) *
-                                        f(xiIdx, 0, 0, 0);
-                                }
-                            }
-                            macroVars(m, 0, 0, 0) /=
-                                (rho * LATTDIM);
-#ifdef CPU
-                            Real T{macroVars(m, 0, 0, 0)};
-                            if (isnan(T) || isinf(T)) {
-                                ops_printf(
-                                    "Error! Temperature T=%f becomes invalid! "
-                                    "Maybe something wrong...\n",
-                                    T);
-                                ops_printf(
-                                    "For the component %i at x=%f y=%f z=%f\n",
-                                    compoIndex, x, y, z);
-                                assert(!(isnan(T) || isinf(T)));
-                            }
-#endif
-                        } else {
-#ifdef CPU
-                            ops_printf(
-                                "Error! The density and macroscopic velocity "
-                                "have not been calculated! Macroscopic "
-                                "variables shall be defined in the order of "
-                                "[rho,u,v,w,T,Qx,Qy...]\n");
-                            assert(ifCalc);
-#endif
-                        }
-                    } break;
-                    case Variable_U_Force: {
-                        if (rhoCalculated) {
-                            veloCalculated[0] = true;
-                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
-                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
-                                 xiIdx++) {
-                                macroVars(m, 0, 0, 0) +=
-                                    CS * XI[xiIdx * LATTDIM] *
-                                    f(xiIdx, 0, 0, 0);
-                            }
-                            macroVars(m, 0, 0, 0) /= rho;
-                            if (VertexType::Fluid == vt ||
-                                VertexType::MDPeriodic == vt) {
-                                macroVars(m, 0, 0, 0) +=
-                                    ((*dt) *
-                                     acceleration(3* compoIndex,0,0,0) / 2);
-                            }
-                            velo[0] = macroVars(m, 0, 0, 0);
-#ifdef CPU
-                            if (isnan(velo[0]) || isinf(velo[0])) {
-                                ops_printf(
-                                    "Error! Velocity U=%f becomes invalid! "
-                                    "Maybe something wrong...\n",
-                                    velo[0]);
-                                ops_printf(
-                                    "For the component %i at x=%f y=%f z=%f\n",
-                                    compoIndex, x, y, z);
-                                assert(!(isnan(velo[0]) || isinf(velo[0])));
-                            }
-#endif
-                        } else {
-#ifdef CPU
-                            ops_printf(
-                                "Error! Density has not be calculated "
-                                "before "
-                                "calculating U! Macroscopic variables "
-                                "shall be "
-                                "defined in the order of "
-                                "[rho,u,v,w,...]\n");
-                            assert(rhoCalculated);
-#endif
-                        }
-                    } break;
-                    case Variable_V_Force: {
-                        if (rhoCalculated) {
-                            veloCalculated[1] = true;
-                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
-                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
-                                 xiIdx++) {
-                                macroVars(m, 0, 0, 0) +=
-                                    CS * XI[xiIdx * LATTDIM + 1] *
-                                    f(xiIdx, 0, 0, 0);
-                            }
-                            macroVars(m, 0, 0, 0) /= rho;
-                            if (VertexType::Fluid == vt ||
-                                VertexType::MDPeriodic == vt) {
-                                macroVars(m, 0, 0, 0) +=
-                                    ((*dt) *
-                                     acceleration(3* compoIndex + 1,0,0,0) /
-                                     2);
-                            }
-                            velo[1] = macroVars(m, 0, 0, 0);
-#ifdef CPU
-                            if (isnan(velo[1]) || isinf(velo[1])) {
-                                ops_printf("%sV=%f\n",
-                                           "Velocity becomes invalid! Maybe "
-                                           "something wrong...",
-                                           velo[1]);
-                                ops_printf(
-                                    "For the component %i at x=%f y=%f z=%f\n",
-                                    compoIndex, x, y, z);
-                                assert(!(isnan(velo[1]) || isinf(velo[1])));
-                            }
-#endif
-                        } else {
-#ifdef CPU
-                            ops_printf(
-                                "Error! Density has not be calculated before "
-                                "calculating V! Macroscopic variables shall be "
-                                "defined in the order of [rho,u,v,w,...]\n");
-                            assert(rhoCalculated);
-#endif
-                        }
-                    } break;
-                    case Variable_W_Force: {
-                        if (rhoCalculated) {
-                            veloCalculated[2] = true;
-                            for (int xiIdx = COMPOINDEX[2 * compoIndex];
-                                 xiIdx <= COMPOINDEX[2 * compoIndex + 1];
-                                 xiIdx++) {
-                                macroVars(m, 0, 0, 0) +=
-                                    CS * XI[xiIdx * LATTDIM + 2] *
-                                    f(xiIdx, 0, 0, 0);
-                            }
-                            macroVars(m, 0, 0, 0) /= rho;
-                            if (VertexType::Fluid == vt ||
-                                VertexType::MDPeriodic == vt) {
-                                macroVars(m, 0, 0, 0) +=
-                                    ((*dt) *
-                                     acceleration(3 * compoIndex + 2, 0, 0, 0) /
-                                     2);
-                            }
-                            velo[2] = macroVars(m, 0, 0, 0);
-#ifdef CPU
-                            if (isnan(velo[2]) || isinf(velo[2])) {
-                                ops_printf(
-                                    "Error! Velocity W=%f becomes invalid! "
-                                    "Maybe something wrong...\n",
-                                    velo[2]);
-                                ops_printf(
-                                    "For the component %i at x=%f y=%f z=%f\n",
-                                    compoIndex, x, y, z);
-                                assert(!(isnan(velo[2]) || isinf(velo[2])));
-                            }
-#endif
-                        } else {
-#ifdef CPU
-                            ops_printf(
-                                "Error! Density has not be calculated before "
-                                "calculating W! Macroscopic variables shall be "
-                                "defined in the order of [rho,u,v,w,...]\n");
-                            assert(rhoCalculated);
-#endif
-                        }
-                    } break;
-                    default:
-                        break;
-                }  // Switch
-            }      // m
-            delete[] veloCalculated;
-            delete[] velo;
-        }  // compoIdx
-    }      // isVertex
-#endif // OPS_3D
-}
+/*!
+ * If a Newton-Cotes quadrature is used, it can be converted to the way
+ * similar to the Gauss-Hermite quadrature
+ *
+ */
+// void KerCalcMacroVars3D(ACC<Real> & macroVars, const ACC<Real>& f,
+//                                 const ACC<int>& nodeType,
+//                                 const ACC<Real>& coordinates,
+//                                 const ACC<Real>& acceleration, const Real* dt) {
+// #ifdef OPS_3D
+//     const Real x{coordinates(0, 0, 0, 0)};
+//     const Real y{coordinates(1, 0, 0, 0)};
+//     const Real z{coordinates(2, 0, 0, 0)};
+//     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+//         VertexType vt =
+//             (VertexType)nodeType(compoIndex, 0, 0, 0);
+//         if (vt != VertexType::ImmersedSolid) {
+//             bool rhoCalculated{false};
+//             Real rho{0};
+//             bool* veloCalculated = new bool[LATTDIM];
+//             Real* velo = new Real[LATTDIM];
+//             for (int lattIdx = 0; lattIdx < LATTDIM; lattIdx++) {
+//                 veloCalculated[lattIdx] = false;
+//                 velo[lattIdx] = 0;
+//             }
+//             for (int m = VARIABLECOMPPOS[2 * compoIndex];
+//                  m <= VARIABLECOMPPOS[2 * compoIndex + 1]; m++) {
+//                 macroVars(m, 0, 0, 0) = 0;
+//                 VariableTypes varType = (VariableTypes)VARIABLETYPE[m];
+//                 switch (varType) {
+//                     case Variable_Rho: {
+//                         rhoCalculated = true;
+//                         for (int xiIdx = COMPOINDEX[2 * compoIndex];
+//                              xiIdx <= COMPOINDEX[2 * compoIndex + 1]; xiIdx++) {
+//                             macroVars(m, 0, 0, 0) +=
+//                                 f(xiIdx, 0, 0, 0);
+//                         }
+//                         rho = macroVars(m, 0, 0, 0);
+// #ifdef CPU
+//                         if (isnan(rho) || rho <= 0 || isinf(rho)) {
+//                             ops_printf(
+//                                 "Error! Density %f becomes invalid！Something "
+//                                 "wrong...",
+//                                 rho);
+//                             ops_printf(
+//                                 "For the component %i at x=%f y=%f z=%f\n",
+//                                 compoIndex, x, y, z);
+//                             assert(!(isnan(rho) || rho <= 0 || isinf(rho)));
+//                         }
+//  #endif
+//                     } break;
+//                     case Variable_U: {
+//                         if (rhoCalculated) {
+//                             veloCalculated[0] = true;
+//                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
+//                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+//                                  xiIdx++) {
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     CS * XI[xiIdx * LATTDIM] *
+//                                     f(xiIdx, 0, 0, 0);
+//                             }
+//                             macroVars(m, 0, 0, 0) /= rho;
+//                             velo[0] = macroVars(m, 0, 0, 0);
+// #ifdef CPU
+//                             if (isnan(velo[0]) || isinf(velo[0])) {
+//                                 ops_printf(
+//                                     "Error! Velocity U=%f becomes invalid! "
+//                                     "Maybe something wrong...\n",
+//                                     velo[0]);
+//                                 ops_printf(
+//                                     "For the component %i at x=%f y=%f z=%f\n",
+//                                     compoIndex, x, y, z);
+//                                 assert(!(isnan(velo[0]) || isinf(velo[0])));
+//                             }
+// #endif
+//                         } else {
+// #ifdef CPU
+//                             ops_printf(
+//                                 "Error! Density has not be calculated before "
+//                                 "calculating U! Macroscopic variables shall be "
+//                                 "defined in the order of [rho,u,v,w,...]\n");
+//                             assert(rhoCalculated);
+// #endif
+//                         }
+//                     } break;
+//                     case Variable_V: {
+//                         if (rhoCalculated) {
+//                             veloCalculated[1] = true;
+//                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
+//                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+//                                  xiIdx++) {
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     CS * XI[xiIdx * LATTDIM + 1] *
+//                                     f(xiIdx, 0, 0, 0);
+//                             }
+//                             macroVars(m, 0, 0, 0) /= rho;
+//                             velo[1] = macroVars(m, 0, 0, 0);
+// #ifdef CPU
+//                             if (isnan(velo[1]) || isinf(velo[1])) {
+//                                 ops_printf(
+//                                     "Error! Velocity V=%f becomes invalid! "
+//                                     "Maybe something wrong...\n",
+//                                     velo[1]);
+//                                 ops_printf(
+//                                     "For the component %i at x=%f y=%f z=%f\n",
+//                                     compoIndex, x, y, z);
+//                                 assert(!(isnan(velo[1]) || isinf(velo[1])));
+//                             }
+// #endif
+//                         } else {
+// #ifdef CPU
+//                             ops_printf(
+//                                 "Error! Density has not be calculated before "
+//                                 "calculating V! Macroscopic variables shall be "
+//                                 "defined in the order of [rho,u,v,w,...]\n");
+//                             assert(rhoCalculated);
+// #endif
+//                         }
+//                     } break;
+//                     case Variable_W: {
+//                         if (rhoCalculated) {
+//                             veloCalculated[2] = true;
+//                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
+//                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+//                                  xiIdx++) {
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     CS * XI[xiIdx * LATTDIM + 2] *
+//                                     f(xiIdx, 0, 0, 0);
+//                             }
+//                             macroVars(m, 0, 0, 0) /= rho;
+//                             velo[2] = macroVars(m, 0, 0, 0);
+// #ifdef CPU
+//                             if (isnan(velo[2]) || isinf(velo[2])) {
+//                                 ops_printf(
+//                                     "Error! Velocity W=%f becomes invalid! "
+//                                     "Maybe something wrong...\n",
+//                                     velo[2]);
+//                                 ops_printf(
+//                                     "For the component %i at x=%f y=%f z=%f\n",
+//                                     compoIndex, x, y, z);
+//                                 assert(!(isnan(velo[2]) || isinf(velo[2])));
+//                             }
+// #endif
+//                         } else {
+// #ifdef CPU
+//                            ops_printf(
+//                                 "Error! Density has not be calculated before "
+//                                 "calculating W! Macroscopic variables shall be "
+//                                 "defined in the order of [rho,u,v,w,...]\n");
+//                             assert(rhoCalculated);
+// #endif
+//                         }
+//                     } break;
+//                     case Variable_Qx: {
+//                         bool ifCalc = true;
+//                         for (int d = 0; d < LATTDIM; d++) {
+//                             ifCalc = ifCalc && veloCalculated[d];
+//                         }
+//                         if (ifCalc) {
+//                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
+//                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+//                                  xiIdx++) {
+//                                 Real T = 0;
+//                                 for (int d = 0; d < LATTDIM; d++) {
+//                                     T += (CS * XI[xiIdx * LATTDIM + d] -
+//                                           velo[d]) *
+//                                          (CS * XI[xiIdx * LATTDIM + d] -
+//                                           velo[d]) *
+//                                          f(xiIdx, 0, 0, 0);
+//                                 }
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     (0.5 *
+//                                      (CS * XI[xiIdx * LATTDIM] - velo[0]) * T);
+//                             }
+// #ifdef CPU
+//                             Real qx{macroVars(m, 0, 0, 0)};
+//                             if (isnan(qx) || isinf(qx)) {
+//                                 ops_printf(
+//                                     "Error!Heat flux  qx=%f becomes invalid! "
+//                                     "Maybe something wrong...\n",
+//                                     qx);
+//                                 ops_printf(
+//                                     "For the component %i at x=%f y=%f z=%f\n",
+//                                     compoIndex, x, y, z);
+//                                 assert(!(isnan(qx) || isinf(qx)));
+//                             }
+// #endif
+//                         } else {
+// #ifdef CPU
+//                             ops_printf(
+//                                 "Error! The density and macroscopic velocity "
+//                                 "have not been calculated! Macroscopic "
+//                                 "variables shall be defined in the order of "
+//                                 "[rho,u,v,w,T,Qx,Qy...]\n");
+//                             assert(ifCalc);
+// #endif
+//                         }
+//                     } break;
+//                     case Variable_Qy: {
+//                         bool ifCalc = true;
+//                         for (int d = 0; d < LATTDIM; d++) {
+//                             ifCalc = ifCalc && veloCalculated[d];
+//                         }
+//                         if (ifCalc) {
+//                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
+//                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+//                                  xiIdx++) {
+//                                 Real T = 0;
+//                                 for (int d = 0; d < LATTDIM; d++) {
+//                                     T += (CS * XI[xiIdx * LATTDIM + d] -
+//                                           velo[d]) *
+//                                          (CS * XI[xiIdx * LATTDIM + d] -
+//                                           velo[d]) *
+//                                          f(xiIdx, 0, 0, 0);
+//                                 }
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     (0.5 *
+//                                      (CS * XI[xiIdx * LATTDIM + 1] - velo[1]) *
+//                                      T);
+//                             }
+// #ifdef CPU
+//                             Real qy{macroVars(m, 0, 0, 0)};
+//                             if (isnan(qy) || isinf(qy)) {
+//                                 ops_printf(
+//                                     "Error! Heat flux  qy=%f becomes invalid! "
+//                                     "Maybe something wrong...\n",
+//                                     qy);
+//                                 ops_printf(
+//                                     "For the component %i at x=%f y=%f z=%f\n",
+//                                     compoIndex, x, y, z);
+//                                 assert(!(isnan(qy) || isinf(qy)));
+//                             }
+// #endif
+//                         } else {
+// #ifdef CPU
+//                              ops_printf(
+//                                 "Error! The density and macroscopic velocity "
+//                                 "have not been calculated! Macroscopic "
+//                                 "variables shall be defined in the order of "
+//                                 "[rho,u,v,w,T,Qx,Qy...]\n");
+//                             assert(ifCalc);
+// #endif
+//                         }
+//                     } break;
+//                     case Variable_Qz: {
+//                         bool ifCalc = true;
+//                         for (int d = 0; d < LATTDIM; d++) {
+//                             ifCalc = ifCalc && veloCalculated[d];
+//                         }
+//                         if (ifCalc) {
+//                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
+//                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+//                                  xiIdx++) {
+//                                 Real T = 0;
+//                                 for (int d = 0; d < LATTDIM; d++) {
+//                                     T += (CS * XI[xiIdx * LATTDIM + d] -
+//                                           velo[d]) *
+//                                          (CS * XI[xiIdx * LATTDIM + d] -
+//                                           velo[d]) *
+//                                          f(xiIdx, 0, 0, 0);
+//                                 }
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     (0.5 *
+//                                      (CS * XI[xiIdx * LATTDIM + 2] - velo[2]) *
+//                                      T);
+//                             }
+// #ifdef CPU
+//                             Real qz{macroVars(m, 0, 0, 0)};
+//                             if (isnan(qz) || isinf(qz)) {
+//                                 ops_printf(
+//                                     "Error! Heat flux qz=%f becomes invalid! "
+//                                     "Maybe something wrong...\n",
+//                                     qz);
+//                                 ops_printf(
+//                                     "For the component %i at x=%f y=%f z=%f\n",
+//                                     compoIndex, x, y, z);
+//                                 assert(!(isnan(qz) || isinf(qz)));
+//                             }
+// #endif
+//                         } else {
+// #ifdef CPU
+//                             ops_printf(
+//                                 "Error! The density and macroscopic velocity "
+//                                 "have not been calculated! Macroscopic "
+//                                 "variables shall be defined in the order of "
+//                                 "[rho,u,v,w,T,Qx,Qy...]\n");
+//                             assert(ifCalc);
+// #endif
+//                         }
+//                     } break;
+//                     case Variable_T: {
+//                         bool ifCalc = rhoCalculated;
+//                         for (int d = 0; d < LATTDIM; d++) {
+//                             ifCalc = ifCalc && veloCalculated[d];
+//                         }
+//                         if (ifCalc) {
+//                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
+//                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+//                                  xiIdx++) {
+//                                 for (int d = 0; d < LATTDIM; d++) {
+//                                     macroVars(m, 0, 0, 0) +=
+//                                         (CS * XI[xiIdx * LATTDIM + d] -
+//                                          velo[d]) *
+//                                         (CS * XI[xiIdx * LATTDIM + d] -
+//                                          velo[d]) *
+//                                         f(xiIdx, 0, 0, 0);
+//                                 }
+//                             }
+//                             macroVars(m, 0, 0, 0) /=
+//                                 (rho * LATTDIM);
+// #ifdef CPU
+//                             Real T{macroVars(m, 0, 0, 0)};
+//                             if (isnan(T) || isinf(T)) {
+//                                 ops_printf(
+//                                     "Error! Temperature T=%f becomes invalid! "
+//                                     "Maybe something wrong...\n",
+//                                     T);
+//                                 ops_printf(
+//                                     "For the component %i at x=%f y=%f z=%f\n",
+//                                     compoIndex, x, y, z);
+//                                 assert(!(isnan(T) || isinf(T)));
+//                             }
+// #endif
+//                         } else {
+// #ifdef CPU
+//                             ops_printf(
+//                                 "Error! The density and macroscopic velocity "
+//                                 "have not been calculated! Macroscopic "
+//                                 "variables shall be defined in the order of "
+//                                 "[rho,u,v,w,T,Qx,Qy...]\n");
+//                             assert(ifCalc);
+// #endif
+//                         }
+//                     } break;
+//                     case Variable_U_Force: {
+//                         if (rhoCalculated) {
+//                             veloCalculated[0] = true;
+//                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
+//                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+//                                  xiIdx++) {
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     CS * XI[xiIdx * LATTDIM] *
+//                                     f(xiIdx, 0, 0, 0);
+//                             }
+//                             macroVars(m, 0, 0, 0) /= rho;
+//                             if (VertexType::Fluid == vt ||
+//                                 VertexType::MDPeriodic == vt) {
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     ((*dt) *
+//                                      acceleration(3* compoIndex,0,0,0) / 2);
+//                             }
+//                             velo[0] = macroVars(m, 0, 0, 0);
+// #ifdef CPU
+//                             if (isnan(velo[0]) || isinf(velo[0])) {
+//                                 ops_printf(
+//                                     "Error! Velocity U=%f becomes invalid! "
+//                                     "Maybe something wrong...\n",
+//                                     velo[0]);
+//                                 ops_printf(
+//                                     "For the component %i at x=%f y=%f z=%f\n",
+//                                     compoIndex, x, y, z);
+//                                 assert(!(isnan(velo[0]) || isinf(velo[0])));
+//                             }
+// #endif
+//                         } else {
+// #ifdef CPU
+//                             ops_printf(
+//                                 "Error! Density has not be calculated "
+//                                 "before "
+//                                 "calculating U! Macroscopic variables "
+//                                 "shall be "
+//                                 "defined in the order of "
+//                                 "[rho,u,v,w,...]\n");
+//                             assert(rhoCalculated);
+// #endif
+//                         }
+//                     } break;
+//                     case Variable_V_Force: {
+//                         if (rhoCalculated) {
+//                             veloCalculated[1] = true;
+//                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
+//                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+//                                  xiIdx++) {
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     CS * XI[xiIdx * LATTDIM + 1] *
+//                                     f(xiIdx, 0, 0, 0);
+//                             }
+//                             macroVars(m, 0, 0, 0) /= rho;
+//                             if (VertexType::Fluid == vt ||
+//                                 VertexType::MDPeriodic == vt) {
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     ((*dt) *
+//                                      acceleration(3* compoIndex + 1,0,0,0) /
+//                                      2);
+//                             }
+//                             velo[1] = macroVars(m, 0, 0, 0);
+// #ifdef CPU
+//                             if (isnan(velo[1]) || isinf(velo[1])) {
+//                                 ops_printf("%sV=%f\n",
+//                                            "Velocity becomes invalid! Maybe "
+//                                            "something wrong...",
+//                                            velo[1]);
+//                                 ops_printf(
+//                                     "For the component %i at x=%f y=%f z=%f\n",
+//                                     compoIndex, x, y, z);
+//                                 assert(!(isnan(velo[1]) || isinf(velo[1])));
+//                             }
+// #endif
+//                         } else {
+// #ifdef CPU
+//                             ops_printf(
+//                                 "Error! Density has not be calculated before "
+//                                 "calculating V! Macroscopic variables shall be "
+//                                 "defined in the order of [rho,u,v,w,...]\n");
+//                             assert(rhoCalculated);
+// #endif
+//                         }
+//                     } break;
+//                     case Variable_W_Force: {
+//                         if (rhoCalculated) {
+//                             veloCalculated[2] = true;
+//                             for (int xiIdx = COMPOINDEX[2 * compoIndex];
+//                                  xiIdx <= COMPOINDEX[2 * compoIndex + 1];
+//                                  xiIdx++) {
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     CS * XI[xiIdx * LATTDIM + 2] *
+//                                     f(xiIdx, 0, 0, 0);
+//                             }
+//                             macroVars(m, 0, 0, 0) /= rho;
+//                             if (VertexType::Fluid == vt ||
+//                                 VertexType::MDPeriodic == vt) {
+//                                 macroVars(m, 0, 0, 0) +=
+//                                     ((*dt) *
+//                                      acceleration(3 * compoIndex + 2, 0, 0, 0) /
+//                                      2);
+//                             }
+//                             velo[2] = macroVars(m, 0, 0, 0);
+// #ifdef CPU
+//                             if (isnan(velo[2]) || isinf(velo[2])) {
+//                                 ops_printf(
+//                                     "Error! Velocity W=%f becomes invalid! "
+//                                     "Maybe something wrong...\n",
+//                                     velo[2]);
+//                                 ops_printf(
+//                                     "For the component %i at x=%f y=%f z=%f\n",
+//                                     compoIndex, x, y, z);
+//                                 assert(!(isnan(velo[2]) || isinf(velo[2])));
+//                             }
+// #endif
+//                         } else {
+// #ifdef CPU
+//                             ops_printf(
+//                                 "Error! Density has not be calculated before "
+//                                 "calculating W! Macroscopic variables shall be "
+//                                 "defined in the order of [rho,u,v,w,...]\n");
+//                             assert(rhoCalculated);
+// #endif
+//                         }
+//                     } break;
+//                     default:
+//                         break;
+//                 }  // Switch
+//             }      // m
+//             delete[] veloCalculated;
+//             delete[] velo;
+//         }  // compoIdx
+//     }      // isVertex
+// #endif // OPS_3D
+// }
 #endif //OPS_3D outter
 #endif //MODEL_KERNEL_INC
