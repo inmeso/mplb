@@ -36,7 +36,10 @@
  * field (allocate memory), set up the geometry and the boundary
  * property, and deallocate the memory.
  */
-
+#include  "ops_lib_core.h"
+#ifdef OPS_MPI
+#include "ops_mpi_core.h"
+#endif
 #include "flowfield.h"
 #include <type_traits>
 #include "block.h"
@@ -107,7 +110,6 @@ void DefineCase(const std::string& caseName, const int spaceDim,
         assert(SPACEDIM == spaceDim);
     }
     SetCaseName(caseName);
-    ops_decl_const("SPACEDIM", 1, "int", &SPACEDIM);
     TRANSIENT = transient;
 }
 

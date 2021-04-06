@@ -35,11 +35,8 @@
  *  @details Define the discrete velocity structure, the macroscopic variables,
  *   and necessary constants
  **/
-#include "ops_lib_core.h"
 
-#ifdef OPS_MPI
-#include "ops_mpi_core.h"
-#endif
+#include "ops_seq_v2.h"
 #include "block.h"
 #include "model.h"
 #include "model_host_device.h"
@@ -55,41 +52,11 @@ Real CS{1};
 Real* XI{nullptr};
 Real* WEIGHTS{nullptr};
 int* OPP{nullptr};
-int NUMMACROVAR{3};
-//int* VARIABLETYPE{nullptr};
-//int* VARIABLECOMPINDEX{nullptr};
 int NUMCOMPONENTS{1};
-//int* COMPOINDEX{nullptr};
+
 Real XIMAXVALUE{1};
 std::map<int,Component> components;
 const std::map<int, Component>& g_Components() { return components; };
-
-// std::list<std::pair<SizeType, CollisionType>> COLLISIONTERMS;
-// std::list<std::pair<SizeType, BodyForceType>> FORCETERMS;
-// std::list<std::pair<SizeType, InitialType>> INITIALTERMS;
-
-// const std::list<std::pair<SizeType, CollisionType>>& CollisionTerms() {
-//     return COLLISIONTERMS;
-// }
-
-// const std::list<std::pair<SizeType, BodyForceType>>& BodyForceTerms() {
-//     return FORCETERMS;
-// }
-
-// const std::list<std::pair<SizeType, InitialType>>& InitialTerms() {
-//     return INITIALTERMS;
-// }
-
-// int* VARIABLECOMPPOS{nullptr};
-/*!
- *Name of all macroscopic variables
- */
-std::vector<std::string> MACROVARNAME;
-/*!
- *Name of all Lattices.
- */
-std::vector<std::string> LATTICENAME;
-
 
 struct lattice {
     int lattDim;
@@ -223,17 +190,6 @@ void SetupD2Q36Latt(const int startPos) {
     FindReverseXi(startPos, nc36);
 }
 
-// void AllocateComponentIndex(const int compoNum) {
-//     if (compoNum == NUMCOMPONENTS) {
-//         if (nullptr == COMPOINDEX) {
-//             COMPOINDEX = new int[2 * compoNum];
-//         }
-//         if (nullptr == VARIABLECOMPPOS) {
-//             VARIABLECOMPPOS = new int[2 * compoNum];
-//         }
-//     }
-// }
-
 void AllocateXi(const int length) {
     if (length == NUMXI) {
         if (nullptr == XI) {
@@ -248,26 +204,6 @@ void AllocateXi(const int length) {
     }
 }
 
-// void AllocateMacroVarProperty(const int macroVarNum) {
-//     if (macroVarNum == NUMMACROVAR) {
-//         if (nullptr == VARIABLETYPE) {
-//             VARIABLETYPE = new int[NUMMACROVAR];
-//         } else {
-//             ops_printf("%s\n", "Warning! VARIABLETYPE has been allocated!");
-//         }
-//         if (nullptr == VARIABLECOMPINDEX) {
-//             VARIABLECOMPINDEX = new int[NUMMACROVAR];
-//         } else {
-//             ops_printf("%s\n",
-//                        "Warning! VARIABLECOMPINDEX has been allocated!");
-//         }
-//     } else {
-//         ops_printf("%s\n",
-//                    "Error! The macroVarNum must be equal to NUMMACROVAR");
-//         assert(macroVarNum == NUMMACROVAR);
-//     }
-// }
-
 void DefineComponents(const std::vector<std::string>& compoNames,
                       const std::vector<int>& compoId,
                       const std::vector<std::string>& lattNames,
@@ -279,7 +215,6 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     }
     NUMCOMPONENTS = compoNames.size();
     if (NUMCOMPONENTS > 0) {
-        // AllocateComponentIndex(NUMCOMPONENTS);
         ops_printf("There are %i components defined.\n", NUMCOMPONENTS);
     } else {
         ops_printf(
@@ -289,7 +224,6 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     }
     bool isLattDimSame{true};
     bool isCsSame{true};
-    //int posCompo{0};
     int totalSize{0};
     int latticeDimension{latticeSet[lattNames[0]].lattDim};
     Real currentCs{latticeSet[lattNames[0]].cs};
@@ -303,10 +237,7 @@ void DefineComponents(const std::vector<std::string>& compoNames,
             lattice currentLattice{latticeSet[lattNames[idx]]};
             component.index[0] = totalSize;
             component.index[1] = totalSize + currentLattice.length - 1;
-            // COMPOINDEX[posCompo] = totalSize;
-            // COMPOINDEX[posCompo + 1] = totalSize + currentLattice.length - 1;
             totalSize += currentLattice.length;
-            // posCompo += 2;
             isLattDimSame =
                 isLattDimSame && (latticeDimension == currentLattice.lattDim);
             isCsSame = isCsSame && (currentCs == currentLattice.cs);
@@ -329,7 +260,6 @@ void DefineComponents(const std::vector<std::string>& compoNames,
         CS = currentCs;
         LATTDIM = latticeDimension;
         AllocateXi(totalSize);
-        // SetLatticeName(lattNames);
         int startPos{0};
         for (int idx = 0; idx < NUMCOMPONENTS; idx++) {
             if ("d3q15" == lattNames[idx]) {
@@ -352,7 +282,6 @@ void DefineComponents(const std::vector<std::string>& compoNames,
         XIMAXVALUE = CS * maxValue;
     }
     ops_decl_const("NUMCOMPONENTS", 1, "int", &NUMCOMPONENTS);
-    // ops_decl_const("COMPOINDEX", 2 * NUMCOMPONENTS, "int", COMPOINDEX);
     ops_decl_const("NUMXI", 1, "int", &NUMXI);
     ops_decl_const("CS", 1, "double", &CS);
     ops_decl_const("LATTDIM", 1, "int", &LATTDIM);
@@ -385,24 +314,21 @@ void DefineComponents(const std::vector<std::string>& compoNames,
 void DefineMacroVars(std::vector<VariableTypes> types,
                      std::vector<std::string> names, std::vector<int> varId,
                      std::vector<int> compoId, const SizeType timeStep) {
-    // It seems varId is not necessary at this moment
     if (components.size() < 1) {
         ops_printf("Error:please call DefineComponent first!\n");
         assert(components.size() == 0);
     }
-    NUMMACROVAR = names.size();
-    ops_decl_const("NUMMACROVAR", 1, "int", &NUMMACROVAR);
-    // TODO:could be removed later
-    MACROVARNAME = names;
-    if (NUMMACROVAR > 0) {
-        // AllocateMacroVarProperty(NUMMACROVAR);
+
+    int numMacroVar{names.size()};
+
+    if (numMacroVar > 0) {
         ops_printf("There are %i macroscopic variables defined.\n",
-                   NUMMACROVAR);
+                   numMacroVar);
     } else {
         ops_printf("Warning! There seems no macroscopic variables defined!\n");
     }
 
-    for (int idx = 0; idx < NUMMACROVAR; idx++) {
+    for (int idx = 0; idx < numMacroVar; idx++) {
         MacroVariable macroVar;
         macroVar.name = names.at(idx);
         macroVar.id = varId.at(idx);
@@ -601,16 +527,8 @@ void DefineInitialCondition(std::vector<InitialType> types,
 }
 
 void DestroyModel() {
-    //FreeArrayMemory(VARIABLETYPE);
-    //FreeArrayMemory(VARIABLECOMPINDEX);
-    //FreeArrayMemory(COMPOINDEX);
-    //FreeArrayMemory(VARIABLECOMPPOS);
     FreeArrayMemory(XI);
     FreeArrayMemory(WEIGHTS);
     FreeArrayMemory(OPP);
 }
-// void SetLatticeName(const std::vector<std::string>& latticeName) {
-//     LATTICENAME = latticeName;
-// }
-// const std::vector<std::string> LatticeName() { return LATTICENAME; }
-// const std::vector<std::string> MacroVarName() { return MACROVARNAME; }
+

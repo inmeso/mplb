@@ -89,23 +89,6 @@ extern int NUMCOMPONENTS;
  * according to the tangential line\n
  */
 extern int* OPP;
-/*!
- * Number of macroscopic variables
- */
-extern int NUMMACROVAR;
-/*!
- * The type of macroscopic variables
- */
-//extern int* VARIABLETYPE;
-/*!
- * Which component does the variable belong to
- */
-//extern int* VARIABLECOMPINDEX;
-/*!
- * The start and end position of macroscopic variables of each
- * component
- */
-//extern int* VARIABLECOMPPOS;
 
 #include "model_host_device.h"
 
@@ -139,27 +122,10 @@ struct Component {
 #endif
     Real tauRef;
 };
-// Convenient functions
-// void SetLatticeName(const std::vector<std::string>& latticeName);
-// const std::vector<std::string> LatticeName();
-// const std::vector<std::string> MacroVarName();
-const std::map<int, Component>& g_Components();
-/**
- * Get collision type
- */
-// const std::list<std::pair<SizeType,CollisionType >> & CollisionTerms();
-/**
- * Get force type
- */
-// const std::list<std::pair<SizeType,BodyForceType>> & BodyForceTerms();
 
-/**
- * Get initial type
- */
-// const std::list<std::pair<SizeType,InitialType>> & InitialTerms();
+const std::map<int, Component>& g_Components();
 
 inline const int ComponentNum() { return NUMCOMPONENTS; }
-inline const int MacroVarsNum() { return NUMMACROVAR; }
 inline const int SizeF() { return NUMXI; }
 inline const Real SoundSpeed() { return CS; }
 inline const Real MaximumSpeed() { return XIMAXVALUE; }
