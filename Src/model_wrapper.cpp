@@ -8,12 +8,12 @@
 #include "model_kernel.inc"
 #ifdef OPS_3D
 void PreDefinedCollision3D() {
-    for (auto idBlock : g_Block()) {
-        Block& block{idBlock.second};
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
         const int blockIndex{block.ID()};
-        for (auto& idCompo : g_Components()) {
+        for (const auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
             const CollisionType collisionType{compo.collisionType};
             const Real tau{compo.tauRef};
@@ -81,13 +81,13 @@ void PreDefinedCollision3D() {
 }
 
 void UpdateMacroVars3D() {
-    for (auto idBlock : g_Block()) {
-        Block& block{idBlock.second};
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
         const int blockIndex{block.ID()};
         const Real* pdt{pTimeStep()};
-        for (auto& idCompo : g_Components()) {
+        for (const auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
             for (auto& macroVar : compo.macroVars) {
                 const int varId{macroVar.second.id};
@@ -244,12 +244,12 @@ void UpdateMacroVars3D() {
 }
 
 void PreDefinedBodyForce3D() {
-    for (auto idBlock : g_Block()) {
-        Block& block{idBlock.second};
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
         const int blockIndex{block.ID()};
-        for (auto& idCompo : g_Components()) {
+        for (const auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
             const BodyForceType forceType{compo.bodyForceType};
             switch (forceType) {
@@ -293,12 +293,12 @@ void PreDefinedBodyForce3D() {
 }
 
 void PreDefinedInitialCondition3D() {
-    for (auto idBlock : g_Block()) {
-        Block& block{idBlock.second};
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
         const int blockIndex{block.ID()};
-        for (auto& idCompo : g_Components()) {
+        for (const auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
             const int compoId{compo.id};
             const InitialType initialType{compo.initialType};

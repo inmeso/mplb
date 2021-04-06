@@ -135,10 +135,10 @@ void NormaliseF3D(Real* ratio);
 #endif  // OPS_3D
 
 void CopyCurrentMacroVar();
-void SetBulkandHaloNodesType(Block& block, int compoId);
+void SetBulkandHaloNodesType(const Block& block, int compoId);
 void SetBoundaryNodeType();
-void SetBlockGeometryProperty(Block& block);
-void AssignCoordinates(Block& block,
+void SetBlockGeometryProperty(const Block& block);
+void AssignCoordinates(const Block& block,
                        const std::vector<std::vector<Real>>& blockCoordinates);
 void UpdateMacroscopicBodyForce(const Real time);
 void SetInitialMacrosVars();

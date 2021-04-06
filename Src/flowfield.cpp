@@ -232,11 +232,11 @@ void Partition() {
  */
 
 void WriteFlowfieldToHdf5(const SizeType timeStep) {
-    for (auto& macroVar : MacroVars) {
+    for (const auto& macroVar : MacroVars) {
         macroVar.second.WriteToHDF5(CASENAME, timeStep);
     }
     CoordinateXYZ.WriteToHDF5(CASENAME, timeStep);
-    for (auto& force : MacroBodyforce) {
+    for (const auto& force : MacroBodyforce) {
         force.second.WriteToHDF5(CASENAME, timeStep);
     }
 }
@@ -247,7 +247,7 @@ void WriteDistributionsToHdf5(const SizeType timeStep) {
 
 void WriteNodePropertyToHdf5(const SizeType timeStep) {
     GeometryProperty.WriteToHDF5(CASENAME, timeStep);
-    for (auto& pair : NodeType) {
+    for (const auto& pair : NodeType) {
         pair.second.WriteToHDF5(CASENAME, timeStep);
     }
 }
@@ -268,7 +268,7 @@ void SetTimeStep(Real dt) { DT = dt; }
 Real GetMaximumResidual(const SizeType checkPeriod) {
     Real maxResError{0};
     Real relResErrorMacroVar{0};
-    for (auto& error: ResidualError) {
+    for (const auto& error: ResidualError) {
         relResErrorMacroVar = error.second / (checkPeriod * TimeStep());
         if (maxResError <= relResErrorMacroVar) {
             maxResError = relResErrorMacroVar;
@@ -335,7 +335,7 @@ void DefineBlocks(const std::vector<int>& blockIds,
     const SizeType blockNum{BLOCKS.size()};
     SizeType numBlockStartPos{startPos.size()};
     if (numBlockStartPos == (blockNum)) {
-        for (auto& idStartPos : startPos) {
+        for (const auto& idStartPos : startPos) {
             std::vector<std::vector<Real>> blockCoordinates(SPACEDIM);
             const int id{idStartPos.first};
             const std::vector<Real> blockStartPos{idStartPos.second};
@@ -364,12 +364,12 @@ void DefineBlocks(const std::vector<int>& blockIds,
 }
 void PrepareFlowField() {
     ops_printf("The coordinates are assigned!\n");
-    for (auto& idBlock: BLOCKS) {
-        Block& block{idBlock.second};
+    for (const auto& idBlock: BLOCKS) {
+        const Block& block{idBlock.second};
         const int blockId{idBlock.first};
         SetBlockGeometryProperty(block);
         ops_printf("The geometry property for Block %i is set!\n", blockId);
-        for (auto& idCompo:g_Components()) {
+        for (const auto& idCompo:g_Components()) {
             SetBulkandHaloNodesType(block, idCompo.first);
             ops_printf(
                 "The bulk and halo node property are set for Component %i at "

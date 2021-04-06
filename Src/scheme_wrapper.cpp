@@ -6,12 +6,12 @@
 #include "scheme_kernel.inc"
 #ifdef OPS_3D
 void Stream3D() {
-    for (auto idBlock : g_Block()) {
-        Block& block{idBlock.second};
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
         const int blockIndex{block.ID()};
-        for (auto& compo : g_Components()) {
+        for (const auto& compo : g_Components()) {
             ops_par_loop(
                 KerStream3D, "KerStream3D", block.Get(), SpaceDim(),
                 iterRng.data(),

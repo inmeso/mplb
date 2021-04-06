@@ -8,12 +8,12 @@
 #include "flowfield_kernel.inc"
 
 void CopyCurrentMacroVar() {
-    for (auto pair : g_MacroVars()) {
+    for (auto& pair : g_MacroVars()) {
         const int varId{pair.first};
         RealField& macroVar{pair.second};
         RealField& macroVarCopy{g_MacroVarsCopy().at(varId)};
-        for (auto idBlock : g_Block()) {
-            Block& block{idBlock.second};
+        for (const auto& idBlock : g_Block()) {
+            const Block& block{idBlock.second};
             std::vector<int> iterRng;
             iterRng.assign(block.WholeRange().begin(),
                            block.WholeRange().end());
@@ -30,14 +30,14 @@ void CopyCurrentMacroVar() {
 
 void CalcResidualError3D() {
     std::map<int, Real> diff;
-    for (auto pair : g_MacroVars()) {
+    for (const auto& pair : g_MacroVars()) {
         const int varId{pair.first};
-        RealField& macroVar{pair.second};
-        RealField& macroVarCopy{g_MacroVarsCopy().at(varId)};
+        const RealField& macroVar{pair.second};
+        const RealField& macroVarCopy{g_MacroVarsCopy().at(varId)};
         Real error{0};
         diff.emplace(varId, error);
-        for (auto idBlock : g_Block()) {
-            Block& block{idBlock.second};
+        for (const auto& idBlock : g_Block()) {
+            const Block& block{idBlock.second};
             std::vector<int> iterRng;
             iterRng.assign(block.WholeRange().begin(),
                            block.WholeRange().end());
@@ -55,18 +55,18 @@ void CalcResidualError3D() {
         }
     }
     // TODO:check if ops_reduction_results works directly for multi-block
-    for (auto pair : g_MacroVars()) {
+    for (const auto& pair : g_MacroVars()) {
         ops_reduction_result(g_ResidualErrorHandle().at(pair.first),
                              &diff.at(pair.first));
     }
 
     CopyCurrentMacroVar();
 
-    for (auto pair : g_MacroVars()) {
+    for (const auto& pair : g_MacroVars()) {
         const int varId{pair.first};
-        RealField& macroVar{pair.second};
-        for (auto idBlock : g_Block()) {
-            Block& block{idBlock.second};
+        const RealField& macroVar{pair.second};
+        for (const auto& idBlock : g_Block()) {
+            const Block& block{idBlock.second};
             std::vector<int> iterRng;
             iterRng.assign(block.WholeRange().begin(),
                            block.WholeRange().end());
@@ -80,7 +80,7 @@ void CalcResidualError3D() {
         }
     }
 
-    for (auto pair : g_MacroVars()) {
+    for (const auto& pair : g_MacroVars()) {
         int varId{pair.first};
         Real sum{0};
         ops_reduction_result(g_ResidualErrorHandle().at(varId), &sum);
@@ -89,8 +89,8 @@ void CalcResidualError3D() {
 }
 
 void CopyDistribution3D(RealField& fDest, RealField& fSrc) {
-    for (auto idBlock : g_Block()) {
-        Block& block{idBlock.second};
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
         const int blockIndex{block.ID()};
@@ -112,8 +112,8 @@ void CopyDistribution3D(RealField& fDest, RealField& fSrc) {
 // way that f_stage is not necessary.
 void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
     // int haloIterRng[]{0, 0, 0, 0, 0, 0};
-    for (auto idBlock : g_Block()) {
-        Block& block{idBlock.second};
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.IminRange().begin(), block.IminRange().end());
         const int blockIndex{block.ID()};
@@ -230,7 +230,7 @@ void NormaliseF3D(Real* ratio) {
     }
 }
 
-void AssignCoordinates(Block& block,
+void AssignCoordinates(const Block& block,
                        const std::vector<std::vector<Real>>& blockCoordinates) {
 #ifdef OPS_2D
     if (SpaceDim() == 2) {
@@ -274,7 +274,7 @@ void AssignCoordinates(Block& block,
 #endif
 }
 
-void  SetBlockGeometryProperty(Block& block) {
+void  SetBlockGeometryProperty(const Block& block) {
     int geometryProperty = (int)VG_Fluid;
     // int* iterRange = BlockIterRng(blockIndex, IterRngBulk());
     std::vector<int> iterRange;
@@ -601,7 +601,7 @@ void  SetBlockGeometryProperty(Block& block) {
 }
 
 void SetBoundaryNodeType() {
-    for (auto boundary : BlockBoundaries()) {
+    for (auto& boundary : BlockBoundaries()) {
         const int boundaryType{(int)boundary.boundaryType};
         const Block& block{g_Block().at(boundary.blockIndex)};
         std::vector<int> iterRange{
@@ -616,10 +616,9 @@ void SetBoundaryNodeType() {
     }
 }
 
-void SetBulkandHaloNodesType(Block& block , int compoId) {
+void SetBulkandHaloNodesType(const Block& block , int compoId) {
     const int fluidType{(int)VertexType::Fluid};
     const int immersedSolidType{(int)VertexType::ImmersedSolid};
-
     std::vector<int> iterRange;
     iterRange.assign(block.BulkRange().begin(), block.BulkRange().end());
     ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),

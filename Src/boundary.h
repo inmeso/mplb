@@ -82,7 +82,7 @@ void DefineBlockBoundary(int blockIndex, int componentID,
                          const VertexType boundaryType = VertexType::Wall);
 const std::vector<BlockBoundary>& BlockBoundaries();
 #ifdef OPS_3D
-void TreatBlockBoundary3D(Block& block, const int componentID,
+void TreatBlockBoundary3D(const Block& block, const int componentID,
                           const Real* givenVars, int* range,
                           const BoundaryScheme boundaryScheme,
                           const BoundarySurface boundarySurface);

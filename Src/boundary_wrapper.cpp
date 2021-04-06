@@ -9,7 +9,7 @@
 #include "ops_seq_v2.h"
 #include "boundary_kernel.inc"
 #ifdef OPS_3D
-void TreatBlockBoundary3D(Block& block, const int componentID,
+void TreatBlockBoundary3D(const Block& block, const int componentID,
                           const Real* givenVars, int* range,
                           const BoundaryScheme boundaryScheme,
                           const BoundarySurface boundarySurface) {

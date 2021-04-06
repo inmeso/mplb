@@ -393,8 +393,8 @@ void BoundaryNormal3D(const VertexGeometryType vg, int* unitNormal) {
 }
 #ifdef OPS_3D
 void ImplementBoundary3D() {
-    for (auto boundary : BlockBoundaries()) {
-        Block block{g_Block().at(boundary.blockIndex)};
+    for (const auto& boundary : BlockBoundaries()) {
+        const Block& block{g_Block().at(boundary.blockIndex)};
         std::vector<int> range{
             BoundarySurfaceRange(block, boundary.boundarySurface)};
         TreatBlockBoundary3D(block, boundary.componentID,

@@ -360,7 +360,7 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     ops_decl_const("WEIGHTS", NUMXI, "double", WEIGHTS);
     ops_decl_const("OPP", NUMXI, "int", OPP);
 
-    for (auto pair : components) {
+    for (const auto& pair : components) {
         IntField nodeType{"NodeType" + pair.second.name};
         g_NodeType().emplace(pair.second.id, nodeType);
     }
@@ -368,12 +368,13 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     g_f().SetDataDim(NUMXI);
     if (timeStep == 0) {
         g_f().CreateFieldFromScratch(g_Block());
-        for (auto pair : g_NodeType()) {
+        for (auto& pair : g_NodeType()) {
+            ops_printf("Create Nodetype %d\n", pair.first);
             pair.second.CreateFieldFromScratch(g_Block());
         }
     } else {
         g_f().CreateFieldFromFile(CaseName(), g_Block(), timeStep);
-        for (auto pair : g_NodeType()) {
+        for (auto& pair : g_NodeType()) {
             pair.second.CreateFieldFromFile(CaseName(), g_Block(), timeStep);
         }
     }
@@ -452,22 +453,22 @@ void DefineMacroVars(std::vector<VariableTypes> types,
     }
 
     if (timeStep == 0) {
-        for (auto pair : g_MacroVars()) {
+        for (auto& pair : g_MacroVars()) {
             pair.second.CreateFieldFromScratch(g_Block());
         }
 
     } else {
-        for (auto pair : g_MacroVars()) {
+        for (auto& pair : g_MacroVars()) {
             pair.second.CreateFieldFromFile(CaseName(), g_Block(), timeStep);
         }
     }
 
     if (!IsTransient()) {
-        for (auto pair : g_MacroVarsCopy()) {
+        for (auto& pair : g_MacroVarsCopy()) {
             pair.second.CreateFieldFromScratch(g_Block());
         }
-        for (auto compo : components) {
-            for (auto var : compo.second.macroVars) {
+        for (const auto& compo : components) {
+            for (const auto& var : compo.second.macroVars) {
                 ops_reduction handle{ops_decl_reduction_handle(
                     sizeof(Real), "double", var.second.name.c_str())};
                 g_ResidualErrorHandle().emplace(var.second.id, handle);
@@ -557,7 +558,7 @@ void DefineBodyForce(std::vector<BodyForceType> types,
             "without "
             "pre-defined body force terms!\n");
     }
-    for (auto pair : g_MacroBodyforce()) {
+    for (auto& pair : g_MacroBodyforce()) {
         pair.second.SetDataDim(SpaceDim());
         pair.second.CreateFieldFromScratch(g_Block());
     }
