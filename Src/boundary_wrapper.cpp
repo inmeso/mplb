@@ -46,7 +46,7 @@ void TreatBlockBoundary3D(const Block& block, const int componentID,
                 ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
                             OPS_READ));
         } break;
-        case BoundaryScheme::EQMDiffuseRefl: {
+        case BoundaryScheme::EQNNoSlip: {
             ops_par_loop(
                 KerCutCellNoslipEQN3D, "KerCutCellNoslipEQN3D", block.Get(),
                 SpaceDim(), range,
