@@ -33,11 +33,12 @@
 #ifndef CAVITY3D_KERNEL_INC
 #define CAVITY3D_KERNEL_INC
 
-void KerSetInitialMacroVars(ACC<Real>& macroVars, const ACC<Real>& coordinates,
+void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
+                            ACC<Real>& w, const ACC<Real>& coordinates,
                             const int* idx) {
-    macroVars(0, 0, 0, 0) = 1;
-    macroVars(1, 0, 0, 0) = 0;
-    macroVars(2, 0, 0, 0) = 0;
-    macroVars(3, 0, 0, 0) = 0;
+    rho(0, 0, 0) = 1;
+    u(0, 0, 0) = 0;
+    v(0, 0, 0) = 0;
+    w(0, 0, 0) = 0;
 }
 #endif // CAVITY3D_KERNEL_INC

@@ -1366,17 +1366,15 @@ void KerCutCellZouHeVelocity(const Real *givenMacroVars,
 void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
                                      const ACC<int> &geometryProperty,
                                      const Real *givenBoundaryVars,
-                                     const int *componentId,
-                                     const int *surface) {
+                                     const int *surface,
+                                     const int *lattIdx) {
 #ifdef OPS_3D
-    const int compoId{*componentId};
-    const int xiStartPos{COMPOINDEX[2 * compoId]};
-    const int xiEndPos{COMPOINDEX[2 * compoId + 1]};
+
     const BoundarySurface boundarySurface{(BoundarySurface)(*surface)};
     VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0, 0);
     Real rhoGiven = givenBoundaryVars[0];
     Real rho = 0;
-    for (int xiIdx = xiStartPos; xiIdx <= xiEndPos; xiIdx++) {
+    for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
         Real cx{CS * XI[xiIdx * LATTDIM]};
         Real cy{CS * XI[xiIdx * LATTDIM + 1]};
         Real cz{CS * XI[xiIdx * LATTDIM + 2]};
@@ -1649,7 +1647,7 @@ void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
         rho += f(xiIdx, 0, 0, 0);
     }
     Real ratio = rhoGiven / rho;
-    for (int xiIdx = 0; xiIdx < NUMXI; xiIdx++) {
+    for (int xiIdx = lattIdx[0]; xiIdx < lattIdx[1]; xiIdx++) {
         f(xiIdx, 0, 0, 0) *= ratio;
     }
 #endif  // OPS_3D
@@ -1658,18 +1656,16 @@ void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
 void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
                                 const ACC<int> &geometryProperty,
                                 const Real *givenMacroVars,
-                                const int *componentId) {
+                                const int *lattIdx) {
 #ifdef OPS_3D
     // This kernel is suitable for any single-speed lattice
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
     const int equilibriumOrder{2};
-    const int compoIdx{*componentId};
-
     const VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0, 0);
-    Real u = givenMacroVars[1];
-    Real v = givenMacroVars[2];
-    Real w = givenMacroVars[3];
+    Real u = givenMacroVars[0];
+    Real v = givenMacroVars[1];
+    Real w = givenMacroVars[2];
 #ifdef CPU
 #if DebugLevel >= 2
     ops_printf(
@@ -1682,17 +1678,15 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
     int numOutgoing{0};
     int numIncoming{0};
     int numParallel{0};
-    int *outgoing =
-        new int[COMPOINDEX[2 * compoIdx + 1] - COMPOINDEX[2 * compoIdx] + 1];
-    int *incoming =
-        new int[COMPOINDEX[2 * compoIdx + 1] - COMPOINDEX[2 * compoIdx] + 1];
-    int *parallel =
-        new int[COMPOINDEX[2 * compoIdx + 1] - COMPOINDEX[2 * compoIdx] + 1];
+    int lattStart{lattIdx[0]};
+    int lattEnd{lattIdx[1]};
+    int *outgoing = new int[lattEnd - lattStart + 1];
+    int *incoming = new int[lattEnd - lattStart + 1];
+    int *parallel = new int[lattEnd - lattStart + 1];
     Real rhoIncoming{0};
     Real rhoParallel{0};
     Real deltaRho{0};
-    for (int xiIdx = COMPOINDEX[2 * compoIdx];
-         xiIdx <= COMPOINDEX[2 * compoIdx + 1]; xiIdx++) {
+    for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
         Real cx{CS * XI[xiIdx * LATTDIM]};
         Real cy{CS * XI[xiIdx * LATTDIM + 1]};
         Real cz{CS * XI[xiIdx * LATTDIM + 2]};
@@ -1740,10 +1734,9 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
         const Real res{f(xiIdx, 0, 0, 0)};
         if (isnan(res) || res <= 0 || isinf(res)) {
             ops_printf(
-                "Error! Distribution function %f becomes "
-                "invalid for the component %i at the lattice "
-                "%i\n",
-                res, compoIdx, xiIdx);
+                "Error! Distribution function %f becomes invalid  at the "
+                "lattice %i\n",
+                res, xiIdx);
             assert(!(isnan(res) || res <= 0 || isinf(res)));
         }
 #endif
@@ -1755,12 +1748,11 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
 }
 
 void KerCutCellNoslipEQN3D(ACC<Real> &f, const ACC<int> &nodeType,
-                           const Real *givenMacroVars, const int *componentId) {
+                           const Real *givenMacroVars, const int *lattIdx) {
 #ifdef OPS_3D
-    const int compoId{*componentId};
-    Real u = givenMacroVars[1];
-    Real v = givenMacroVars[2];
-    Real w = givenMacroVars[3];
+    Real u = givenMacroVars[0];
+    Real v = givenMacroVars[1];
+    Real w = givenMacroVars[2];
 #ifdef CPU
 #if DebugLevel >= 2
     ops_printf(
@@ -1774,8 +1766,7 @@ void KerCutCellNoslipEQN3D(ACC<Real> &f, const ACC<int> &nodeType,
     Real vIntermidate{0};
     Real wIntermidate{0};
 
-    for (int xiIdx = COMPOINDEX[2 * compoId];
-         xiIdx <= COMPOINDEX[2 * compoId + 1]; xiIdx++) {
+    for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
         Real cx{CS * XI[xiIdx * LATTDIM]};
         Real cy{CS * XI[xiIdx * LATTDIM + 1]};
         Real cz{CS * XI[xiIdx * LATTDIM + 2]};
@@ -1795,8 +1786,7 @@ void KerCutCellNoslipEQN3D(ACC<Real> &f, const ACC<int> &nodeType,
     ops_printf("Calculated intermidate W =  %f\n", wIntermidate);
 #endif
 #endif
-    for (int xiIdx = COMPOINDEX[2 * compoId];
-         xiIdx <= COMPOINDEX[2 * compoId + 1]; xiIdx++) {
+    for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
         f(xiIdx, 0, 0, 0) =
             
                                                   
@@ -1806,10 +1796,9 @@ void KerCutCellNoslipEQN3D(ACC<Real> &f, const ACC<int> &nodeType,
         const Real res{f(xiIdx, 0, 0, 0)};
         if (isnan(res) || res <= 0 || isinf(res)) {
             ops_printf(
-                "Error! Distribution function %f becomes "
-                "invalid for the component %i at the lattice "
-                "%i\n",
-                res, compoId, xiIdx);
+                "Error! Distribution function %f becomes invalid at the "
+                "lattice %i\n",
+                res, xiIdx);
             assert(!(isnan(res) || res <= 0 || isinf(res)));
         }
 #endif
@@ -1820,11 +1809,10 @@ void KerCutCellNoslipEQN3D(ACC<Real> &f, const ACC<int> &nodeType,
 
 void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
                           const ACC<int> &geometryProperty,
-                          const int *componentId, const int* surface) {
+                          const int *lattIdx, const int* surface) {
 #ifdef OPS_3D
-    const int compoId{*componentId};
-    const int xiStartPos{COMPOINDEX[2 * compoId]};
-    const int xiEndPos{COMPOINDEX[2 * compoId + 1]};
+    const int xiStartPos{lattIdx[0]};
+    const int xiEndPos{lattIdx[1]};
     const BoundarySurface boundarySurface{(BoundarySurface)(*surface)};
 
     VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0, 0);
@@ -2198,10 +2186,9 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         const Real res{f(xiIndex, 0, 0, 0)};
         if (isnan(res) || res <= 0 || isinf(res)) {
             ops_printf(
-                "Error! Distribution function %f becomes "
-                "invalid for the component %i at the lattice "
-                "%i\n at the surface %i\n",
-                res, compoId, xiIndex, geometryProperty(0, 0, 0));
+                "Error! Distribution function %f becomes invalid  at the "
+                "lattice %i\n at the surface %i\n",
+                res, xiIndex, geometryProperty(0, 0, 0));
             assert(!(isnan(res) || res <= 0 || isinf(res)));
         }
     }

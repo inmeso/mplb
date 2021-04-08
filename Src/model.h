@@ -39,6 +39,7 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <map>
 #include "type.h"
 
 /*!
@@ -62,7 +63,7 @@ extern Real CS;
 /*!
  * The start index and end index of each component in the XI and WEIGHTS;
  */
-extern int* COMPOINDEX;
+//extern int* COMPOINDEX;
 /*!
  * XI: if using stream-collision scheme XI should integers actually\n
  * XI: if using finite difference scheme, it may be real and CS=1 accordingly\n
@@ -88,23 +89,6 @@ extern int NUMCOMPONENTS;
  * according to the tangential line\n
  */
 extern int* OPP;
-/*!
- * Number of macroscopic variables
- */
-extern int NUMMACROVAR;
-/*!
- * The type of macroscopic variables
- */
-extern int* VARIABLETYPE;
-/*!
- * Which component does the variable belong to
- */
-extern int* VARIABLECOMPINDEX;
-/*!
- * The start and end position of macroscopic variables of each
- * component
- */
-extern int* VARIABLECOMPPOS;
 
 #include "model_host_device.h"
 
@@ -118,26 +102,30 @@ enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };
 
 enum InitialType {Initial_BGKFeq2nd = 1};
 
-// Convenient functions
-void SetLatticeName(const std::vector<std::string>& latticeName);
-const std::vector<std::string> LatticeName();
-const std::vector<std::string> MacroVarName();
-/**
- * Get collision type
- */
-const std::list<std::pair<SizeType,CollisionType >> & CollisionTerms();
- /**
- * Get force type
- */
-const std::list<std::pair<SizeType,BodyForceType>> & BodyForceTerms();
+struct MacroVariable {
+    std::string name;
+    int id{0};
+    VariableTypes type;
+};
+struct Component {
+    std::string name;
+    int id{0};
+    std::string latticeName;
+    CollisionType collisionType;
+    BodyForceType bodyForceType;
+    InitialType initialType;
+    std::map<VariableTypes, MacroVariable> macroVars;
+    int index[2];
+    int uId, vId;
+#ifdef OPS_3D
+    int wId;
+#endif
+    Real tauRef;
+};
 
-/**
- * Get initial type
- */
-const std::list<std::pair<SizeType,InitialType>> & InitialTerms();
+const std::map<int, Component>& g_Components();
 
 inline const int ComponentNum() { return NUMCOMPONENTS; }
-inline const int MacroVarsNum() { return NUMMACROVAR; }
 inline const int SizeF() { return NUMXI; }
 inline const Real SoundSpeed() { return CS; }
 inline const Real MaximumSpeed() { return XIMAXVALUE; }
@@ -152,14 +140,15 @@ inline const int SizeofTau() { return NUMCOMPONENTS; }
 // HiLeMMS interface, https://gitlab.com/jpmeng/hilemms
 
 void DefineComponents(const std::vector<std::string>& compoNames,
-                      const std::vector<SizeType>& compoId,
+                      const std::vector<int>& compoId,
                       const std::vector<std::string>& lattNames,
-                      const SizeType timeStep=0);
+                      const std::vector<Real> tauRef,
+                      const SizeType timeStep = 0);
 
 
 void DefineMacroVars(std::vector<VariableTypes> types,
                      std::vector<std::string> names,
-                     std::vector<SizeType> varId, std::vector<SizeType> compoId,
+                     std::vector<int> varId, std::vector<int> compoId,
                      const SizeType timeStep=0);
 
 /*!
@@ -168,7 +157,7 @@ void DefineMacroVars(std::vector<VariableTypes> types,
 * HiLeMMS interface, , https://gitlab.com/jpmeng/hilemms
 */
 void DefineCollision(std::vector<CollisionType> types,
-                       std::vector<SizeType> compoId);
+                       std::vector<int> compoId);
 
 void DefineBodyForce(std::vector<BodyForceType> types,
                      std::vector<SizeType> compoId);

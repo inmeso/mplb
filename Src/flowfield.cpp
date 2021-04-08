@@ -36,7 +36,10 @@
  * field (allocate memory), set up the geometry and the boundary
  * property, and deallocate the memory.
  */
-
+#include  "ops_lib_core.h"
+#ifdef OPS_MPI
+#include "ops_mpi_core.h"
+#endif
 #include "flowfield.h"
 #include <type_traits>
 #include "block.h"
@@ -58,18 +61,22 @@ int SPACEDIM{2};
 BlockGroup BLOCKS;
 RealField f{"f"};
 RealField fStage{"fStage"};
-RealField MacroVars{"MacroVars"};
-RealField MacroVarsCopy{"MacroVars_Copy"};
-Real* g_ResidualError{nullptr};
-ops_reduction* g_ResidualErrorHandle{nullptr};
-RealField MacroBodyforce{"MacroBodyForce"};
+RealFieldGroup MacroVars;
+RealFieldGroup MacroVarsCopy;
+std::map<int,Real> ResidualError;
+std::map<int, ops_reduction> ResidualErrorHandle;
+std::map<int, Real>& g_ResidualError() { return ResidualError; };
+std::map<int, ops_reduction>& g_ResidualErrorHandle() {
+    return ResidualErrorHandle;
+};
 
+RealFieldGroup MacroBodyforce;
 const BlockGroup& g_Block() { return BLOCKS; };
 RealField& g_f() { return f; };
 RealField& g_fStage() { return fStage; };
-RealField& g_MacroVars() { return MacroVars; };
-RealField& g_MacroVarsCopy() { return MacroVarsCopy; };
-RealField& g_MacroBodyforce() { return MacroBodyforce; };
+RealFieldGroup& g_MacroVars() { return MacroVars; };
+RealFieldGroup& g_MacroVarsCopy() { return MacroVarsCopy; };
+RealFieldGroup& g_MacroBodyforce() { return MacroBodyforce; };
 /**
  * DT: time step
  */
@@ -80,14 +87,15 @@ Real DT{1};
  * In appropriate non-dimensional system, it is the Knudsen number
  * It must be a constant during the run time
  */
-Real* TAUREF{nullptr};
+
 RealField CoordinateXYZ{"CoordinateXYZ"};
 RealField& g_CoordinateXYZ() { return CoordinateXYZ; };
 std::map<SizeType, std::vector<std::vector<Real>>> COORDINATES;
 
-IntField NodeType{"NodeType"};
+//IntField NodeType{"NodeType"};
+IntFieldGroup NodeType;
 IntField GeometryProperty{"GeometryProperty"};
-IntField& g_NodeType() { return NodeType; };
+IntFieldGroup& g_NodeType() { return NodeType; };
 IntField& g_GeometryProperty() { return GeometryProperty; };
 
 /*!
@@ -102,7 +110,6 @@ void DefineCase(const std::string& caseName, const int spaceDim,
         assert(SPACEDIM == spaceDim);
     }
     SetCaseName(caseName);
-    ops_decl_const("SPACEDIM", 1, "int", &SPACEDIM);
     TRANSIENT = transient;
 }
 
@@ -186,7 +193,7 @@ void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair) {
             "applications!");
         assert(BLOCKS.size() == 1);
     }
-    const SizeType blockId{BLOCKS.begin()->first};
+    const int blockId{BLOCKS.begin()->first};
     DefinePeriodicHaloPair3D(haloPair, f[blockId], f.HaloDepth());
 }
 
@@ -198,7 +205,7 @@ void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair,
             "applications!");
         assert(BLOCKS.size() == 1);
     }
-    const SizeType blockId{BLOCKS.begin()->first};
+    const int blockId{BLOCKS.begin()->first};
     DefinePeriodicHaloPair3D(haloPair, data[blockId], data.HaloDepth());
 }
 
@@ -210,7 +217,7 @@ void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair,
             "applications!");
         assert(BLOCKS.size() == 1);
     }
-    const SizeType blockId{BLOCKS.begin()->first};
+    const int blockId{BLOCKS.begin()->first};
     DefinePeriodicHaloPair3D(haloPair, data[blockId], data.HaloDepth());
 }
 
@@ -227,19 +234,24 @@ void Partition() {
  */
 
 void WriteFlowfieldToHdf5(const SizeType timeStep) {
-    MacroVars.WriteToHDF5(CASENAME, timeStep);
+    for (const auto& macroVar : MacroVars) {
+        macroVar.second.WriteToHDF5(CASENAME, timeStep);
+    }
     CoordinateXYZ.WriteToHDF5(CASENAME, timeStep);
-    MacroBodyforce.WriteToHDF5(CASENAME, timeStep);
+    for (const auto& force : MacroBodyforce) {
+        force.second.WriteToHDF5(CASENAME, timeStep);
+    }
 }
 
 void WriteDistributionsToHdf5(const SizeType timeStep) {
     f.WriteToHDF5(CASENAME, timeStep);
-
 }
 
 void WriteNodePropertyToHdf5(const SizeType timeStep) {
     GeometryProperty.WriteToHDF5(CASENAME, timeStep);
-    NodeType.WriteToHDF5(CASENAME, timeStep);
+    for (const auto& pair : NodeType) {
+        pair.second.WriteToHDF5(CASENAME, timeStep);
+    }
 }
 
 const std::string& CaseName() { return CASENAME; }
@@ -249,49 +261,17 @@ void setCaseName(const char* caseName) {
     CASENAME = tmp;
 }
 
-void DestroyFlowfield() {
-
-    FreeArrayMemory(TAUREF);
-    // if steady flow
-    // FreeArrayMemory(g_MacroVarsCopy);
-    FreeArrayMemory(g_ResidualErrorHandle);
-    FreeArrayMemory(g_ResidualError);
-    // end if steady flow
-    // delete[] halos;
-}
-
 Real TotalMeshSize() { return 0; }
 
 Real TimeStep() { return DT; }
 const Real* pTimeStep() { return &DT; }
 void SetTimeStep(Real dt) { DT = dt; }
-const Real* TauRef() { return TAUREF; }
-
-void SetTauRef(const std::vector<Real>& tauRef) {
-    const int tauNum = SizeofTau();
-    if (tauRef.size() == tauNum) {
-        if (nullptr == TAUREF) {
-            TAUREF = new Real[tauNum];
-        }
-        for (int idx = 0; idx < tauNum; idx++) {
-            TAUREF[idx] = tauRef[idx];
-            // ops_printf("\n tau is %f \n",TAUREF[idx]);
-        }
-    } else {
-        ops_printf("Error! %i taus are required but there are %i!\n", tauNum,
-                   tauRef.size());
-        assert(tauRef.size() == tauNum);
-    }
-}
 
 Real GetMaximumResidual(const SizeType checkPeriod) {
     Real maxResError{0};
     Real relResErrorMacroVar{0};
-    for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
-        relResErrorMacroVar = g_ResidualError[2 * macroVarIdx] /
-                              g_ResidualError[2 * macroVarIdx + 1] /
-                              (checkPeriod * TimeStep());
-
+    for (const auto& error: ResidualError) {
+        relResErrorMacroVar = error.second / (checkPeriod * TimeStep());
         if (maxResError <= relResErrorMacroVar) {
             maxResError = relResErrorMacroVar;
         }
@@ -320,7 +300,7 @@ void TransferHalos(const std::vector<std::string> keys) {
         }
     }
 }
-void DefineBlocks(const std::vector<SizeType>& blockIds,
+void DefineBlocks(const std::vector<int>& blockIds,
                   const std::vector<std::string>& blockNames,
                   const std::vector<int>& blockSizes) {
     const SizeType blockNum{blockIds.size()};
@@ -338,8 +318,8 @@ void DefineBlocks(const std::vector<SizeType>& blockIds,
             blockNum, blockSizes.size());
         assert(blockNum == blockSizes.size());
     }
-    for (SizeType i = 0; i < blockNum; i++) {
-        const SizeType blockId{blockIds.at(i)};
+    for (int i = 0; i < blockNum; i++) {
+        const int blockId{blockIds.at(i)};
         std::vector<int> blockSize(SPACEDIM);
         for (int j = 0; j < SPACEDIM; j++) {
             blockSize.at(j) = blockSizes.at(i * SPACEDIM + j);
@@ -349,17 +329,17 @@ void DefineBlocks(const std::vector<SizeType>& blockIds,
     }
 }
 
-void DefineBlocks(const std::vector<SizeType>& blockIds,
+void DefineBlocks(const std::vector<int>& blockIds,
                   const std::vector<std::string>& blockNames,
                   const std::vector<int>& blockSizes, const Real meshSize,
-                  const std::map<SizeType, std::vector<Real>>& startPos) {
+                  const std::map<int, std::vector<Real>>& startPos) {
     DefineBlocks(blockIds, blockNames, blockSizes);
     const SizeType blockNum{BLOCKS.size()};
     SizeType numBlockStartPos{startPos.size()};
     if (numBlockStartPos == (blockNum)) {
-        for (auto& idStartPos : startPos) {
+        for (const auto& idStartPos : startPos) {
             std::vector<std::vector<Real>> blockCoordinates(SPACEDIM);
-            const SizeType id{idStartPos.first};
+            const int id{idStartPos.first};
             const std::vector<Real> blockStartPos{idStartPos.second};
             for (int coordIndex = 0; coordIndex < SPACEDIM; coordIndex++) {
                 const int numOfGridPoints{BLOCKS.at(id).Size().at(coordIndex)};
@@ -379,29 +359,24 @@ void DefineBlocks(const std::vector<SizeType>& blockIds,
             blockNum, numBlockStartPos);
         assert(numBlockStartPos == blockNum);
     }
-    NodeType.CreateFieldFromScratch(BLOCKS);
+    //NodeType.CreateFieldFromScratch(BLOCKS);
     CoordinateXYZ.SetDataDim(SPACEDIM);
     CoordinateXYZ.CreateFieldFromScratch(BLOCKS);
     GeometryProperty.CreateFieldFromScratch(BLOCKS);
 }
-
-
-
-
-
 void PrepareFlowField() {
     ops_printf("The coordinates are assigned!\n");
-    for (auto& idBlock: BLOCKS) {
-        Block& block{idBlock.second};
-        const SizeType blockId{idBlock.first};
+    for (const auto& idBlock: BLOCKS) {
+        const Block& block{idBlock.second};
+        const int blockId{idBlock.first};
         SetBlockGeometryProperty(block);
         ops_printf("The geometry property for Block %i is set!\n", blockId);
-        for (int compoId = 0; compoId < NUMCOMPONENTS; compoId++) {
-            SetBulkandHaloNodesType(block, compoId);
+        for (const auto& idCompo:g_Components()) {
+            SetBulkandHaloNodesType(block, idCompo.first);
             ops_printf(
                 "The bulk and halo node property are set for Component %i at "
                 "Block %i\n",
-                compoId, blockId);
+                idCompo.first, blockId);
         }
         AssignCoordinates(block, COORDINATES.at(blockId));
     }
@@ -410,11 +385,12 @@ void PrepareFlowField() {
 
 void DispResidualError3D(const int iter, const SizeType checkPeriod) {
     ops_printf("##########Residual Error at %i time step##########\n", iter);
-    for (int macroVarIdx = 0; macroVarIdx < MacroVarsNum(); macroVarIdx++) {
-        Real residualError = g_ResidualError[2 * macroVarIdx] /
-                             g_ResidualError[2 * macroVarIdx + 1] /
-                             (checkPeriod * TimeStep());
-        ops_printf("Residual of %s = %.17g\n",
-                   MacroVarName()[macroVarIdx].c_str(), residualError);
+    for (auto& compo : g_Components()) {
+        for (auto& macroVar : compo.second.macroVars) {
+            Real residualError = ResidualError.at(macroVar.second.id) /
+                                 (checkPeriod * TimeStep());
+            ops_printf("Residual of %s = %.17g\n", macroVar.second.name.c_str(),
+                       residualError);
+        }
     }
 }

@@ -95,7 +95,7 @@ void Iterate(const SizeType steps, const SizeType checkPointPeriod,
     }
     ops_printf("Simulation finished! Exiting...\n");
     DestroyModel();
-    DestroyFlowfield();
+
 }
 
 void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
@@ -126,7 +126,6 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
     }
     ops_printf("Simulation finished! Exiting...\n");
     DestroyModel();
-    DestroyFlowfield();
 }
 
 

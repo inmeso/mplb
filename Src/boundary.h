@@ -54,13 +54,13 @@ enum class BoundaryScheme {
     BounceBack = 20,
     FreeFlux = 21,
     ZouHeVelocity = 22,
-    EQN = 23,
+    EQNNoSlip = 23,
     EQMDiffuseRefl = 24
 };
 
 struct BlockBoundary {
-    SizeType blockIndex;
-    SizeType componentID;
+    int blockIndex;
+    int componentID;
     std::vector<Real> givenVars;
     BoundarySurface boundarySurface;
     BoundaryScheme boundaryScheme;
@@ -82,7 +82,7 @@ void DefineBlockBoundary(int blockIndex, int componentID,
                          const VertexType boundaryType = VertexType::Wall);
 const std::vector<BlockBoundary>& BlockBoundaries();
 #ifdef OPS_3D
-void TreatBlockBoundary3D(Block& block, const int componentID,
+void TreatBlockBoundary3D(const Block& block, const int componentID,
                           const Real* givenVars, int* range,
                           const BoundaryScheme boundaryScheme,
                           const BoundarySurface boundarySurface);

@@ -46,14 +46,24 @@ void SetInitialMacrosVars() {
         Block& block{idBlock.second};
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
-        const SizeType blockIdx{block.ID()};
-        ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
-                     block.Get(), SpaceDim(), iterRng.data(),
-                     ops_arg_dat(g_MacroVars()[blockIdx], NUMMACROVAR,
-                                 LOCALSTENCIL, "Real", OPS_RW),
-                     ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
-                                 LOCALSTENCIL, "Real", OPS_READ),
-                     ops_arg_idx());
+        const int blockIdx{block.ID()};
+        for (auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            const int rhoId{compo.macroVars.at(Variable_Rho).id};
+            ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
+                         block.Get(), SpaceDim(), iterRng.data(),
+                         ops_arg_dat(g_MacroVars().at(rhoId).at(blockIdx), 1,
+                                     LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIdx),
+                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIdx),
+                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIdx),
+                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                         ops_arg_idx());
+        }
     }
 }
 //Provide macroscopic body-force term
@@ -64,27 +74,28 @@ void simulate() {
     std::string caseName{"3D_lid_Driven_cavity"};
     SizeType spaceDim{3};
     DefineCase(caseName, spaceDim);
-    std::vector<SizeType> blockIds{0};
+    std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
     std::vector<int> blockSize{33, 33, 33};
     Real meshSize{1. / 32};
-    std::map<SizeType, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
+    std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
     std::vector<std::string> compoNames{"Fluid"};
-    std::vector<SizeType> compoid{0};
+    std::vector<int> compoid{0};
     std::vector<std::string> lattNames{"d3q19"};
-    DefineComponents(compoNames, compoid, lattNames);
+    std::vector<Real> tauRef{0.01};
+    DefineComponents(compoNames, compoid, lattNames, tauRef);
 
     std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
                                              Variable_V, Variable_W};
     std::vector<std::string> macroVarNames{"rho", "u", "v", "w"};
-    std::vector<SizeType> macroVarId{0, 1, 2, 3};
-    std::vector<SizeType> macroCompoId{0, 0, 0, 0};
+    std::vector<int> macroVarId{0, 1, 2, 3};
+    std::vector<int> macroCompoId{0, 0, 0, 0};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
     std::vector<CollisionType> collisionTypes{Collision_BGKIsothermal2nd};
-    std::vector<SizeType> collisionCompoId{0};
+    std::vector<int> collisionCompoId{0};
     DefineCollision(collisionTypes, collisionCompoId);
 
     std::vector<BodyForceType> bodyForceTypes{BodyForce_None};
@@ -132,8 +143,6 @@ void simulate() {
     Partition();
     SetInitialMacrosVars();
     PreDefinedInitialCondition3D();
-    std::vector<Real> tauRef{0.01};
-    SetTauRef(tauRef);
     SetTimeStep(meshSize / SoundSpeed());
 
     const Real convergenceCriteria{1E-7};
