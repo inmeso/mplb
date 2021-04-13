@@ -4,13 +4,13 @@
 #define OPS_FUN_PREFIX
 #endif
 
-enum BoundarySurface {
-    BoundarySurface_Left = 0,
-    BoundarySurface_Right = 1,
-    BoundarySurface_Top = 2,
-    BoundarySurface_Bottom = 3,
-    BoundarySurface_Front = 4,
-    BoundarySurface_Back = 5,
+enum class BoundarySurface {
+    Left = 0,
+    Right = 1,
+    Top = 2,
+    Bottom = 3,
+    Front = 4,
+    Back = 5,
 };
 
 /*!

@@ -62,32 +62,32 @@ std::vector<int> BoundarySurfaceRange(const Block& block,
                                       BoundarySurface surface) {
     std::vector<int> iterRange(2 * SpaceDim());
     switch (surface) {
-        case BoundarySurface_Left:
+        case BoundarySurface::Left:
             iterRange.assign(block.IminRange().begin(),
                              block.IminRange().end());
             break;
 
-        case BoundarySurface_Right:
+        case BoundarySurface::Right:
             iterRange.assign(block.ImaxRange().begin(),
                              block.ImaxRange().end());
             break;
 
-        case BoundarySurface_Top:
+        case BoundarySurface::Top:
             iterRange.assign(block.JmaxRange().begin(),
                              block.JmaxRange().end());
             break;
 
-        case BoundarySurface_Bottom:
+        case BoundarySurface::Bottom:
             iterRange.assign(block.JminRange().begin(),
                              block.JminRange().end());
             break;
 
-        case BoundarySurface_Front:
+        case BoundarySurface::Front:
             iterRange.assign(block.KmaxRange().begin(),
                              block.KmaxRange().end());
             break;
 
-        case BoundarySurface_Back:
+        case BoundarySurface::Back:
             iterRange.assign(block.KminRange().begin(),
                              block.KminRange().end());
             break;

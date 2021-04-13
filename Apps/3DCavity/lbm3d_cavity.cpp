@@ -112,28 +112,28 @@ void simulate() {
                                                        Variable_W};
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
     // Left noSlipStationaryWall
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Left,
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Left,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     // Right noSlipStationaryWall
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Right,
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Right,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     // Top noslipMovingWall
     std::vector<Real> noSlipMovingWall{0.01, 0, 0};
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Top,
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Top,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipMovingWall);
     // bottom noSlipStationaryWall
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Bottom,
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Bottom,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     // front noSlipStationaryWall
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Front,
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Front,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     // back noSlipStationaryWall
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface_Back,
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Back,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
