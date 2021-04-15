@@ -82,26 +82,13 @@ RealFieldGroup& g_MacroBodyforce() { return MacroBodyforce; };
  */
 Real DT{1};
 
-/**
- * TAUREF: the reference relaxation time
- * In appropriate non-dimensional system, it is the Knudsen number
- * It must be a constant during the run time
- */
-
 RealField CoordinateXYZ{"CoordinateXYZ"};
 RealField& g_CoordinateXYZ() { return CoordinateXYZ; };
 std::map<SizeType, std::vector<std::vector<Real>>> COORDINATES;
-
-//IntField NodeType{"NodeType"};
 IntFieldGroup NodeType;
 IntField GeometryProperty{"GeometryProperty"};
 IntFieldGroup& g_NodeType() { return NodeType; };
 IntField& g_GeometryProperty() { return GeometryProperty; };
-
-/*!
- * Formal collection of halo relations required by the OPS library
- */
-std::map<std::string,ops_halo_group> HALOGROUPS;
 
 void DefineCase(const std::string& caseName, const int spaceDim,
                 const bool transient) {
@@ -114,114 +101,6 @@ void DefineCase(const std::string& caseName, const int spaceDim,
 }
 
 bool IsTransient() { return TRANSIENT; }
-
-//This version is for the distribution function
-//Other version to follow.
-//TODO this function only suitable for single halo
-#ifdef OPS_3D
-void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair,
-                              ops_dat dat, const int haloDepth) {
-    if (dat == nullptr) {
-        ops_printf("Data must be allocated before defining halo relations!");
-        assert(dat == nullptr);
-    }
-    // max halo depths for the dat in the positive direction
-    int d_p[3] = {haloDepth, haloDepth, haloDepth};
-    // max halo depths for the dat in the negative direction
-    int d_m[3] = {-haloDepth, -haloDepth, -haloDepth};
-    // The domain size in the Block 0
-    const Block& block{BLOCKS.begin()->second};
-    int nx{(int)block.Size().at(0)};
-    int ny{(int)block.Size().at(1)};
-    int nz{(int)block.Size().at(2)};
-    int dir[] = {1, 2, 3};
-    for (auto& pair : haloPair) {
-        if (0 == pair.first) {
-            // left and right pair
-            int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1],
-                               nz + d_p[2] - d_m[2]};
-            int base_from[] = {0, d_m[1], d_m[2]};
-            int base_to[] = {nx, d_m[1], d_m[2]};
-            ops_halo leftToRight = ops_decl_halo(dat, dat, halo_iter, base_from,
-                                                 base_to, dir, dir);
-            base_from[0] = nx + d_m[0];
-            base_to[0] = d_m[0];
-            ops_halo rightToLeft = ops_decl_halo(dat, dat, halo_iter, base_from,
-                                                 base_to, dir, dir);
-            ops_halo group[]{leftToRight, rightToLeft};
-            HALOGROUPS.emplace(pair.second, ops_decl_halo_group(2, group));
-        }
-
-        if (1 == pair.first) {
-            // top and bottom pair
-            int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth,
-                               nz + d_p[2] - d_m[2]};
-            int base_from[] = {d_m[0], 0, d_m[2]};
-            int base_to[] = {d_m[0], ny, d_m[2]};
-            ops_halo botToTop = ops_decl_halo(dat, dat, halo_iter, base_from,
-                                              base_to, dir, dir);
-            base_from[1] = ny + d_m[1];
-            base_to[1] = d_m[1];
-            ops_halo topToBot = ops_decl_halo(dat, dat, halo_iter, base_from,
-                                              base_to, dir, dir);
-            ops_halo group[]{botToTop, topToBot};
-            HALOGROUPS.emplace(pair.second, ops_decl_halo_group(2, group));
-        }
-
-        if (2 == pair.first) {
-            // front and back pair
-            int halo_iter[] = {nx + d_p[0] - d_m[0], ny + d_p[1] - d_m[1],
-                               haloDepth};
-            int base_from[] = {d_m[0], d_m[1], 0};
-            int base_to[] = {d_m[0], d_m[1], nz};
-            ops_halo backToFront = ops_decl_halo(dat, dat, halo_iter, base_from,
-                                                 base_to, dir, dir);
-            base_from[2] = nz + d_m[2];
-            base_to[2] = d_m[2];
-            ops_halo frontToBack = ops_decl_halo(dat, dat, halo_iter, base_from,
-                                                 base_to, dir, dir);
-            ops_halo group[]{backToFront, frontToBack};
-            HALOGROUPS.emplace(pair.second, ops_decl_halo_group(2, group));
-        }
-    }
-}
-
-void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair) {
-    if (BLOCKS.size() > 1) {
-        ops_printf(
-            "Periodic boundary conditions are only valid for single-block "
-            "applications!");
-        assert(BLOCKS.size() == 1);
-    }
-    const int blockId{BLOCKS.begin()->first};
-    DefinePeriodicHaloPair3D(haloPair, f[blockId], f.HaloDepth());
-}
-
-void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair,
-                              RealField& data) {
-    if (BLOCKS.size() > 1) {
-        ops_printf(
-            "Periodic boundary conditions are only valid for single-block "
-            "applications!");
-        assert(BLOCKS.size() == 1);
-    }
-    const int blockId{BLOCKS.begin()->first};
-    DefinePeriodicHaloPair3D(haloPair, data[blockId], data.HaloDepth());
-}
-
-void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair,
-                              IntField& data) {
-    if (BLOCKS.size() > 1) {
-        ops_printf(
-            "Periodic boundary conditions are only valid for single-block "
-            "applications!");
-        assert(BLOCKS.size() == 1);
-    }
-    const int blockId{BLOCKS.begin()->first};
-    DefinePeriodicHaloPair3D(haloPair, data[blockId], data.HaloDepth());
-}
-
-#endif //OPS_3D
 
 void Partition() {
     ops_partition((char*)"LBM Solver");
@@ -256,10 +135,6 @@ void WriteNodePropertyToHdf5(const SizeType timeStep) {
 
 const std::string& CaseName() { return CASENAME; }
 void SetCaseName(const std::string& caseName) { CASENAME = caseName; }
-void setCaseName(const char* caseName) {
-    std::string tmp(caseName);
-    CASENAME = tmp;
-}
 
 Real TotalMeshSize() { return 0; }
 
@@ -279,27 +154,12 @@ Real GetMaximumResidual(const SizeType checkPeriod) {
     return maxResError;
 }
 
-const std::map<std::string,ops_halo_group>& HaloGroups() { return HALOGROUPS; }
-
 void TransferHalos() {
-    if (HALOGROUPS.size() > 0) {
-        for (auto haloGroup : HALOGROUPS){
-             ops_halo_transfer(haloGroup.second);
-        }
-    }
+
 }
 
-void TransferHalos(const std::string key) {
-    ops_halo_transfer(HALOGROUPS[key]);
-}
 
-void TransferHalos(const std::vector<std::string> keys) {
-    if (keys.size() > 0) {
-        for (auto key : keys) {
-            ops_halo_transfer(HALOGROUPS[key]);
-        }
-    }
-}
+
 void DefineBlocks(const std::vector<int>& blockIds,
                   const std::vector<std::string>& blockNames,
                   const std::vector<int>& blockSizes) {
@@ -392,5 +252,26 @@ void DispResidualError3D(const int iter, const SizeType checkPeriod) {
             ops_printf("Residual of %s = %.17g\n", macroVar.second.name.c_str(),
                        residualError);
         }
+    }
+}
+
+void DefineBlockConnection(const std::vector<int>& fromBlock,
+                           const std::vector<BoundarySurface>& fromSurface,
+                           const std::vector<int>& toBlock,
+                           const std::vector<BoundarySurface>& toSurface) {
+    const int fromBlockSize{static_cast<int>(fromBlock.size())};
+    const int fromSurfaceSize{static_cast<int>(fromSurface.size())};
+    const int toBlockSize{static_cast<int>(toBlock.size())};
+    const int toSurfaceSize{static_cast<int>(toSurface.size())};
+    if ((fromBlockSize != fromSurfaceSize) || (fromBlockSize != toBlockSize) ||
+        (fromBlockSize != toSurfaceSize) ||
+        (fromSurfaceSize != toSurfaceSize) | (fromSurfaceSize != toBlockSize) ||
+        (toBlockSize != toSurfaceSize)) {
+        ops_printf("Please input consistent halo paris!\n");
+        assert(false);
+    }
+    for (int idx = 0; idx < fromBlockSize; idx++) {
+        Neighbor neighbor{toBlock.at(idx), toSurface.at(idx)};
+        BLOCKS.at(fromBlock.at(idx)).AddNeighbor(fromSurface.at(idx), neighbor);
     }
 }
