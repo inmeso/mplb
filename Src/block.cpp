@@ -89,3 +89,12 @@ Block::Block(const int blockId, const std::string& blockName,
     kmaxRange.at(5) = size.at(2);
 #endif
 }
+
+void Block::AddNeighbor(BoundarySurface surface, const Neighbor& neighbor) {
+    if (neighbors.find(surface) != neighbors.end()) {
+        ops_printf("Error! There is already a neighbor defined for Block $s!\n",
+                   name.c_str());
+        assert(neighbors.find(surface) == neighbors.end());
+    }
+    neighbors.emplace(surface, neighbor);
+}

@@ -49,6 +49,12 @@
 #include "ops_mpi_core.h"
 #endif
 #include "type.h"
+#include "flowfield_host_device.h"
+#include "boundary_host_device.h"
+struct Neighbor {
+    int blockId{0};
+    BoundarySurface surface;
+};
 class Block {
    private:
     ops_block block;
@@ -67,6 +73,7 @@ class Block {
     std::vector<int> imaxRange;
     std::vector<int> jminRange;
     std::vector<int> jmaxRange;
+    std::map<BoundarySurface, Neighbor> neighbors;
 #ifdef OPS_3D
     std::vector<int> kminRange;
     std::vector<int> kmaxRange;
@@ -86,11 +93,14 @@ class Block {
     const std::vector<int>& IminRange() const { return iminRange; };
     const std::vector<int>& JmaxRange() const { return jmaxRange; };
     const std::vector<int>& JminRange() const { return jminRange; };
+    const std::map<BoundarySurface, Neighbor> & Neighbors() const {
+        return neighbors;
+    };
+    void AddNeighbor(BoundarySurface surface, const Neighbor& neighbor);
 #ifdef OPS_3D
     const std::vector<int>& KmaxRange() const { return kmaxRange; };
     const std::vector<int>& KminRange() const { return kminRange; };
 #endif
 };
-
 using BlockGroup = std::map<int, Block>;
 #endif  // BLOCK_H
