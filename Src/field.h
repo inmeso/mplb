@@ -230,17 +230,26 @@ void Field<T>::CreateHalos() {
         for (const auto& surfaceNeighbor : block.Neighbors()) {
             const Neighbor& neighbor{surfaceNeighbor.second};
             const BoundarySurface surface{surfaceNeighbor.first};
+            const VertexType type{neighbor.type};
             switch (surface) {
                 case BoundarySurface::Right: {
+                    const int disp{0};
+                    if (type == VertexType::FDPeriodic ||
+                        type == VertexType::MDPeriodic) {
+                        disp = d_m[0];
+                    };
+                    if (type == VertexType::VirtualBoundary) {
+                        disp = d_m[0] - 1;
+                    };
 #ifdef OPS_3D
                     int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1],
                                        nz + d_p[2] - d_m[2]};
-                    int base_from[] = {nx + d_m[0], d_m[1], d_m[2]};
+                    int base_from[] = {nx + disp, d_m[1], d_m[2]};
                     int base_to[] = {d_m[0], d_m[1], d_m[2]};
 #endif
 #ifdef OPS_2D
                     int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1]};
-                    int base_from[] = {nx + d_m[0], d_m[1]};
+                    int base_from[] = {nx + disp, d_m[1]};
                     int base_to[] = {d_m[0], d_m[1]};
 #endif
                     ops_halo rightToLeft = ops_decl_halo(
@@ -251,15 +260,23 @@ void Field<T>::CreateHalos() {
                 case BoundarySurface::Left: {
                     const int neighborBase{
                         dataBlock.at(neighbor.blockId).Size().at(0)};
+                    const int disp{0};
+                    if (type == VertexType::FDPeriodic ||
+                        type == VertexType::MDPeriodic) {
+                        disp = 0;
+                    };
+                    if (type == VertexType::VirtualBoundary) {
+                        disp = 1;
+                    };
 #ifdef OPS_3D
                     int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1],
                                        nz + d_p[2] - d_m[2]};
-                    int base_from[] = {0, d_m[1], d_m[2]};
+                    int base_from[] = {disp, d_m[1], d_m[2]};
                     int base_to[] = {neighborBase, d_m[1], d_m[2]};
 #endif
 #ifdef OPS_2D
                     int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1]};
-                    int base_from[] = {0, d_m[1]};
+                    int base_from[] = {disp, d_m[1]};
                     int base_to[] = {neighborBase, d_m[1]};
 #endif
                     ops_halo leftToRight = ops_decl_halo(
@@ -270,15 +287,23 @@ void Field<T>::CreateHalos() {
                 case BoundarySurface::Bottom: {
                     const int neighborBase{
                         dataBlock.at(neighbor.blockId).Size().at(1)};
+                    const int disp{0};
+                    if (type == VertexType::FDPeriodic ||
+                        type == VertexType::MDPeriodic) {
+                        disp = 0;
+                    };
+                    if (type == VertexType::VirtualBoundary) {
+                        disp = 1;
+                    };
 #ifdef OPS_3D
                     int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth,
                                        nz + d_p[2] - d_m[2]};
-                    int base_from[] = {d_m[0], 0, d_m[2]};
+                    int base_from[] = {d_m[0], disp, d_m[2]};
                     int base_to[] = {d_m[0], neighborBase, d_m[2]};
 #endif
 #ifdef OPS_2D
                     int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth};
-                    int base_from[] = {d_m[0], 0};
+                    int base_from[] = {d_m[0], disp};
                     int base_to[] = {d_m[0], neighborBase};
 #endif
                     ops_halo botToTop = ops_decl_halo(
@@ -288,15 +313,23 @@ void Field<T>::CreateHalos() {
                 } break;
 
                 case BoundarySurface::Top: {
+                    const int disp{0};
+                    if (type == VertexType::FDPeriodic ||
+                        type == VertexType::MDPeriodic) {
+                        disp = d_m[1];
+                    };
+                    if (type == VertexType::VirtualBoundary) {
+                        disp = d_m[1] - 1;
+                    };
 #ifdef OPS_3D
                     int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth,
                                        nz + d_p[2] - d_m[2]};
-                    int base_from[] = {d_m[0], ny + d_m[1], d_m[2]};
+                    int base_from[] = {d_m[0], ny + disp, d_m[2]};
                     int base_to[] = {d_m[0], d_m[1], d_m[2]};
 #endif
 #ifdef OPS_2D
                     int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth};
-                    int base_from[] = {d_m[0], ny + d_m[1]};
+                    int base_from[] = {d_m[0], ny + disp};
                     int base_to[] = {d_m[0], d_m[1]};
 #endif
                     ops_halo topToBot = ops_decl_halo(
@@ -308,9 +341,17 @@ void Field<T>::CreateHalos() {
                 case BoundarySurface::Back: {
                     const int neighborBase{
                         dataBlock.at(neighbor.blockId).Size().at(2)};
+                    const int disp{0};
+                    if (type == VertexType::FDPeriodic ||
+                        type == VertexType::MDPeriodic) {
+                        disp = 0;
+                    };
+                    if (type == VertexType::VirtualBoundary) {
+                        disp = 1;
+                    };
                     int halo_iter[] = {nx + d_p[0] - d_m[0],
                                        ny + d_p[1] - d_m[1], haloDepth};
-                    int base_from[] = {d_m[0], d_m[1], 0};
+                    int base_from[] = {d_m[0], d_m[1], disp};
                     int base_to[] = {d_m[0], d_m[1], neighborBase};
 
                     ops_halo backToFront = ops_decl_halo(
@@ -320,9 +361,16 @@ void Field<T>::CreateHalos() {
                 } break;
 
                 case BoundarySurface::Front: {
+                    if (type == VertexType::FDPeriodic ||
+                        type == VertexType::MDPeriodic) {
+                        disp = d_m[2];
+                    };
+                    if (type == VertexType::VirtualBoundary) {
+                        disp = d_m[2] - 1;
+                    };
                     int halo_iter[] = {nx + d_p[0] - d_m[0],
                                        ny + d_p[1] - d_m[1], haloDepth};
-                    int base_from[] = {d_m[0], d_m[1], nz + d_m[2]};
+                    int base_from[] = {d_m[0], d_m[1], nz + disp};
                     int base_to[] = {d_m[0], d_m[1], d_m[2]};
 
                     ops_halo frontToBack = ops_decl_halo(

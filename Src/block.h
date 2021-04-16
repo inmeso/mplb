@@ -54,6 +54,7 @@
 struct Neighbor {
     int blockId{0};
     BoundarySurface surface;
+    VertexType type;
 };
 class Block {
    private:
