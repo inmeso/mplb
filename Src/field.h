@@ -89,12 +89,16 @@ class Field {
     ops_dat& operator[](int blockIdx) { return this->at(blockIdx); };
     const ops_dat& operator[](int blockIdx) const { return this->at(blockIdx); };
     void CreateHalos();
-    void TransferHalos() { ops_halo_transfer(haloGroup); };
+    void TransferHalos();
 };
-
 template <typename T>
-Field<T>::Field(const std::string& varName, const int dataDim,
-                const int halo) {
+void Field<T>::TransferHalos() {
+    if (haloGroup != nullptr) {
+        ops_halo_transfer(haloGroup);
+    }
+};
+template <typename T>
+Field<T>::Field(const std::string& varName, const int dataDim, const int halo) {
     name = varName;
     dim = dataDim;
     haloDepth = halo;
@@ -218,9 +222,9 @@ void Field<T>::CreateHalos() {
         const int ny{(int)block.Size().at(1)};
 #ifdef OPS_3D
         int nz{(int)block.Size().at(2)};
-        cons tint d_p[]{haloDepth, haloDepth, haloDepth};
+        const int d_p[]{haloDepth, haloDepth, haloDepth};
         const int d_m[]{-haloDepth, -haloDepth, -haloDepth};
-        const int dir[]{0, 1, 2};
+        int dir[]{0, 1, 2};
 #endif
 #ifdef OPS_2D
         const int d_p[]{haloDepth, haloDepth};
@@ -233,14 +237,14 @@ void Field<T>::CreateHalos() {
             const VertexType type{neighbor.type};
             switch (surface) {
                 case BoundarySurface::Right: {
-                    const int disp{0};
+                    int disp{0};
                     if (type == VertexType::FDPeriodic ||
                         type == VertexType::MDPeriodic) {
                         disp = d_m[0];
-                    };
+                    }
                     if (type == VertexType::VirtualBoundary) {
                         disp = d_m[0] - 1;
-                    };
+                    }
 #ifdef OPS_3D
                     int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1],
                                        nz + d_p[2] - d_m[2]};
@@ -253,21 +257,21 @@ void Field<T>::CreateHalos() {
                     int base_to[] = {d_m[0], d_m[1]};
 #endif
                     ops_halo rightToLeft = ops_decl_halo(
-                        data.at(block.ID()), data.at(neighbor.blockId),
+                        data.at(id), data.at(neighbor.blockId),
                         halo_iter, base_from, base_to, dir, dir);
                     halos.push_back(rightToLeft);
                 } break;
                 case BoundarySurface::Left: {
                     const int neighborBase{
                         dataBlock.at(neighbor.blockId).Size().at(0)};
-                    const int disp{0};
+                    int disp{0};
                     if (type == VertexType::FDPeriodic ||
                         type == VertexType::MDPeriodic) {
                         disp = 0;
-                    };
+                    }
                     if (type == VertexType::VirtualBoundary) {
                         disp = 1;
-                    };
+                    }
 #ifdef OPS_3D
                     int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1],
                                        nz + d_p[2] - d_m[2]};
@@ -280,21 +284,21 @@ void Field<T>::CreateHalos() {
                     int base_to[] = {neighborBase, d_m[1]};
 #endif
                     ops_halo leftToRight = ops_decl_halo(
-                        data.at(block.ID()), data.at(neighbor.blockId),
+                        data.at(id), data.at(neighbor.blockId),
                         halo_iter, base_from, base_to, dir, dir);
                     halos.push_back(leftToRight);
                 } break;
                 case BoundarySurface::Bottom: {
                     const int neighborBase{
                         dataBlock.at(neighbor.blockId).Size().at(1)};
-                    const int disp{0};
+                    int disp{0};
                     if (type == VertexType::FDPeriodic ||
                         type == VertexType::MDPeriodic) {
                         disp = 0;
-                    };
+                    }
                     if (type == VertexType::VirtualBoundary) {
                         disp = 1;
-                    };
+                    }
 #ifdef OPS_3D
                     int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth,
                                        nz + d_p[2] - d_m[2]};
@@ -307,20 +311,20 @@ void Field<T>::CreateHalos() {
                     int base_to[] = {d_m[0], neighborBase};
 #endif
                     ops_halo botToTop = ops_decl_halo(
-                        data.at(block.ID()), data.at(neighbor.blockId),
+                        data.at(id), data.at(neighbor.blockId),
                         halo_iter, base_from, base_to, dir, dir);
                     halos.push_back(botToTop);
                 } break;
 
                 case BoundarySurface::Top: {
-                    const int disp{0};
+                    int disp{0};
                     if (type == VertexType::FDPeriodic ||
                         type == VertexType::MDPeriodic) {
                         disp = d_m[1];
-                    };
+                    }
                     if (type == VertexType::VirtualBoundary) {
                         disp = d_m[1] - 1;
-                    };
+                    }
 #ifdef OPS_3D
                     int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth,
                                        nz + d_p[2] - d_m[2]};
@@ -333,7 +337,7 @@ void Field<T>::CreateHalos() {
                     int base_to[] = {d_m[0], d_m[1]};
 #endif
                     ops_halo topToBot = ops_decl_halo(
-                        data.at(block.ID()), data.at(neighbor.blockId),
+                        data.at(id), data.at(neighbor.blockId),
                         halo_iter, base_from, base_to, dir, dir);
                     halos.push_back(topToBot);
                 } break;
@@ -341,40 +345,41 @@ void Field<T>::CreateHalos() {
                 case BoundarySurface::Back: {
                     const int neighborBase{
                         dataBlock.at(neighbor.blockId).Size().at(2)};
-                    const int disp{0};
+                    int disp{0};
                     if (type == VertexType::FDPeriodic ||
                         type == VertexType::MDPeriodic) {
                         disp = 0;
-                    };
+                    }
                     if (type == VertexType::VirtualBoundary) {
                         disp = 1;
-                    };
+                    }
                     int halo_iter[] = {nx + d_p[0] - d_m[0],
                                        ny + d_p[1] - d_m[1], haloDepth};
                     int base_from[] = {d_m[0], d_m[1], disp};
                     int base_to[] = {d_m[0], d_m[1], neighborBase};
 
                     ops_halo backToFront = ops_decl_halo(
-                        data.at(block.ID()), data.at(neighbor.blockId),
+                        data.at(id), data.at(neighbor.blockId),
                         halo_iter, base_from, base_to, dir, dir);
                     halos.push_back(backToFront);
                 } break;
 
                 case BoundarySurface::Front: {
+                    int disp{0};
                     if (type == VertexType::FDPeriodic ||
                         type == VertexType::MDPeriodic) {
                         disp = d_m[2];
-                    };
+                    }
                     if (type == VertexType::VirtualBoundary) {
                         disp = d_m[2] - 1;
-                    };
+                    }
                     int halo_iter[] = {nx + d_p[0] - d_m[0],
                                        ny + d_p[1] - d_m[1], haloDepth};
                     int base_from[] = {d_m[0], d_m[1], nz + disp};
                     int base_to[] = {d_m[0], d_m[1], d_m[2]};
 
                     ops_halo frontToBack = ops_decl_halo(
-                        data.at(block.ID()), data.at(neighbor.blockId),
+                        data.at(id), data.at(neighbor.blockId),
                         halo_iter, base_from, base_to, dir, dir);
                     halos.push_back(frontToBack);
                 } break;
@@ -384,7 +389,9 @@ void Field<T>::CreateHalos() {
             }
         }
     }
-    haloGroup = ops_decl_halo_group(halos.size(), halos.data);
+    if (halos.size()>=1){
+        haloGroup = ops_decl_halo_group(halos.size(), halos.data());
+    }
 }
 
 using RealField = Field<Real>;

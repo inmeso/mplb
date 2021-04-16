@@ -96,7 +96,7 @@ void DefineCase(const std::string& caseName, const int spaceDim,
         ops_printf("Error! The SPACEDIM here is inconsistent with the\n");
         assert(SPACEDIM == spaceDim);
     }
-    SetCaseName(caseName);
+    CASENAME = caseName;
     TRANSIENT = transient;
 }
 
@@ -134,7 +134,7 @@ void WriteNodePropertyToHdf5(const SizeType timeStep) {
 }
 
 const std::string& CaseName() { return CASENAME; }
-void SetCaseName(const std::string& caseName) { CASENAME = caseName; }
+
 
 Real TotalMeshSize() { return 0; }
 
@@ -154,11 +154,7 @@ Real GetMaximumResidual(const SizeType checkPeriod) {
     return maxResError;
 }
 
-void TransferHalos() {
-
-}
-
-
+void TransferHalos() { f.TransferHalos(); }
 
 void DefineBlocks(const std::vector<int>& blockIds,
                   const std::vector<std::string>& blockNames,
@@ -258,20 +254,26 @@ void DispResidualError3D(const int iter, const SizeType checkPeriod) {
 void DefineBlockConnection(const std::vector<int>& fromBlock,
                            const std::vector<BoundarySurface>& fromSurface,
                            const std::vector<int>& toBlock,
-                           const std::vector<BoundarySurface>& toSurface) {
+                           const std::vector<BoundarySurface>& toSurface,
+                           const std::vector<VertexType>& connectionType) {
     const int fromBlockSize{static_cast<int>(fromBlock.size())};
     const int fromSurfaceSize{static_cast<int>(fromSurface.size())};
     const int toBlockSize{static_cast<int>(toBlock.size())};
     const int toSurfaceSize{static_cast<int>(toSurface.size())};
+    const int connectionTypeSize(static_cast<int>(connectionType.size()));
     if ((fromBlockSize != fromSurfaceSize) || (fromBlockSize != toBlockSize) ||
         (fromBlockSize != toSurfaceSize) ||
-        (fromSurfaceSize != toSurfaceSize) | (fromSurfaceSize != toBlockSize) ||
-        (toBlockSize != toSurfaceSize)) {
+        (fromSurfaceSize != toSurfaceSize) ||
+        (fromSurfaceSize != toBlockSize) || (toBlockSize != toSurfaceSize) ||
+        connectionTypeSize != fromBlockSize) {
         ops_printf("Please input consistent halo paris!\n");
         assert(false);
     }
     for (int idx = 0; idx < fromBlockSize; idx++) {
-        Neighbor neighbor{toBlock.at(idx), toSurface.at(idx)};
+        Neighbor neighbor;
+        neighbor.blockId = toBlock.at(idx);
+        neighbor.surface = toSurface.at(idx);
+        neighbor.type = connectionType.at(idx);
         BLOCKS.at(fromBlock.at(idx)).AddNeighbor(fromSurface.at(idx), neighbor);
     }
 }

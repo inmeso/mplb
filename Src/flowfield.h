@@ -126,5 +126,7 @@ void SetInitialMacrosVars();
 void DefineBlockConnection(const std::vector<int>& fromBlock,
                            const std::vector<BoundarySurface>& fromSurface,
                            const std::vector<int>& toBlock,
-                           const std::vector<BoundarySurface>& toSurface);
+                           const std::vector<BoundarySurface>& toSurface,
+                           const std::vector<VertexType>& connectionType);
+void TransferHalos();
 #endif

@@ -99,10 +99,9 @@ std::vector<int> BoundarySurfaceRange(const Block& block,
     return iterRange;
 }
 
-void DefineBlockBoundary(
-    int blockIndex, int componentID, BoundarySurface boundarySurface,
-    const VertexType boundaryType = VertexType::VirtualBoundary) {
-
+void DefineBlockBoundary(int blockIndex, int componentID,
+                         BoundarySurface boundarySurface,
+                         const VertexType boundaryType) {
     if (boundaryType != VertexType::VirtualBoundary) {
         ops_printf(
             "Error: This routine is specially for defining virtual "
