@@ -31,7 +31,9 @@ enum class VertexType {
     // Bulk node but with immersed solid nodes
     ImmersedSolid = -1,
     // Immersed solid but surface
-    ImmersedBoundary = -2
+    ImmersedBoundary = -2,
+    //surface and/or edge between two blocks
+    VirtualBoundary = -3
 };  // vt
 #endif
 #ifndef NEWVERTEX

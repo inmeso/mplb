@@ -602,17 +602,47 @@ void  SetBlockGeometryProperty(const Block& block) {
 
 void SetBoundaryNodeType() {
     for (auto& boundary : BlockBoundaries()) {
-        const int boundaryType{(int)boundary.boundaryType};
+        const int intBoundaryType{(int)boundary.boundaryType};
         const Block& block{g_Block().at(boundary.blockIndex)};
-        std::vector<int> iterRange{
-            BoundarySurfaceRange(block, boundary.boundarySurface)};
+        const BoundarySurface surface{boundary.boundarySurface};
+        std::vector<int> iterRange{BoundarySurfaceRange(block, surface)};
         const int compoId{boundary.componentID};
+        const VertexType boundaryType{boundary.boundaryType};
+        if (boundaryType == VertexType::VirtualBoundary) {
+            if (surface == BoundarySurface::Left ||
+                surface == BoundarySurface::Right) {
+                iterRange.at(2)++;
+                iterRange.at(3)--;
+#ifdef OPS_3D
+                iterRange.at(4)++;
+                iterRange.at(5)--;
+#endif
+            }
+            if (surface == BoundarySurface::Top ||
+                surface == BoundarySurface::Bottom) {
+                iterRange.at(0)++;
+                iterRange.at(1)--;
+#ifdef OPS_3D
+                iterRange.at(4)++;
+                iterRange.at(5)--;
+#endif
+            }
+#ifdef OPS_3D
+            if (surface == BoundarySurface::Front ||
+                surface == BoundarySurface::Back) {
+                iterRange.at(0)++;
+                iterRange.at(1)--;
+                iterRange.at(2)++;
+                iterRange.at(3)--;
+#endif
+            }
+        }
         // Specify general boundary type
-        ops_par_loop(
-            KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-            iterRange.data(), ops_arg_gbl(&boundaryType, 1, "int", OPS_READ),
-            ops_arg_dat(g_NodeType().at(compoId).at(block.ID()), 1,
-                        LOCALSTENCIL, "int", OPS_WRITE));
+        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                     iterRange.data(),
+                     ops_arg_gbl(&intBoundaryType, 1, "int", OPS_READ),
+                     ops_arg_dat(g_NodeType().at(compoId).at(block.ID()), 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE));
     }
 }
 
