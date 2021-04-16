@@ -99,6 +99,32 @@ std::vector<int> BoundarySurfaceRange(const Block& block,
     return iterRange;
 }
 
+void DefineBlockBoundary(
+    int blockIndex, int componentID, BoundarySurface boundarySurface,
+    const VertexType boundaryType = VertexType::VirtualBoundary) {
+
+    if (boundaryType != VertexType::VirtualBoundary) {
+        ops_printf(
+            "Error: This routine is specially for defining virtual "
+            "boundary!\n");
+    }
+
+    BlockBoundary blockBoundary;
+    blockBoundary.blockIndex = blockIndex;
+    blockBoundary.componentID = componentID;
+    blockBoundary.givenVars = std::vector<Real>();
+    blockBoundary.boundarySurface = boundarySurface;
+    blockBoundary.boundaryScheme = BoundaryScheme::None;
+    blockBoundary.boundaryType = boundaryType;
+    blockBoundaries.push_back(blockBoundary);
+    ops_printf(
+        "The scheme %i is adopted for Component %i at Surface %i, boundary "
+        "type %i and Block %i\n",
+        blockBoundary.boundaryScheme, blockBoundary.componentID,
+        blockBoundary.boundarySurface, blockBoundary.boundaryType,
+        blockBoundary.blockIndex);
+}
+
 void DefineBlockBoundary(int blockIndex, int componentID,
                          BoundarySurface boundarySurface,
                          BoundaryScheme boundaryScheme,

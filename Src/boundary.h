@@ -55,7 +55,8 @@ enum class BoundaryScheme {
     FreeFlux = 21,
     ZouHeVelocity = 22,
     EQNNoSlip = 23,
-    EQMDiffuseRefl = 24
+    EQMDiffuseRefl = 24,
+    None = -1
 };
 
 struct BlockBoundary {
@@ -74,12 +75,17 @@ void SetBoundaryHaloNum(const int boundaryhaloNum);
 void BoundaryNormal3D(const VertexGeometryType vg, int* unitNormal);
 std::vector<int> BoundarySurfaceRange(const Block& block,
                                       BoundarySurface surface);
+
 void DefineBlockBoundary(int blockIndex, int componentID,
                          BoundarySurface boundarySurface,
                          BoundaryScheme boundaryScheme,
                          const std::vector<VariableTypes>& macroVarTypes,
                          const std::vector<Real>& macroVarValues,
                          const VertexType boundaryType = VertexType::Wall);
+
+void DefineBlockBoundary(
+    int blockIndex, int componentID, BoundarySurface boundarySurface,
+    const VertexType boundaryType = VertexType::VirtualBoundary);
 const std::vector<BlockBoundary>& BlockBoundaries();
 #ifdef OPS_3D
 void TreatBlockBoundary3D(const Block& block, const int componentID,
