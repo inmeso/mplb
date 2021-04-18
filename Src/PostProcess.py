@@ -154,38 +154,47 @@ def ReadOPSDataHDF5(nx, ny, blockName, haloNum, spaceDim, macroVarNum, macroVarN
     dataFile.close()
     return res
 
-
-def ReadVariableWithHaloFromHDF53D(nx, ny, nz, blockName, haloNum, spaceDim, varName, varLen, fileName):
+def ReadVariableFromHDF5(fileName,varName,varLen=1,haloNum=1,withHalo=False):
     if ((not h5Loaded) or (not numpyLoaded)):
         print("The h5py or numpy is not installed!")
         res = "The h5py or numpy is not installed!"
         return res
-    dataFile = h5.File(fileName)
+    dataFile = h5.File(fileName,"r")
+    blockName = list(dataFile.keys())[0]
     dataKey = varName+'_'+blockName
-    if (varLen == 1):
-        data = dataFile[blockName][dataKey][:, :, :]
-        res = data.transpose(2, 1, 0)
-    if (varLen > 1):
-        data = ChangeShape3D(
-                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, varLen, haloNum)
-        res = data[:, :, :, :]
-    dataFile.close()
-    return res
-
-def ReadVariableFromHDF53D(nx, ny, nz, blockName, haloNum, spaceDim, varName, varLen, fileName):
-    if ((not h5Loaded) or (not numpyLoaded)):
-        print("The h5py or numpy is not installed!")
-        res = "The h5py or numpy is not installed!"
-        return res
-    dataFile = h5.File(fileName)
-    dataKey = varName+'_'+blockName
-    if (varLen == 1):
-        data = dataFile[blockName][dataKey][haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum]
-        res = data.transpose(2, 1, 0)
-    if (varLen > 1):
-        data = ChangeShape3D(
-                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, varLen, haloNum)
-        res = data[haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
+    rawData = np.array(dataFile[blockName][dataKey])
+    spaceDim=len(rawData.shape)
+    if spaceDim==3:
+        nx = int(rawData.shape[2]/varLen)-2*haloNum
+        ny = rawData.shape[1]-2*haloNum
+        nz = rawData.shape[0]-2*haloNum
+        if (varLen == 1):
+            if not withHalo:
+                data = rawData[haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum]
+            else:
+                data = rawData
+            res = data.transpose(2, 1, 0)
+        if (varLen > 1):
+            data = ChangeShape3D(rawData, nx, ny, nz, varLen, haloNum)
+            if not withHalo:
+                res = data[haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum,:]
+            else:
+                res = data
+    if spaceDim==2:
+        nx = int(rawData.shape[2]/varLen)-2*haloNum
+        ny = rawData.shape[1]-2*haloNum
+        if (varLen == 1):
+            if not withHalo:
+                data = rawData[haloNum:-haloNum, haloNum:-haloNum]
+            else:
+                data = rawData
+            res = data.transpose()
+        if (varLen > 1):
+            data = ChangeShape(rawData, nx, ny, varLen, haloNum)
+            if not withHalo:
+                res = data[haloNum:-haloNum, haloNum:-haloNum,:]
+            else:
+                res = data
     dataFile.close()
     return res
 
