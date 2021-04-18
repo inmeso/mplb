@@ -1672,7 +1672,7 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
         "KerCutCellEQMDiffuseRefl3D: We received the following "
         "conditions for the surface %i:\n",
         geometryProperty(0, 0, 0));
-    ops_printf("U=%f, V=%f, W=%f for the component %i\n", u, v, w, compoIdx);
+    ops_printf("U=%f, V=%f, W=%f\n", u, v, w);
 #endif
 #endif
     int numOutgoing{0};
@@ -1758,7 +1758,7 @@ void KerCutCellNoslipEQN3D(ACC<Real> &f, const ACC<int> &nodeType,
     ops_printf(
         "KerCutCellNoslipEQN3D: We received the following "
         "conditions:\n");
-    ops_printf("U=%f, V=%f, W=%f for the component %i\n", u, v, w, compoId);
+    ops_printf("U=%f, V=%f, W=%f\n", u, v, w);
 #endif
 #endif
     Real rhoIntermidate{0};
