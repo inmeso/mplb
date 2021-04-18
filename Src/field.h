@@ -197,7 +197,7 @@ void Field<T>::WriteToHDF5(const std::string& caseName,
     for (const auto& idData : data) {
         const int blockId{idData.first};
         const Block& block{dataBlock.at(blockId)};
-        std::string fileName = caseName + "_" + block.Name() + "_" +
+        std::string fileName = caseName + "_" + block.Name() + "_T" +
                                std::to_string(timeStep) + ".h5";
         ops_fetch_block_hdf5_file(block.Get(), fileName.c_str());
         ops_fetch_dat_hdf5_file(idData.second, fileName.c_str());
@@ -224,12 +224,12 @@ void Field<T>::CreateHalos() {
         int nz{(int)block.Size().at(2)};
         const int d_p[]{haloDepth, haloDepth, haloDepth};
         const int d_m[]{-haloDepth, -haloDepth, -haloDepth};
-        int dir[]{0, 1, 2};
+        int dir[]{1, 2, 3};
 #endif
 #ifdef OPS_2D
         const int d_p[]{haloDepth, haloDepth};
         const int d_m[]{-haloDepth, -haloDepth};
-        const int dir[] { 0, 1 }
+        const int dir[] { 1, 2 }
 #endif
         for (const auto& surfaceNeighbor : block.Neighbors()) {
             const Neighbor& neighbor{surfaceNeighbor.second};
