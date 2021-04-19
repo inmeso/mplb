@@ -98,49 +98,12 @@ void simulate() {
     DefineBlockConnection(fromBlock, fromSurface, toBlock, toSurface,
                           connectionType);
 
-    for (const auto& idBlock:g_Block()){
-        const int id{idBlock.first};
-        for (const auto& surfaceNeighbor:idBlock.second.Neighbors()){
-            ops_printf(
-                "Connection from %i block %i surface to %i block %i surface "
-                "type %d!\n",
-                id, surfaceNeighbor.first, surfaceNeighbor.second.blockId,
-                surfaceNeighbor.second.surface, surfaceNeighbor.second.type);
-        }
-
-    }
-
 
     std::vector<std::string> compoNames{"Fluid"};
     std::vector<int> compoid{0};
     std::vector<std::string> lattNames{"d3q19"};
     std::vector<Real> tauRef{0.01};
     DefineComponents(compoNames, compoid, lattNames, tauRef);
-
-    ops_printf("There are totally %d halos for g_f!\n",
-               g_f().haloGroup->nhalos);
-    for (int idx = 0; idx < g_f().haloGroup->nhalos;idx++){
-        ops_halo halo{g_f().haloGroup->halos[idx]};
-        ops_printf("Halo Number %d\n", idx);
-        ops_printf("From %s to %s\n", halo->from->name, halo->to->name);
-        ops_printf("From %d %d %d to %d %d %d with size %d %d %d\n",
-                   halo->from_base[0], halo->from_base[1], halo->from_base[2],
-                   halo->to_base[0], halo->to_base[1], halo->to_base[2],
-                   halo->iter_size[0], halo->iter_size[1], halo->iter_size[2]);
-        ops_printf("From dir %d %d %d to dir %d %d %d\n", halo->from_dir[0],
-                   halo->from_dir[1], halo->from_dir[2], halo->to_dir[0],
-                   halo->to_dir[1], halo->to_dir[2]);
-    }
-
-     for (int idx = 0; idx < g_fStage().haloGroup->nhalos;idx++){
-        ops_halo halo{g_fStage().haloGroup->halos[idx]};
-        ops_printf("Halo Number %d\n", idx);
-        ops_printf("From %s to %s\n", halo->from->name, halo->to->name);
-        ops_printf("From %d %d %d to %d %d %d with size %d %d %d\n",
-                   halo->from_base[0], halo->from_base[1], halo->from_base[2],
-                   halo->to_base[0], halo->to_base[1], halo->to_base[2],
-                   halo->iter_size[0], halo->iter_size[1], halo->iter_size[2]);
-    }
 
     std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
                                                  Variable_V, Variable_W};
