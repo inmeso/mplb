@@ -154,7 +154,9 @@ Real GetMaximumResidual(const SizeType checkPeriod) {
     return maxResError;
 }
 
-void TransferHalos() { f.TransferHalos(); }
+void TransferHalos() {
+    fStage.TransferHalos();
+}
 
 void DefineBlocks(const std::vector<int>& blockIds,
                   const std::vector<std::string>& blockNames,
@@ -266,7 +268,7 @@ void DefineBlockConnection(const std::vector<int>& fromBlock,
         (fromSurfaceSize != toSurfaceSize) ||
         (fromSurfaceSize != toBlockSize) || (toBlockSize != toSurfaceSize) ||
         connectionTypeSize != fromBlockSize) {
-        ops_printf("Please input consistent halo paris!\n");
+        ops_printf("Please input consistent halo pairs!\n");
         assert(false);
     }
     for (int idx = 0; idx < fromBlockSize; idx++) {

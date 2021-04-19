@@ -128,7 +128,6 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
     DestroyModel();
 }
 
-
 void StreamCollision3D(const Real time) {
 #if DebugLevel >= 1
     ops_printf("Calculating the macroscopic variables...\n");
@@ -146,13 +145,15 @@ void StreamCollision3D(const Real time) {
     PreDefinedCollision3D();
 
 #if DebugLevel >= 1
-    ops_printf("Streaming...\n");
-#endif
-    Stream3D();
-#if DebugLevel >= 1
     ops_printf("Updating the halos...\n");
 #endif
     TransferHalos();
+
+#if DebugLevel >= 1
+    ops_printf("Streaming...\n");
+#endif
+    Stream3D();
+
 #if DebugLevel >= 1
     ops_printf("Implementing the boundary conditions...\n");
 #endif

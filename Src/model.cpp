@@ -309,7 +309,6 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     }
     g_fStage().SetDataDim(NUMXI);
     g_fStage().CreateFieldFromScratch(g_Block());
-    g_f().CreateHalos();
     g_fStage().CreateHalos();
 }
 

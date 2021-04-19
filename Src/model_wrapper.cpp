@@ -336,6 +336,5 @@ void PreDefinedInitialCondition3D() {
     if (!IsTransient()) {
         CopyCurrentMacroVar();
     }
-    TransferHalos();
 }
 #endif //OPS_3D
