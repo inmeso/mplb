@@ -52,9 +52,11 @@ typedef float Real;
 const Real PI{3.1415926535897932384626433832795};
 const Real EPS{std::numeric_limits<Real>::epsilon()};
 const Real BOLTZ{1.3806488e-23};
-const int xaxis = 1;
-const int yaxis = 2;
-const int zaxis = 3;
+const int xaxis = 0;
+const int yaxis = 1;
+#ifdef OPS_3D
+const int zaxis = 2;
+#endif
 // ZERO is the zero constant with the desired precision, i.e., float or double
 const Real ZERO{(Real)((int)0)};
 typedef std::size_t SizeType;

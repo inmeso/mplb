@@ -952,13 +952,15 @@ void KerStream3D(ACC<Real> & f, const ACC<Real>& fStage,
         int cy = (int)XI[xiIndex * LATTDIM + 1];
         int cz = (int)XI[xiIndex * LATTDIM + 2];
 
-        if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
+        if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
+            vt == VertexType::VirtualBoundary) {
             f(xiIndex, 0, 0, 0) = fStage(xiIndex, -cx, -cy, -cz);
             continue;
         }
 
-        if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
-            // TODO te be determined if necessary
+        if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid &&
+            vt != VertexType::VirtualBoundary && vt != VertexType::MDPeriodic) {
+            // TODO to be determined if necessary
             bool streamRequired{true};
             if (streamRequired) {
                 if ((cx == 0) && (cy == 0) && (cz == 0)) {

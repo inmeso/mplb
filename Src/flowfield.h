@@ -72,8 +72,6 @@ const std::string& CaseName();
 Real TotalMeshSize();
 const std::map<std::string,ops_halo_group>& HaloGroups();
 void SetTimeStep(Real dt);
-void SetCaseName(const std::string& caseName);
-void setCaseName(const char* caseName);
 
 /*!
  * the residual error for steady flows
@@ -89,23 +87,6 @@ std::map<int, ops_reduction>& g_ResidualErrorHandle();
 void WriteFlowfieldToHdf5(const SizeType timeStep);
 void WriteDistributionsToHdf5(const SizeType timeStep);
 void WriteNodePropertyToHdf5(const SizeType timeStep);
-
-//Define the halo pair of implementing periodic boundary condition for
-//distribution function itself
-void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair);
-//Define the halo pair of implementing periodic boundary condition for a
-//specfied Field variable
-void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair,
-                              RealField& data);
-
-void DefinePeriodicHaloPair3D(const std::map<int, std::string>& haloPair,
-                              IntField& data);
-// Transfer all defined halo pair at once
-void TransferHalos();
-// Transfer the halo pair specified by the key
-void TransferHalos(const std::string key);
-// Transfer a group of halo pairs specified by the keys
-void TransferHalos(const std::vector<std::string> keys);
 void Partition();
 void PrepareFlowField();
 // caseName: case name
@@ -142,4 +123,10 @@ void AssignCoordinates(const Block& block,
                        const std::vector<std::vector<Real>>& blockCoordinates);
 void UpdateMacroscopicBodyForce(const Real time);
 void SetInitialMacrosVars();
+void DefineBlockConnection(const std::vector<int>& fromBlock,
+                           const std::vector<BoundarySurface>& fromSurface,
+                           const std::vector<int>& toBlock,
+                           const std::vector<BoundarySurface>& toSurface,
+                           const std::vector<VertexType>& connectionType);
+void TransferHalos();
 #endif

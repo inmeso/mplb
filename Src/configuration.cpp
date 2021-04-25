@@ -98,12 +98,12 @@ NLOHMANN_JSON_SERIALIZE_ENUM(BodyForceType,
                               {BodyForce_None, "BodyForce_None"}});
 
 NLOHMANN_JSON_SERIALIZE_ENUM(BoundarySurface,
-                             {{BoundarySurface_Left, "Left"},
-                              {BoundarySurface_Right, "Right"},
-                              {BoundarySurface_Top, "Top"},
-                              {BoundarySurface_Bottom, "Bottom"},
-                              {BoundarySurface_Front, "Front"},
-                              {BoundarySurface_Back, "Back"}});
+                             {{BoundarySurface::Left, "Left"},
+                              {BoundarySurface::Right, "Right"},
+                              {BoundarySurface::Top, "Top"},
+                              {BoundarySurface::Bottom, "Bottom"},
+                              {BoundarySurface::Front, "Front"},
+                              {BoundarySurface::Back, "Back"}});
 
 NLOHMANN_JSON_SERIALIZE_ENUM(InitialType,
                              {{Initial_BGKFeq2nd, "Initial_BGKFeq2nd"}});

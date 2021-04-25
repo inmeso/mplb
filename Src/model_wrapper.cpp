@@ -27,6 +27,8 @@ void PreDefinedCollision3D() {
                                     "double", OPS_WRITE),
                         ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_READ),
+                        ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                    LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
                                     LOCALSTENCIL, "int", OPS_READ),
                         ops_arg_dat(g_MacroVars()

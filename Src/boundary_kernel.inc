@@ -1411,120 +1411,120 @@ void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
             } break;
             case VG_IPJP_I: {
                 if ((cx >= 0 && cy > 0) || (cx > 0 && cy == 0)) {
-                    if (boundarySurface == BoundarySurface_Left) {
+                    if (boundarySurface == BoundarySurface::Left) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Bottom) {
+                    if (boundarySurface == BoundarySurface::Bottom) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 1, 0);
                     }
                 }
             } break;
             case VG_IPJM_I: {
                 if ((cx >= 0 && cy < 0) || (cx > 0 && cy == 0)) {
-                    if (boundarySurface == BoundarySurface_Left) {
+                    if (boundarySurface == BoundarySurface::Left) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Top) {
+                    if (boundarySurface == BoundarySurface::Top) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, -1, 0);
                     }
                 }
             } break;
             case VG_IMJP_I: {
                 if ((cx <= 0 && cy > 0) || (cx < 0 && cy == 0)) {
-                    if (boundarySurface == BoundarySurface_Right) {
+                    if (boundarySurface == BoundarySurface::Right) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, -1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Bottom) {
+                    if (boundarySurface == BoundarySurface::Bottom) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 1, 0);
                     }
                 }
             } break;
             case VG_IMJM_I: {
                 if ((cx <= 0 && cy < 0) || (cx < 0 && cy == 0)) {
-                    if (boundarySurface == BoundarySurface_Right) {
+                    if (boundarySurface == BoundarySurface::Right) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, -1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Top) {
+                    if (boundarySurface == BoundarySurface::Top) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, -1, 0);
                     }
                 }
             } break;
             case VG_IPKP_I: {
                 if ((cx >= 0 && cz > 0) || (cx > 0 && cz == 0)) {
-                    if (boundarySurface == BoundarySurface_Left) {
+                    if (boundarySurface == BoundarySurface::Left) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Back) {
+                    if (boundarySurface == BoundarySurface::Back) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, 1);
                     }
                 }
             } break;
             case VG_IPKM_I: {
                 if ((cx >= 0 && cz < 0) || (cx > 0 && cz == 0)) {
-                    if (boundarySurface == BoundarySurface_Left) {
+                    if (boundarySurface == BoundarySurface::Left) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Front) {
+                    if (boundarySurface == BoundarySurface::Front) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, -1);
                     }
                 }
             } break;
             case VG_IMKP_I: {
                 if ((cx <= 0 && cz > 0) || (cx < 0 && cz == 0)) {
-                    if (boundarySurface == BoundarySurface_Right) {
+                    if (boundarySurface == BoundarySurface::Right) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, -1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Back) {
+                    if (boundarySurface == BoundarySurface::Back) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, 1);
                     }
                 }
             } break;
             case VG_IMKM_I: {
                 if ((cx <= 0 && cz < 0) || (cx < 0 && cz == 0)) {
-                    if (boundarySurface == BoundarySurface_Right) {
+                    if (boundarySurface == BoundarySurface::Right) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, -1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Front) {
+                    if (boundarySurface == BoundarySurface::Front) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, -1);
                     }
                 }
             } break;
             case VG_JPKP_I: {
                 if ((cy >= 0 && cz > 0) || (cy > 0 && cz == 0)) {
-                    if (boundarySurface == BoundarySurface_Bottom) {
+                    if (boundarySurface == BoundarySurface::Bottom) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Back) {
+                    if (boundarySurface == BoundarySurface::Back) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, 1);
                     }
                 }
             } break;
             case VG_JPKM_I: {
                 if ((cy >= 0 && cz < 0) || (cy > 0 && cz == 0)) {
-                    if (boundarySurface == BoundarySurface_Bottom) {
+                    if (boundarySurface == BoundarySurface::Bottom) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Front) {
+                    if (boundarySurface == BoundarySurface::Front) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, -1);
                     }
                 }
             } break;
             case VG_JMKP_I: {
                 if ((cy <= 0 && cz > 0) || (cy < 0 && cz == 0)) {
-                    if (boundarySurface == BoundarySurface_Top) {
+                    if (boundarySurface == BoundarySurface::Top) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, -1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Back) {
+                    if (boundarySurface == BoundarySurface::Back) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, 1);
                     }
                 }
             } break;
             case VG_JMKM_I: {
                 if ((cy <= 0 && cz < 0) || (cy < 0 && cz == 0)) {
-                    if (boundarySurface == BoundarySurface_Top) {
+                    if (boundarySurface == BoundarySurface::Top) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, -1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Front) {
+                    if (boundarySurface == BoundarySurface::Front) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, -1);
                     }
                 }
@@ -1532,13 +1532,13 @@ void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
             case VG_IPJPKP_I: {
                 if ((cx >= 0 && cy >= 0 && cz >= 0) &&
                     (cx != 0 || cy != 0 || cz != 0)) {
-                    if (boundarySurface == BoundarySurface_Left) {
+                    if (boundarySurface == BoundarySurface::Left) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Bottom) {
+                    if (boundarySurface == BoundarySurface::Bottom) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Back) {
+                    if (boundarySurface == BoundarySurface::Back) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, 1);
                     }
                 }
@@ -1546,13 +1546,13 @@ void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
             case VG_IPJPKM_I: {
                 if ((cx >= 0 && cy >= 0 && cz <= 0) &&
                     (cx != 0 || cy != 0 || cz != 0)) {
-                    if (boundarySurface == BoundarySurface_Left) {
+                    if (boundarySurface == BoundarySurface::Left) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Bottom) {
+                    if (boundarySurface == BoundarySurface::Bottom) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Front) {
+                    if (boundarySurface == BoundarySurface::Front) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, -1);
                     }
                 }
@@ -1560,13 +1560,13 @@ void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
             case VG_IPJMKP_I: {
                 if ((cx >= 0 && cy <= 0 && cz >= 0) &&
                     (cx != 0 || cy != 0 || cz != 0)) {
-                    if (boundarySurface == BoundarySurface_Left) {
+                    if (boundarySurface == BoundarySurface::Left) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Top) {
+                    if (boundarySurface == BoundarySurface::Top) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, -1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Back) {
+                    if (boundarySurface == BoundarySurface::Back) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, 1);
                     }
                 }
@@ -1574,13 +1574,13 @@ void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
             case VG_IPJMKM_I: {
                 if ((cx >= 0 && cy <= 0 && cz <= 0) &&
                     (cx != 0 || cy != 0 || cz != 0)) {
-                    if (boundarySurface == BoundarySurface_Left) {
+                    if (boundarySurface == BoundarySurface::Left) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Top) {
+                    if (boundarySurface == BoundarySurface::Top) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, -1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Front) {
+                    if (boundarySurface == BoundarySurface::Front) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, -1);
                     }
                 }
@@ -1588,13 +1588,13 @@ void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
             case VG_IMJPKP_I: {
                 if ((cx <= 0 && cy >= 0 && cz >= 0) &&
                     (cx != 0 || cy != 0 || cz != 0)) {
-                    if (boundarySurface == BoundarySurface_Right) {
+                    if (boundarySurface == BoundarySurface::Right) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, -1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Bottom) {
+                    if (boundarySurface == BoundarySurface::Bottom) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Back) {
+                    if (boundarySurface == BoundarySurface::Back) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, 1);
                     }
                 }
@@ -1602,13 +1602,13 @@ void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
             case VG_IMJPKM_I: {
                 if ((cx <= 0 && cy >= 0 && cz <= 0) &&
                     (cx != 0 || cy != 0 || cz != 0)) {
-                    if (boundarySurface == BoundarySurface_Right) {
+                    if (boundarySurface == BoundarySurface::Right) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, -1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Bottom) {
+                    if (boundarySurface == BoundarySurface::Bottom) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Front) {
+                    if (boundarySurface == BoundarySurface::Front) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, -1);
                     }
                 }
@@ -1616,13 +1616,13 @@ void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
             case VG_IMJMKP_I: {
                 if ((cx <= 0 && cy <= 0 && cz >= 0) &&
                     (cx != 0 || cy != 0 || cz != 0)) {
-                    if (boundarySurface == BoundarySurface_Right) {
+                    if (boundarySurface == BoundarySurface::Right) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, -1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Top) {
+                    if (boundarySurface == BoundarySurface::Top) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, -1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Back) {
+                    if (boundarySurface == BoundarySurface::Back) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, 1);
                     }
                 }
@@ -1630,13 +1630,13 @@ void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
             case VG_IMJMKM_I: {
                 if ((cx <= 0 && cy <= 0 && cz <= 0) &&
                     (cx != 0 || cy != 0 || cz != 0)) {
-                    if (boundarySurface == BoundarySurface_Right) {
+                    if (boundarySurface == BoundarySurface::Right) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, -1, 0, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Top) {
+                    if (boundarySurface == BoundarySurface::Top) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, -1, 0);
                     }
-                    if (boundarySurface == BoundarySurface_Front) {
+                    if (boundarySurface == BoundarySurface::Front) {
                         f(xiIdx, 0, 0, 0) = f(xiIdx, 0, 0, -1);
                     }
                 }
@@ -1672,7 +1672,7 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
         "KerCutCellEQMDiffuseRefl3D: We received the following "
         "conditions for the surface %i:\n",
         geometryProperty(0, 0, 0));
-    ops_printf("U=%f, V=%f, W=%f for the component %i\n", u, v, w, compoIdx);
+    ops_printf("U=%f, V=%f, W=%f\n", u, v, w);
 #endif
 #endif
     int numOutgoing{0};
@@ -1758,7 +1758,7 @@ void KerCutCellNoslipEQN3D(ACC<Real> &f, const ACC<int> &nodeType,
     ops_printf(
         "KerCutCellNoslipEQN3D: We received the following "
         "conditions:\n");
-    ops_printf("U=%f, V=%f, W=%f for the component %i\n", u, v, w, compoId);
+    ops_printf("U=%f, V=%f, W=%f\n", u, v, w);
 #endif
 #endif
     Real rhoIntermidate{0};
@@ -1788,9 +1788,9 @@ void KerCutCellNoslipEQN3D(ACC<Real> &f, const ACC<int> &nodeType,
 #endif
     for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
         f(xiIdx, 0, 0, 0) =
-            
-                                                  
-                                                  
+
+
+
             CalcBGKFeq(xiIdx, rhoIntermidate, u, v, w, 1, 2);
 #ifdef CPU
         const Real res{f(xiIdx, 0, 0, 0)};
@@ -1850,13 +1850,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
             // There are only inner corners for block boundaries
         case VG_IPJP_I: {
             // VG_IP
-            if (boundarySurface == BoundarySurface_Left) {
+            if (boundarySurface == BoundarySurface::Left) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, -1, 0, 0);
                 }
             }
             // VG_JP
-            if (boundarySurface == BoundarySurface_Bottom) {
+            if (boundarySurface == BoundarySurface::Bottom) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, -1, 0);
                 }
@@ -1864,13 +1864,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IPJM_I: {
             // VG_IP
-            if (boundarySurface == BoundarySurface_Left) {
+            if (boundarySurface == BoundarySurface::Left) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, -1, 0, 0);
                 }
             }
             // VG_JM
-            if (boundarySurface == BoundarySurface_Top) {
+            if (boundarySurface == BoundarySurface::Top) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 1, 0);
                 }
@@ -1878,13 +1878,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IMJP_I: {
             // VG_IM
-            if (boundarySurface == BoundarySurface_Right) {
+            if (boundarySurface == BoundarySurface::Right) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 1, 0, 0);
                 }
             }
             // VG_JP
-            if (boundarySurface == BoundarySurface_Bottom) {
+            if (boundarySurface == BoundarySurface::Bottom) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, -1, 0);
                 }
@@ -1892,13 +1892,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IMJM_I: {
             // VG_IM
-            if (boundarySurface == BoundarySurface_Right) {
+            if (boundarySurface == BoundarySurface::Right) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 1, 0, 0);
                 }
             }
             // VG_JM
-            if (boundarySurface == BoundarySurface_Top) {
+            if (boundarySurface == BoundarySurface::Top) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 1, 0);
                 }
@@ -1907,13 +1907,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
 
         case VG_IPKP_I: {
             // VG_IP
-            if (boundarySurface == BoundarySurface_Left) {
+            if (boundarySurface == BoundarySurface::Left) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, -1, 0, 0);
                 }
             }
             // VG_KP
-            if (boundarySurface == BoundarySurface_Back) {
+            if (boundarySurface == BoundarySurface::Back) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, -1);
                 }
@@ -1921,13 +1921,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IPKM_I: {
             // VG_IP
-            if (boundarySurface == BoundarySurface_Right) {
+            if (boundarySurface == BoundarySurface::Right) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, -1, 0, 0);
                 }
             }
             // VG_KM
-            if (boundarySurface == BoundarySurface_Front) {
+            if (boundarySurface == BoundarySurface::Front) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, 1);
                 }
@@ -1935,13 +1935,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IMKP_I: {
             // VG_IM
-            if (boundarySurface == BoundarySurface_Right) {
+            if (boundarySurface == BoundarySurface::Right) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 1, 0, 0);
                 }
             }
             // VG_KP
-            if (boundarySurface == BoundarySurface_Back) {
+            if (boundarySurface == BoundarySurface::Back) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, -1);
                 }
@@ -1949,13 +1949,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IMKM_I: {
             // VG_IM
-            if (boundarySurface == BoundarySurface_Right) {
+            if (boundarySurface == BoundarySurface::Right) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 1, 0, 0);
                 }
             }
             // VG_KM
-            if (boundarySurface == BoundarySurface_Front) {
+            if (boundarySurface == BoundarySurface::Front) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, 1);
                 }
@@ -1963,13 +1963,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_JPKP_I: {
             // VG_JP
-            if (boundarySurface == BoundarySurface_Bottom) {
+            if (boundarySurface == BoundarySurface::Bottom) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, -1, 0);
                 }
             }
             // VG_KP
-            if (boundarySurface == BoundarySurface_Back) {
+            if (boundarySurface == BoundarySurface::Back) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, -1);
                 }
@@ -1977,13 +1977,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_JPKM_I: {
             // VG_JP
-            if (boundarySurface == BoundarySurface_Bottom) {
+            if (boundarySurface == BoundarySurface::Bottom) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, -1, 0);
                 }
             }
             // VG_KM
-            if (boundarySurface == BoundarySurface_Front) {
+            if (boundarySurface == BoundarySurface::Front) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, 1);
                 }
@@ -1991,13 +1991,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_JMKP_I: {
             // VG_JM
-            if (boundarySurface == BoundarySurface_Top) {
+            if (boundarySurface == BoundarySurface::Top) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 1, 0);
                 }
             }
             // VG_KP
-            if (boundarySurface == BoundarySurface_Front) {
+            if (boundarySurface == BoundarySurface::Front) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, -1);
                 }
@@ -2005,13 +2005,13 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_JMKM_I: {
             // VG_JM
-            if (boundarySurface == BoundarySurface_Top) {
+            if (boundarySurface == BoundarySurface::Top) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 1, 0);
                 }
             }
             // VG_KM
-            if (boundarySurface == BoundarySurface_Front) {
+            if (boundarySurface == BoundarySurface::Front) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, 1);
                 }
@@ -2019,19 +2019,19 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IPJPKP_I: {
             // VG_IP
-            if (boundarySurface == BoundarySurface_Left) {
+            if (boundarySurface == BoundarySurface::Left) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, -1, 0, 0);
                 }
             }
             // VG_JP
-            if (boundarySurface == BoundarySurface_Bottom) {
+            if (boundarySurface == BoundarySurface::Bottom) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, -1, 0);
                 }
             }
             // VG_KP
-            if (boundarySurface == BoundarySurface_Back) {
+            if (boundarySurface == BoundarySurface::Back) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, -1);
                 }
@@ -2039,19 +2039,19 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IPJPKM_I: {
             // VG_IP
-            if (boundarySurface == BoundarySurface_Left) {
+            if (boundarySurface == BoundarySurface::Left) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, -1, 0, 0);
                 }
             }
             // VG_JP
-            if (boundarySurface == BoundarySurface_Bottom) {
+            if (boundarySurface == BoundarySurface::Bottom) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, -1, 0);
                 }
             }
             // VG_KM
-            if (boundarySurface == BoundarySurface_Front) {
+            if (boundarySurface == BoundarySurface::Front) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, 1);
                 }
@@ -2059,19 +2059,19 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IPJMKP_I: {
             // VG_IP
-            if (boundarySurface == BoundarySurface_Left) {
+            if (boundarySurface == BoundarySurface::Left) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, -1, 0, 0);
                 }
             }
             // VG_JM
-            if (boundarySurface == BoundarySurface_Top) {
+            if (boundarySurface == BoundarySurface::Top) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 1, 0);
                 }
             }
             // VG_KP
-            if (boundarySurface == BoundarySurface_Back) {
+            if (boundarySurface == BoundarySurface::Back) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, -1);
                 }
@@ -2079,19 +2079,19 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IPJMKM_I: {
             // VG_IP
-            if (boundarySurface == BoundarySurface_Top) {
+            if (boundarySurface == BoundarySurface::Top) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, -1, 0, 0);
                 }
             }
             // VG_JM
-            if (boundarySurface == BoundarySurface_Top) {
+            if (boundarySurface == BoundarySurface::Top) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 1, 0);
                 }
             }
             // VG_KM
-            if (boundarySurface == BoundarySurface_Front) {
+            if (boundarySurface == BoundarySurface::Front) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, 1);
                 }
@@ -2099,19 +2099,19 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IMJPKP_I: {
             // VG_IM
-            if (boundarySurface == BoundarySurface_Right) {
+            if (boundarySurface == BoundarySurface::Right) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 1, 0, 0);
                 }
             }
             // VG_JP
-            if (boundarySurface == BoundarySurface_Bottom) {
+            if (boundarySurface == BoundarySurface::Bottom) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, -1, 0);
                 }
             }
             // VG_KP
-            if (boundarySurface == BoundarySurface_Back) {
+            if (boundarySurface == BoundarySurface::Back) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, -1);
                 }
@@ -2119,19 +2119,19 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IMJPKM_I: {
             // VG_IM
-            if (boundarySurface == BoundarySurface_Right) {
+            if (boundarySurface == BoundarySurface::Right) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 1, 0, 0);
                 }
             }
             // VG_JP
-            if (boundarySurface == BoundarySurface_Bottom) {
+            if (boundarySurface == BoundarySurface::Bottom) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, -1, 0);
                 }
             }
             // VG_KM
-            if (boundarySurface == BoundarySurface_Front) {
+            if (boundarySurface == BoundarySurface::Front) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, 1);
                 }
@@ -2139,19 +2139,19 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IMJMKP_I: {
             // VG_IM
-            if (boundarySurface == BoundarySurface_Right) {
+            if (boundarySurface == BoundarySurface::Right) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 1, 0, 0);
                 }
             }
             // VG_JM
-            if (boundarySurface == BoundarySurface_Top) {
+            if (boundarySurface == BoundarySurface::Top) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 1, 0);
                 }
             }
             // VG_KP
-            if (boundarySurface == BoundarySurface_Back) {
+            if (boundarySurface == BoundarySurface::Back) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, -1);
                 }
@@ -2160,19 +2160,19 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
         } break;
         case VG_IMJMKM_I: {
             // VG_IM
-            if (boundarySurface == BoundarySurface_Right) {
+            if (boundarySurface == BoundarySurface::Right) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 1, 0, 0);
                 }
             }
             // VG_JM
-            if (boundarySurface == BoundarySurface_Top) {
+            if (boundarySurface == BoundarySurface::Top) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 1, 0);
                 }
             }
             // VG_KM
-            if (boundarySurface == BoundarySurface_Front) {
+            if (boundarySurface == BoundarySurface::Front) {
                 for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
                     f(xiIndex, 0, 0, 0) = f(xiIndex, 0, 0, 1);
                 }

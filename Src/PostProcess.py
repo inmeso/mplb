@@ -32,7 +32,7 @@
  @brief   Post-processing utilities
  @author  Jianping Meng
  @details Providing post-processing utilities including data format transformation, basic visualisation facilities.
- usage: from PostProcess import ReadOPSDataHDF5
+ usage: from PostProcess import ReadBlockData
         from PostProcess import WriteMacroVarsPlainHDF5
  Specific examples can be found in provide source codes
  Dependency: numpy, h5py, matplotlib for 2D visualisation, and mayavi2 for 3D visualisation.
@@ -92,200 +92,125 @@ def ChangeShape3D(data, nx, ny, nz, dataLength, haloNum):
     return data.transpose((2, 1, 0, 3))
 
 
-def ReadOPSDataHDF5(nx, ny, blockName, haloNum, spaceDim, macroVarNum, macroVarNames, xiNum, fileName):
-    """Converting a 2D result file into a single dictionary enclosing two sub-dictionaries, MacroVars and Distributions. In particular, all vectors or tensors will be accessed through components. """
+def ReadVariableFromHDF5(fileName,varName,varLen=1,haloNum=1,withHalo=False):
     if ((not h5Loaded) or (not numpyLoaded)):
         print("The h5py or numpy is not installed!")
         res = "The h5py or numpy is not installed!"
         return res
-    dataFile = h5.File(fileName)
-    macroVars = {}
-    distributions = {}
-
-    for dataKey in dataFile[blockName].keys():
-        if 'Bodyforce_' + blockName == dataKey:
-            tmpvars = ChangeShape(
-                dataFile[blockName][dataKey][:, :], nx, ny, xiNum, haloNum)
-            distributions['Force'] = tmpvars[haloNum:-
-                                             haloNum, haloNum:-haloNum, :]
-        if 'MacroVars_' + blockName == dataKey:
-            tmpvars = ChangeShape(
-                dataFile[blockName][dataKey][:, :], nx, ny, macroVarNum, haloNum)
-            for i in range(len(macroVarNames)):
-                macroVars[macroVarNames[i]] = tmpvars[haloNum:-
-                                                      haloNum, haloNum:-haloNum, i]
-        if 'Tau_' + blockName == dataKey:
-            data = dataFile[blockName][dataKey][haloNum:-
-                                               haloNum, haloNum:-haloNum]
-            macroVars['Tau'] = data.transpose()
-        if 'Nodetype_' + blockName == dataKey:
-            data = dataFile[blockName][dataKey][haloNum:-
-                                               haloNum, haloNum:-haloNum]
-            macroVars['NT'] = data.transpose()
-        if 'GeometryProperty_' + blockName == dataKey:
-            data = dataFile[blockName][dataKey][haloNum:-
-                                               haloNum, haloNum:-haloNum]
-            macroVars['GP'] = data.transpose()
-        if 'CoordinateXYZ_' + blockName == dataKey:
-            tmpvars = ChangeShape(
-                dataFile[blockName][dataKey][:, :], nx, ny, spaceDim, haloNum)
-            macroVars['X'] = tmpvars[haloNum:-haloNum, haloNum:-haloNum, 0]
-            macroVars['Y'] = tmpvars[haloNum:-haloNum, haloNum:-haloNum, 1]
-            distributions['X'] = tmpvars[haloNum:-haloNum, haloNum:-haloNum, 0]
-            distributions['Y'] = tmpvars[haloNum:-haloNum, haloNum:-haloNum, 1]
-        if 'fStage_' + blockName == dataKey:
-            tmpvars = ChangeShape(
-                dataFile[blockName][dataKey][:, :], nx, ny, xiNum, haloNum)
-            distributions['Fstage'] = tmpvars[haloNum:-
-                                              haloNum, haloNum:-haloNum, :]
-        if 'f_' + blockName == dataKey:
-            tmpvars = ChangeShape(
-                dataFile[blockName][dataKey][:, :], nx, ny, xiNum, haloNum)
-            distributions['F'] = tmpvars[haloNum:-
-                                         haloNum, haloNum:-haloNum, :]
-        if 'feq_' + blockName == dataKey:
-            tmpvars = ChangeShape(
-                dataFile[blockName][dataKey][:, :], nx, ny, xiNum, haloNum)
-            distributions['Feq'] = tmpvars[haloNum:-
-                                           haloNum, haloNum:-haloNum, :]
-    res = {}
-    res['MacroVars'] = macroVars
-    res['Distributions'] = distributions
-    dataFile.close()
-    return res
-
-
-def ReadVariableWithHaloFromHDF53D(nx, ny, nz, blockName, haloNum, spaceDim, varName, varLen, fileName):
-    if ((not h5Loaded) or (not numpyLoaded)):
-        print("The h5py or numpy is not installed!")
-        res = "The h5py or numpy is not installed!"
-        return res
-    dataFile = h5.File(fileName)
+    dataFile = h5.File(fileName,"r")
+    blockName = list(dataFile.keys())[0]
     dataKey = varName+'_'+blockName
-    if (varLen == 1):
-        data = dataFile[blockName][dataKey][:, :, :]
-        res = data.transpose(2, 1, 0)
-    if (varLen > 1):
-        data = ChangeShape3D(
-                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, varLen, haloNum)
-        res = data[:, :, :, :]
+    rawData = np.array(dataFile[blockName][dataKey])
+    spaceDim=len(rawData.shape)
+    if spaceDim==3:
+        nx = int(rawData.shape[2]/varLen)-2*haloNum
+        ny = rawData.shape[1]-2*haloNum
+        nz = rawData.shape[0]-2*haloNum
+        if (varLen == 1):
+            if not withHalo:
+                data = rawData[haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum]
+            else:
+                data = rawData
+            res = data.transpose(2, 1, 0)
+        if (varLen > 1):
+            data = ChangeShape3D(rawData, nx, ny, nz, varLen, haloNum)
+            if not withHalo:
+                res = data[haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum,:]
+            else:
+                res = data
+    if spaceDim==2:
+        nx = int(rawData.shape[2]/varLen)-2*haloNum
+        ny = rawData.shape[1]-2*haloNum
+        if (varLen == 1):
+            if not withHalo:
+                data = rawData[haloNum:-haloNum, haloNum:-haloNum]
+            else:
+                data = rawData
+            res = data.transpose()
+        if (varLen > 1):
+            data = ChangeShape(rawData, nx, ny, varLen, haloNum)
+            if not withHalo:
+                res = data[haloNum:-haloNum, haloNum:-haloNum,:]
+            else:
+                res = data
     dataFile.close()
     return res
 
-def ReadVariableFromHDF53D(nx, ny, nz, blockName, haloNum, spaceDim, varName, varLen, fileName):
-    if ((not h5Loaded) or (not numpyLoaded)):
-        print("The h5py or numpy is not installed!")
-        res = "The h5py or numpy is not installed!"
-        return res
-    dataFile = h5.File(fileName)
-    dataKey = varName+'_'+blockName
-    if (varLen == 1):
-        data = dataFile[blockName][dataKey][haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum]
-        res = data.transpose(2, 1, 0)
-    if (varLen > 1):
-        data = ChangeShape3D(
-                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, varLen, haloNum)
-        res = data[haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
-    dataFile.close()
+def ReadBlockData(fileName,variables):
+    """Read a series of variables specified by a list of dictionary "variables" on a block from a file specified by "fileName" """
+    errorMsg="Please provide a list variables in the format [{'name':'rho','len':1,'haloNum':1,'withHalo':False}"
+    if not isinstance(variables,list):
+        print(errorMsg)
+        return None
+    if not all(isinstance(var, dict) for var in variables):
+        print(errorMsg)
+        return None
+    invalidVars=[]
+    for var in variables:
+        if 'name' not in var.keys():
+            invalidVars.append(var)
+            print("Please provide the name of varable:",var)
+    validVars=[var for var in variables if (var not in invalidVars)]
+    res={}
+    for var in validVars:
+        name = var['name']
+        len = 1
+        haloNum = 1
+        withHalo = False
+        if 'len' in var.keys():
+            if isinstance(var['len'],int) and var['len']>1:
+                len = var['len']
+        if 'haloNum' in var.keys():
+            if isinstance(var['haloNum'],int) and var['haloNum']>1:
+                haloNum = var['haloNum']
+        if 'withHalo' in var.keys():
+            if isinstance(var['withHalo'],bool):
+                withHalo = var['withHalo']
+        print("Reading ",var,"...")
+        res[name]=ReadVariableFromHDF5(fileName,varName=name,varLen=len,haloNum=haloNum,withHalo=withHalo)
+    if "CoordinateXYZ" in res.keys():
+        if res['CoordinateXYZ'].shape[-1]==3:
+            res['X']=np.copy(res['CoordinateXYZ'][:,:,:,0])
+            res['Y']=np.copy(res['CoordinateXYZ'][:,:,:,1])
+            res['Z']=np.copy(res['CoordinateXYZ'][:,:,:,2])
+        if res['CoordinateXYZ'].shape[-1]==2:
+            res['X']=np.copy(res['CoordinateXYZ'][:,:,0])
+            res['Y']=np.copy(res['CoordinateXYZ'][:,:,1])
+        del res['CoordinateXYZ']
     return res
 
-def ReadOPSDataHDF53D(nx, ny, nz, blockName, haloNum, spaceDim, macroVarNum, macroVarNames, xiNum, fileName):
-    """Converting a 3D result file into a single dictionary enclosing two sub-dictionaries, MacroVars and Distributions. In particular, all vectors or tensors will be accessed through components. """
-    if ((not h5Loaded) or (not numpyLoaded)):
-        print("The h5py or numpy is not installed!")
-        res = "The h5py or numpy is not installed!"
-        return res
-    dataFile = h5.File(fileName)
-    macroVars = {}
-    distributions = {}
-    for dataKey in dataFile[blockName].keys():
-        if 'Bodyforce_' + blockName == dataKey:
-            tmpvars = ChangeShape3D(
-                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
-            distributions['Force'] = tmpvars[haloNum:-
-                                             haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
-        if 'MacroVars_' + blockName == dataKey:
-            tmpvars = ChangeShape3D(
-                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, macroVarNum, haloNum)
-            for i in range(len(macroVarNames)):
-                macroVars[macroVarNames[i]] = tmpvars[haloNum:-
-                                                      haloNum, haloNum:-haloNum, haloNum:-haloNum, i]
-        if 'Tau_' + blockName == dataKey:
-            data = dataFile[blockName][dataKey][haloNum:-
-                                               haloNum, haloNum:-haloNum, haloNum:-haloNum]
-            macroVars['Tau'] = data.transpose(2, 1, 0)
-        if 'Nodetype_' + blockName == dataKey:
-            data = dataFile[blockName][dataKey][haloNum:-
-                                               haloNum, haloNum:-haloNum, haloNum:-haloNum]
-            macroVars['NT'] = data.transpose(2, 1, 0)
-        if 'GeometryProperty_' + blockName == dataKey:
-            data = dataFile[blockName][dataKey][haloNum:-
-                                               haloNum, haloNum:-haloNum, haloNum:-haloNum]
-            macroVars['GP'] = data.transpose(2, 1, 0)
-        if 'CoordinateXYZ_' + blockName == dataKey:
-            tmpvars = ChangeShape3D(
-                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, spaceDim, haloNum)
-            macroVars['X'] = tmpvars[haloNum:-
-                                     haloNum, haloNum:-haloNum, haloNum:-haloNum, 0]
-            macroVars['Y'] = tmpvars[haloNum:-
-                                     haloNum, haloNum:-haloNum, haloNum:-haloNum, 1]
-            macroVars['Z'] = tmpvars[haloNum:-
-                                     haloNum, haloNum:-haloNum, haloNum:-haloNum, 2]
-            distributions['X'] = tmpvars[haloNum:-
-                                         haloNum, haloNum:-haloNum, haloNum:-haloNum, 0]
-            distributions['Y'] = tmpvars[haloNum:-
-                                         haloNum, haloNum:-haloNum, haloNum:-haloNum, 1]
-            distributions['Z'] = tmpvars[haloNum:-
-                                         haloNum, haloNum:-haloNum, haloNum:-haloNum, 2]
-        if 'fStage_' + blockName == dataKey:
-            tmpvars = ChangeShape3D(
-                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
-            distributions['Fstage'] = tmpvars[haloNum:-
-                                              haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
-        if 'f_' + blockName == dataKey:
-            tmpvars = ChangeShape3D(
-                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
-            distributions['F'] = tmpvars[haloNum:-
-                                         haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
-        if 'feq_' + blockName == dataKey:
-            tmpvars = ChangeShape3D(
-                dataFile[blockName][dataKey][:, :, :], nx, ny, nz, xiNum, haloNum)
-            distributions['Feq'] = tmpvars[haloNum:-
-                                           haloNum, haloNum:-haloNum, haloNum:-haloNum, :]
-    res = {}
-    res['MacroVars'] = macroVars
-    res['Distributions'] = distributions
-    dataFile.close()
-    return res
-
-def WriteMacroVarsPlainHDF5(res, fileName):
+def WriteVariablesToPlainHDF5(res, fileName):
     """ Save the data into a plain HDF5 file"""
     if ((not h5Loaded) or (not numpyLoaded)):
         print("The h5py or numpy is not installed!")
         return
     dataFile = h5.File(fileName, "w")
-    for key in res['MacroVars'].keys():
-        dataFile.create_dataset(key, data=res['MacroVars'][key])
+    for key in res.keys():
+        dataFile.create_dataset(key, data=res[key])
     dataFile.flush()
     dataFile.close()
 
 def WriteMacroVarsTecplotHDF5(res, fileName):
-    """ Save the data into a Tecplot HDF5 file"""
+    """
+    Save the data into a Tecplot HDF5 file.
+
+    Currently only works for a single block.
+    """
     if ((not h5Loaded) or (not numpyLoaded)):
         print("The h5py or numpy is not installed!")
         return
     dataFile = h5.File(fileName, "w")
-    spaceDim = len(res['MacroVars']['X'].shape)
+    spaceDim = len(res['X'].shape)
     if (2 == spaceDim):
-        res['MacroVars']['X'] = res['MacroVars']['X'][:, 0]
-        res['MacroVars']['Y'] = res['MacroVars']['Y'][0, :]
+        dataFile.create_dataset('X', data=res['X'][:, 0])
+        dataFile.create_dataset('Y', data=res['Y'][0, :])
     if (3 == spaceDim):
-        res['MacroVars']['X'] = res['MacroVars']['X'][:, 0, 0]
-        res['MacroVars']['Y'] = res['MacroVars']['Y'][0, :, 0]
-        res['MacroVars']['Z'] = res['MacroVars']['Z'][0, 0, :]
-
-    for key in res['MacroVars'].keys():
-        dataFile.create_dataset(key, data=res['MacroVars'][key])
+        dataFile.create_dataset('X', data=res['X'][:, 0, 0])
+        dataFile.create_dataset('Y', data=res['Y'][0, :, 0])
+        dataFile.create_dataset('Z', data=res['Z'][0, 0, :])
+    for key in res.keys():
+        if key not in ['X','Y','Z']:
+            dataFile.create_dataset(key, data=res[key])
     dataFile.flush()
     dataFile.close()
 
@@ -310,38 +235,41 @@ def contourPlot(x,y,var,lineNum, imgSize=1,labels=('x','y')):
     plt.show()
 
 def ContourPlot(res, varName, lineNum, imgSize=1):
-    """Plot the Contour of a scalar."""
+    """ Plot a scalar contour from 2D results at a single block"""
     if ((not mplLoaded) or (not numpyLoaded)):
         print("The matplotlib or numpy is not installed!")
         return
-    x = res['MacroVars']['X']
-    y = res['MacroVars']['Y']
-    var = res['MacroVars'][varName]
+    x = res['X']
+    y = res['Y']
+    var = res[varName]
     contourPlot(x,y,var,lineNum, imgSize)
 
 def SliceContourPlot(res, varName, slice, lineNum, imgSize=1):
     """
-        ContourPlot for a slice (dir,pos) perpendicular to dir='x','y','z'
-        corrdinate at a pos, e.g., ('x',20)
+        ContourPlot for a slice [dir,pos] perpendicular to dir='x' (|'y'|'z')
+        coordinate at 'x' (|'y'|'z')=pos.
+
+        This routine is for 3D results at a single block.
+
+        Example: SliceContourPlot(right,'rho',['z',16],20,8)
     """
     labels=['x','y']
     if (slice[0] == 'x'):
-        x = res['MacroVars']['Z'][slice[1],:,:]
-        y = res['MacroVars']['Y'][slice[1],:,:]
-        var = res['MacroVars'][varName][slice[1], :, :]
+        x = res['Z'][slice[1],:,:]
+        y = res['Y'][slice[1],:,:]
+        var = res[varName][slice[1], :, :]
         labels=['z','y']
 
-
     if (slice[0] == 'y'):
-        x = res['MacroVars']['X'][:,slice[1],:]
-        y = res['MacroVars']['Z'][:,slice[1],:]
-        var = res['MacroVars'][varName][:, slice[1], :]
+        x = res['X'][:,slice[1],:]
+        y = res['Z'][:,slice[1],:]
+        var = res[varName][:, slice[1], :]
         labels=['x','z']
 
     if (slice[0] == 'z'):
-        x = res['MacroVars']['X'][:,:,slice[1]]
-        y = res['MacroVars']['Y'][:,:,slice[1]]
-        var = res['MacroVars'][varName][:, :, slice[1]]
+        x = res['X'][:,:,slice[1]]
+        y = res['Y'][:,:,slice[1]]
+        var = res[varName][:, :, slice[1]]
 
     contourPlot(x,y,var,lineNum, imgSize,labels)
 
@@ -364,40 +292,44 @@ def vectorPlot(X,Y,U,V,imgSize=1,labels=('x','y')):
     plt.show()
 
 def VectorPlot(res, varName, imgSize=1):
+    """ Plot a vector from 2D results at a single block"""
     if ((not mplLoaded) or (not numpyLoaded) or (not mathLoaded)):
         print("The matplotlib, math or numpy is not installed!")
         return
-    x = res['MacroVars']['X']
-    y = res['MacroVars']['Y']
-    varX = res['MacroVars'][varName[0]]
-    varY = res['MacroVars'][varName[1]]
+    x = res['X']
+    y = res['Y']
+    varX = res[varName[0]]
+    varY = res[varName[1]]
     vectorPlot(x,y,varX,varY,imgSize)
 
 def SliceVectorPlot(res, varName, slice, imgSize=1):
-    """
-        VectorPlot for a slice (dir,pos) perpendicular to dir='x','y','z'
-        corrdinate at a pos, e.g., ('x',20)
+    """ VectorPlot for a slice [dir,pos] perpendicular to dir='x' (|'y'|'z')
+        coordinate at 'x' (|'y'|'z')=pos.
+
+        This routine is for 3D results at a single block.
+
+        Example: SliceVectorPlot(middle,['u','v','w'],['y',16],8)
     """
     labels=['x','y']
     if (slice[0] == 'x'):
-        x = res['MacroVars']['Z'][slice[1],:,:]
-        y = res['MacroVars']['Y'][slice[1],:,:]
-        varX = res['MacroVars'][varName[2]][slice[1],:,:]
-        varY = res['MacroVars'][varName[1]][slice[1], :, :]
+        x = res['Z'][slice[1],:,:]
+        y = res['Y'][slice[1],:,:]
+        varX = res[varName[2]][slice[1],:,:]
+        varY = res[varName[1]][slice[1], :, :]
         labels=['z','y']
 
     if (slice[0] == 'y'):
-        x = res['MacroVars']['X'][:,slice[1],:]
-        y = res['MacroVars']['Z'][:,slice[1],:]
-        varX = res['MacroVars'][varName[0]][:,slice[1],:]
-        varY = res['MacroVars'][varName[2]][:, slice[1], :]
+        x = res['X'][:,slice[1],:]
+        y = res['Z'][:,slice[1],:]
+        varX = res[varName[0]][:,slice[1],:]
+        varY = res[varName[2]][:, slice[1], :]
         labels=['x','z']
 
     if (slice[0] == 'z'):
-        x = res['MacroVars']['X'][:,:,slice[1]]
-        y = res['MacroVars']['Y'][:,:,slice[1]]
-        varX = res['MacroVars'][varName[0]][:,:,slice[1]]
-        varY = res['MacroVars'][varName[1]][:,:,slice[1]]
+        x = res['X'][:,:,slice[1]]
+        y = res['Y'][:,:,slice[1]]
+        varX = res[varName[0]][:,:,slice[1]]
+        varY = res[varName[1]][:,:,slice[1]]
 
     vectorPlot(x,y,varX,varY,imgSize,labels)
 
@@ -407,12 +339,12 @@ def VectorPlot3D(res, varName):
     if ((not mlabLoaded)):
         print("The mayavi is not installed!")
         return
-    x = res['MacroVars']['X'].transpose(1,0,2)
-    y = res['MacroVars']['Y'].transpose(1,0,2)
-    z = res['MacroVars']['Z'].transpose(1,0,2)
-    varX = res['MacroVars'][varName[0]].transpose(1,0,2)
-    varY = res['MacroVars'][varName[1]].transpose(1,0,2)
-    varZ = res['MacroVars'][varName[2]].transpose(1,0,2)
+    x = res['X'].transpose(1,0,2)
+    y = res['Y'].transpose(1,0,2)
+    z = res['Z'].transpose(1,0,2)
+    varX = res[varName[0]].transpose(1,0,2)
+    varY = res[varName[1]].transpose(1,0,2)
+    varZ = res[varName[2]].transpose(1,0,2)
     mlab.quiver3d(x,y,z,varX,varY,varZ)
     mlab.show()
 
@@ -420,16 +352,16 @@ def ContourPlot3D(res, varName, contours):
     if ((not mlabLoaded)):
         print("The mayavi is not installed!")
         return
-    x = res['MacroVars']['X']
-    y = res['MacroVars']['Y']
-    z = res['MacroVars']['Z']
-    var = res['MacroVars'][varName]
+    x = res['X']
+    y = res['Y']
+    z = res['Z']
+    var = res[varName]
     mlab.contour3d(x,y,z,var, contours=contours, transparent=True)
     mlab.show()
 
 def CornerValues(res, varName):
     """Get the macroscopic variable value at corners. """
-    var = res['MacroVars'][varName]
+    var = res[varName]
     corner = {}
     nx, ny = var.shape
     corner["left bottom"] = var[0, 0]
@@ -440,7 +372,7 @@ def CornerValues(res, varName):
 
 def CornerValues3D(res, varName):
     """Get the macroscopic variable value at corners. """
-    var = res['MacroVars'][varName]
+    var = res[varName]
     corner = {}
     nx, ny, nz = var.shape
     corner["left bottom back"] = var[0, 0, 0]
@@ -455,7 +387,7 @@ def CornerValues3D(res, varName):
 
 def EdgeValue3D(res, varName, edge):
     """ Get macroscopic variable value at a edge:3D only """
-    var = res['MacroVars'][varName]
+    var = res[varName]
     if ('left bottom' == edge):
         return var[0, 0, :]
     if ('left top' == edge):
@@ -483,7 +415,7 @@ def EdgeValue3D(res, varName, edge):
 
 def FaceValue(res, varName, face):
     """ Get macroscopic variable value at a face"""
-    var = res['MacroVars'][varName]
+    var = res[varName]
     if ('left' == face):
         return var[0, :]
     if ('right' == face):
@@ -495,7 +427,7 @@ def FaceValue(res, varName, face):
 
 def FaceValue3D(res, varName, face):
     """ Get macroscopic variable value at a face:3D"""
-    var = res['MacroVars'][varName]
+    var = res[varName]
     if ('left' == face):
         return var[0, :, :]
     if ('right' == face):
