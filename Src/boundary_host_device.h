@@ -9,8 +9,23 @@ enum class BoundarySurface {
     Right = 1,
     Top = 2,
     Bottom = 3,
+#ifdef OPS_3D
     Front = 4,
     Back = 5,
+    LeftBack = 50,
+    LeftFront = 40,
+    RightBack = 51,
+    RightFront = 41,
+    TopBack = 52,
+    TopFront = 42,
+    BottomBack = 53,
+    BottomFront = 43,
+#endif
+    LeftTop = 20,
+    LeftBottom = 30,
+    RightTop = 21,
+    RightBottom = 31
+
 };
 
 /*!

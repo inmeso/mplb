@@ -159,6 +159,9 @@ void simulate() {
     DefineBlockBoundary(1, componentId, BoundarySurface::Right);
 
     DefineBlockBoundary(1, componentId, BoundarySurface::Top);
+    DefineBlockBoundary(1, componentId, BoundarySurface::RightTop,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
     // bottom noSlipStationaryWall
     DefineBlockBoundary(1, componentId, BoundarySurface::Bottom,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,

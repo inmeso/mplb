@@ -51,6 +51,7 @@
 #include "type.h"
 #include "flowfield_host_device.h"
 #include "boundary_host_device.h"
+
 struct Neighbor {
     int blockId{0};
     BoundarySurface surface;
@@ -68,12 +69,13 @@ class Block {
     std::string name;
     int id;
     std::vector<int> size;
+    std::map<BoundarySurface, std::vector<int>> boundarySurfaceRange;
+    int RangeStart(const int axis, const BoundarySurface surface);
+    int RangeStart(const int axis);
+    int RangeEnd(const int axis, const BoundarySurface surface);
+    int RangeEnd(const int axis);
     std::vector<int> wholeRange;
     std::vector<int> bulkRange;
-    std::vector<int> iminRange;
-    std::vector<int> imaxRange;
-    std::vector<int> jminRange;
-    std::vector<int> jmaxRange;
     std::map<BoundarySurface, Neighbor> neighbors;
 #ifdef OPS_3D
     std::vector<int> kminRange;
@@ -90,18 +92,14 @@ class Block {
     const int* pSize() const { return size.data(); };
     const std::vector<int>& WholeRange() const { return wholeRange; };
     const std::vector<int>& BulkRange() const { return bulkRange; };
-    const std::vector<int>& ImaxRange() const { return imaxRange; };
-    const std::vector<int>& IminRange() const { return iminRange; };
-    const std::vector<int>& JmaxRange() const { return jmaxRange; };
-    const std::vector<int>& JminRange() const { return jminRange; };
-    const std::map<BoundarySurface, Neighbor> & Neighbors() const {
+    const std::map<BoundarySurface, std::vector<int>>& BoundarySurfaceRange()
+        const {
+        return boundarySurfaceRange;
+    };
+    const std::map<BoundarySurface, Neighbor>& Neighbors() const {
         return neighbors;
     };
     void AddNeighbor(BoundarySurface surface, const Neighbor& neighbor);
-#ifdef OPS_3D
-    const std::vector<int>& KmaxRange() const { return kmaxRange; };
-    const std::vector<int>& KminRange() const { return kminRange; };
-#endif
 };
 using BlockGroup = std::map<int, Block>;
 #endif  // BLOCK_H

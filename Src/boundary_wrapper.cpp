@@ -10,17 +10,20 @@
 #include "boundary_kernel.inc"
 #ifdef OPS_3D
 void TreatBlockBoundary3D(const Block& block, const int componentID,
-                          const Real* givenVars, int* range,
+                          const Real* givenVars,
                           const BoundaryScheme boundaryScheme,
                           const BoundarySurface boundarySurface) {
     const int surface{(int)boundarySurface};
     const int blockIndex{block.ID()};
+    std::vector<int> range(2 * SpaceDim());
+    range.assign(block.BoundarySurfaceRange().at(boundarySurface).begin(),
+                     block.BoundarySurfaceRange().at(boundarySurface).end());
     switch (boundaryScheme) {
         case BoundaryScheme::ExtrapolPressure1ST: {
             ops_par_loop(
                 KerCutCellExtrapolPressure1ST3D,
                 "KerCutCellExtrapolPressure1ST3D", block.Get(), SpaceDim(),
-                range,
+                range.data(),
                 ops_arg_dat(g_f()[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
                             "double", OPS_RW),
                 ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,
@@ -35,7 +38,7 @@ void TreatBlockBoundary3D(const Block& block, const int componentID,
         case BoundaryScheme::EQMDiffuseRefl: {
             ops_par_loop(
                 KerCutCellEQMDiffuseRefl3D, "KerCutCellEQMDiffuseRefl3D",
-                block.Get(), SpaceDim(), range,
+                block.Get(), SpaceDim(), range.data(),
                 ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
                             OPS_RW),
                 ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,
@@ -49,7 +52,7 @@ void TreatBlockBoundary3D(const Block& block, const int componentID,
         case BoundaryScheme::EQNNoSlip: {
             ops_par_loop(
                 KerCutCellNoslipEQN3D, "KerCutCellNoslipEQN3D", block.Get(),
-                SpaceDim(), range,
+                SpaceDim(), range.data(),
                 ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
                             OPS_RW),
                 ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,
@@ -61,7 +64,7 @@ void TreatBlockBoundary3D(const Block& block, const int componentID,
         case BoundaryScheme::FDPeriodic: {
             ops_par_loop(
                 KerCutCellPeriodic3D, "KerCutCellPeriodic3D", block.Get(),
-                SpaceDim(), range,
+                SpaceDim(), range.data(),
                 ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
                             OPS_RW),
                 ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,

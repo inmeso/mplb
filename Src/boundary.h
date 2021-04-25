@@ -44,6 +44,29 @@
 #include "model.h"
 #include "model_host_device.h"
 
+const std::vector<BoundarySurface> AllBoundarySurface{BoundarySurface::Left,
+                                   BoundarySurface::Right,
+                                   BoundarySurface::Top,
+                                   BoundarySurface::Bottom,
+#ifdef OPS_3D
+                                   BoundarySurface::Front,
+                                   BoundarySurface::Back,
+                                   BoundarySurface::LeftBack,
+                                   BoundarySurface::LeftFront,
+                                   BoundarySurface::RightBack,
+                                   BoundarySurface::RightFront,
+                                   BoundarySurface::TopBack,
+                                   BoundarySurface::TopFront,
+                                   BoundarySurface::BottomBack,
+                                   BoundarySurface::BottomFront,
+#endif
+                                   BoundarySurface::LeftTop,
+                                   BoundarySurface::LeftBottom,
+                                   BoundarySurface::RightTop,
+                                   BoundarySurface::RightBottom
+
+};
+
 enum class BoundaryScheme {
     KineticDiffuseWall = 11,
     KineticSpelluarWall = 12,
@@ -73,8 +96,6 @@ struct BlockBoundary {
 int BoundaryHaloNum();
 void SetBoundaryHaloNum(const int boundaryhaloNum);
 void BoundaryNormal3D(const VertexGeometryType vg, int* unitNormal);
-std::vector<int> BoundarySurfaceRange(const Block& block,
-                                      BoundarySurface surface);
 
 void DefineBlockBoundary(int blockIndex, int componentID,
                          BoundarySurface boundarySurface,
@@ -89,7 +110,7 @@ void DefineBlockBoundary(
 const std::vector<BlockBoundary>& BlockBoundaries();
 #ifdef OPS_3D
 void TreatBlockBoundary3D(const Block& block, const int componentID,
-                          const Real* givenVars, int* range,
+                          const Real* givenVars,
                           const BoundaryScheme boundaryScheme,
                           const BoundarySurface boundarySurface);
 void ImplementBoundary3D();

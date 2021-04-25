@@ -57,47 +57,6 @@ int boundaryHaloPt{1};
 
 const std::vector<BlockBoundary>& BlockBoundaries() { return blockBoundaries; }
 
-// This routine finds the index range of boundary surface
-std::vector<int> BoundarySurfaceRange(const Block& block,
-                                      BoundarySurface surface) {
-    std::vector<int> iterRange(2 * SpaceDim());
-    switch (surface) {
-        case BoundarySurface::Left:
-            iterRange.assign(block.IminRange().begin(),
-                             block.IminRange().end());
-            break;
-
-        case BoundarySurface::Right:
-            iterRange.assign(block.ImaxRange().begin(),
-                             block.ImaxRange().end());
-            break;
-
-        case BoundarySurface::Top:
-            iterRange.assign(block.JmaxRange().begin(),
-                             block.JmaxRange().end());
-            break;
-
-        case BoundarySurface::Bottom:
-            iterRange.assign(block.JminRange().begin(),
-                             block.JminRange().end());
-            break;
-
-        case BoundarySurface::Front:
-            iterRange.assign(block.KmaxRange().begin(),
-                             block.KmaxRange().end());
-            break;
-
-        case BoundarySurface::Back:
-            iterRange.assign(block.KminRange().begin(),
-                             block.KminRange().end());
-            break;
-
-        default:
-            ops_printf("Surface entered for the BC is incorrect!\n");
-    }
-
-    return iterRange;
-}
 
 void DefineBlockBoundary(int blockIndex, int componentID,
                          BoundarySurface boundarySurface,
@@ -420,12 +379,9 @@ void BoundaryNormal3D(const VertexGeometryType vg, int* unitNormal) {
 void ImplementBoundary3D() {
     for (const auto& boundary : BlockBoundaries()) {
         const Block& block{g_Block().at(boundary.blockIndex)};
-        std::vector<int> range{
-            BoundarySurfaceRange(block, boundary.boundarySurface)};
         TreatBlockBoundary3D(block, boundary.componentID,
-                             boundary.givenVars.data(), range.data(),
-                             boundary.boundaryScheme, boundary.boundarySurface);
+                             boundary.givenVars.data(), boundary.boundaryScheme,
+                             boundary.boundarySurface);
     }
 }
 #endif //OPS_3D
-
