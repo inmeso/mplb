@@ -309,6 +309,7 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     }
     g_fStage().SetDataDim(NUMXI);
     g_fStage().CreateFieldFromScratch(g_Block());
+    g_fStage().CreateHalos();
 }
 
 void DefineMacroVars(std::vector<VariableTypes> types,
@@ -319,7 +320,7 @@ void DefineMacroVars(std::vector<VariableTypes> types,
         assert(components.size() == 0);
     }
 
-    int numMacroVar{names.size()};
+    int numMacroVar{static_cast<int>(names.size())};
 
     if (numMacroVar > 0) {
         ops_printf("There are %i macroscopic variables defined.\n",

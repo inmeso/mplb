@@ -462,6 +462,7 @@ void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<int>& nodeType,
 }
 
 void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
+                               const ACC<Real>& coordinates,
                                const ACC<int>& nodeType, const ACC<Real>& Rho,
                                const ACC<Real>& U, const ACC<Real>& V,
                                const ACC<Real>& W, const Real* tauRef,
@@ -495,8 +496,10 @@ void KerCollideBGKIsothermal3D(ACC<Real>& fStage, const ACC<Real>& f,
             if (isnan(res) || res <= 0 || isinf(res)) {
                 ops_printf(
                     "Error! Distribution function = %e becomes invalid at  "
-                    "the lattice %i where feq=%e\n",
-                    res, xiIndex, feq);
+                    "the lattice %i where feq=%e and rho=%e u=%e v=%e w=%e at "
+                    "x=%e y=%e z=%e\n",
+                    res, xiIndex, feq, rho, u, v, w, coordinates(0, 0, 0, 0),
+                    coordinates(1, 0, 0, 0), coordinates(2, 0, 0, 0));
                 assert(!(isnan(res) || res <= 0 || isinf(res)));
             }
 #endif  // CPU

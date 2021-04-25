@@ -57,46 +57,30 @@ int boundaryHaloPt{1};
 
 const std::vector<BlockBoundary>& BlockBoundaries() { return blockBoundaries; }
 
-// This routine finds the index range of boundary surface
-std::vector<int> BoundarySurfaceRange(const Block& block,
-                                      BoundarySurface surface) {
-    std::vector<int> iterRange(2 * SpaceDim());
-    switch (surface) {
-        case BoundarySurface_Left:
-            iterRange.assign(block.IminRange().begin(),
-                             block.IminRange().end());
-            break;
 
-        case BoundarySurface_Right:
-            iterRange.assign(block.ImaxRange().begin(),
-                             block.ImaxRange().end());
-            break;
-
-        case BoundarySurface_Top:
-            iterRange.assign(block.JmaxRange().begin(),
-                             block.JmaxRange().end());
-            break;
-
-        case BoundarySurface_Bottom:
-            iterRange.assign(block.JminRange().begin(),
-                             block.JminRange().end());
-            break;
-
-        case BoundarySurface_Front:
-            iterRange.assign(block.KmaxRange().begin(),
-                             block.KmaxRange().end());
-            break;
-
-        case BoundarySurface_Back:
-            iterRange.assign(block.KminRange().begin(),
-                             block.KminRange().end());
-            break;
-
-        default:
-            ops_printf("Surface entered for the BC is incorrect!\n");
+void DefineBlockBoundary(int blockIndex, int componentID,
+                         BoundarySurface boundarySurface,
+                         const VertexType boundaryType) {
+    if (boundaryType != VertexType::VirtualBoundary) {
+        ops_printf(
+            "Error: This routine is specially for defining virtual "
+            "boundary!\n");
     }
 
-    return iterRange;
+    BlockBoundary blockBoundary;
+    blockBoundary.blockIndex = blockIndex;
+    blockBoundary.componentID = componentID;
+    blockBoundary.givenVars = std::vector<Real>();
+    blockBoundary.boundarySurface = boundarySurface;
+    blockBoundary.boundaryScheme = BoundaryScheme::None;
+    blockBoundary.boundaryType = boundaryType;
+    blockBoundaries.push_back(blockBoundary);
+    ops_printf(
+        "The scheme %i is adopted for Component %i at Surface %i, boundary "
+        "type %i and Block %i\n",
+        blockBoundary.boundaryScheme, blockBoundary.componentID,
+        blockBoundary.boundarySurface, blockBoundary.boundaryType,
+        blockBoundary.blockIndex);
 }
 
 void DefineBlockBoundary(int blockIndex, int componentID,
@@ -395,12 +379,9 @@ void BoundaryNormal3D(const VertexGeometryType vg, int* unitNormal) {
 void ImplementBoundary3D() {
     for (const auto& boundary : BlockBoundaries()) {
         const Block& block{g_Block().at(boundary.blockIndex)};
-        std::vector<int> range{
-            BoundarySurfaceRange(block, boundary.boundarySurface)};
         TreatBlockBoundary3D(block, boundary.componentID,
-                             boundary.givenVars.data(), range.data(),
-                             boundary.boundaryScheme, boundary.boundarySurface);
+                             boundary.givenVars.data(), boundary.boundaryScheme,
+                             boundary.boundarySurface);
     }
 }
 #endif //OPS_3D
-

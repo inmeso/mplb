@@ -1,11 +1,80 @@
 #include "block.h"
 #include <string>
 #include <vector>
+#include <map>
 #include <cassert>
 #include "ops_lib_core.h"
 #ifdef OPS_MPI
 #include "ops_mpi_core.h"
 #endif
+#include "type.h"
+#include "boundary_host_device.h"
+#include "boundary.h"
+
+int Block::RangeStart(const int axis) { return 0; }
+int Block::RangeEnd(const int axis) { return size.at(axis); }
+
+int Block::RangeStart(const int axis, const BoundarySurface surface) {
+    int start{RangeStart(axis)};
+    if (axis == xaxis) {
+        if (surface == BoundarySurface::Right ||
+            surface == BoundarySurface::RightBack ||
+            surface == BoundarySurface::RightBottom ||
+            surface == BoundarySurface::RightFront ||
+            surface == BoundarySurface::RightTop)
+            start = size.at(axis) - 1;
+    }
+    if (axis == yaxis) {
+        if (surface == BoundarySurface::Top ||
+            surface == BoundarySurface::TopBack ||
+            surface == BoundarySurface::TopFront ||
+            surface == BoundarySurface::LeftTop ||
+            surface == BoundarySurface::RightTop)
+            start = size.at(axis) - 1;
+    }
+#ifdef OPS_3D
+    if (axis == zaxis) {
+        if (surface == BoundarySurface::Front ||
+            surface == BoundarySurface::LeftFront ||
+            surface == BoundarySurface::RightFront ||
+            surface == BoundarySurface::TopFront ||
+            surface == BoundarySurface::BottomFront)
+            start = size.at(axis) - 1;
+    }
+#endif
+    return start;
+}
+
+int Block::RangeEnd(const int axis, const BoundarySurface surface) {
+    int end{RangeEnd(axis)};
+    if (axis == xaxis) {
+        if (surface == BoundarySurface::Left ||
+            surface == BoundarySurface::LeftBack ||
+            surface == BoundarySurface::LeftBottom ||
+            surface == BoundarySurface::LeftFront ||
+            surface == BoundarySurface::LeftTop)
+            end = 1;
+    }
+    if (axis == yaxis) {
+        if (surface == BoundarySurface::Bottom ||
+            surface == BoundarySurface::BottomBack ||
+            surface == BoundarySurface::BottomFront ||
+            surface == BoundarySurface::LeftBottom ||
+            surface == BoundarySurface::RightBottom)
+            end = 1;
+    }
+#ifdef OPS_3D
+    if (axis == zaxis) {
+        if (surface == BoundarySurface::Back ||
+            surface == BoundarySurface::LeftBack ||
+            surface == BoundarySurface::RightBack ||
+            surface == BoundarySurface::TopBack ||
+            surface == BoundarySurface::BottomBack)
+            end = 1;
+    }
+#endif
+    return end;
+}
 
 Block::Block(const int blockId, const std::string& blockName,
              const std::vector<int>& blockSize) {
@@ -29,63 +98,32 @@ Block::Block(const int blockId, const std::string& blockName,
 #endif
     bulkRange.resize(2 * spaceDim);
     bulkRange.at(0) = 1;
-    bulkRange.at(1) = size.at(0)-1;
+    bulkRange.at(1) = size.at(0) - 1;
     bulkRange.at(2) = 1;
-    bulkRange.at(3) = size.at(1)-1;
+    bulkRange.at(3) = size.at(1) - 1;
 #ifdef OPS_3D
     bulkRange.at(4) = 1;
-    bulkRange.at(5) = size.at(2)-1;
+    bulkRange.at(5) = size.at(2) - 1;
 #endif
-    iminRange.resize(2 * spaceDim);
-    iminRange.at(0) = 0;
-    iminRange.at(1) = 1;
-    iminRange.at(2) = 0;
-    iminRange.at(3) = size.at(1);
+    for (const auto surface : AllBoundarySurface) {
+         boundarySurfaceRange[surface] = {RangeStart(xaxis, surface),
+                          RangeEnd(xaxis, surface),
+                          RangeStart(yaxis, surface),
+                          RangeEnd(yaxis, surface)
 #ifdef OPS_3D
-    iminRange.at(4) = 0;
-    iminRange.at(5) = size.at(2);
+                              ,
+                          RangeStart(zaxis, surface),
+                          RangeEnd(zaxis, surface)
 #endif
-    imaxRange.resize(2 * spaceDim);
-    imaxRange.at(0) = size.at(0) - 1;
-    imaxRange.at(1) = size.at(0);
-    imaxRange.at(2) = 0;
-    imaxRange.at(3) = size.at(1);
-#ifdef OPS_3D
-    imaxRange.at(4) = 0;
-    imaxRange.at(5) = size.at(2);
-#endif
-    jminRange.resize(2 * spaceDim);
-    jminRange.at(0) = 0;
-    jminRange.at(1) = size.at(0);
-    jminRange.at(2) = 0;
-    jminRange.at(3) = 1;
-#ifdef OPS_3D
-    jminRange.at(4) = 0;
-    jminRange.at(5) = size.at(2);
-#endif
-    jmaxRange.resize(2 * spaceDim);
-    jmaxRange.at(0) = 0;
-    jmaxRange.at(1) = size.at(0);
-    jmaxRange.at(2) = size.at(1)-1;
-    jmaxRange.at(3) = size.at(1);
-#ifdef OPS_3D
-    jmaxRange.at(4) = 0;
-    jmaxRange.at(5) = size.at(2);
-#endif
-#ifdef OPS_3D
-    kminRange.resize(2 * spaceDim);
-    kminRange.at(0) = 0;
-    kminRange.at(1) = size.at(0);
-    kminRange.at(2) = 0;
-    kminRange.at(3) = size.at(1);
-    kminRange.at(4) = 0;
-    kminRange.at(5) = 1;
-    kmaxRange.resize(2 * spaceDim);
-    kmaxRange.at(0) = 0;
-    kmaxRange.at(1) = size.at(0);
-    kmaxRange.at(2) = 0;
-    kmaxRange.at(3) = size.at(1);
-    kmaxRange.at(4) = size.at(2) - 1;
-    kmaxRange.at(5) = size.at(2);
-#endif
+        };
+    }
+}
+
+void Block::AddNeighbor(BoundarySurface surface, const Neighbor& neighbor) {
+    if (neighbors.find(surface) != neighbors.end()) {
+        ops_printf("Error! There is already a neighbor defined for Block $s!\n",
+                   name.c_str());
+        assert(neighbors.find(surface) == neighbors.end());
+    }
+    neighbors.emplace(surface, neighbor);
 }
