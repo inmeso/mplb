@@ -1,9 +1,9 @@
 
 cmake_minimum_required(VERSION 3.18)
-set(AppName "LChannel3D")
-set(AppSrc "lbm3d_L.cpp")
-set(LibSrc evolution3d.cpp scheme.cpp scheme_wrapper.cpp configuration.cpp model.cpp model_wrapper.cpp block.cpp flowfield.cpp flowfield_wrapper.cpp boundary.cpp boundary_wrapper.cpp)
-set(LibHeadList type.h flowfield_host_device.h boundary_host_device.h model_host_device.h)
+set(AppName FieldBlock)
+set(AppSrc field_block.cpp)
+set(LibSrc  block.cpp)
+set(LibHeadList "")
 
 if (NOT OPTIMISE)
     # Set the path for LibSrc
@@ -16,9 +16,9 @@ if (NOT OPTIMISE)
 else()
     set(SpaceDim 3)
     #set the files needed to be translated by ops.py from the app side
-    set(AppSrcGenList lbm3d_L.cpp)
-    set(AppKernelGenList LChannel_kernel.inc)
-    set(AppHeadGenList "")
+    set(AppSrcGenList field_block.cpp)
+    set(AppKernelGenList setvalue_kernel.inc)
+    set(AppHeadList "")
     CreateTempDir()
     set(TMP_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp)
     set(HeadList ${LibHeadList} ${AppHeadList})
