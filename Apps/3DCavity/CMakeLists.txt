@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.18)
 set(AppName Cavity3D)
 set(AppSrc lbm3d_cavity.cpp)
 set(LibSrc evolution3d.cpp scheme.cpp scheme_wrapper.cpp configuration.cpp model.cpp model_wrapper.cpp block.cpp flowfield.cpp flowfield_wrapper.cpp boundary.cpp boundary_wrapper.cpp)
+set(LibHeadList type.h flowfield_host_device.h boundary_host_device.h model_host_device.h)
 
 if (NOT OPTIMISE)
     # Set the path for LibSrc
@@ -17,12 +18,11 @@ else()
     #set the files needed to be translated by ops.py from the app side
     set(AppSrcGenList lbm3d_cavity.cpp)
     set(AppKernelGenList cavity3d_kernel.inc)
-    set(AppHeadGenList "")
+    set(AppHeadList "")
     CreateTempDir()
     set(TMP_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp)
-
-    WriteJsonConfig(${TMP_SOURCE_DIR} ${AppName} "${AppSrcGenList}" "${AppKernelGenList}" "${AppHeadGenList}" ${SpaceDim})
-
+    set(HeadList ${LibHeadList} ${AppHeadList})
+    WriteJsonConfig(${TMP_SOURCE_DIR} ${AppName} "${LibSrc}" "${AppSrcGenList}" "${AppKernelGenList}" "${HeadList}" ${SpaceDim})
     TranslateSourceCodes(${LibDir} "${LibSrcGenList}" "${AppSrcGenList}" ${TMP_SOURCE_DIR})
     SeqTarget()
     MpiTarget()
