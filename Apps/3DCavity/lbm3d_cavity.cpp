@@ -141,6 +141,7 @@ void simulate() {
     std::vector<SizeType> initalCompoId{0};
     DefineInitialCondition(initType,initalCompoId);
     Partition();
+    ops_diagnostic_output();
     SetInitialMacrosVars();
     PreDefinedInitialCondition3D();
     SetTimeStep(meshSize / SoundSpeed());
