@@ -133,7 +133,7 @@ Field<T>::Field(const char* varName, const int dataDim,
 
 template <typename T>
 void Field<T>::CreateFieldFromScratch(const Block& block) {
-    T* temp = NULL;
+    T* temp{nullptr};
     int* d_p = new int[spaceDim];
     int* d_m = new int[spaceDim];
     int* base = new int[spaceDim];
@@ -146,7 +146,7 @@ void Field<T>::CreateFieldFromScratch(const Block& block) {
     std::string dataName{name + "_" + block.Name()};
     std::vector<int> size{block.Size()};
     ops_dat localDat =
-        ops_decl_dat((ops_block)block.Get(), dim, size.data(), base,
+        ops_decl_dat(block.Get(), dim, size.data(), base,
                      d_m, d_p, temp, type.c_str(), dataName.c_str());
     data.emplace(blockId, localDat);
     dataBlock.emplace(blockId, block);
