@@ -101,9 +101,13 @@ NLOHMANN_JSON_SERIALIZE_ENUM(BoundarySurface,
                              {{BoundarySurface::Left, "Left"},
                               {BoundarySurface::Right, "Right"},
                               {BoundarySurface::Top, "Top"},
-                              {BoundarySurface::Bottom, "Bottom"},
+                              {BoundarySurface::Bottom, "Bottom"}
+#ifdef OPS_3D
+                              ,
                               {BoundarySurface::Front, "Front"},
-                              {BoundarySurface::Back, "Back"}});
+                              {BoundarySurface::Back, "Back"}
+#endif
+                             });
 
 NLOHMANN_JSON_SERIALIZE_ENUM(InitialType,
                              {{Initial_BGKFeq2nd, "Initial_BGKFeq2nd"}});
