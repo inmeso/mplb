@@ -229,7 +229,7 @@ void Field<T>::CreateHalos() {
 #ifdef OPS_2D
         const int d_p[]{haloDepth, haloDepth};
         const int d_m[]{-haloDepth, -haloDepth};
-        const int dir[] { 1, 2 }
+        int dir[]{1, 2};
 #endif
         for (const auto& surfaceNeighbor : block.Neighbors()) {
             const Neighbor& neighbor{surfaceNeighbor.second};

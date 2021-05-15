@@ -53,7 +53,7 @@
  * In the macroVars, all variables are conserved, i.e., with density.
  * @todo how to deal with overflow in a kernel function? in particular, GPU
  */
-
+#ifdef OPS_2D
 void KerCalcDensity(ACC<Real>& Rho, const ACC<Real>& f,
                     const ACC<int>& nodeType, const int* lattIdx) {
 #ifdef OPS_2D
@@ -158,6 +158,7 @@ void KerCalcUForce(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
 void KerCalcVForce(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
                    const ACC<Real>& coordinates, const ACC<Real>& acceleration,
                    const ACC<Real>& Rho, const Real* dt, const int* lattIdx) {
+#ifdef OPS_2D
     const Real x{coordinates(0, 0, 0)};
     const Real y{coordinates(1, 0, 0)};
     VertexType vt = (VertexType)nodeType(0, 0);
@@ -181,6 +182,7 @@ void KerCalcVForce(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
 #endif
         V(0, 0) = v;
     }
+#endif  // OPS_2D
 }
 
 /*!
@@ -213,7 +215,7 @@ void KerInitialiseBGK2nd(ACC<Real>& f, const ACC<int>& nodeType,
 #endif  // CPU
         }
     }
-#endif  // OPS_32
+#endif  // OPS_2D
 }
 
 void KerCollideBGKIsothermal(ACC<Real>& fStage, const ACC<Real>& f,
@@ -281,7 +283,7 @@ void KerCollideBGKThermal(ACC<Real>& fStage, const ACC<Real>& f,
         Real tau = (*tauRef) / (rho * sqrt(T));
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-            const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
+            const Real feq{CalcBGKFeq(xiIndex, rho, u, v, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
                 fStage(xiIndex, 0, 0) =
                     f(xiIndex, 0, 0) -
@@ -344,7 +346,9 @@ void KerCalcBodyForceNone(ACC<Real>& fStage, const ACC<Real>& acceration,
     }
 #endif  // OPS_2D
 }
+#endif // OPS_2D outter
 
+#ifdef OPS_3D
 void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<int>& nodeType,
                            const ACC<Real>& Rho, const ACC<Real>& U,
                            const ACC<Real>& V, const ACC<Real>& W,
@@ -698,5 +702,6 @@ void KerCalcWForce3D(ACC<Real>& W, const ACC<Real>& f, const ACC<int>& nodeType,
     }
 #endif //OPS_3D
 }
+#endif //OPS_3D outter
 
 #endif //MODEL_KERNEL_INC
