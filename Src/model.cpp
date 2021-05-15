@@ -298,7 +298,6 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     if (timeStep == 0) {
         g_f().CreateFieldFromScratch(g_Block());
         for (auto& pair : g_NodeType()) {
-            ops_printf("Create Nodetype %d\n", pair.first);
             pair.second.CreateFieldFromScratch(g_Block());
         }
     } else {
