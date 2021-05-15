@@ -109,7 +109,7 @@ void DefineBlocks(const std::vector<int>& blockIds,
 bool IsTransient();
 #ifdef OPS_3D
 void CalcResidualError();
-void DispResidualError3D(const int iter, const SizeType checkPeriod);
+void DispResidualError(const int iter, const SizeType checkPeriod);
 void CopyDistribution(RealField& fDest, RealField& fSrc);
 void CopyBlockEnvelopDistribution(Field<Real>& fDest, Field<Real>& fSrc);
 void NormaliseF(Real* ratio);
