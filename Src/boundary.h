@@ -114,5 +114,13 @@ void TreatBlockBoundary3D(const Block& block, const int componentID,
                           const BoundaryScheme boundaryScheme,
                           const BoundarySurface boundarySurface);
 void ImplementBoundary3D();
-#endif // OPS_3D
+#endif
+
+#ifdef OPS_2D
+void TreatBlockBoundary(const Block& block, const int componentID,
+                          const Real* givenVars,
+                          const BoundaryScheme boundaryScheme,
+                          const BoundarySurface boundarySurface);
+void ImplementBoundary();
+#endif
 #endif  // BOUNDARY_H
