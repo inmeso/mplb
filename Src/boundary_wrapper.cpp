@@ -112,7 +112,7 @@ void TreatBlockBoundary(const Block& block, const int componentID,
         } break;
         case BoundaryScheme::FDPeriodic: {
             ops_par_loop(
-                KerCutCellPeriodic3D, "KerCutCellPeriodic3D", block.Get(),
+                KerCutCellPeriodic, "KerCutCellPeriodic", block.Get(),
                 SpaceDim(), range.data(),
                 ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
                             OPS_RW),

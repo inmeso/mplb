@@ -51,97 +51,6 @@
 #include "boundary_host_device.h"
 
 #ifdef OPS_2D// Boundary conditions for two-dimensional problems
-
-void KerCutCellPeriodic(ACC<Real> &f, const ACC<int> &nodeType,
-                        const ACC<int> &geometryProperty, const int *lattIdx,
-                        const int *surface)  {
-#ifdef OPS_2D
-    const BoundarySurface boundarySurface{(BoundarySurface)(*surface)};
-    VertexGeometryTypes vg = (VertexGeometryTypes)geometryProperty(0, 0);
-    switch (vg) {
-        case VG_IP:
-            for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++)  {
-                f(xiIndex, 0, 0) = f(xiIndex, 1, 0);
-            }
-            break;
-        case VG_IM:
-            for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-                f(xiIndex, 0, 0) = f(xiIndex, -1, 0);
-            }
-            break;
-        case VG_JP:
-            for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-                f(xiIndex, 0, 0) = f(xiIndex, 0, 1);
-            }
-            break;
-        case VG_JM:
-            for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-                f(xiIndex, 0, 0) = f(xiIndex, 0, -1);
-            }
-            break;
-
-        case VG_IPJP_I:
-            // VG_IP
-            if (vt == BoundarySurface::Left) {
-                for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-                    f(xiIndex, 0, 0) = f(xiIndex, 1, 0);
-                }
-            }
-            // VG_JP
-            if (vt == BoundarySurface::Bottom) {
-                for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-                    f(xiIndex, 0, 0) = f(xiIndex, 0, 1);
-                }
-            }
-            break;
-        case VG_IPJM_I:
-            // VG_IP
-            if (vt == BoundarySurface::Left) {
-                for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-                    f(xiIndex, 0, 0) = f(xiIndex, 1, 0);
-                }
-            }
-            // VG_JM
-            if (vt == BoundarySurface::Top) {
-                for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-                    f(xiIndex, 0, 0) = f(xiIndex, 0, -1);
-                }
-            }
-            break;
-        case VG_IMJP_I:
-            // VG_IM
-            if (vt == BoundarySurface::Right) {
-                for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-                    f(xiIndex, 0, 0) = f(xiIndex, -1, 0);
-                }
-            }
-            // VG_JP
-            if (vt == BoundarySurface::Bottom) {
-                for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-                    f(xiIndex, 0, 0) = f(xiIndex, 0, 1);
-                }
-            }
-            break;
-        case VG_IMJM_I:
-            //  VG_IM
-            if (vt == BoundarySurface::Right) {
-                for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-                    f(xiIndex, 0, 0) = f(xiIndex, -1, 0);
-                }
-            }
-            // VG_JM
-            if (vt == BoundarySurface::Top) {
-                for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-                    f(xiIndex, 0, 0) = f(xiIndex, 0, -1);
-                }
-            }
-            break;
-        default:
-            break;
-    }
-#endif OPS_2D
-}
-
 // Need to be modified for ImmersedSolid
 // void KerCutCellEmbeddedBoundary(const ACC<int> &nodeType,
 //                                 const ACC<int> &geometryProperty,
@@ -628,9 +537,9 @@ void KerCutCellEQMDiffuseRefl(ACC<Real> &f, const ACC<int> &nodeType,
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
     const int equilibriumOrder{2};
-    VertexGeometryTypes vg = (VertexGeometryTypes)geometryProperty(0, 0);
-    Real u = givenMacroVars[1];
-    Real v = givenMacroVars[2];
+    VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0);
+    Real u = givenMacroVars[0];
+    Real v = givenMacroVars[1];
 #ifdef CPU
 #if DebugLevel >= 2
     ops_printf(
@@ -643,6 +552,8 @@ void KerCutCellEQMDiffuseRefl(ACC<Real> &f, const ACC<int> &nodeType,
     int numOutgoing{0};
     int numIncoming{0};
     int numParallel{0};
+    int lattStart{lattIdx[0]};
+    int lattEnd{lattIdx[1]};
     int *outgoing = new int[lattEnd - lattStart + 1];
     int *incoming = new int[lattEnd - lattStart + 1];
     int *parallel = new int[lattEnd - lattStart + 1];
@@ -815,7 +726,7 @@ void KerCutCellZouHeVelocity(const Real *givenMacroVars,
     Note: This boundary condition is lattice specific.
     */
 
-    VertexGeometryTypes vg = (VertexGeometryTypes)geometryProperty(0, 0);
+    VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0);
     Real rho{0};
     Real u{givenMacroVars[1]};
     Real v{givenMacroVars[2]};

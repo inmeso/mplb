@@ -177,7 +177,7 @@ void StreamCollision(const Real time) {
     Stream3D();
 #endif
 #ifdef OPS_2D
-    Stream3D();
+    Stream();
 #endif
 
 #if DebugLevel >= 1

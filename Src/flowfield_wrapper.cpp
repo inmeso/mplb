@@ -256,7 +256,7 @@ void AssignCoordinates(const Block& block,
         const int sizeY{block.Size().at(1)};
         ops_par_loop(KerSetCoordinates, "KerSetCoordinates", block.Get(),
                      SpaceDim(), range.data(),
-                     ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                     ops_arg_dat(g_CoordinateXYZ()[block.ID()], SpaceDim(),
                                  LOCALSTENCIL, "double", OPS_WRITE),
                      ops_arg_idx(),
                      ops_arg_gbl(coordinateX, sizeX, "double", OPS_READ),
@@ -656,8 +656,8 @@ void SetBoundaryNodeType() {
                 iterRange.at(1)--;
                 iterRange.at(2)++;
                 iterRange.at(3)--;
-#endif
             }
+#endif
         }
         // Specify general boundary type
         ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
