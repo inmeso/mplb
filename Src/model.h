@@ -169,11 +169,11 @@ void UpdateMacroVars3D();
 void PreDefinedBodyForce3D();
 void PreDefinedInitialCondition3D();
 void PreDefinedCollision3D();
-#endif //OPS_3D
+#endif
 #ifdef OPS_2D
 void UpdateMacroVars();
 void PreDefinedBodyForce();
 void PreDefinedInitialCondition();
 void PreDefinedCollision();
-#endif  // OPS_2D
+#endif
 #endif
