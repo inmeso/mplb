@@ -384,4 +384,15 @@ void ImplementBoundary3D() {
                              boundary.boundarySurface);
     }
 }
-#endif //OPS_3D
+#endif
+
+#ifdef OPS_2D
+void ImplementBoundary() {
+    for (const auto& boundary : BlockBoundaries()) {
+        const Block& block{g_Block().at(boundary.blockIndex)};
+        TreatBlockBoundary(block, boundary.componentID,
+                             boundary.givenVars.data(), boundary.boundaryScheme,
+                             boundary.boundarySurface);
+    }
+}
+#endif
