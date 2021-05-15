@@ -75,4 +75,8 @@ const SchemeType Scheme();
 #ifdef OPS_3D
 void Stream3D();
 #endif //OPS_3D
+
+#ifdef OPS_2D
+void Stream();
+#endif //OPS_2D
 #endif

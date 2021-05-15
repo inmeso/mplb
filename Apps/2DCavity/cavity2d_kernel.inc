@@ -28,20 +28,15 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- */
+*/
 
-#ifndef MPLB_H
-#define MPLB_H
-#include "boundary.h"
-#include "configuration.h"
-#include "model.h"
-#include "scheme.h"
-#include "type.h"
-#include "flowfield.h"
-#ifdef OPS_3D
-#include "evolution.h"
-#endif
-#ifdef OPS_2D
-#include "evolution.h"
-#endif
-#endif  // MPLB_H
+#ifndef CAVITY2D_KERNEL_INC
+#define CAVITY2D_KERNEL_INC
+
+void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
+                            const ACC<Real>& coordinates, const int* idx) {
+    rho(0, 0) = 1;
+    u(0, 0) = 0;
+    v(0, 0) = 0;
+}
+#endif // CAVITY2D_KERNEL_INC

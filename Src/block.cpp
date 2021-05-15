@@ -18,19 +18,28 @@ int Block::RangeStart(const int axis, const BoundarySurface surface) {
     int start{RangeStart(axis)};
     if (axis == xaxis) {
         if (surface == BoundarySurface::Right ||
-            surface == BoundarySurface::RightBack ||
-            surface == BoundarySurface::RightBottom ||
-            surface == BoundarySurface::RightFront ||
-            surface == BoundarySurface::RightTop)
+            surface == BoundarySurface::RightTop ||
+            surface == BoundarySurface::RightBottom
+#ifdef OPS_3D
+            || surface == BoundarySurface::RightFront ||
+            surface == BoundarySurface::RightBack
+#endif
+        ) {
             start = size.at(axis) - 1;
+        }
     }
     if (axis == yaxis) {
         if (surface == BoundarySurface::Top ||
-            surface == BoundarySurface::TopBack ||
-            surface == BoundarySurface::TopFront ||
             surface == BoundarySurface::LeftTop ||
-            surface == BoundarySurface::RightTop)
+            surface == BoundarySurface::RightTop
+#ifdef OP_3D
+            || surface == BoundarySurface::TopBack ||
+            surface == BoundarySurface::TopFront
+#endif
+
+        ) {
             start = size.at(axis) - 1;
+        }
     }
 #ifdef OPS_3D
     if (axis == zaxis) {
@@ -38,8 +47,9 @@ int Block::RangeStart(const int axis, const BoundarySurface surface) {
             surface == BoundarySurface::LeftFront ||
             surface == BoundarySurface::RightFront ||
             surface == BoundarySurface::TopFront ||
-            surface == BoundarySurface::BottomFront)
+            surface == BoundarySurface::BottomFront) {
             start = size.at(axis) - 1;
+        }
     }
 #endif
     return start;
@@ -49,19 +59,28 @@ int Block::RangeEnd(const int axis, const BoundarySurface surface) {
     int end{RangeEnd(axis)};
     if (axis == xaxis) {
         if (surface == BoundarySurface::Left ||
-            surface == BoundarySurface::LeftBack ||
             surface == BoundarySurface::LeftBottom ||
-            surface == BoundarySurface::LeftFront ||
-            surface == BoundarySurface::LeftTop)
+            surface == BoundarySurface::LeftTop
+#ifdef OPS_3D
+            || surface == BoundarySurface::LeftFront ||
+            surface == BoundarySurface::LeftBack
+#endif
+        ) {
             end = 1;
+        }
     }
     if (axis == yaxis) {
         if (surface == BoundarySurface::Bottom ||
-            surface == BoundarySurface::BottomBack ||
-            surface == BoundarySurface::BottomFront ||
             surface == BoundarySurface::LeftBottom ||
-            surface == BoundarySurface::RightBottom)
+            surface == BoundarySurface::RightBottom
+#ifdef OPS_3D
+
+            || surface == BoundarySurface::BottomBack ||
+            surface == BoundarySurface::BottomFront
+#endif
+        ) {
             end = 1;
+        }
     }
 #ifdef OPS_3D
     if (axis == zaxis) {
@@ -69,8 +88,9 @@ int Block::RangeEnd(const int axis, const BoundarySurface surface) {
             surface == BoundarySurface::LeftBack ||
             surface == BoundarySurface::RightBack ||
             surface == BoundarySurface::TopBack ||
-            surface == BoundarySurface::BottomBack)
+            surface == BoundarySurface::BottomBack) {
             end = 1;
+        }
     }
 #endif
     return end;
@@ -106,14 +126,14 @@ Block::Block(const int blockId, const std::string& blockName,
     bulkRange.at(5) = size.at(2) - 1;
 #endif
     for (const auto surface : AllBoundarySurface) {
-         boundarySurfaceRange[surface] = {RangeStart(xaxis, surface),
-                          RangeEnd(xaxis, surface),
-                          RangeStart(yaxis, surface),
-                          RangeEnd(yaxis, surface)
+        boundarySurfaceRange[surface] = {RangeStart(xaxis, surface),
+                                         RangeEnd(xaxis, surface),
+                                         RangeStart(yaxis, surface),
+                                         RangeEnd(yaxis, surface)
 #ifdef OPS_3D
-                              ,
-                          RangeStart(zaxis, surface),
-                          RangeEnd(zaxis, surface)
+                                             ,
+                                         RangeStart(zaxis, surface),
+                                         RangeEnd(zaxis, surface)
 #endif
         };
     }
