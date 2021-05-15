@@ -4,17 +4,17 @@ set(AppName Cavity3D)
 set(AppSrc lbm3d_cavity.cpp)
 set(LibSrc evolution.cpp scheme.cpp scheme_wrapper.cpp configuration.cpp model.cpp model_wrapper.cpp block.cpp flowfield.cpp flowfield_wrapper.cpp boundary.cpp boundary_wrapper.cpp)
 set(LibHeadList type.h flowfield_host_device.h boundary_host_device.h model_host_device.h)
-
+set(SpaceDim 3)
 if (NOT OPTIMISE)
     # Set the path for LibSrc
     set(LibSrcPath "")
     foreach(Src IN LISTS LibSrc)
         list(APPEND LibSrcPath ${LibDir}/${Src})
     endforeach(Src IN LISTS LibSrc)
-    SeqDevTarget(0)
-    MpiDevTarget(0)
+    SeqDevTarget("${SpaceDim}" 0)
+    MpiDevTarget("${SpaceDim}" 0)
 else()
-    set(SpaceDim 3)
+
     #set the files needed to be translated by ops.py from the app side
     set(AppSrcGenList lbm3d_cavity.cpp)
     set(AppKernelGenList cavity3d_kernel.inc)
