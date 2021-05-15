@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.18)
 set(AppName "LChannel3D")
 set(AppSrc "lbm3d_L.cpp")
-set(LibSrc evolution3d.cpp scheme.cpp scheme_wrapper.cpp configuration.cpp model.cpp model_wrapper.cpp block.cpp flowfield.cpp flowfield_wrapper.cpp boundary.cpp boundary_wrapper.cpp)
+set(LibSrc evolution.cpp scheme.cpp scheme_wrapper.cpp configuration.cpp model.cpp model_wrapper.cpp block.cpp flowfield.cpp flowfield_wrapper.cpp boundary.cpp boundary_wrapper.cpp)
 set(LibHeadList type.h flowfield_host_device.h boundary_host_device.h model_host_device.h)
 
 if (NOT OPTIMISE)
