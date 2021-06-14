@@ -42,7 +42,11 @@
 #include "ops_seq_v2.h"
 #include "block_particles.inc"
 
-BlockParticles::BlockParticles(int spacedim, Real dx1, Real cutoff, Block myBlock) {
+ListBlockParticles BlockParticleList;
+
+BlockParticles::BlockParticles(int spacedim, Real dx1, Real cutoff,const Block& myBlock,
+		ParticleShapeDiscriptor particleType, int nInputExtraVariables,
+		int nOutputExtraVariables) : currentBlock(myBlock){
 
 	spaceDim = spacedim;
 
@@ -64,15 +68,50 @@ BlockParticles::BlockParticles(int spacedim, Real dx1, Real cutoff, Block myBloc
 	xBoundGlobal = new Real[2 * spaceDim];
 	xBoundLocal = new Real[2 * spaceDim];
 	Nf = new int[2 * spaceDim];
-	owned = false;
+	owned = true;
 
-	currentBlock = &myBlock;
+
 
 	NParticles  = 0;
 	NPeriodic = 0;
 
+	particleShape = particleType;
+	//sanity checks
+	switch (particleShape) {
+		case spherical:
+			ops_printf("Spherical particles will be generated for Block %d\n", myBlock.ID());
+			break;
+		case quadratic:
+			ops_printf("Quadratic particles will be generated for Block %d\n", myBlock.ID());
+			break;
+		case mesh:
+			ops_printf("Polygonal particles will be generated for Block %d\n", myBlock.ID());
+			break;
+		default:
+			ops_printf("This types of particles is not supported.\n Exiting\n");
+			exit(EXIT_FAILURE);
+	}
+
 	Nmax = 100;
 	particleList.reserve(Nmax);
+
+	if (nInputExtraVariables > 0) {
+		 hasExtraInputVariables = true;
+		 extraInputVarSize = nInputExtraVariables;
+	}
+	else {
+		 hasExtraInputVariables = false;
+		 extraInputVarSize = 0;
+	}
+
+	if (nOutputExtraVariables > 0) {
+		 hasExtraOutputVariables = true;
+		 extraOutputVarSize = nOutputExtraVariables;
+	}
+	else {
+		hasExtraOutputVariables = false;
+		extraOutputVarSize = 0;
+	}
 
 }
 
@@ -84,12 +123,12 @@ BlockParticles::~BlockParticles() {
 
 }
 
-int BlockParticles::checkDistanceBlock() {
+int BlockParticles::CheckDistanceBlock() {
 
 	int nTotal = NParticles + NPeriodic;
 	Real distance;
 	int cut = 0;
-	for (int iPart = 0; iPart < nTotal; iPart) {
+	for (int iPart = 0; iPart < nTotal; iPart++) {
 		distance  = 0.0;
 		for (int iDim = 0; iDim < spaceDim; iDim++)
 			distance  += (particleList[iPart].xParticle[iDim] - particleList[iPart].xOld[iPart]) *
@@ -103,56 +142,75 @@ int BlockParticles::checkDistanceBlock() {
 	return cut;
 }
 
-void BlockParticles::initializeDragForce() {
+void BlockParticles::UpdateOldParticlePosition() {
 
-	for (int iPart = 0; iPart < NParticles; iPart++)
-		particleList[iPart].initializeDrag();
+	int nTotal = NParticles + NPeriodic;
+	for (int iPart = 0; iPart < nTotal; iPart++) {
+		for (int iDim = 0; iDim < spaceDim; iDim++)
+			particleList.at(iPart).UpdateOldParticlePositions();
+	}
 }
 
-void BlockParticles::evaluateDragForce(Real dt)    {
+void BlockParticles::InitializeDragForce() {
 
 	for (int iPart = 0; iPart < NParticles; iPart++)
-		particleList[iPart].evaluateDrag(dt);
+		particleList[iPart].InitializeDrag();
 }
 
-void BlockParticles::updateParticle(Real* xpos, Real radius, std::vector<Real> shape) {
+void BlockParticles::EvaluateDragForce(Real dt)    {
+
+	for (int iPart = 0; iPart < NParticles; iPart++)
+		particleList[iPart].EvaluateDrag(dt);
+}
+
+int BlockParticles::UpdateParticle(Real* xpos, Real radius, std::vector<Real> shape) {
 
 
 	NParticles += 1;
 	if (NParticles >= Nmax) {
 		Nmax += 100;
 		particleList.reserve(Nmax);
+		Particle particleNew(spaceDim, radius, xpos, shape, particleShape,
+				extraInputVarSize, extraOutputVarSize);
+		particleList.push_back(particleNew);
+	}
+	else {
+		particleList[NParticles-1].UpdateParticleLocation(xpos);
+		particleList[NParticles-1].UpdateParticleShape(radius, shape);
 	}
 
-	particleList[NParticles-1].updateParticleLocation(xpos);
-	particleList[NParticles-1].updateParticleShape(radius, shape);
+	return NParticles-1;
 
 }
-void BlockParticles::updateParticleVelocities(Real* uPart, Real* omegaT) {
+void BlockParticles::UpdateParticleVelocities(Real* uPart, Real* omegaT) {
 
-	particleList[NParticles - 1].updateParticleVelocities(uPart, omegaT);
+	particleList[NParticles - 1].UpdateParticleVelocities(uPart, omegaT);
 }
 
 
-void BlockParticles::insertParticle(Real* xpos, Real radius, std::vector<Real> shape,
+int BlockParticles::InsertParticle(Real* xpos, Real radius, std::vector<Real> shape,
 		Real* uPart, Real* omegaT) {
 
+	int idParticle;
 	bool flag = SphereParallepipedIntersection(xpos, radius);
 
 	if (flag == true) {
-		updateParticle(xpos, radius, shape);
-		updateParticleVelocities(uPart, omegaT);
+		idParticle = UpdateParticle(xpos, radius, shape);
+		UpdateParticleVelocities(uPart, omegaT);
+
+		return idParticle;
 	}
 
+	return -1;
 }
 
 
-void BlockParticles::findStencil() {
+void BlockParticles::FindStencil() {
 
 	int nTotal = NPeriodic + NParticles;
 
 	for (int iPart = 0; iPart < nTotal; iPart++)
-		particleList[iPart].updateStencil(xBoundGlobal, Nf,  dx);
+		particleList[iPart].UpdateStencil(xBoundGlobal, Nf,  dx);
 
 }
 
@@ -193,12 +251,12 @@ void BlockParticles::FindBoxLocalBound() {
 		xBoundLocal[2 * nDim] = std::numeric_limits<Real>::max();
 		xBoundLocal[2 * nDim + 1] = -1.0 * std::numeric_limits<Real>::max();
 	}
-	int blockIndex = currentBlock->ID();
+	int blockIndex = currentBlock.ID();
 
 	if (owned) {
 		//Find block ranges
 
-		ops_get_abs_owned_range(currentBlock->Get(), range, start, end, disp);
+		ops_get_abs_owned_range(currentBlock.Get(), range, start, end, disp);
 		for (int iDir = 0; iDir < spaceDim; iDir++) {
 			Nf[2 * iDir] = start[iDir];
 			Nf[2 * iDir + 1] = end[iDir];
@@ -209,7 +267,7 @@ void BlockParticles::FindBoxLocalBound() {
 			iterRng[2 * iDim + 1] = Nf[2 * iDim + 1] + 1;
 		}
 		int spacedim = spaceDim;
-		ops_par_loop(KerCarBound,"KerCarBound", currentBlock->Get(), spaceDim, iterRng,
+		ops_par_loop(KerCarBound,"KerCarBound", currentBlock.Get(), spaceDim, iterRng,
 				ops_arg_dat(g_CoordinateXYZ()[blockIndex], spaceDim,
 							LOCALSTENCIL, "double", OPS_READ),
 				ops_arg_gbl(xb, spaceDim, "double", OPS_READ),
@@ -227,7 +285,7 @@ void BlockParticles::FindBoxLocalBound() {
 
 
 
-		ops_par_loop(KerCarBound, "KerCarBound", currentBlock->Get(), spaceDim, iterRng,
+		ops_par_loop(KerCarBound, "KerCarBound", currentBlock.Get(), spaceDim, iterRng,
 				ops_arg_dat(g_CoordinateXYZ()[blockIndex], spaceDim,
 							LOCALSTENCIL, "double", OPS_READ),
 				ops_arg_gbl(xb, spaceDim, "double", OPS_READ),
@@ -243,7 +301,17 @@ void BlockParticles::FindBoxLocalBound() {
 
 }
 
-void BlockParticles::getLocalBound(Real* xBound) {
+
+void BlockParticles::ExtractBound(Real* xMin, Real* xMax) {
+
+	for (int iDim = 0; iDim < spaceDim; iDim++) {
+		xMin[iDim] = xBoundLocal[2 * iDim];
+		xMax[iDim] = xBoundLocal[2 * iDim + 1];
+	}
+
+}
+
+void BlockParticles::GetLocalBound(Real* xBound) {
 
 	for (int iDim = 0; iDim <2 * spaceDim; iDim++)
 		xBound[iDim] = xBoundLocal[iDim];
@@ -251,13 +319,43 @@ void BlockParticles::getLocalBound(Real* xBound) {
 
 }
 
-void BlockParticles::setGlobalBound(Real* xBound) {
+void BlockParticles::SetGlobalBound(Real* xBound) {
 
 	for (int iDim = 0; iDim < 2* spaceDim; iDim++)
 		xBoundGlobal[iDim] = 2 * xBound[iDim];
 }
 
-void BlockParticles::getOwnership(bool flag) {
+void BlockParticles::GetOwnership() {
 
-	owned = flag;
+	owned = true;
+#ifdef OPS_MPI
+	int blockIndex = currentBlock.ID();
+
+	 sub_block_list sb = OPS_sub_block_list[blockIndex];
+	 	if (sb->owned)
+	 		owned = true;
+	 	else
+	 		owned = false;
+#endif
+}
+
+void BlockParticles::ExtractDragForce(Real* Fd, Real* Td,int iParticle) {
+
+	particleList.at(iParticle).PushDrag(Fd, Td);
+
+}
+
+void BlockParticles::ExtractPositions(Real* xPos,int iParticle) {
+
+	particleList.at(iParticle).GetParticlePositions(xPos);
+}
+
+void BlockParticles::GetAdditionalOutputVariables(std::vector<Real>& output,int iParticle) {
+
+	particleList.at(iParticle).GetOutputVariables(output);
+}
+
+void BlockParticles::GetAdditionalInputVariables(std::vector<Real>& inputVariables,int idParticle) {
+
+	particleList.at(idParticle).SetInputVariables(inputVariables);
 }

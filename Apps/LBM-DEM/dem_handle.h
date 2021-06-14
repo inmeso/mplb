@@ -35,19 +35,35 @@
  * @author  C. Tsigginos
  */
 
-#ifndef DEM_DEM_HANDLE_H_
-#define DEM_DEM_HANDLE_H_
+#ifndef DEM_HANDLE_H_
+#define DEM_HANDLE_H_
 
 #include "block_particles.h"
 #include "flowfield.h"
 #include <map>
 #include "block.h"
+#include "fpi.h"
+#include <vector>
+#include "model.h"
+#include "block_particle_helper.h"
+#include "dem_data.h"
+#include <string>
 
-void findBlockOwnership();
-void DefineBlockParticles(const BlockGroup& blocks, int spacedim, Real cutoff, Real dx1);
+
+
+
+void SetupBlockParticles(InteractionData data, SizeType maxStep);
 void DefineGlobalBlockBox();
+void CreateMuiInterface(InteractionData data, std::vector<FSIType> models, Real skin);
+void StreamCollisionFSI3D(int flag);
+void IterateFSI(InteractionData data, int savingFlag);
+void IterateFSI(Real convergenceRate,const SizeType checkPointPeriod,const SizeType maxIters);
 
-extern std::map<int, BlockParticles> BlockParticleList;
+void SetupDEMLBM(InteractionData& data);
+void ReadParticleDataSpherical();
 
+void SetDemLbMParams(InteractionData* data, bool flag, bool muiOn, Real convergeRate,
+		SizeType checkperiod, SizeType timeStep, std::string particleType);
+void SetupParticleBoxes(InteractionData data);
 
 #endif /* APPS_LBM_DEM_DEM_HANDLE_H_ */

@@ -34,23 +34,12 @@
  * @author C. Tsigginos
  * @details Declaring the base definitions for the fluid-particle interaction model
  */
-#ifndef APPS_LBM_DEM_FPI_H_
-#define APPS_LBM_DEM_FPI_H_
+#ifndef FPI_H_
+#define FPI_H_
 
-#include "type.h"
-#include <vector>
-#include <cassert>
-#include "model.h"
-#include "flowfield.h"
 #include "fsi_base.h"
-
-enum FSIType { Model_Prati = 2, Model_PSM = 1, Model_None = 0};
-enum SolFracType {Mode_None = 0, Mode_Spherical = 1, Mode_Grid = 2, Mode_Copy = 3};
-
-
-void DefineInteractionModel(std::vector<FSIType> FluidParticleType,
-		std::vector<SolidFracType>  SolFracType, vector<int> fsiCompoId,
-		double gamma = 0.0, SizeType timeStep = 0);
+#include "prati.h"
+#include "psm.h"
 
 
 

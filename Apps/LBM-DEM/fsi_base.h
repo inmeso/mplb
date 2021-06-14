@@ -42,6 +42,8 @@
 #include "block.h"
 #include "type.h"
 #include "model.h"
+
+
 enum FSIType { Model_Prati = 2, Model_PSM = 1, Model_None = 0};
 enum SolFracType {Mode_None = 0, Mode_Spherical = 1, Mode_Grid = 2, Mode_Copy = 3};
 
@@ -55,7 +57,7 @@ class FsiBase {
 		int spaceDim;
 		Real* force;
 		int forceFlag;
-
+		int isThermalModel = 0; //Thermal flag
 	public:
 		bool collisionOwned;  //If true fluid-particle interaction model utilizes own collision model
 
@@ -64,15 +66,18 @@ class FsiBase {
 		virtual void ModelCollision() {} //inputs to be determined
 		virtual void PostVelocityCalculation() { } //inputs to be determined
 		virtual void PreCollision() { } //inputs to be de determined
-		virtual void PostCollision() {} //inputs to be determined
-		virtual void MappingFunction();
+		virtual void PostStreaming() {} //inputs to be determined
+		virtual void MappingFunction(bool flag) {}
 		virtual void InitializeVariables() {}
 		virtual void CalculateDragForce() { } // inputs to be determined
 		virtual void SetupSimulation() { } //inputs to be determined
 		virtual void RestartSimulation() { } // inputs to be determined
 		virtual void WriteToHdf5(const std::string& caseName, const SizeType timeStep) {}
-		virtual void DefineConstants(); //To be added
-		virtual void DefineVariables(SizeType timestep = 0); {} //Base functions for defining model required variables
+		virtual void DefineConstants() {} //To be added
+		virtual void DefineVariables(SizeType timestep = 0) {} //Base functions for defining model required variables
+		virtual void ObtainID(int* velId, int* loop, Real& tauCompo,
+				CollisionType& collisModel, int& idComponent, int& rhoId,int &thId);
+		virtual int GetThermalFlag() {return isThermalModel;}
 
 };
 

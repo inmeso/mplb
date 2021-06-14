@@ -10,37 +10,15 @@
 #include "particle_shape.h"
 
 
-ParticleShape::ParticleShape(Real Rp, std::string name) {
+ParticleShape::ParticleShape(Real Rp, ParticleShapeDiscriptor particleShape) {
 
 	Rparticle = Rp;
-	typeParticle = name;
+	typeParticle = particleShape;
 
 }
 
-void ParticleShape::updateShape(Real radius, std::vector<Real> shape) {
-
-	Rparticle = radius;
-}
-
-Real ParticleShape::getArea() {
-
-
-	return 4.0/3.0 * PI * Rparticle * Rparticle * Rparticle;
-
-}
-
-Real ParticleShape::getSurface() {
-
-	return 4.0 * PI * Rparticle * Rparticle;
-}
-
-Real ParticleShape::getEquivalentRadius() {
-
-	return Rparticle;
-}
-
-ParticleShapeQuadratic::ParticleShapeQuadratic(Real Rp, std::string name,
-		std::vector<Real> shape) :	ParticleShape(Rp, name) {
+ParticleShapeQuadratic::ParticleShapeQuadratic(Real Rp, ParticleShapeDiscriptor particleShape,
+		std::vector<Real> shape) :	ParticleShape(Rp, particleShape) {
 
 	particleParameters = shape;
 

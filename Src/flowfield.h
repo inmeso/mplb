@@ -68,6 +68,7 @@ IntFieldGroup& g_NodeType();
 IntField& g_GeometryProperty();
 Real TimeStep();
 const Real* pTimeStep();
+Real GetDx();
 const std::string& CaseName();
 Real TotalMeshSize();
 const std::map<std::string,ops_halo_group>& HaloGroups();

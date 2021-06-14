@@ -41,7 +41,9 @@
 #include <math.h>
 #include "ops_seq_v2.h"
 
-Particle::Particle(int Dimension, Real radius, Real* xp, std::vector<Real> Shape, std::string particleImport) {
+Particle::Particle(int Dimension, Real radius, Real* xp, std::vector<Real> Shape,
+		ParticleShapeDiscriptor particleImport, int inputVariablesSize,
+		int outputVariableSize) {
 
 	spaceDim = Dimension;
 	if (spaceDim < 2 && spaceDim > 3) {
@@ -64,25 +66,36 @@ Particle::Particle(int Dimension, Real radius, Real* xp, std::vector<Real> Shape
 
 	//TODO Assign the Particle Shape
 	particleShapeType = particleImport;
-	std::string Spherical("spherical");
-	std::string Quadratic("quadratic");
-	std::string Mesh("mesh");
 
+	switch(particleShapeType) {
+		case spherical:
+			particleShape = new ParticleShape(radius, spherical);
+			break;
+		case quadratic:
+			particleShape = new ParticleShapeQuadratic(radius, quadratic, Shape);
+			break;
+		case mesh:
+			particleShape = new ParticleShape(radius, mesh); //TODO ADD ACTUAL MESH PARTICLE
+			break;
+		default:
+			ops_printf("ERROR: This type of particle type is not supported\n");
+			exit(EXIT_FAILURE);
+	}
 
-	if (particleShapeType.compare(Spherical)==0) {
-		particleShape = new ParticleShape(radius, Spherical);
+	//Assing extra variables
+	if (inputVariablesSize > 0) {
+		nInputExtraVariables = inputVariablesSize;
+		inputVariables.reserve(nInputExtraVariables);
 	}
-	else if (particleShapeType.compare(Quadratic)==0) {
-		particleShape = new ParticleShapeQuadratic(radius, Quadratic, Shape);
-	}
-	else if (particleShapeType.compare(Mesh) == 0) {
-		particleShape = new ParticleShapeMesh(radius, Mesh, Shape);
-	}
-	else {
-		ops_printf("Error: This options is not supported\n");
-		exit(EXIT_FAILURE);
+	else
+		nInputExtraVariables = 0;
 
+	if (outputVariableSize > 0) {
+		nOutputExtraVariables = outputVariableSize;
+		outputVariables.reserve(nOutputExtraVariables);
 	}
+	else
+		nOutputExtraVariables = 0;
 
 
 }
@@ -98,7 +111,7 @@ Particle::~Particle() {
 	delete[] uParticle;
 }
 
-void Particle::initializeDrag() {
+void Particle::InitializeDrag() {
 
 	for (int iDim = 0; iDim < spaceDim; iDim++) {
 		FDrag[iDim] = 0.0;
@@ -107,19 +120,34 @@ void Particle::initializeDrag() {
 
 }
 
-void Particle::updateParticleLocation(Real* xp) {
+std::string Particle::GetParticleShape() {
+
+	switch (particleShapeType) {
+		case spherical:
+			return "sphere";
+		case quadratic:
+			return "quadratic";
+		case mesh:
+			return "mesh";
+
+	}
+
+	return "none";
+}
+
+void Particle::UpdateParticleLocation(Real* xp) {
 
 	for (int iDim = 0; iDim < spaceDim; iDim++)
 		xParticle[iDim] = xp[iDim];
 }
 
-void Particle::updateParticleShape(Real radius, std::vector<Real> shape) {
+void Particle::UpdateParticleShape(Real radius, std::vector<Real> shape) {
 
-	particleShape->updateShape(radius, shape);
-	particleShape->rotate();
+	particleShape->UpdateShape(radius, shape);
+	particleShape->Rotate();
 }
 
-void Particle::addDrag(Real* Fp, Real* Tp) {
+void Particle::AddDrag(Real* Fp, Real* Tp) {
 
 	for (int iDim = 0; iDim < spaceDim; iDim++) {
 		FDrag[iDim] += Fp[iDim];
@@ -128,7 +156,7 @@ void Particle::addDrag(Real* Fp, Real* Tp) {
 
 }
 
-void Particle::evaluateDrag(Real dt) {
+void Particle::EvaluateDrag(Real dt) {
 
 	for (int iDim = 0; iDim < spaceDim;iDim++) {
 		FDrag[iDim] /= dt;
@@ -137,7 +165,7 @@ void Particle::evaluateDrag(Real dt) {
 
 }
 
-void Particle::pushDrag(Real* Fd, Real* Td) {
+void Particle::PushDrag(Real* Fd, Real* Td) {
 
 	for (int iDim = 0; iDim < spaceDim ; iDim++) {
 		Fd[iDim] = FDrag[iDim];
@@ -145,13 +173,13 @@ void Particle::pushDrag(Real* Fd, Real* Td) {
 	}
 }
 
-void Particle::updateXOld(Real *x) {
+void Particle::UpdateOldParticlePositions() {
 
 	for (int iDim =0; iDim < spaceDim; iDim++)
-		xOld[iDim] = x[iDim];
+		xOld[iDim] = xParticle[iDim];
 }
 
-void Particle::updateParticleVelocities(Real* uP, Real* omP) {
+void Particle::UpdateParticleVelocities(Real* uP, Real* omP) {
 
 	for (int iDim = 0; iDim < spaceDim; iDim++) {
 		uParticle[iDim] = uP[iDim];
@@ -160,7 +188,7 @@ void Particle::updateParticleVelocities(Real* uP, Real* omP) {
 
 }
 
-void Particle::updateStencil(Real* xBounds, int *Nf, Real dx) {
+void Particle::UpdateStencil(Real* xBounds, int *Nf, Real dx) {
 
 	Real xMin[spaceDim];
 	int iLocal[spaceDim];
@@ -187,5 +215,50 @@ void Particle::updateStencil(Real* xBounds, int *Nf, Real dx) {
 	}
 
 
+
+}
+
+
+void Particle::GetParticlePositions(Real* xPos) {
+
+	for (int iDim = 0; iDim < spaceDim; iDim++)
+		xPos[iDim] = xParticle[iDim];
+}
+
+void Particle::SetInputVariables(std::vector<Real>& inputData) {
+
+	if (inputData.size() > nInputExtraVariables) {
+		nInputExtraVariables = inputData.size();
+		inputVariables.reserve(nInputExtraVariables);
+	}
+
+	for (int iDir = 0; iDir < nInputExtraVariables; iDir++)
+		inputVariables.at(iDir) = inputData.at(iDir);
+}
+
+void Particle::GetInputVariables(std::vector<Real>& inputData) {
+
+	for (int iDir = 0; iDir < nInputExtraVariables; iDir++)
+		inputData.at(iDir) = inputVariables.at(iDir);
+}
+
+
+void Particle::GetOutputVariables(std::vector<Real>& outputData) {
+
+	for (int iDir = 0; iDir < nOutputExtraVariables; iDir++) {
+		outputData.at(iDir) = outputVariables.at(iDir);
+	}
+
+}
+
+void Particle::SetOutputVariables(std::vector<Real>& outputData) {
+
+	if (outputData.size() > nOutputExtraVariables) {
+		nOutputExtraVariables = outputData.size();
+		outputVariables.reserve(nOutputExtraVariables);
+	}
+
+	for (int iDir = 0; iDir < nOutputExtraVariables; iDir++)
+		outputVariables.at(iDir) = outputData.at(iDir);
 
 }

@@ -74,7 +74,7 @@ void Prati::KerCollisionPrati3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>
 		Real poros = 1.0;
 		Real eff, porosEff;
 
-		Real u[spaceDim], rho;
+		Real u[spaceDim];
 		int oppos, oppos1, noTot1;
 		int noTot = 0;
 		Real rho{Rho(0, 0, 0)};
@@ -361,9 +361,7 @@ void Prati::KerDragPRATI(const ACC<int>& id, const ACC<Real>& sfp, const ACC<Rea
 	Real Beta, sf;
 	Real porosEff, eff;
 
-	xfl[0] = xf(0, 0, 0, 0);
-	xfl[1] = xf(1, 0, 0, 0);
-	xfl[2] = xf(2, 0, 0, 0);
+
 
 	for (int pIndex = 0; pIndex < NELEM; pIndex++) {
 		noTot += (id(pIndex, 0, 0, 0) > -1);
@@ -393,6 +391,9 @@ void Prati::KerDragPRATI(const ACC<int>& id, const ACC<Real>& sfp, const ACC<Rea
 			Beta = sfp(pIndex, 0, 0, 0) * eff /(1.0 + (sf) * alpha);
 			loc = pIndex * SPACEDIM;
 
+			xfl[0] = xf(loc, 0, 0, 0);
+			xfl[1] = xf(loc + 1, 0, 0, 0);
+			xfl[2] = xf(loc + 2, 0, 0, 0);
 			FDp[0] += Beta * Fd(loc, 0, 0, 0);
 			FDp[1] += Beta * Fd(loc + 1, 0, 0, 0);
 			FDp[2] += Beta * Fd(loc + 2, 0, 0, 0);

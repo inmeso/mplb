@@ -42,11 +42,11 @@
 #include <vector>
 #include <map>
 #include "ops_seq_v2.h"
-#include "model_kernel.inc"
 #include "prati.inc"
-Prati::Prati(Component componentUser, int spacedim, bool owned = false,
-		int porosModel = 0, Real gammaUser = 0.0, int nelem) :
-		FsiBase(componentUser, spacedim, owned, porosModel),
+
+Prati::Prati(Component componentUser, int spacedim, Real* forceUser, bool owned,
+		int porosModel, Real gammaUser, int nelem, int ParticleType) :
+		FsiBase(componentUser, spacedim, forceUser, owned, porosModel),
 		Fd{"FdPrati"} {
 
 	noElem = nelem;
@@ -57,10 +57,10 @@ Prati::Prati(Component componentUser, int spacedim, bool owned = false,
 	}
 
 	if (porosModel == Mode_Spherical) {
-		poros = new PorosSpherical();
+		poros = new PorosSpherical(ParticleType, spaceDim);
 	}
 	else if (porosModel == Mode_Grid)
-		poros = new PorosGrid();
+		poros = new PorosGrid(ParticleType, spaceDim);
 
 
 }
@@ -72,13 +72,12 @@ void Prati::DefineVariables(SizeType timestep) {
 
 	Fd.SetDataDim(size);
 	if (timestep == 0) {
-		Fd. CreateFieldFromScratch(g_Block());
-		poros.DefineVariables(noElem);
+		Fd.CreateFieldFromScratch(g_Block());
+		poros->DefineVariables(noElem);
 	}
-
 	else {
 		Fd.CreateFieldFromFile(CaseName(), g_Block(), timestep);
-		poros.DefineVariables(noElem, timestep);
+		poros->DefineVariables(noElem, timestep);
 	}
 
 }
@@ -94,9 +93,8 @@ void Prati::ModelCollision() {
 		std::vector<int> iterRng;
 		iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
 
-		const Block& block{idBlock.second};
-		Real tauRef = compo.tauRef();
-		const Real* pdt {pTimestep()};
+		Real tauRef = compo.tauRef;
+		const Real* pdt {pTimeStep()};
 		const int blockIndex{block.ID()};
 		ops_par_loop(KerCollisionPrati3D,"KerCollisionPrati3D", block.Get(),
 					 spaceDim, iterRng.data(),
@@ -118,19 +116,19 @@ void Prati::ModelCollision() {
 								 1, LOCALSTENCIL, "double", OPS_READ),
 					 ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIndex),
 								 1, LOCALSTENCIL, "double", OPS_READ),
-					 ops_arg_dat(poros->id[blockIndex], noElem, LOCALSTENCIL,
-							 "int", OPS_READ),
-					 ops_arg_dat(poros->sfParticle[blockIndex], noElem, LOCALSTENCIL,
-							 	 "double", OPS_READ),
-					 ops_arg_dat(poros->vParts[blockIndex], size, LOCALSTENCIL),
-					 	 	 	 "double", OPS_READ),
+					 ops_arg_dat(poros->GetIntFieldVariable(0).at(blockIndex), noElem,
+							 	 LOCALSTENCIL, "int", OPS_READ),
+					 ops_arg_dat(poros->GetRealFieldVariable(0).at(blockIndex), noElem,
+							 	 LOCALSTENCIL, "double", OPS_READ),
+					 ops_arg_dat(poros->GetRealFieldVariable(1).at(blockIndex), size,
+							 	 LOCALSTENCIL, "double", OPS_READ),
 					 ops_arg_gbl(pdt, 1, "double", OPS_READ),
 					 ops_arg_gbl(&tauRef, 1, "int", OPS_READ),
 					 ops_arg_gbl(&forceFlag, 1, "int", OPS_READ),
 					 ops_arg_gbl(force, spaceDim, "double", OPS_READ),
 					 ops_arg_gbl(&gamma, 1, "double", OPS_READ),
 					 ops_arg_gbl(&noElem, 1, "int", OPS_READ),
-					 ops_arg_gbl(&spaceDim, 1, "int", OPS_READ)
+					 ops_arg_gbl(&spaceDim, 1, "int", OPS_READ),
 					 ops_arg_gbl(compo.index, 2, "int", OPS_READ));
 	}
 
@@ -161,12 +159,12 @@ void Prati::InitializeVariables() {
 
 void Prati::PostVelocityCalculation() {
 
-	Real tauRef = compo.tauRef();
-	const Real* pdt {pTimestep()};
+	Real tauRef = compo.tauRef;
+	const Real* pdt {pTimeStep()};
 
 	int size = noElem * spaceDim;
 	for (const auto& idBlock : g_Block()) {
-		const Block& block(idBlock.second());
+		const Block& block(idBlock.second);
 		 std::vector<int> iterRng;
 		 iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
 		 const int blockIndex{block.ID()};
@@ -176,17 +174,17 @@ void Prati::PostVelocityCalculation() {
 			 switch (varType) {
 			 	 case Variable_U:
 			 		 ops_par_loop(KerPratiUpdateU3D, "KerPratiUpdateU3D", block.Get(),
-			 				 	  spaceDim, iterRng.data,
+			 				 	  spaceDim, iterRng.data(),
 								  ops_arg_dat(g_MacroVars().at(varId).at(blockIndex),
 	                                          1, LOCALSTENCIL, "double", OPS_RW),
 								  ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
 											  LOCALSTENCIL, "int", OPS_READ),
-								  ops_arg_dat(poros->id[blockIndex], noElem,
-										  	  LOCALSTENCIL, "int", OPS_READ),
-								  ops_arg_dat(poros->poros[blockIndex], noElem,
-										  	  LOCALSTENCIL, "double", OPS_READ),
-								  ops_arg_dat(poros->vParts[blockIndex], size,
-										  	  LOCALSTENCIL, "double", OPS_READ),
+								  ops_arg_dat(poros->GetIntFieldVariable(0).at(blockIndex),
+										 	  noElem, LOCALSTENCIL, "int", OPS_READ),
+								  ops_arg_dat(poros->GetRealFieldVariable(0).at(blockIndex),
+										      noElem,  LOCALSTENCIL, "double", OPS_READ),
+								  ops_arg_dat(poros->GetRealFieldVariable(1).at(blockIndex),
+										      size, LOCALSTENCIL, "double", OPS_READ),
 								  ops_arg_gbl(pdt, 1, "double", OPS_READ),
 								  ops_arg_gbl(&tauRef, 1, "double", OPS_READ),
 								  ops_arg_gbl(&gamma, 1, "double", OPS_READ),
@@ -195,19 +193,23 @@ void Prati::PostVelocityCalculation() {
 								  ops_arg_gbl(&noElem, 1, "int", OPS_READ),
 								  ops_arg_gbl(&spaceDim, 1, "int", OPS_READ));
 			 		 break;
+
+
+
+
 			 	 case Variable_V:
 			 		 ops_par_loop(KerPratiUpdateV3D, "KerPratiUpdateV3D", block.Get(),
-			 					  spaceDim, iterRng.data,
+			 					  spaceDim, iterRng.data(),
 			 					  ops_arg_dat(g_MacroVars().at(varId).at(blockIndex),
 			 			                      1, LOCALSTENCIL, "double", OPS_RW),
 								  ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
 											  LOCALSTENCIL, "int", OPS_READ),
-			 					  ops_arg_dat(poros->id[blockIndex], noElem,
-			 								  LOCALSTENCIL, "int", OPS_READ),
-			 				      ops_arg_dat(poros->poros[blockIndex], noElem,
-			 						          LOCALSTENCIL, "double", OPS_READ),
-			 				      ops_arg_dat(poros->vParts[blockIndex], size,
-			 								  LOCALSTENCIL, "double", OPS_READ),
+								  ops_arg_dat(poros->GetIntFieldVariable(0).at(blockIndex),
+											  noElem, LOCALSTENCIL, "int", OPS_READ),
+								  ops_arg_dat(poros->GetRealFieldVariable(0).at(blockIndex),
+											  noElem,  LOCALSTENCIL, "double", OPS_READ),
+								  ops_arg_dat(poros->GetRealFieldVariable(1).at(blockIndex),
+											  size, LOCALSTENCIL, "double", OPS_READ),
 								  ops_arg_gbl(pdt, 1, "double", OPS_READ),
 								  ops_arg_gbl(&tauRef, 1, "double", OPS_READ),
 								  ops_arg_gbl(&gamma, 1, "double", OPS_READ),
@@ -218,17 +220,17 @@ void Prati::PostVelocityCalculation() {
 			 		 break;
 			 	 case Variable_W:
 			 		 ops_par_loop(KerPratiUpdateW3D, "KerPratiUpdateW3D", block.Get(),
-			 					  spaceDim, iterRng.data,
+			 					  spaceDim, iterRng.data(),
 			 					  ops_arg_dat(g_MacroVars().at(varId).at(blockIndex),
 			 			                      1, LOCALSTENCIL, "double", OPS_RW),
 								  ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
 											  LOCALSTENCIL, "int", OPS_READ),
-			 					  ops_arg_dat(poros->id[blockIndex], noElem,
-			 								  LOCALSTENCIL, "int", OPS_READ),
-			 				      ops_arg_dat(poros->poros[blockIndex], noElem,
-			 						          LOCALSTENCIL, "double", OPS_READ),
-			 				      ops_arg_dat(poros->vParts[blockIndex], size,
-			 								  LOCALSTENCIL, "double", OPS_READ),
+								  ops_arg_dat(poros->GetIntFieldVariable(0).at(blockIndex),
+											  noElem, LOCALSTENCIL, "int", OPS_READ),
+								  ops_arg_dat(poros->GetRealFieldVariable(0).at(blockIndex),
+											  noElem,  LOCALSTENCIL, "double", OPS_READ),
+								  ops_arg_dat(poros->GetRealFieldVariable(1).at(blockIndex),
+											  size, LOCALSTENCIL, "double", OPS_READ),
 								  ops_arg_gbl(pdt, 1, "double", OPS_READ),
 								  ops_arg_gbl(&tauRef, 1, "double", OPS_READ),
 								  ops_arg_gbl(&gamma, 1, "double", OPS_READ),
@@ -243,5 +245,82 @@ void Prati::PostVelocityCalculation() {
 			 }
 		 }
 	}
+
+}
+
+
+void Prati::CalculateDragForce() {
+
+
+	Real tauRef = compo.tauRef;
+	const Real* pdt {pTimeStep()};
+	const Real Dx {GetDx()}; //TODO ADD to flowfield
+	int xPos[spaceDim], FdLocal[spaceDim], TdLocal[spaceDim];
+	int size = noElem * spaceDim;
+	int StenList[2 * spaceDim];
+	int blockIndex;
+	int idParticle;
+	for (auto& idBlock : BlockParticleList) {
+		BlockParticles& ParticlesCurrentBlock = idBlock.second;
+				if ( !ParticlesCurrentBlock.owned ) continue;
+				blockIndex = ParticlesCurrentBlock.GetBlock().ID();
+				int nlocal =  ParticlesCurrentBlock.NParticles +
+						ParticlesCurrentBlock.NPeriodic;
+				for (int iPart = 0; iPart < nlocal; iPart++) {
+
+					xPos[0] = ParticlesCurrentBlock.particleList[iPart].xParticle[0];
+					xPos[1] = ParticlesCurrentBlock.particleList[iPart].xParticle[1];
+					xPos[2] = ParticlesCurrentBlock.particleList[iPart].xParticle[2];
+
+					idParticle = iPart;
+					for (int iDir = 0; iDir < 2 * spaceDim; iDir++)
+						StenList[iDir] = ParticlesCurrentBlock.particleList[iPart].stenList[iDir];
+
+					ops_par_loop(KerDragPRATI,"KerDragPRATI",
+								 ParticlesCurrentBlock.GetBlock().Get(),
+								 spaceDim, StenList,
+								 ops_arg_dat(poros->GetIntFieldVariable(0).at(blockIndex),
+								 	 noElem, LOCALSTENCIL, "int", OPS_READ),
+								 ops_arg_dat(poros->GetRealFieldVariable(0).at(blockIndex),
+								     noElem,  LOCALSTENCIL, "double", OPS_READ),
+								 ops_arg_dat(poros->GetRealFieldVariable(2).at(blockIndex),
+					    		 	 size, LOCALSTENCIL,"double", OPS_READ),
+								 ops_arg_dat(Fd[blockIndex], size, LOCALSTENCIL,
+								 	 "double", OPS_READ),
+								 ops_arg_gbl(FdLocal, spaceDim, "double", OPS_READ),
+						         ops_arg_gbl(TdLocal, spaceDim, "double", OPS_READ),
+						         ops_arg_gbl(&idParticle, 1, "int", OPS_READ),
+						         ops_arg_gbl(xPos, spaceDim, "double", OPS_READ),
+						         ops_arg_gbl(pdt, 1, "double", OPS_READ),
+						         ops_arg_gbl(&tauRef, 1, "double", OPS_READ),
+						         ops_arg_gbl(&gamma, 1, "double", OPS_READ),
+						         ops_arg_gbl(&spaceDim, 1, "int", OPS_READ),
+						         ops_arg_gbl(&noElem, 1, "int", OPS_READ));
+
+			for (int iDir = 0; iDir < spaceDim; iDir++) {
+				ParticlesCurrentBlock.particleList[iPart].FDrag[iDir] += FdLocal[iDir];
+				ParticlesCurrentBlock.particleList[iPart].TDrag[iDir] += TdLocal[iDir];
+			}
+		}
+	}
+
+
+}
+
+void Prati::MappingFunction(bool flag) {
+
+	if (flag) {
+		poros->ParticleProjection();
+	}
+	else
+		poros->UpdateProjection();
+
+}
+
+void Prati::WriteToHdf5(const std::string& caseName, const SizeType timeStep) {
+
+	Fd.WriteToHDF5(caseName, timeStep);
+
+	poros->WriteToHdf5(caseName, timeStep);
 
 }

@@ -30,60 +30,48 @@
  * POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*! @brief Base class for fluid-particle interaction modeling
- *  @author C. Tsigginos
- *  Discription: The base class for handling the fluid-particle interactions
- **/
+/*! @brief  Definition of mapping spherical particles with solid fraction
+ * @author C. Tsigginos
+ */
 
-#include "fsi_base.h"
+#ifndef POROS_SPHERICAL_H_
+#define POROS_SPHERICAL_H_
+
+#include "particle_to_grid_base.h"
+#include "type.h"
+#include "flowfield_host_device.h"
 #include <cmath>
-FsiBase::FsiBase(Component& compoUser, int spacedim, Real* forceUser, bool owned, int porosUser, Real gammaUser) : compo{compoUser}{
 
-	gamma = gammaUser;
-	spaceDim = spacedim;
-	porosModel = (SolFracType) porosUser;
+class PorosSpherical : public ParticleToGridBase {
+	public:
+	PorosSpherical(int ParticleType,int spaceDim);
+	virtual int  particleShape() {return 1;}
+	virtual void DefineVariables(int noElem, SizeType timestep = 0);
+	virtual void ParticleProjection();
+	virtual void UpdateProjection();
+	virtual void MappingFunction(bool flag);
+	virtual void InitializeVariables();
 
-	force = new Real[spaceDim];
+	protected:
+	static void KerSolidFracSphere(ACC<int>& id, ACC<Real>& sfp, ACC<Real>& vp,
+			ACC<Real>& xAvg, const ACC<Real>& xf, const Real* xPos, const Real* Radius,
+			const int* idP, const Real* vPart, const Real* omPart, const Real* dx,
+			const int* nelem, const int* spacedim);
 
-	Real sumF = 0.0;
-	for (int iDim = 0; iDim < spaceDim; iDim++) {
-		force[iDim] = forceUser[iDim];
-		sumF += abs(force[iDim]);
-	}
+	static void KerSolidVelocitySphere(ACC<Real>& vP, const ACC<int>& id,
+			const ACC<Real>& xAvg, const int* idParticle,
+			const Real* xPos, const Real* radPart, const Real* velP, const Real* omP,
+			const Real* dx, const Real* spacedim, const Real* noelem);
 
-	forceFlag = 0;
-	if (sumF != 0.0)
-		forceFlag = 1;
-	collisionOwned = owned;
+	static void KerInitializePorousSpherical(ACC<Real>&sfP, ACC<Real>& vP, ACC<Real>& xAvg,
+				ACC<int>& id, const int* spacedim, const int* noelem);
 
-}
+	static inline OPS_FUN_PREFIX Real CalculateSolidFractionSpheres(const Real* xfl,
+			const Real Ravg, const Real* xPos, const Real Rp, Real* xAvg);
 
-FsiBase::~FsiBase() {
+	private:
+		int sizeofData = 4;
+};
 
-	delete[] force;
-}
 
-void FsiBase::ObtainID(int* idVel, int* loop, Real& tauCompo, CollisionType& collisModel,
-		int& idComponent,int& rhoId,int &thId) {
-
-	idVel[0] = compo.uId;
-	idVel[1] = compo.vId;
-
-#if OPS_3D
-	idVel[2] = compo.wId;
-#endif
-
-	loop[0] = compo.index[0];
-	loop[1] = compo.index[1];
-	tauCompo = compo.tauRef;
-	collisModel = compo.collisionType;
-	idComponent = compo.id;
-
-	rhoId = compo.macroVars.at(Variable_Rho).id;
-
-	if (isThermalModel == 1)
-		thId = compo.macroVars.at(Variable_T).id;
-	else
-		thId = -1;
-
-}
+#endif /* APPS_LBM_DEM_POROS_SPHERICAL_H_ */

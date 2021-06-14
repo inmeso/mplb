@@ -38,6 +38,7 @@
 
 #include "type.h"
 #include "particle_shape.h"
+#include "dem_data.h"
 #include <vector>
 #include <string>
 class Particle {
@@ -51,20 +52,35 @@ class Particle {
 		Real* uParticle;
 		Real* omegaParticle;
 		int* stenList;
-		std::string particleShapeType;
+		ParticleShapeDiscriptor particleShapeType;
 		int spaceDim;
 
-		Particle(int Dimension, Real radius, Real* xp, std::vector<Real> Shape, std::string particleImport);
+
+		Particle(int Dimension, Real radius, Real* xp, std::vector<Real> Shape,
+				ParticleShapeDiscriptor particleImport, int inputVariablesSize,
+				int outputVariableSize);
 		~Particle();
-		void initializeDrag();
-		void addDrag(Real* Fp, Real* Tp);
-		void evaluateDrag(Real dt);
-		void updateParticleLocation(Real* xp);
-		void updateParticleShape(Real Rmax, std::vector<Real> Shape);
-		void updateParticleVelocities(Real* uPart, Real* omegaPart);
-		void pushDrag(Real* Fd, Real* Td);
-		void updateStencil(Real* xBounds, int *Nf, Real dx);
-		void updateXOld(Real *x);
+		void InitializeDrag();
+		void AddDrag(Real* Fp, Real* Tp);
+		void EvaluateDrag(Real dt);
+		void GetParticlePositions(Real* xPos);
+		std::string GetParticleShape();
+		void UpdateParticleLocation(Real* xp);
+		void UpdateParticleShape(Real Rmax, std::vector<Real> Shape);
+		void UpdateParticleVelocities(Real* uPart, Real* omegaPart);
+		void PushDrag(Real* Fd, Real* Td);
+		void UpdateStencil(Real* xBounds, int *Nf, Real dx);
+		void UpdateOldParticlePositions();
+		void SetInputVariables(std::vector<Real>& inputData);
+		void GetInputVariables(std::vector<Real>& inputData);
+		void GetOutputVariables(std::vector<Real>& outputData);
+		void SetOutputVariables(std::vector<Real>& outputData);
+
+	private:
+		int nInputExtraVariables;
+		int nOutputExtraVariables;
+		std::vector<Real> inputVariables;
+		std::vector<Real> outputVariables;
 };
 
 

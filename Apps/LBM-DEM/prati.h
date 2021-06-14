@@ -42,25 +42,27 @@
 #include "type.h"
 #include <string>
 #include "model.h"
+#include "block_particles.h"
+#include "mapping_models.h"
 
-class Prati : protected FsiBase {
+class Prati : public FsiBase {
 
 	protected:
 		RealField Fd;
-		porosModel* poros; //TODO: Add the porosity model
+		ParticleToGridBase* poros; //TODO: Add the porosity model
 		int noElem = 1;
 
 	public:
-	Prati(Component componentUser, int spacedim, bool owned = false, int porosModel = 0, Real gammaUser = 0.0, int nelem);
-	~Prati();
-	void ModelCollision();
-	void CalculateDragForce();
-	void PostVelocityCalculation();
-	void MappingFunction();
-	void SetupSimulation(); /*ToDo Do I need to add it*/
-	void RestartSimulation(); //ToDo
-	void DefineVariables(SizeType timestep = 0);
-    void InitializeVariables();
+	Prati(Component componentUser, int spacedim, Real* forceUser, bool owned = false,
+			int porosModel = 0, Real gammaUser = 0.0, int nelem = 2, int ParticleType = 1);
+	~Prati() { };
+	virtual void ModelCollision(); //Dpme
+	virtual void CalculateDragForce();//Done
+	virtual void PostVelocityCalculation(); //Done
+	virtual void MappingFunction(bool flag); //Done
+	virtual void DefineVariables(SizeType timestep = 0); //DONE
+    virtual void InitializeVariables(); //DONE
+    virtual void WriteToHdf5(const std::string& caseName, const SizeType timeStep);
 
 	static void KerCollisionPrati3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real> f,
 			const ACC<Real>& coordinates, const ACC<Real>& nodeType,
@@ -88,7 +90,7 @@ class Prati : protected FsiBase {
 	static void KerDragPRATI(const ACC<int>& id, const ACC<Real>& sfp, const ACC<Real>& xf,
 			const ACC<Real>& Fd, Real* FDp, Real* TDp, const int* idp, const Real* xp,
 			const Real* dt, const Real* tau, const Real* gamma,
-			const int* spacedim, const int* nelem)
+			const int* spacedim, const int* nelem);
 
 	static void KerInitialize(ACC<Real>& Fd, const int* size);
 

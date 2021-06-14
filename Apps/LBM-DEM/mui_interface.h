@@ -28,62 +28,57 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
-/*! @brief Base class for fluid-particle interaction modeling
- *  @author C. Tsigginos
- *  Discription: The base class for handling the fluid-particle interactions
- **/
+/*! @brief  Head files for the base Mui class
+ * @author C. Tsigginos
+ */
 
-#include "fsi_base.h"
-#include <cmath>
-FsiBase::FsiBase(Component& compoUser, int spacedim, Real* forceUser, bool owned, int porosUser, Real gammaUser) : compo{compoUser}{
+#ifndef MUI_INTERFACE_BASE_H_
+#define MUI_INTERFACE_BASE_H_
 
-	gamma = gammaUser;
-	spaceDim = spacedim;
-	porosModel = (SolFracType) porosUser;
+#include <limits>
+#include <vector>
+#include <map>
+#include <string>
+#include "block_particles.h"
+#include "mui.h"
+#include "type.h"
+#include "dem_data.h"
+class MuiInterface {
 
-	force = new Real[spaceDim];
+	public:
+		MuiInterface(ListBlockParticles* blockParticles,
+				std::vector<std::string> input, std::vector<std::string> particleShape,
+				std::vector<std::string> output, Real skin = 1.0);
+	    ~MuiInterface();
+		void SetDomains(SizeType maxIteration);
+		void UpdateDomains(SizeType steps);
+		void ExtractData(SizeType currentStep, SizeType &firstStep, SizeType& maxStep,
+				Real& alpha, int* flags, ParticleShapeDiscriptor& particleShape);
+		void ExtractParticles(SizeType timeStep);
+		void SendParticles(SizeType timesStep);
+		void ForgetData(SizeType timeStep);
 
-	Real sumF = 0.0;
-	for (int iDim = 0; iDim < spaceDim; iDim++) {
-		force[iDim] = forceUser[iDim];
-		sumF += abs(force[iDim]);
-	}
+	private:
+		mui::uniface3d* interface;
+		SizeType maxStep;
+		Real Rmax;
+		void DefineProcBox(Real* xmin, Real* xmax);
+		ListBlockParticles*  blockPointer;
+		int spaceDim;
+		int currentStep;
+		std::vector<std::string> inputData;
+		std::vector<std::string> outputData;
+		std::vector<std::string> particleShapeData;
+		int inputDataSize;
+		int outputDataSize;
+		int inputParticleSize;
+		void SendExtraParameters();
+		void ReceiveExtraParameters();
+		void ReceiveParticleDetails();
+};
 
-	forceFlag = 0;
-	if (sumF != 0.0)
-		forceFlag = 1;
-	collisionOwned = owned;
 
-}
 
-FsiBase::~FsiBase() {
-
-	delete[] force;
-}
-
-void FsiBase::ObtainID(int* idVel, int* loop, Real& tauCompo, CollisionType& collisModel,
-		int& idComponent,int& rhoId,int &thId) {
-
-	idVel[0] = compo.uId;
-	idVel[1] = compo.vId;
-
-#if OPS_3D
-	idVel[2] = compo.wId;
-#endif
-
-	loop[0] = compo.index[0];
-	loop[1] = compo.index[1];
-	tauCompo = compo.tauRef;
-	collisModel = compo.collisionType;
-	idComponent = compo.id;
-
-	rhoId = compo.macroVars.at(Variable_Rho).id;
-
-	if (isThermalModel == 1)
-		thId = compo.macroVars.at(Variable_T).id;
-	else
-		thId = -1;
-
-}
+#endif /* APPS_LBM_DEM_MUI_INTERFACE_BASE_H_ */

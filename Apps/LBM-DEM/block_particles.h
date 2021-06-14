@@ -44,6 +44,8 @@
 #include "scheme.h"
 #include "flowfield.h"
 #include "ops_lib_core.h"
+#include "dem_data.h"
+#include <string>
 #ifdef OPS_MPI
 #include "ops_mpi_core.h"
 #endif
@@ -57,21 +59,33 @@ class BlockParticles {
 		int Nmax; //Maximum allowed particle in the block
 		bool owned; //Flag for defining if the given process owns the block
 		std::vector<Particle> particleList; //PArticle data
-		BlockParticles(int spacedim, Real dx1, Real cutoff, Block myBlock);
+		BlockParticles(int spacedim, Real dx1, Real cutoff,const Block& myBlock,
+				ParticleShapeDiscriptor particleType,
+				int nInputExtraVariables = 0, int nOutputExtraVariables = 0);
 		~BlockParticles();
-		int checkDistanceBlock();
-		void initializeDragForce();
-		void evaluateDragForce(Real dt);
-		void updateParticle(Real* xpos, Real radius, std::vector<Real> shape);
-		void insertParticle(Real* xpos, Real radius, std::vector<Real> shape,
+		int CheckDistanceBlock();
+		void InitializeDragForce();
+		void EvaluateDragForce(Real dt);
+		void ExtractDragForce(Real* Fd, Real* Td,int iParticle);
+		void ExtractPositions(Real* xPos,int iParticle);
+		int UpdateParticle(Real* xpos, Real radius, std::vector<Real> shape);
+		int InsertParticle(Real* xpos, Real radius, std::vector<Real> shape,
 							Real* uPart, Real* omegaT);
-		void updateParticleVelocities(Real* uPart,Real* omegaT);
-		void findStencil();
+		void UpdateParticleVelocities(Real* uPart,Real* omegaT);
+		void FindStencil();
 		void FindBoxLocalBound();
 		static void  KerCarBound(const ACC<Real>& xf, Real* xb,const int* spacedim);
-		void getLocalBound(Real* xBound);
-		void setGlobalBound(Real* xBound);
-		void getOwnership(bool flag);
+		void GetLocalBound(Real* xBound);
+		void SetGlobalBound(Real* xBound);
+		void GetOwnership();
+		ParticleShapeDiscriptor GetParticleShape() { return particleShape;}
+		void UpdateOldParticlePosition();
+		void ExtractBound(Real* xMin, Real* xMax);
+		void GetAdditionalOutputVariables(std::vector<Real>& output,int iParticle);
+		void GetAdditionalInputVariables(std::vector<Real>& inputVariables,int idParticle);
+		inline void ClearParticles() {NParticles = 0;
+					NPeriodic = 0;}
+		const Block& GetBlock() { return currentBlock; };
 	private:
 		int spaceDim;
 		int cutOff;
@@ -79,10 +93,16 @@ class BlockParticles {
 		Real* xBoundLocal;
 		Real dx;
 		int *Nf;
-		Block* currentBlock;
+		const Block& currentBlock;
+		ParticleShapeDiscriptor particleShape;
 		bool SphereParallepipedIntersection(Real* xpos,Real radius);
+		bool hasExtraInputVariables;
+		bool hasExtraOutputVariables;
+		int extraInputVarSize;
+		int extraOutputVarSize;
 };
 
 
-
+using ListBlockParticles = std::map<int, BlockParticles>;
+extern ListBlockParticles BlockParticleList;
 #endif

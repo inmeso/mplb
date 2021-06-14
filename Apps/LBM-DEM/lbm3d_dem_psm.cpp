@@ -40,29 +40,62 @@
 #include "mplb.h"
 #include "ops_seq_v2.h"
 #include "mplb_dem.h"
-//#include "cavity3d_kernel.inc"
+#include "fpi.h"
+#include "cavity3d_kernel.inc"
+
+void SetInitialMacrosVars() {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIdx{block.ID()};
+        for (auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            const int rhoId{compo.macroVars.at(Variable_Rho).id};
+            ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
+                         block.Get(), SpaceDim(), iterRng.data(),
+                         ops_arg_dat(g_MacroVars().at(rhoId).at(blockIdx), 1,
+                                     LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIdx),
+                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIdx),
+                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIdx),
+                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                         ops_arg_idx());
+        }
+    }
+}
+
+
+void UpdateMacroscopicBodyForce(const Real time) {}
 
 
 void simulate() {
 
 
-	//Define geometry-Blocks
-    std::string caseName{"3D_lid_Driven_cavity"};
-    SizeType spaceDim{3};
-    DefineCase(caseName, spaceDim);
-    std::vector<int> blockIds{0};
-    std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{33, 33, 33};
-    Real meshSize{1. / 32};
-    std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
-    DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
+	//Define simulations and blocks
+	ops_printf("Define simulation and blocks\n");
+	std::string caseName{"LBM-DEM3D\n"};
+	SizeType spaceDim{3};
+	std::vector<int> blockIds{0};
+	std::vector<std::string> blockNames{"Cavity"};
+	std::vector<int> blockSize{33, 33, 33};
+	Real meshSize(1./32);
+	std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
+	DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
-    std::vector<std::string> compoNames{"Fluid"};
-    std::vector<int> compoid{0};
-    std::vector<std::string> lattNames{"d3q19"};
-    std::vector<Real> tauRef{0.01};
-    DefineComponents(compoNames, compoid, lattNames, tauRef);
 
+	//Define fluid components
+	std::vector<std::string> componentNames{"Fluid"};
+	std::vector<int> compoId{0};
+	std::vector<std::string> lattNames {"d3q19"};
+	std::vector<Real> tauRef{0.01};
+	DefineComponents(componentNames, compoId, lattNames, tauRef);
+
+	//Define macro-variables
     std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
                                              Variable_V, Variable_W};
     std::vector<std::string> macroVarNames{"rho", "u", "v", "w"};
@@ -70,11 +103,89 @@ void simulate() {
     std::vector<int> macroCompoId{0, 0, 0, 0};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
-    //Define fluid-particle interaction scheme
-    std::vector<FSIType> FluidParticleType{Model_Prati};
-    std::vector<SolidFracType> SolFracType{Mode_Spherical};
-    std::vector<int> fsiCompoId{0};
-    DefineInteractionModel(FluidParticleType, SolFracType, fsiCompoId);
+    std::vector<CollisionType> collisionTypes{Collision_BGKIsothermal2nd};
+    std::vector<int> collisionCompoId{0};
+    DefineCollision(collisionTypes, collisionCompoId);
+
+    std::vector<BodyForceType> bodyForceTypes{BodyForce_None};
+    std::vector<SizeType> bodyForceCompoId{0};
+    DefineBodyForce(bodyForceTypes, bodyForceCompoId);
+
+    SchemeType scheme{Scheme_StreamCollision};
+    DefineScheme(scheme);
+
+    ops_printf("Defining fluid-particle interaction\n");
+    Real cutoff = 0.01 * meshSize;
+    std::string particleType{"spherical"};
+    DefineBlockParticles(spaceDim, cutoff,  meshSize, particleType);
+
+    //Define FSI-model
+    std::vector<FSIType> fluidModel{1};
+    std::vector<int> porosModelParams{1};//, 2, 2};
+    std::vector<int> fsiComponent{0};
+    Real force[spaceDim]={0.0, 0.0, 0.0};
+
+    // Setting boundary conditions
+    SizeType blockIndex{0};
+    SizeType componentId{0};
+    std::vector<VariableTypes> macroVarTypesatBoundary{Variable_U, Variable_V,
+                                                       Variable_W};
+    std::vector<Real> noSlipStationaryWall{0, 0, 0};
+    // Left noSlipStationaryWall
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Left,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    // Right noSlipStationaryWall
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Right,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    // Top noslipMovingWall
+    std::vector<Real> noSlipMovingWall{0.01, 0, 0};
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Top,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
+                        noSlipMovingWall);
+    // bottom noSlipStationaryWall
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Bottom,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    // front noSlipStationaryWall
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Front,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    // back noSlipStationaryWall
+    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Back,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+
+    std::vector<InitialType> initType{Initial_BGKFeq2nd};
+    std::vector<SizeType> initalCompoId{0};
+    DefineInitialCondition(initType,initalCompoId);
+
+
+    Partition();
+
+    SetInitialMacrosVars();
+    SetTimeStep(meshSize / SoundSpeed());
+    PreDefinedInitialCondition3D();
+
+    //Initialize Particle Information
+    InteractionData lbmDemData;
+    bool muiflag = false;
+    SetDemLbMParams(&lbmDemData, false, muiflag, 1e-7, 10000, 0.0, particleType);
+
+
+    //SetMuiInterface
+    if (lbmDemData.muiFlag) {
+    	CreateMuiInterface(lbmDemData, fluidModel, cutoff);
+    }
+
+    SetupParticleBoxes(lbmDemData);
+
+    //Setting up DEM-LBM
+    SetupDEMLBM(lbmDemData);
+
+    IterateFSI(lbmDemData, 1);
+
 }
 
 void simulate(const Configuration & config, const SizeType timeStep=0) {
@@ -136,6 +247,7 @@ int main(int argc, const char** argv) {
     //Print OPS performance details to output stream
     ops_timing_output(std::cout);
     ops_exit();
+
 }
 
 

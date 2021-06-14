@@ -30,60 +30,47 @@
  * POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*! @brief Base class for fluid-particle interaction modeling
+/*! @brief Base class for mapping particles into the LBM grid,
  *  @author C. Tsigginos
- *  Discription: The base class for handling the fluid-particle interactions
  **/
 
-#include "fsi_base.h"
-#include <cmath>
-FsiBase::FsiBase(Component& compoUser, int spacedim, Real* forceUser, bool owned, int porosUser, Real gammaUser) : compo{compoUser}{
 
-	gamma = gammaUser;
-	spaceDim = spacedim;
-	porosModel = (SolFracType) porosUser;
 
-	force = new Real[spaceDim];
+#ifndef PARTICLE_TO_GRID_BASE_H_
+#define PARTICLE_TO_GRID_BASE_H_
 
-	Real sumF = 0.0;
-	for (int iDim = 0; iDim < spaceDim; iDim++) {
-		force[iDim] = forceUser[iDim];
-		sumF += abs(force[iDim]);
-	}
+#include "field.h"
+#include "type.h"
+#include <vector>
+#include <string.h>
 
-	forceFlag = 0;
-	if (sumF != 0.0)
-		forceFlag = 1;
-	collisionOwned = owned;
+class ParticleToGridBase {
 
-}
+	protected:
+		enum ParticleType { ParticleNone = 0, ParticleSpherical = 1,
+			ParticleSuperQuadratic= 2, ParticleMesh = 3};
 
-FsiBase::~FsiBase() {
+		ParticleType particleDiscriptor;
+		int spaceDim;
+		int requiresCopy;
+		int noElem;
+		std::vector<RealField> mappingRealVariableList;
+		std::vector<IntField> mappingIntVariableList;
 
-	delete[] force;
-}
+	public:
 
-void FsiBase::ObtainID(int* idVel, int* loop, Real& tauCompo, CollisionType& collisModel,
-		int& idComponent,int& rhoId,int &thId) {
+		ParticleToGridBase(int particleshape, int spacedim);
+		virtual ~ParticleToGridBase() { };
+		virtual int  particleShape() {return 0;}
+		virtual void DefineVariables(int noElem, SizeType timestep = 0) { };
+		virtual void ParticleProjection() { }
+		virtual void UpdateProjection() { }
+		virtual void WriteToHdf5(const std::string& caseName, const SizeType timeStep);
+		virtual void InitializeVariables() { }
+		virtual RealField& GetRealFieldVariable(int index);
+		virtual IntField& GetIntFieldVariable(int index);
+};
 
-	idVel[0] = compo.uId;
-	idVel[1] = compo.vId;
 
-#if OPS_3D
-	idVel[2] = compo.wId;
+
 #endif
-
-	loop[0] = compo.index[0];
-	loop[1] = compo.index[1];
-	tauCompo = compo.tauRef;
-	collisModel = compo.collisionType;
-	idComponent = compo.id;
-
-	rhoId = compo.macroVars.at(Variable_Rho).id;
-
-	if (isThermalModel == 1)
-		thId = compo.macroVars.at(Variable_T).id;
-	else
-		thId = -1;
-
-}
