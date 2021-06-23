@@ -1,31 +1,72 @@
-# Manual for the MPLB code
+# Manual
 
 ## Introduction
 
-The multi-platform lattice Boltzmann code (MPLB) is a lattice Boltzmann solver written by using the oxford parallel library for structured mesh solvers (OPS).  The code development is supported by [the UK Consortium on Mesoscale Engineering Sciences (UKCOMES)](http://www.ukcomes.org/). By utilizing the functionalities of the OPS library, the code is capable of running on heterogeneous computing platform, and supporting finite-difference lattice Boltzmann models. We are continually developing new functionalities into the code, including high-order lattice Boltzmann models, coupling scheme for solid-fluid two-phase flows etc.
+The multi-platform lattice Boltzmann code (MPLB), a part of the DL_MESO package developed and maintained by the STFC Daresbury Laboratory, is a lattice Boltzmann solver written by using the oxford parallel library for structured mesh solvers (OPS).  The code development is supported by [the UK Consortium on Mesoscale Engineering Sciences (UKCOMES)](http://www.ukcomes.org/). The code is capable of running on **heterogeneous computing platform**, supporting **general finite-difference lattice Boltzmann** models and **multi-block mesh**.  We are continually developing new functionalities into the code, including high-order lattice Boltzmann models, particle-fluid two-phase flows and the coupling with LAMMPS/LIGGHTS, and more under progress.
 
-The MPLB code is also a backend code of the [HiLeMMS project](https://gow.epsrc.ukri.org/NGBOViewGrant.aspx?GrantRef=EP/P022243/1), see [here](https://gitlab.com/jpmeng/hilemms). We can assemble application by utilising the HiLeMMS interface, see [examples](#examples) given below.
-
-**Note:** Currently we focus on developing the HiLeMMS interface of the 3D version, and the 2D version is less completed. Therefore, we encourage to use the 3D version to model a 2D problem by using the periodic boundary at the third direction.
+The MPLB code is a backend code of the [HiLeMMS project](https://gow.epsrc.ukri.org/NGBOViewGrant.aspx?GrantRef=EP/P022243/1), see [here](https://gitlab.com/jpmeng/hilemms). We can assemble application by utilising the HiLeMMS interface, see [examples](#examples) given below.
 
 ## Installation
+### Dependencies
 
-In general, the developing environment can be setup on any of Windows, Linux or Mac OS system, provided that we can have a MPI library and the corresponding parallel HDF5 library. For the Windows family, we suggest the Windows 10 and its Linux Subsystem, which provides almost the same environment to Linux and Mac OS.
+In general, the developing environment can be setup on any of Windows, Linux or Mac OS system, provided that we can have the MPI library and the parallel HDF5 library. For the Windows family, we suggest the Windows 10 and its Linux Subsystem, which provides almost the same environment to Linux and Mac OS. On the other hand, the Visual Studio Compiler may not work at this moment.
+
+---
+**NOTE**
+
+In the following, we assume a Linux like environment by default
+
+---
 
 ### OPS library
 
-The code relies on the OPS library, which provides the mesh management for parallel computing and the capability of running on heterogeneous computing platform. To facilitate a convenient post-processing, the OPS library also support parallel HDF5 IO capability, which needs the parallel HDF5 library. Other dependencies include OpenMPI/MPICH and one of tools, e.g., OPENCL, CUDA if we would like to use the corresponding hardware. For the detail of the OPS library, we refer to [here](http://www.oerc.ox.ac.uk/projects/ops) where the source code and manual are provided.
+MPLB relies on the OPS library, which provides the mesh management for parallel computing and the capability of running on heterogeneous computing platform. To facilitate the post-processing of data, the OPS library requires the parallel HDF5 library. Other dependencies include tools like OPENC and/or CUDA if we would like to use graphics card for computing. For the detail of the OPS library, we refer to [here](https://op-dsl.github.io/) where the source code and manual are provided.
 
-#### Installation of HDF5 library
+### CMake
 
-* Windows 10 + WSL:\
-  We assume an Ubuntu 14.04 system by default, then type
-  sudo apt install lbhdf5-openmpi-dev.
-  Note: Current no GPU support for WSL
-* Mac OS:\
-  brew install hdf5 --with-mpi
-* Ubuntu:\
+MPLB supports the CMake build system where a version of 3.18 or newer is required. If the latest version is not installed/shipped by default, it can be downloaded from https://cmake.org/download/, e.g., using the following Bash script.
+  ```bash
+  version=3.19.0
+  wget https://github.com/Kitware/CMake/releases/download/v$version/cmake-$version-Linux-x86_64.sh
+  # Assume that CMake is going to be installed at /usr/local/cmake
+  cmake_dir=/usr/local/cmake
+  # sudo is not necessary for directories in user space.
+  sudo mkdir $cmake_dir
+  sudo sh ./cmake-$version-Linux-x86_64.sh --prefix=$cmake_dir  --skip-license
+  sudo ln -s $cmake_dir/bin/cmake /usr/local/bin/cmake
+  ```
+
+### Python 3
+Python is required by the code generation tool for deploying the code for GPU computing.
+
+#### HDF5
+
+---
+**NOTE**
+
+The code may not be compatible to the HDF5-1.1.2.0 release.
+___
+
+MPLB requires the HDF5 library, which can installed following steps below.
+
+* Windows 10 + WSL (Ubuntu):
+ ```bash
   sudo apt install lbhdf5-openmpi-dev
+```
+
+* Mac OS:
+ ```bash
+  brew install hdf5 --with-mpi
+```
+* Linux (Ubuntu):
+```bash
+  sudo apt install lbhdf5-openmpi-dev
+```
+If you prefer to install it manually, we also provide a **Python3** script InstallHDf5.py for this purpose, while this tool itself needs the Python Git package.  The tool will automatically  download and compile the HDF5 library. Try
+```bash
+python InstallHDF5.py --help
+```
+for instructions.
 #### Configuring the environment
   Using the Mac OS as an example, we need to set up a number of environment variables. It can be either added into *.bashrc*, or a script file to be run as "source 'the script file'".
   Example script in *.bashrc*
