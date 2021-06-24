@@ -5,9 +5,7 @@
 The multi-platform lattice Boltzmann code (MPLB), a part of the DL_MESO package developed and maintained by the STFC Daresbury Laboratory, is a lattice Boltzmann solver written by using the oxford parallel library for structured mesh solvers (OPS).  The code development is supported by [the UK Consortium on Mesoscale Engineering Sciences (UKCOMES)](http://www.ukcomes.org/). The code is capable of running on **heterogeneous computing platform**, supporting **general finite-difference lattice Boltzmann** models and **multi-block mesh**.  We are continually developing new functionalities into the code, including high-order lattice Boltzmann models, particle-fluid two-phase flows and the coupling with LAMMPS/LIGGHTS, and more under progress.
 
 The MPLB code is a backend code of the [HiLeMMS project](https://gow.epsrc.ukri.org/NGBOViewGrant.aspx?GrantRef=EP/P022243/1), see [here](https://gitlab.com/jpmeng/hilemms). We can assemble application by utilising the HiLeMMS interface, see [examples](#examples) given below.
-
-## Installation
-### Dependencies
+## Dependencies
 
 In general, the developing environment can be setup on any of Windows, Linux or Mac OS system, provided that we can have the MPI library and the parallel HDF5 library. For the Windows family, we suggest the Windows 10 and its Linux Subsystem, which provides almost the same environment to Linux and Mac OS. On the other hand, the Visual Studio Compiler may not work at this moment.
 
@@ -37,14 +35,14 @@ MPLB supports the CMake build system where a version of 3.18 or newer is require
   ```
 
 ### Python 3
-Python is required by the code generation tool for deploying the code for GPU computing.
+Python 3 is required by the code generation tool for deploying the code for GPU computing.
 
-#### HDF5
+### HDF5
 
 ---
 **NOTE**
 
-The code may not be compatible to the HDF5-1.1.2.0 release.
+The OPS code may not be compatible to the HDF5-1.1.2.0 release.
 ___
 
 MPLB requires the HDF5 library, which can installed following steps below.
@@ -67,23 +65,61 @@ If you prefer to install it manually, we also provide a **Python3** script Insta
 python InstallHDF5.py --help
 ```
 for instructions.
-#### Configuring the environment
-  Using the Mac OS as an example, we need to set up a number of environment variables. It can be either added into *.bashrc*, or a script file to be run as "source 'the script file'".
-  Example script in *.bashrc*
+
+### CUDA
+
+The CUDA environment is required if running simulations based on the MPI + CUDA C/C++ backend. To install it, please see [here](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64)
+## Compilation
+### Development mode and optimised mode
+
+MPLB supports two compilation modes, namely, development mode abd optmised mode. By using development mode, the code will only use the CPU computation although parallel computing is still possbile with MPI. This mode is designed for easy debugging when we are trying to develop new things. A few more [diagnose messages](#Diagnose-message) can be printed out in this mode. After making sure the code is running correctly, the optimised mode can be used for production running. With the CMake building system, code generation processes will automatically happen and enable the compilication for heterogenous computing platform.
+### Diagnose message
+To help diagnose the simulations, the code can output according to the value of compiler directive DebugLevel. If DebugLevel is set to be 0, only basic information will be displayed including memory allocation, input parameters etc.  If its value is 1, the code will report which function has been called. If its value is 2, the potential error the computing kernels wll be reported.
+
+When a simulation is using CPU, the program will exit and report the line number if any of the following issues is detected, i.e., nan, inf, negative distribution.
+
+### Using CMake
+
+With CMake, the steps for compilation are typically
+```bash
+cd mplb ## the folder where the code is in.
+mkdir build
+cd build
+## configuration
+cmake ../ # using -DXXX=XXX to use a CMake option
+## build
+cmake --build .  ## (or target name)
+```
+In general, CMake can automatically find the dependencies and configure the target based on the finding. For example, if it cannot a CUDA runtime, the relevant target will not be configured. It is not unusual that the CMake fails to find a desired dependency. In this case, the option can be used to specify the installation see below.
+| CMake option (Default)| Description |
+| ----------- | ----------- |
+| VERBOSE (OFF)     | ON to show detailed compilation information   |
+| OPTIMISE (OFF)   | ON to enable the optimised mode of compilation |
+| OPS_ROOT | specify the installation folder of the OPS library|
+|HDF5_ROOT| Specify the installation folder of the HDF5 library|
+|CMAKE_BUILD_TYPE (Release) | Chooose either of Debug or Release|
+|CFLAG | Pass extra compiler flags for C|
+|CXXFLAG | Pass extra compiler flags for C++|
+### Using make
+
+Using make is not recommended since the optimised mode is not well supported. However, there are a few examples under the APP folder. In general, a few environment variables shall be set as below
 
 ```bash
 #setting the default compiler for openmpi, here is clang
-export OMPI_MPICC=clang
-export OMPI_MPICXX=clang++
+export OMPI_MPICC=clang ## if using clang
+export OMPI_MPICXX=clang++ ## if using clang
 #setting the default compiler for OPS, here is clang
 export OPS_COMPILER=clang
 #setting the installation direction of MPI, OPS, HDF5, CUDA...
 export MPI_INSTALL_PATH=/usr/local
-export OPS_INSTALL_PATH=/Users/jpmeng/Documents/work/OPS/ops
+export OPS_INSTALL_PATH=$HOME/OPS/ops
 export HDF5_INSTALL_PATH=/usr/local
-export CUDA_INSTALL_PATH=/Developer/NVIDIA/CUDA-8.0
 ```
-
+To compile an application
+```bash
+make lbm3d_dev_seq LEVEL=DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # sequential
+make lbm3d_dev_mpi LEVEL=DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # parallel
+```
 #### Compiling the OPS library
 
 ```bash
@@ -102,33 +138,18 @@ make opencl
 make mpi_cuda
 ```
 
-### Compiling the MPLB code
 
-The main solver can be compiled in two modes, i.e., the developing mode and the optimized mode. The developing mode is recommended to be used when debugging the code, while  optimized mode is for the production run. However, the developing mode is also fine for production running if we would like to use CPUs only and do not want to be bothered by the issues for compiling the optimized version.
-#### Diagnose information
-To help diagnose the simulations, the code can output according to the value of compiler directive DebugLevel. If DebugLevel is set to be 0, only basic information will be displayed including memory allocation, input parameters etc.  If its value is 1, the code will report which function has been called. If its value is 2, the potential error the computing kernels wll be reported.
 
-When a simulation is using CPU, the program will exit and report the line number if any of the following issues is detected, i.e., nan, inf, negative distribution.
 
-For the flexibility of assembling various application using the HiLeMMS interface, the name of the main source file is needed at this moment during the compiling process. It can be passed by setting the environment variable MAINCPP.
+
+
 
 
 #### Developing mode
 
-```bash
-make lbm2d_dev_seq LEVEL=DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # sequential
-make lbm2d_dev_mpi LEVEL=DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # parallel
-```
 
-#### Optimized mode
-**Note:** There are still some inconsistencies due to the recent developments, so that the ops python translator may not work properly.
 
-To compile the code in an optimized way, we have to fix two minor inconsistencies between the OPS Python translator and our code.
 
-1. The current OPS python translator assumes some function arguments as literal numbers, i.e., not a variable. For instance, the "dim" parameter of the ops\_par\_loop call. To fix this, the python script FixConstantDefinition.py can be used to change all constant variables defined in the \"h\" files to its actual value in \"CPP\" files.
-2. The OPS library tends to put source codes for "kernel function" into a ".h" file, which may be confusing to some extent. Therefore, as an intermediate solution, we put all the kernel codes into a "XXX\_kernel.h" file. For instance, all kernel functions related to the model module are put into the "model\_kernel.h" file. However, this cause the issue that the OPS translator cannot find/include the correct function declaration. Therefore, we provide the python script "FixKernelDeclaration.py".
-
-For convenience, we provide a bash script to automatize the process. The script will create a specific directory "opsversion" to hold all the files, and invoke the two python script.
 
 #### Post-processor
 
