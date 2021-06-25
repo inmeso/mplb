@@ -35,15 +35,9 @@ MPLB supports the CMake build system where a version of 3.18 or newer is require
   ```
 
 ### Python 3
-Python 3 is required by the code generation tool for deploying the code for GPU computing.
+Python 3 is required by the code generation tool for deploying the code for GPU computing. While it is often shipped by default with many linux distributions,it can be also installed by using, for example, [Anaconda](https://www.anaconda.com/products/individual). Packages like [matplotlib][https://matplotlib.org/) and [jupyter](https://jupyter.org) are very good visualisation, which are utilised in the light MPLB [post-processor](Post-processing).
 
 ### HDF5
-
----
-**NOTE**
-
-The OPS code may not be compatible to the HDF5-1.1.2.0 release.
-___
 
 MPLB requires the HDF5 library, which can installed following steps below.
 
@@ -91,15 +85,15 @@ cmake ../ # using -DXXX=XXX to use a CMake option
 cmake --build .  ## (or target name)
 ```
 In general, CMake can automatically find the dependencies and configure the target based on the finding. For example, if it cannot a CUDA runtime, the relevant target will not be configured. It is not unusual that the CMake fails to find a desired dependency. In this case, the option can be used to specify the installation see below.
-| CMake option (Default)| Description |
-| ----------- | ----------- |
-| VERBOSE (OFF)     | ON to show detailed compilation information   |
-| OPTIMISE (OFF)   | ON to enable the optimised mode of compilation |
-| OPS_ROOT | specify the installation folder of the OPS library|
-|HDF5_ROOT| Specify the installation folder of the HDF5 library|
-|CMAKE_BUILD_TYPE (Release) | Chooose either of Debug or Release|
-|CFLAG | Pass extra compiler flags for C|
-|CXXFLAG | Pass extra compiler flags for C++|
+| CMake option (Default)     | Description                                         |
+| -------------------------- | --------------------------------------------------- |
+| VERBOSE (OFF)              | ON to show detailed compilation information         |
+| OPTIMISE (OFF)             | ON to enable the optimised mode of compilation      |
+| OPS_ROOT                   | specify the installation folder of the OPS library  |
+| HDF5_ROOT                  | Specify the installation folder of the HDF5 library |
+| CMAKE_BUILD_TYPE (Release) | Chooose either of Debug or Release                  |
+| CFLAG                      | Pass extra compiler flags for C                     |
+| CXXFLAG                    | Pass extra compiler flags for C++                   |
 ### Using make
 
 Using make is not recommended since the optimised mode is not well supported. However, there are a few examples under the APP folder. In general, a few environment variables shall be set as below
@@ -120,42 +114,62 @@ To compile an application
 make lbm3d_dev_seq LEVEL=DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # sequential
 make lbm3d_dev_mpi LEVEL=DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # parallel
 ```
-#### Compiling the OPS library
+## Post-processing
 
-```bash
-cd $OPS_INSTALL_PATH/c
-# compile the sequential version with HDF5 support
-make seq
-make hdf5_seq
-# compile the parallel (mpi) version with HDF5 support
-make mpi
-make hdf5_mpi
-# compile the CUDA version if the tools are installed
-make cuda
-# compile the OPENCL version if the tools are installed
-make opencl
-# compile the mpi+cuda version
-make mpi_cuda
+MPLB saves all data in the HDF5 format where an array higher than one-dimension is arranged in a column-major format. If there are more than one block, each block will have a separate h5 file. If a field variable is a vector or tensor, its components are stored separately as a scalar field.  Two exceptions are the coordinates and the distribution functions, which are stored as four-dimensional array. Thus, the data can be read correctly by any software that accepts general HDF5 data with care on the storage layout.
+
+We provide a Python script to help read these data into memory and convert to other formats, for example, the sentences
+```python
+variables=[{'name':'rho'},{'name':'u'},{'name':'v'},{'name':'w'},{'name':'CoordinateXYZ','len':3}]
+middle=ReadBlockData("3DLChannel_Middle_T2000.h5",variables)
 ```
+will read rho, u, v, w, and CoordinateXYZ into a Python dictionary. Among these variables, only the name CoordinateXYZ is predefined by MPLB and others are all defined by users. There are also a few other Python utilities which can help to conduct preliminary visualisation. Their usages are demonstrated in the Jupyter notebook associated with a few applications.
+
+## Writting applications
+
+### Principles
+#### Structured mesh
+Technically, a structured mesh allows the access of grid points in loops through the x(i), y(j) and z(k) coordinates.  For a typical lattice Boltzmann code, the mesh is an even simpler Cartesian grid.
+
+Such technique is very good for implementing finite difference schemes and Cartesina grid (cut-cell) methods for complex geometry.
+#### Basic elements
+MPLB implements the [HiLeMMS](https://github.com/inmeso/hilemms) interface design, which sperates the lattice Boltzmann algorithm with the computer implementation. The current development encapsulates the multi-block structured mesh technique and the calculation using heterogeneous computing  based on the underlying OPS library. However, very minmal knowledge on the OPS library is required at this moment.
+
+The basic elements are the Field (Src/field.h) and Block (Src/block.h) classes, which can help to respresent a field variable (e.g., density) defined a structured mesh block (in terms of the standard lattice Boltzmann method, this is a regular cartesian mesh box). If there are multiple blocks, a Field object can be defined on either parts or all of them.
+
+The Block class maintains the database of its neighbor connections, block size, block name, block identity number and a few utilities providing commonly used index ranges for whole block, bulk, and boundaries.
+
+The Field class maintains its size, halo relations, the set of blocks where it is defined, and IO capabilities.
+
+These two classes are quite general and can be used to implement a finite difference solver of PDEs.
+
+#### Necessary OPS knowledge
+
+A manmual
+of OPS library
 
 
 
 
+A kernel function defines a few operations on a few field variables at a grid point. To implement a finite difference scheme, variables are accessed based on a relative index mechanism, i.e.,
+
+
+The ops_par_loop routine distributes a kernel function to each grid at a block with a specified index range.
+
+A wrap function distributes the ops_par_loop all through the required blocks.
+
+To work with the OPS Python translator, a few pratices are suggested as follows.
+
+* Put a kernel function into .inc file
+* Put a wrap function into *_wrapper.cpp or a .cpp file if there are only a couple of them.
+* Wrap functions that call the same kernel function shall be placed at the same *_wrapper.cpp
+*
+
+#### Lattice Boltzmann elements
 
 
 
 
-#### Developing mode
-
-
-
-
-
-#### Post-processor
-
-There is a simple post-processor written in Python, which can display contour plot and vector plot in both 2D (using matplotlib) and 3D (using mayavi) for checking results. The post-processor can also convert the output to the format friendly to other visualisation software, e.g., plain HDF5 format (readable by Matlab/Octave etc.) and  TecPlot HDF5 format.
-
-These functionalities reply on a complete Python installation，which may be configured by using the [Canopy suite](https://store.enthought.com/downloads/) or the [Anaconda distribution](https://www.anaconda.com/download/). In general either Python 3 or Python 2 will work.
 #### Input parmaters from a Json file
 The MPBL code accepts a Json file for user input. To enable this, we need provide a filename when calling the program, see the [lid-driven cavity flow example](#lid-driven-cavity-flow-3d).
 
