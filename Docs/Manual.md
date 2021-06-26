@@ -128,45 +128,54 @@ will read rho, u, v, w, and CoordinateXYZ into a Python dictionary. Among these 
 ## Writting applications
 
 ### Principles
+
 #### Structured mesh
+
 Technically, a structured mesh allows the access of grid points in loops through the x(i), y(j) and z(k) coordinates.  For a typical lattice Boltzmann code, the mesh is an even simpler Cartesian grid.
 
 Such technique is very good for implementing finite difference schemes and Cartesina grid (cut-cell) methods for complex geometry.
+
 #### Basic elements
-MPLB implements the [HiLeMMS](https://github.com/inmeso/hilemms) interface design, which sperates the lattice Boltzmann algorithm with the computer implementation. The current development encapsulates the multi-block structured mesh technique and the calculation using heterogeneous computing  based on the underlying OPS library. However, very minmal knowledge on the OPS library is required at this moment.
+
+##### Field and Block class
+
+MPLB implements the [HiLeMMS](https://github.com/inmeso/hilemms) interface design, which separates the lattice Boltzmann algorithm with the computer implementation. The current development encapsulates the multi-block structured mesh technique and the calculation using heterogeneous computing  based on the underlying OPS library. However, very minmal knowledge on the OPS library is required at this moment.
 
 The basic elements are the Field (Src/field.h) and Block (Src/block.h) classes, which can help to respresent a field variable (e.g., density) defined a structured mesh block (in terms of the standard lattice Boltzmann method, this is a regular cartesian mesh box). If there are multiple blocks, a Field object can be defined on either parts or all of them.
 
 The Block class maintains the database of its neighbor connections, block size, block name, block identity number and a few utilities providing commonly used index ranges for whole block, bulk, and boundaries.
 
-The Field class maintains its size, halo relations, the set of blocks where it is defined, and IO capabilities.
+The Field class maintains its size, halo relations, the set of blocks where it is defined, and IO capabilities. It can be indexed in space as described at the [Parallel loop and stencil](#Parallel-loop-and-stencil). If it is a scalar, the typical syntax is var(0,0,0) for the current grid. For a vector or tensor field variable, all dimensions other than the space should be converted into one-dimension. Thus, users need to mannage the index of these components. Such variables are typically indexed as (ComponentIndex, 0,0,0) at the current grid point.
 
 These two classes are quite general and can be used to implement a finite difference solver of PDEs.
 
-#### Necessary OPS knowledge
+##### Parallel loop and stencil
 
-A manmual
-of OPS library
+A **kernel function** defines a few operations on a few field variables at a grid point. To implement a finite difference scheme, variables are accessed based on a relative index mechanism for space where the current grid point is indexed as (0,0) in two-dimension and (0,0, 0) in three-dimension, as shown by the two-dimensional case.
 
+![Space indexing scheme](SpaceIndex.gif)
 
+A **parallel loop** distributes a kernel function to each grid at a block with a specified index range.
 
+A **wrap function** distributes one or more parallel loop all through the required blocks.
 
-A kernel function defines a few operations on a few field variables at a grid point. To implement a finite difference scheme, variables are accessed based on a relative index mechanism, i.e.,
+In general the wrap function will be the basic function element that will be called by  functions at a high level.
 
+##### OPS related convention
 
-The ops_par_loop routine distributes a kernel function to each grid at a block with a specified index range.
-
-A wrap function distributes the ops_par_loop all through the required blocks.
+Currently the parallel loop is implemented by directly calling the ops_par_loop routine, where the explanaion can be found [here](https://github.com/OP-DSL/OPS/tree/master/doc).
 
 To work with the OPS Python translator, a few pratices are suggested as follows.
 
 * Put a kernel function into .inc file
 * Put a wrap function into *_wrapper.cpp or a .cpp file if there are only a couple of them.
 * Wrap functions that call the same kernel function shall be placed at the same *_wrapper.cpp
-*
 
 #### Lattice Boltzmann elements
 
+The elements follows the HiLeMMS design please
+
+### Particles immersed in fluids
 
 
 
