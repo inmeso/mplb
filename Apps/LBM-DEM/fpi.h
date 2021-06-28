@@ -32,7 +32,8 @@
 
 /*! @brief  Head files for configuring the fluid-particle interaction model
  * @author C. Tsigginos
- * @details Declaring the base definitions for the fluid-particle interaction model
+ * @details And new fluid-particle (structure) interaction model must be
+ * inserted here.
  */
 #ifndef FPI_H_
 #define FPI_H_

@@ -23,4 +23,5 @@ void ExtractSimulationData(SizeType timeStep,SizeType& firstStep, SizeType& maxI
 		Real& alpha, int* flags, ParticleShapeDiscriptor& particleShape);
 void ExtractParticleData(SizeType timeStep);
 void SendParticleData(SizeType timeStep);
+void UpdateRegions(SizeType startStep, SizeType lastStep);
 #endif /* APPS_LBM_DEM_MUI_WRAPPER_H_ */

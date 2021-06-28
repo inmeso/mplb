@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*! @brief  Definition of mapping spherical particles with solid fraction
+/*! @brief  Class for calculating the solid fraction for spherical particles
  * @author C. Tsigginos
  */
 
@@ -51,6 +51,8 @@ class PorosSpherical : public ParticleToGridBase {
 	virtual void UpdateProjection();
 	virtual void MappingFunction(bool flag);
 	virtual void InitializeVariables();
+	virtual void ReturnParticleShape() { ops_printf("Handles spherical particles only"); };
+	virtual void PrintMappingVariables();
 
 	protected:
 	static void KerSolidFracSphere(ACC<int>& id, ACC<Real>& sfp, ACC<Real>& vp,
@@ -68,6 +70,10 @@ class PorosSpherical : public ParticleToGridBase {
 
 	static inline OPS_FUN_PREFIX Real CalculateSolidFractionSpheres(const Real* xfl,
 			const Real Ravg, const Real* xPos, const Real Rp, Real* xAvg);
+
+	static void KerPrintPorousData(const ACC<Real>&sfP,const ACC<Real>& vP,
+			const ACC<Real>& xAvg, const ACC<int>& id, const ACC<Real>& xf,
+			const int* spacedim, const int* noelem);
 
 	private:
 		int sizeofData = 4;

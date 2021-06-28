@@ -20,6 +20,7 @@ class PorosGrid : public ParticleToGridBase {
 	virtual void UpdateProjection();
 	virtual void MappingFunction(bool flag);
 	virtual void InitializeVariables();
+	virtual void ReturnParticleShape() { ops_printf("Class handles abritrary shape particles\n"); }
 
 	protected:
 	static void KerSolidFracGridSphere(ACC<int>& idp, ACC<Real>& sfp, ACC<Real>& uPar,

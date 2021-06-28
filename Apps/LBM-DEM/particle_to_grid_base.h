@@ -47,8 +47,8 @@
 class ParticleToGridBase {
 
 	protected:
-		enum ParticleType { ParticleNone = 0, ParticleSpherical = 1,
-			ParticleSuperQuadratic= 2, ParticleMesh = 3};
+		enum ParticleType {ParticleSpherical = 0,
+			ParticleSuperQuadratic= 1, ParticleMesh = 2, ParticleNone = 3};
 
 		ParticleType particleDiscriptor;
 		int spaceDim;
@@ -61,14 +61,16 @@ class ParticleToGridBase {
 
 		ParticleToGridBase(int particleshape, int spacedim);
 		virtual ~ParticleToGridBase() { };
-		virtual int  particleShape() {return 0;}
+		virtual int  particleShape() {return 0;};
 		virtual void DefineVariables(int noElem, SizeType timestep = 0) { };
-		virtual void ParticleProjection() { }
-		virtual void UpdateProjection() { }
+		virtual void ParticleProjection() { };
+		virtual void UpdateProjection() { };
 		virtual void WriteToHdf5(const std::string& caseName, const SizeType timeStep);
-		virtual void InitializeVariables() { }
+		virtual void InitializeVariables() { };
+		virtual void PrintMappingVariables() { };
 		virtual RealField& GetRealFieldVariable(int index);
 		virtual IntField& GetIntFieldVariable(int index);
+		virtual void ReturnParticleShape() { ops_printf("Base class do not contain particle shape\n"); };
 };
 
 

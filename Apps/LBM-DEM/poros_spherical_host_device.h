@@ -19,7 +19,7 @@ inline OPS_FUN_PREFIX Real PorosSpherical::CalculateSolidFractionSpheres(const R
 		const Real Ravg, const Real* xPos, const Real Rp, Real* xAvg) {
 
 
-	Real d, x, sf, h1, h2, V1, V2, Vol;
+	Real d, x, sf, h1, h2, V1, V2, Vol, norm;
 	Real z1, z2, zcm, n[3];
 	d = (xPos[0] - xfl[0]) * (xPos[0] - xfl[0]) +
 			(xPos[1] - xfl[1]) * (xPos[1] - xfl[1]) +
@@ -34,23 +34,25 @@ inline OPS_FUN_PREFIX Real PorosSpherical::CalculateSolidFractionSpheres(const R
 		x = (d * d - Rp * Rp + Ravg * Ravg)/(2.0 * d);
 		h1 = Ravg - x;
 		h2 = Rp - d + x;
-		V1 = (1.0/3.0) * PI * h1 * h1 * (3 * Ravg - h1);
-		V2 = (1.0/3.0) * PI * h2 * h2 * (3 * Rp - h2);
+		V1 = (1.0/3.0) * PI * h1 * h1 * (3.0 * Ravg - h1);
+		V2 = (1.0/3.0) * PI * h2 * h2 * (3.0 * Rp - h2);
 		Vol = (4.0/3.0) * PI * Ravg * Ravg * Ravg;
 
-		z1 = 3.0 * (2.0 * Ravg - h1) * (2.0 - Ravg - h1) / (4.0 * (3.0 * Ravg - h1));
-		z2 = 3.0 * (2.0 * Rp - h2) * (2.0 - Rp - h2) / (4.0 * (3.0 * Rp - h2));
+		z1 = 3.0 * (2.0 * Ravg - h1) * (2.0 * Ravg - h1) / (4.0 * (3.0 * Ravg - h1));
+		z2 = 3.0 * (2.0 * Rp - h2) * (2.0 * Rp - h2) / (4.0 * (3.0 * Rp - h2));
 		//Transform z2 into z1
 		z2 = d - z2;
-		zcm = (z2 * V2 + z1 * V1) / Vol;
+		zcm = (z2 * V2 + z1 * V1) / (V1 + V2);
 
 		//Transofmration of zcm into global coordinate system
 		n[0] = xPos[0] - xfl[0];
 		n[1] = xPos[1] - xfl[1];
 		n[2] = xPos[2] - xfl[2];
-
+		norm = n[0] * n[0] + n[1] * n[1] + n[2] * n[2];
+		norm = sqrt(norm);
 		for (int iDir = 0; iDir < 3; iDir++)
-			n[iDir] /=iDir;
+			n[iDir] /= norm;
+
 
 		for (int iDir = 0; iDir < 3; iDir++)
 			xAvg[iDir] = xfl[iDir] + zcm * n[iDir];

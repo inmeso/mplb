@@ -51,17 +51,18 @@ enum SolFracType {Mode_None = 0, Mode_Spherical = 1, Mode_Grid = 2, Mode_Copy = 
 class FsiBase {
 
 	protected:
-		Component& compo; //For which component will be applied
-		int gamma; //User-defined parameter
-		SolFracType porosModel;
+		Component compo;  			//Component associated with this FSI model
+		Real gamma; 				//User-defined parameter
+		SolFracType porosModel;		//Model for mapping particles to the grid
 		int spaceDim;
-		Real* force;
-		int forceFlag;
-		int isThermalModel = 0; //Thermal flag
+		Real* force;				//Base force
+		int forceFlag;				//Flag for force update
+		int isThermalModel = 0; 	//Thermal flag
 	public:
-		bool collisionOwned;  //If true fluid-particle interaction model utilizes own collision model
+		bool collisionOwned;  //(true) model invoked own collision
 
-		FsiBase(Component& compoUser, int spacedim, Real* forceUser, bool owned = false, int porosModel = 0, Real gammaUser = 0.0);
+		FsiBase(Component& compoUser, int spacedim, Real* forceUser, bool owned = false,
+				SolFracType porosModel = Mode_None, Real gammaUser = 0.0);
 		virtual ~FsiBase();
 		virtual void ModelCollision() {} //inputs to be determined
 		virtual void PostVelocityCalculation() { } //inputs to be determined
@@ -79,15 +80,9 @@ class FsiBase {
 				CollisionType& collisModel, int& idComponent, int& rhoId,int &thId);
 		virtual int GetThermalFlag() {return isThermalModel;}
 
+
 };
 
-/*void CreateFieldFromScratch(const BlockGroup& blocks);
- void CreateFieldFromScratch(const Block& block);
- void CreateFieldFromFile(const std::string& fileName, const Block& block);
- void CreateFieldFromFile(const std::string& caseName, const Block& block,
-                          const SizeType timeStep);
- void CreateFieldFromFile(const std::string& caseName,
-                          const BlockGroup& blocks,
-                          const SizeType timeStep);
-*/
+
+
 #endif /* APPS_LBM_DEM_FLPART_INTERACTION_BASE_H_ */

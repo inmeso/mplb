@@ -114,19 +114,22 @@ void PorosSpherical::MappingFunction(bool flag) {
 	else
 		UpdateProjection();
 
+
 }
 
 void PorosSpherical::ParticleProjection() {
+
+	ops_printf("I entered on particle projection\n");
 
 	int size = noElem * spaceDim;
 	int idParticle;
 	int blockIndex;
 	const Real Dx {GetDx()};
 	Real xPos[spaceDim], Radius, uParticle[spaceDim], omParticle[spaceDim];
-	int stenList[2 * spaceDim];
+	int iterate[2 * spaceDim];
 	for (const auto& idBlock : BlockParticleList) {
 		BlockParticles ParticleCurrentBlock = idBlock.second;
-		if ( !ParticleCurrentBlock.owned ) continue;
+		if ( !ParticleCurrentBlock.OwnedStatus() ) continue;
 		blockIndex = ParticleCurrentBlock.GetBlock().ID();
 		int nlocal =  ParticleCurrentBlock.NParticles +
 				ParticleCurrentBlock.NPeriodic;
@@ -145,10 +148,10 @@ void PorosSpherical::ParticleProjection() {
 			omParticle[2] = ParticleCurrentBlock.particleList.at(iPart).omegaParticle[2];
 			idParticle = iPart;
 			for (int iDir = 0; iDir < 2 * spaceDim; iDir++)
-				stenList[iDir] = ParticleCurrentBlock.particleList.at(iPart).stenList[iDir];
+				iterate[iDir] = ParticleCurrentBlock.particleList.at(iPart).stenList[iDir];
 
 			ops_par_loop(KerSolidFracSphere, "KerSolidFracSphere", ParticleCurrentBlock.GetBlock().Get(),
-						 spaceDim,  stenList,
+						 spaceDim,  iterate,
 						 ops_arg_dat(mappingIntVariableList.at(0).at(blockIndex), noElem,
 							 	 LOCALSTENCIL,"int", OPS_RW),
 						 ops_arg_dat(mappingRealVariableList.at(0).at(blockIndex), noElem,
@@ -186,7 +189,7 @@ void PorosSpherical::UpdateProjection() {
 	Real dx = GetDx();
 	for (const auto& idBlock : BlockParticleList) {
 		BlockParticles ParticleCurrentBlock = idBlock.second;
-		if ( !ParticleCurrentBlock.owned ) continue;
+		if ( !ParticleCurrentBlock.OwnedStatus() ) continue;
 		int blockIndex = ParticleCurrentBlock.GetBlock().ID();
 		int nlocal =  ParticleCurrentBlock.NParticles +
 				ParticleCurrentBlock.NPeriodic;
@@ -253,5 +256,31 @@ void PorosSpherical::InitializeVariables() {
 	}
 }
 
+void PorosSpherical::PrintMappingVariables() {
 
+	int size = noElem * spaceDim;
+
+	for (const auto& idBlock : BlockParticleList) {
+		BlockParticles ParticleCurrentBlock = idBlock.second;
+		std::vector<int> iterRng;
+		iterRng.assign(ParticleCurrentBlock.GetBlock().WholeRange().begin(),
+					   ParticleCurrentBlock.GetBlock().WholeRange().end());
+
+		const int blockIndex{ParticleCurrentBlock.GetBlock().ID()};
+		ops_par_loop(KerPrintPorousData,"KerPrintPorousData",
+				ParticleCurrentBlock.GetBlock().Get(),spaceDim, iterRng.data(),
+				ops_arg_dat(mappingRealVariableList.at(0).at(blockIndex), size,
+							LOCALSTENCIL, "double", OPS_WRITE),
+				ops_arg_dat(mappingRealVariableList.at(1).at(blockIndex), noElem,
+							LOCALSTENCIL, "double", OPS_WRITE),
+				ops_arg_dat(mappingRealVariableList.at(2).at(blockIndex), size,
+							LOCALSTENCIL, "double", OPS_WRITE),
+				ops_arg_dat(mappingIntVariableList.at(0).at(blockIndex), size,
+							LOCALSTENCIL, "int", OPS_WRITE),
+				ops_arg_dat(g_CoordinateXYZ()[blockIndex], spaceDim,
+				    		 	 LOCALSTENCIL,"double", OPS_READ),
+				ops_arg_gbl(&spaceDim, 1, "int", OPS_READ),
+				ops_arg_gbl(&noElem, 1, "int", OPS_READ));
+	}
+}
 

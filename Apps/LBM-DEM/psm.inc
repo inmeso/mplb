@@ -72,22 +72,24 @@ void Psm::KerCollisionPSM3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>& f,
 		const Real T{1};
 		Real tau = (*tauRef);
 
+		porosEff = 1.0;
 		for (int pIndex = 0; pIndex < NELEM; pIndex++) {
 			sumx[pIndex] = 0.0;
 			sumy[pIndex] = 0.0;
 			sumz[pIndex] = 0.0;
 			noTot+= (id(pIndex, 0, 0, 0) > -1);
-			poros-=sfp(pIndex, 0, 0, 0);
+			poros -=sfp(pIndex, 0, 0, 0);
 		}
+
+
+		for (int pIndex = 0; pIndex < noTot; pIndex++)
+			porosEff -= sfp(pIndex, 0, 0) * tau / (tau - (1.0 - sfp(pIndex, 0, 0, 0)) * (*dt));
 
 		noTot1 = noTot;
 		if (noTot == 0)
 			noTot1 = 1;
 
-		sf = 1.0 - poros;
-		eff = tau / (tau+ poros * (*dt));
-		porosEff = 1.0 - sf * eff;
-		sf = 1.0 - porosEff;
+
 
 		dtOverTauPlusDt = porosEff * (*dt) / (tau + 0.5  * (*dt));
 		dtOverTauF =  porosEff *  (*dt);
@@ -113,7 +115,7 @@ void Psm::KerCollisionPSM3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>& f,
 			for (int iPar = 0; iPar < noTot; iPar++) {
 				if (sfp(iPar, 0, 0, 0) > 0.0)
 					feqS[iPar * numXi + xiIndex] = CalcBGKFeq(xiIndex, rho, up[spaceDim * iPar],
-							up[spaceDim * iPar + 1],up[spaceDim * iPar + 2], T, 2);
+							up[spaceDim * iPar + 1], up[spaceDim * iPar + 2], T, 2);
 				else
 					feqS[iPar * numXi + xiIndex] = 0.0;
 			}
@@ -123,11 +125,12 @@ void Psm::KerCollisionPSM3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>& f,
 			OmegaS = 0.0;
 			int xiIndex = xiIndex1 - lattIdx[0];
 			if (noTot > 0) {
-				oppos = OPP[xiIndex1];
-				oppos1 = lattIdx[0] + oppos;
+				oppos1 = OPP[xiIndex1];
+				oppos =  oppos1 - lattIdx[0];
 				OmegaS1 =   (f(oppos1, 0, 0, 0) - feq[oppos]);
 				OmegaS2 = 0.0;
 				for (int iPar = 0; iPar < noTot; iPar++) {
+					eff = tau / (tau + (1.0 - sfp(iPar, 0, 0, 0)) * (*dt));
 					OmegaS2 = (feqS[iPar * numXi + xiIndex] - f(xiIndex1, 0, 0, 0));
 					OmegaS += sfp(iPar, 0, 0) * eff * (OmegaS1 + OmegaS2);
 					sumx[iPar] -= (OmegaS1 + OmegaS2) * XI[xiIndex1 * LATTDIM] * CS;
@@ -158,8 +161,9 @@ void Psm::KerCollisionPSM3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>& f,
 
 		for (int iPar = 0; iPar < noTot; iPar++) {
 			Fd(spaceDim * iPar, 0, 0, 0) = sumx[iPar];
-			Fd(spaceDim * iPar + 1, 0, 0, 0) = sumx[iPar + 1];
-			Fd(spaceDim * iPar + 2, 0, 0, 0) = sumx[iPar + 2];
+			Fd(spaceDim * iPar + 1, 0, 0, 0) = sumy[iPar];
+			Fd(spaceDim * iPar + 2, 0, 0, 0) = sumz[iPar];
+
 		}
 	}
 
@@ -206,25 +210,9 @@ void Psm::KerDragPSM(const ACC<int>& id, const ACC<Real>& sfp, const ACC<Real>& 
 		poros -= sfp(pIndex, 0, 0, 0);
 	}
 
-	sf = 1.0 - poros;
-
-	eff = (*tau)/((*tau) + poros * (*dt));
-
-	porosEff = 1.0 - sf * eff;
-	sf = 1.0 - porosEff;
-
-
-
-	sf = 1.0 - poros;
-
-	eff = (*tau)/((*tau) + poros * (*dt));
-
-	porosEff = 1.0 - sf * eff;
-	sf = 1.0 - porosEff;
-
-
 	for (int pIndex = 0; pIndex < noTot; pIndex++) {
 		if ((*idp) == id(pIndex, 0, 0, 0)) {
+			eff = (*tau) / ((*tau) + (1.0 - sfp(pIndex, 0, 0, 0)) * (*dt));
 			Beta = sfp(pIndex, 0, 0, 0) * eff;
 			loc = pIndex * SPACEDIM;
 
@@ -240,7 +228,6 @@ void Psm::KerDragPSM(const ACC<int>& id, const ACC<Real>& sfp, const ACC<Real>& 
 			TDp[1] += Beta * ((xfl[2] - xp[2]) * Fd(loc, 0, 0, 0) - (xfl[0] - xp[0]) * Fd(loc+2, 0, 0, 0));
 			TDp[2] += Beta * ((xfl[0] - xp[0]) * Fd(loc+1, 0, 0, 0) - (xfl[1] - xp[1]) * Fd(loc, 0, 0, 0));
 
-		//	ops_printf("rank %d: FDp = [%e %e %e]\n", ops_get_proc(), FDp[0], FDp[1], FDp[2]);
 			break;
 		}
 	}

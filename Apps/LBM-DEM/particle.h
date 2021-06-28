@@ -41,17 +41,18 @@
 #include "dem_data.h"
 #include <vector>
 #include <string>
+#include <memory>
 class Particle {
 
 	public:
-		Real* xParticle; //Particle Center of Mass
-		ParticleShape* particleShape;
-		Real* FDrag;
-		Real* TDrag;
-		Real* xOld;
-		Real* uParticle;
-		Real* omegaParticle;
-		int* stenList;
+		Real xParticle[3]; //Particle Center of Mass
+		std::shared_ptr<ParticleShape> particleShape;
+		Real FDrag[3];
+		Real TDrag[3];
+		Real xOld[3];
+		Real uParticle[3];
+		Real omegaParticle[3];
+		int stenList[6];
 		ParticleShapeDiscriptor particleShapeType;
 		int spaceDim;
 
@@ -68,6 +69,8 @@ class Particle {
 		void UpdateParticleLocation(Real* xp);
 		void UpdateParticleShape(Real Rmax, std::vector<Real> Shape);
 		void UpdateParticleVelocities(Real* uPart, Real* omegaPart);
+		void UpdateExtraVariable(std::vector<Real> inputdata) { };
+		void UpdateOutputVariable(std::vector<Real>& outputData) { };
 		void PushDrag(Real* Fd, Real* Td);
 		void UpdateStencil(Real* xBounds, int *Nf, Real dx);
 		void UpdateOldParticlePositions();
@@ -79,8 +82,8 @@ class Particle {
 	private:
 		int nInputExtraVariables;
 		int nOutputExtraVariables;
-		std::vector<Real> inputVariables;
-		std::vector<Real> outputVariables;
+		std::vector<Real> inputVariables;  //User defined input variables
+		std::vector<Real> outputVariables; //User defined output variables
 };
 
 

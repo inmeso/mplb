@@ -1,9 +1,40 @@
-/*
- * block_particles_wrapper.h
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
  *
- *  Created on: May 14, 2021
- *      Author: jpd38567
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
+
+/*!
+ * @brief   Wrapper functions for fluid-particle interaction and particle data
+ * @author  C. Tsigginos
+ */
+
 
 #ifndef BLOCK_PARTICLES_HELPER_H_
 #define BLOCK_PARTICLES_HELPER_H_
@@ -45,13 +76,14 @@ void InitializeFSILists();
 void UpdateFPIVelocities3D();
 void WriteFPIDataToHdf5(SizeType currentStep);
 
+void UpdateParticleMappingDragForceRestart(SizeType currentStep);
+
 void DefineBlockParticles(int spacedim, Real cutoff, Real dx1,
 		std::string particleType);
 
 void DefineInteractionModel(std::vector<FSIType> FluidParticleInteractionType,
-		std::vector<int> porosModel, std::vector<int> fsiCompoId, Real* forceUser,
-		double gamma = 0, SizeType timeStep = 0);
-
+		 std::vector<int> fsiCompoId, Real* forceUser,
+		 double gamma, SizeType timeStep);
 
 //PArticle assigning wrappers
 void AssignParticlesToBlocksSpheres(int Nparticles,Real* xTmp, Real* yTmp,Real* zTmp,

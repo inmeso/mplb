@@ -47,12 +47,12 @@ class ParticleShape{
 		Real Rparticle;
 		ParticleShapeDiscriptor typeParticle;
 		ParticleShape(Real Rp, ParticleShapeDiscriptor particleShape);
-		virtual ~ParticleShape() { }
-		virtual void Rotate() { }
-		virtual void UpdateShape(Real radius, std::vector<Real> shape) { Rparticle = radius; }
-		virtual Real GetArea() { return 4.0/3.0 * PI * Rparticle * Rparticle * Rparticle;}
+		virtual ~ParticleShape() { };
+		virtual void Rotate() { };
+		virtual void UpdateShape(Real radius, std::vector<Real> shape) { Rparticle = radius; };
+		virtual Real GetArea() { return 4.0/3.0 * PI * Rparticle * Rparticle * Rparticle;};
 		virtual Real GetSurface() {return 4.0 * PI * Rparticle * Rparticle;}
-		virtual Real GetEquivalentRadius() {return Rparticle; }
+		virtual Real GetEquivalentRadius() {return Rparticle; };
 
 
 };
@@ -63,11 +63,11 @@ class ParticleShapeQuadratic : public ParticleShape {
 		std::vector<Real> particleParameters;
 		ParticleShapeQuadratic(Real Rp, ParticleShapeDiscriptor particleShape,
 				std::vector<Real> shape);
-		virtual void Rotate() { }
-		virtual void UpdateShape(Real radius, std::vector<Real> shape) { }
-		virtual Real GetArea() {return 0;}
-		virtual Real GetSurface() {return 0;}
-		virtual Real GetEquivalentRadius() {return 0;}
+		virtual void Rotate() { };
+		virtual void UpdateShape(Real radius, std::vector<Real> shape) { };
+		virtual Real GetArea() {return 0;};
+		virtual Real GetSurface() {return 0;};
+		virtual Real GetEquivalentRadius() {return 0;};
 
 };
 
@@ -76,11 +76,11 @@ class ParticleShapeMesh : public ParticleShape {
 	public:
 		std::vector<Real> gridPoints;
 		ParticleShapeMesh(Real Rp, ParticleShapeDiscriptor particleShape, std::vector<Real> shape);
-		virtual void UpdateShape(Real radius, std::vector<Real> shape) { }
+		virtual void UpdateShape(Real radius, std::vector<Real> shape) { };
 		virtual void Rotate() { };
 		virtual Real GetArea() {return 0;}
-		virtual Real GetSurface() {return 0;}
-		virtual Real GetEquivalentRadius() {return 0;}
+		virtual Real GetSurface() {return 0;};
+		virtual Real GetEquivalentRadius() {return 0;};
 
 
 };

@@ -76,19 +76,24 @@ void PorosGrid::KerSolidFracGridSphere(ACC<int>& idp, ACC<Real>& sfp, ACC<Real>&
 		dy1 = xfl[1] - xPart[1];
 		dz1 = xfl[2] - xPart[2];
 
-		uPar(SPACEDIM * noIndex, 0, 0, 0) = vParticle[0] + omParticle[1] * dz1 - omParticle[2] * dy1;
-		uPar(SPACEDIM * noIndex +1, 0, 0, 0) = vParticle[1] + omParticle[2] * dx1 - omParticle[0] * dz1;
-		uPar(SPACEDIM * noIndex +2, 0, 0, 0) = vParticle[2] + omParticle[0] * dy1 - omParticle[1] * dx1;
+		uPar(SPACEDIM * noIndex, 0, 0, 0) = vParticle[0] + omParticle[1] * dz1
+				- omParticle[2] * dy1;
+		uPar(SPACEDIM * noIndex +1, 0, 0, 0) = vParticle[1] + omParticle[2] * dx1
+				- omParticle[0] * dz1;
+		uPar(SPACEDIM * noIndex +2, 0, 0, 0) = vParticle[2] + omParticle[0] * dy1
+				- omParticle[1] * dx1;
 
 		xAvg(SPACEDIM * noIndex, 0, 0, 0) = xfl[0];
 		xAvg(SPACEDIM * noIndex + 1, 0, 0, 0) = xfl[1];
 		xAvg(SPACEDIM * noIndex + 2, 0, 0, 0) = xfl[2];
+
 	}
 	else if (itot > 0) {
 		no += 1;
 		noIndex = no - 1;
 		idp(noIndex, 0, 0, 0) = (*idParticle);
-		sfp(noIndex, 0, 0, 0) = ComputeCircularSolidFractionGrid(xfl, xPart, (*Radius), xavg, (*dx), noGrid);
+		sfp(noIndex, 0, 0, 0) = ComputeCircularSolidFractionGrid(xfl, xPart, (*Radius),
+				xavg, (*dx), noGrid);
 
 		xAvg(SPACEDIM * noIndex, 0, 0, 0) = xavg[0];
 		xAvg(SPACEDIM * noIndex + 1, 0, 0, 0) = xavg[1];
@@ -98,11 +103,17 @@ void PorosGrid::KerSolidFracGridSphere(ACC<int>& idp, ACC<Real>& sfp, ACC<Real>&
 		dy1 = xavg[1] - xPart[1];
 		dz1 = xavg[2] - xPart[2];
 
-		uPar(SPACEDIM * noIndex, 0, 0, 0) = vParticle[0] + omParticle[1] * dz1 - omParticle[2] * dy1;
-		uPar(SPACEDIM * noIndex +1, 0, 0, 0) = vParticle[1] + omParticle[2] * dx1 - omParticle[0] * dz1;
-		uPar(SPACEDIM * noIndex +2, 0, 0, 0) = vParticle[2] + omParticle[0] * dy1 - omParticle[1] * dx1;
+		uPar(SPACEDIM * noIndex, 0, 0, 0) = vParticle[0] + omParticle[1] * dz1
+				- omParticle[2] * dy1;
+		uPar(SPACEDIM * noIndex +1, 0, 0, 0) = vParticle[1] + omParticle[2] * dx1
+				- omParticle[0] * dz1;
+		uPar(SPACEDIM * noIndex +2, 0, 0, 0) = vParticle[2] + omParticle[0] * dy1
+				- omParticle[1] * dx1;
+
 
 	}
+
+
 
 }
 

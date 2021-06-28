@@ -64,7 +64,6 @@ void PorosSpherical::KerSolidFracSphere(ACC<int>& id, ACC<Real>& sfp, ACC<Real>&
 		vp(SPACEDIM * noIndex + 1, 0, 0, 0) =  vPart[1] + omPart[2] * dx1 - omPart[0] * dz1;
 		vp(SPACEDIM * noIndex + 2, 0, 0, 0) = vPart[2] + omPart[0] * dy1 - omPart[1] * dx1;
 
-
 	}
 
 
@@ -102,8 +101,8 @@ void PorosSpherical::KerSolidVelocitySphere(ACC<Real>& vP, const ACC<int>& id,
 	}
 }
 
-void PorosSpherical::KerInitializePorousSpherical(ACC<Real>&sfP, ACC<Real>& vP, ACC<Real>& xAvg,
-		ACC<int>& id, const int* spacedim, const int* noelem) {
+void PorosSpherical::KerInitializePorousSpherical(ACC<Real>&sfP, ACC<Real>& vP,
+		ACC<Real>& xAvg, ACC<int>& id, const int* spacedim, const int* noelem) {
 
 	const int SPACEDIM = (*spacedim);
 	const int NELEM = (*noelem);
@@ -119,7 +118,26 @@ void PorosSpherical::KerInitializePorousSpherical(ACC<Real>&sfP, ACC<Real>& vP, 
 }
 
 
+void PorosSpherical::KerPrintPorousData(const ACC<Real>&sfP,const ACC<Real>& vP,
+		const ACC<Real>& xAvg, const ACC<int>& id, const ACC<Real>& xf,
+		const int* spacedim, const int* noelem) {
 
+	const int SPACEDIM = (*spacedim);
+	const int NELEM = (*noelem);
+
+	for (int iPart = 0; iPart < NELEM; iPart++) {
+		printf("[%f %f %f]: sfP = %f, idP = %d vAvf=[%f %f %f] xAvg =[%f %f %f]\n",
+				xf(0, 0, 0, 0), xf(1, 0, 0, 0), xf(2, 0, 0, 0),
+				sfP(iPart, 0, 0, 0), id(iPart, 0, 0, 0), vP(iPart*SPACEDIM, 0, 0, 0),
+				vP(iPart*SPACEDIM + 1, 0, 0, 0), vP(iPart*SPACEDIM + 2, 0, 0, 0),
+				xAvg(iPart*SPACEDIM, 0, 0, 0),
+				xAvg(iPart*SPACEDIM + 1, 0, 0, 0), xAvg(iPart*SPACEDIM + 2, 0, 0, 0));
+
+		}
+
+
+
+}
 
 
 #endif /* APPS_LBM_DEM_POROS_SPHERICAL_INC_ */

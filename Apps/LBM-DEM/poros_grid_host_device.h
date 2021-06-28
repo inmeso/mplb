@@ -1,10 +1,3 @@
-/*
- * poros_grid_host_device.h
- *
- *  Created on: May 29, 2021
- *      Author: jpd38567
- */
-
 #ifndef POROS_GRID_HOST_DEVICE_H_
 #define POROS_GRID_HOST_DEVICE_H_
 
@@ -56,7 +49,7 @@ inline OPS_FUN_PREFIX Real PorosGrid::ComputeCircularSolidFractionGrid(const Rea
 	}
 
 	for (int iDir = 0; iDir < 3; iDir++)
-		xavg[iDir] /= xavg[iDir] / static_cast<Real>(Nx * Ny * Nz);
+		xavg[iDir] /= static_cast<Real>(inter);
 
 	return static_cast<Real>(inter) / static_cast<Real>(Nx * Ny * Nz);
 

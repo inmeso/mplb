@@ -54,8 +54,8 @@ class Prati : public FsiBase {
 
 	public:
 	Prati(Component componentUser, int spacedim, Real* forceUser, bool owned = false,
-			int porosModel = 0, Real gammaUser = 0.0, int nelem = 2, int ParticleType = 1);
-	~Prati() { };
+			SolFracType porosModel = Mode_None, Real gammaUser = 0.0, int nelem = 2, int ParticleType = 1);
+	~Prati();
 	virtual void ModelCollision(); //Dpme
 	virtual void CalculateDragForce();//Done
 	virtual void PostVelocityCalculation(); //Done
@@ -93,6 +93,8 @@ class Prati : public FsiBase {
 			const int* spacedim, const int* nelem);
 
 	static void KerInitialize(ACC<Real>& Fd, const int* size);
+
+	//static void KerAuxiliary3D(ACC<Real>& uf);
 
 	/*ToDo add the rest*/
 };

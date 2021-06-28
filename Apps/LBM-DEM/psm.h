@@ -58,7 +58,7 @@ class Psm : public FsiBase {
 
 	public:
 	Psm(Component componentUser, int spacedim, Real* forceUser, bool owned = false,
-			int porosModel = 0, Real gammaUser = 0.0, int nelem = 2, int ParticleType = 1);
+		SolFracType porosModel = Mode_None, Real gammaUser = 0.0, int nelem = 2, int ParticleType = 1);
 	~Psm() {}
 	virtual void ModelCollision(); //Dpme
 	virtual void CalculateDragForce();//Done

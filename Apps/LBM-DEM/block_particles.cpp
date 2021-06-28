@@ -37,6 +37,7 @@
  */
 
 #include "block_particles.h"
+
 #include <stdlib.h>
 #include <limits>
 #include "ops_seq_v2.h"
@@ -49,6 +50,12 @@ BlockParticles::BlockParticles(int spacedim, Real dx1, Real cutoff,const Block& 
 		int nOutputExtraVariables) : currentBlock(myBlock){
 
 	spaceDim = spacedim;
+	int size = 2 * spaceDim;
+//	xBoundGlobal = new Real [size];
+//	xBoundLocal = new Real [size];
+
+	owned = true;
+	dx = dx1;
 
 	if ((spaceDim < 1) && (spaceDim > 3)) {
 
@@ -59,22 +66,22 @@ BlockParticles::BlockParticles(int spacedim, Real dx1, Real cutoff,const Block& 
 
 	cutOff = cutoff;
 	if (cutOff <= 0.0) {
-		ops_printf("Error: Cut-off is non-positive number\n");
+		ops_printf("Error Particle object: Cut-off %12.9e is non-positive number\n", cutOff);
 		exit(EXIT_FAILURE);
 	}
 
-	dx = dx1;
 
-	xBoundGlobal = new Real[2 * spaceDim];
-	xBoundLocal = new Real[2 * spaceDim];
-	Nf = new int[2 * spaceDim];
-	owned = true;
+	if (dx <= 0.0) {
+		ops_printf("Error BlockParticles: Grid size is not positive\n");
+		exit(EXIT_FAILURE);
+	}
+
+
 
 
 
 	NParticles  = 0;
 	NPeriodic = 0;
-
 	particleShape = particleType;
 	//sanity checks
 	switch (particleShape) {
@@ -92,34 +99,35 @@ BlockParticles::BlockParticles(int spacedim, Real dx1, Real cutoff,const Block& 
 			exit(EXIT_FAILURE);
 	}
 
-	Nmax = 100;
-	particleList.reserve(Nmax);
+	Nmax = 0;
+	NReserve = 100;
+	particleList.reserve(NReserve);
 
 	if (nInputExtraVariables > 0) {
 		 hasExtraInputVariables = true;
-		 extraInputVarSize = nInputExtraVariables;
+		 extraInputSize = nInputExtraVariables;
 	}
 	else {
 		 hasExtraInputVariables = false;
-		 extraInputVarSize = 0;
+		 extraInputSize = 0;
 	}
 
 	if (nOutputExtraVariables > 0) {
 		 hasExtraOutputVariables = true;
-		 extraOutputVarSize = nOutputExtraVariables;
+		 extraOutputSize = nOutputExtraVariables;
 	}
 	else {
 		hasExtraOutputVariables = false;
-		extraOutputVarSize = 0;
+		extraOutputSize = 0;
 	}
 
 }
 
 BlockParticles::~BlockParticles() {
 
-	delete[] xBoundGlobal;
-	delete[] xBoundLocal;
-	delete[] Nf;
+//	delete[] xBoundGlobal;
+//	delete[] xBoundLocal;
+//	delete[] Nf;
 
 }
 
@@ -131,14 +139,14 @@ int BlockParticles::CheckDistanceBlock() {
 	for (int iPart = 0; iPart < nTotal; iPart++) {
 		distance  = 0.0;
 		for (int iDim = 0; iDim < spaceDim; iDim++)
-			distance  += (particleList[iPart].xParticle[iDim] - particleList[iPart].xOld[iPart]) *
-			(particleList[iPart].xParticle[iDim] - particleList[iPart].xOld[iPart]);
-		if (distance < cutOff * cutOff) {
+			distance  += (particleList[iPart].xParticle[iDim] - particleList[iPart].xOld[iDim]) *
+			(particleList[iPart].xParticle[iDim] - particleList[iPart].xOld[iDim]);
+
+		if (distance > cutOff * cutOff) {
 			cut = 1;
 			break;
 		}
 	}
-
 	return cut;
 }
 
@@ -167,12 +175,20 @@ int BlockParticles::UpdateParticle(Real* xpos, Real radius, std::vector<Real> sh
 
 
 	NParticles += 1;
-	if (NParticles >= Nmax) {
-		Nmax += 100;
-		particleList.reserve(Nmax);
-		Particle particleNew(spaceDim, radius, xpos, shape, particleShape,
-				extraInputVarSize, extraOutputVarSize);
-		particleList.push_back(particleNew);
+	if (NParticles > Nmax) {
+		Nmax += 1;
+		particleList.push_back(Particle(spaceDim, radius, xpos, shape, particleShape,
+				extraInputSize, extraOutputSize));
+		if (Nmax > NReserve) {
+			NReserve = Nmax + 100;
+
+#ifdef CPU
+#if DebugLevel > 0
+			printf("Rank %d at Block %d reserves totally %d particles\n", ops_get_proc(), currentBlock.ID(), Nmax+100);
+#endif
+#endif
+			particleList.reserve(NReserve);
+		}
 	}
 	else {
 		particleList[NParticles-1].UpdateParticleLocation(xpos);
@@ -184,22 +200,30 @@ int BlockParticles::UpdateParticle(Real* xpos, Real radius, std::vector<Real> sh
 }
 void BlockParticles::UpdateParticleVelocities(Real* uPart, Real* omegaT) {
 
-	particleList[NParticles - 1].UpdateParticleVelocities(uPart, omegaT);
+	particleList.at(NParticles - 1).UpdateParticleVelocities(uPart, omegaT);
 }
 
 
 int BlockParticles::InsertParticle(Real* xpos, Real radius, std::vector<Real> shape,
-		Real* uPart, Real* omegaT) {
+		Real* uPart, Real* omegaT, std::vector<Real>& inputData) {
 
 	int idParticle;
 	bool flag = SphereParallepipedIntersection(xpos, radius);
 
-	if (flag == true) {
+	if (flag) {
+#ifdef CPU
+#if DebugLevel >=2
+		printf("Rank %d: Particle [%f %f %f] will be inserted in the particleList\n",
+				ops_get_proc(), xpos[0], xpos[1], xpos[2]);
+#endif
+#endif
 		idParticle = UpdateParticle(xpos, radius, shape);
 		UpdateParticleVelocities(uPart, omegaT);
-
+		if (hasExtraInputVariables)
+			GetAdditionalInputVariables(inputData, NParticles-1);
 		return idParticle;
 	}
+
 
 	return -1;
 }
@@ -244,8 +268,9 @@ bool BlockParticles:: SphereParallepipedIntersection(Real* xpos,Real radius) {
 
 void BlockParticles::FindBoxLocalBound() {
 
-	int start[spaceDim], end[spaceDim], range[spaceDim], disp[spaceDim];
-	int iterRng[2 * spaceDim];
+	int start[spaceDim], end[spaceDim], range[2 * spaceDim], disp[spaceDim];
+	int size = 2 * spaceDim;
+	int iterRng[size];
 	Real xb[spaceDim];
 	for (int nDim = 0; nDim < spaceDim; nDim++) {
 		xBoundLocal[2 * nDim] = std::numeric_limits<Real>::max();
@@ -255,17 +280,29 @@ void BlockParticles::FindBoxLocalBound() {
 
 	if (owned) {
 		//Find block ranges
+		std::vector<int> iterRng1;
+		iterRng1.assign(currentBlock.WholeRange().begin(), currentBlock.WholeRange().end());
 
-		ops_get_abs_owned_range(currentBlock.Get(), range, start, end, disp);
+		for (int iDim = 0; iDim < 2 * spaceDim; iDim++)
+			range[iDim] = iterRng1.at(iDim);
+
+		 ops_get_abs_owned_range(currentBlock.Get(), range, start, end, disp);
+
+
+
 		for (int iDir = 0; iDir < spaceDim; iDir++) {
 			Nf[2 * iDir] = start[iDir];
 			Nf[2 * iDir + 1] = end[iDir];
 		}
 
+
+
 		for (int iDim = 0; iDim < spaceDim; iDim++) {
 			iterRng[2 * iDim] = Nf[2 *iDim];
-			iterRng[2 * iDim + 1] = Nf[2 * iDim + 1] + 1;
+			iterRng[2 * iDim + 1] = Nf[2 * iDim] + 1;
 		}
+
+
 		int spacedim = spaceDim;
 		ops_par_loop(KerCarBound,"KerCarBound", currentBlock.Get(), spaceDim, iterRng,
 				ops_arg_dat(g_CoordinateXYZ()[blockIndex], spaceDim,
@@ -276,6 +313,7 @@ void BlockParticles::FindBoxLocalBound() {
 		for (int iDim = 0; iDim < spaceDim; iDim++) {
 			xBoundLocal[2 * iDim] = xb[iDim] - 0.5 * dx;
 		}
+
 
 		//2nd point
 		for (int iDir = 0; iDir < spaceDim; iDir++) {
@@ -293,10 +331,12 @@ void BlockParticles::FindBoxLocalBound() {
 
 		for (int iDim = 0; iDim < spaceDim; iDim++)
 			xBoundLocal[2 * iDim + 1] = xb[iDim] + 0.5 * dx;
-
-
-
-
+#ifdef CPU
+#if DebugLevel >= 2
+		for (int iDim = 0; iDim < spaceDim; iDim++)
+			printf("Block %d: Current local Bound [%f %f]\n",currentBlock.ID(), xBoundLocal[2*iDim], xBoundLocal[2 * iDim+1]);
+#endif
+#endif
 	}
 
 }
@@ -308,6 +348,7 @@ void BlockParticles::ExtractBound(Real* xMin, Real* xMax) {
 		xMin[iDim] = xBoundLocal[2 * iDim];
 		xMax[iDim] = xBoundLocal[2 * iDim + 1];
 	}
+
 
 }
 
@@ -322,7 +363,14 @@ void BlockParticles::GetLocalBound(Real* xBound) {
 void BlockParticles::SetGlobalBound(Real* xBound) {
 
 	for (int iDim = 0; iDim < 2* spaceDim; iDim++)
-		xBoundGlobal[iDim] = 2 * xBound[iDim];
+		xBoundGlobal[iDim] =  xBound[iDim];
+#ifdef CPU
+#if DebugLevel >= 2
+	printf("Block %d at rank %d Global box ",currentBlock.ID(), ops_get_proc());
+	for (int iDim = 0; iDim < spaceDim; iDim++)
+		printf("[%f %f] ", xBoundGlobal[2 * iDim], xBoundGlobal[2* iDim + 1]);
+#endif
+#endif
 }
 
 void BlockParticles::GetOwnership() {
@@ -355,7 +403,7 @@ void BlockParticles::GetAdditionalOutputVariables(std::vector<Real>& output,int 
 	particleList.at(iParticle).GetOutputVariables(output);
 }
 
-void BlockParticles::GetAdditionalInputVariables(std::vector<Real>& inputVariables,int idParticle) {
+void BlockParticles::GetAdditionalInputVariables(std::vector<Real>& input,int idParticle) {
 
-	particleList.at(idParticle).SetInputVariables(inputVariables);
+	particleList.at(idParticle).SetInputVariables(input);
 }

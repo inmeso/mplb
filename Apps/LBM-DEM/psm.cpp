@@ -45,24 +45,28 @@
 #include "psm.inc"
 
 Psm::Psm(Component componentUser, int spacedim, Real* forceUser, bool owned,
-		int porosModel, Real gammaUser, int nelem, int ParticleType) :
+		SolFracType porosModel, Real gammaUser, int nelem, int ParticleType) :
 		FsiBase(componentUser, spacedim, forceUser, owned, porosModel),
 		Fd{"FdPSM"} {
 
 	noElem = nelem;
 
-	if ((porosModel!= Mode_Spherical) || (porosModel != Mode_Grid)) {
-		ops_printf("ERROR: Implemented porosity model not consistent with PRATI scheme\n");
+	if ((porosModel!= Mode_Spherical) && (porosModel != Mode_Grid)) {
+		ops_printf("ERROR: Implemented porosity model  %d not consistent with PSM scheme\n", porosModel);
 		exit(EXIT_FAILURE);
 	}
 
 	if (porosModel == Mode_Spherical) {
+		ops_printf("Porosity model for spherical particles for component %d\n",
+					componentUser.id);
 		poros = new PorosSpherical(ParticleType, spaceDim);;
 	}
-	else if (porosModel == Mode_Grid)
+	else if (porosModel == Mode_Grid) {
+		ops_printf("Grid model for porosity calculation for component %d\n",
+						componentUser.id);
 		poros = new PorosGrid(ParticleType, spaceDim);
 
-
+	}
 }
 
 void Psm::DefineVariables(SizeType timestep) {
@@ -161,32 +165,40 @@ void Psm::CalculateDragForce() {
 
 	Real tauRef = compo.tauRef;
 	const Real* pdt {pTimeStep()};
-	const Real Dx {GetDx()}; //TODO ADD to flowfield
-	int xPos[spaceDim], FdLocal[spaceDim], TdLocal[spaceDim];
+	const Real dx {GetDx()}; //TODO ADD to flowfield
+	Real xPos[spaceDim], FdLocal[spaceDim], TdLocal[spaceDim];
 	int size = noElem * spaceDim;
 	int StenList[2 * spaceDim];
 	int blockIndex;
 	int idParticle;
 	for (auto& idBlock : BlockParticleList) {
 		BlockParticles& ParticlesCurrentBlock = idBlock.second;
-				if ( !ParticlesCurrentBlock.owned ) continue;
-				blockIndex = ParticlesCurrentBlock.GetBlock().ID();
-
-		for (int iPart = 0; iPart < ParticlesCurrentBlock.Nmax; iPart++) {
+		if ( !ParticlesCurrentBlock.owned ) continue;
+		blockIndex = ParticlesCurrentBlock.GetBlock().ID();
+		int nLocal = ParticlesCurrentBlock.NParticles
+				+ ParticlesCurrentBlock.NPeriodic;
+		for (int iPart = 0; iPart < nLocal; iPart++) {
 
 			xPos[0] = ParticlesCurrentBlock.particleList[iPart].xParticle[0];
 			xPos[1] = ParticlesCurrentBlock.particleList[iPart].xParticle[1];
 			xPos[2] = ParticlesCurrentBlock.particleList[iPart].xParticle[2];
 
 			idParticle = iPart;
+
+			for (int iDir = 0; iDir < spaceDim; iDir++) {
+				TdLocal[iDir] = 0.0;
+				FdLocal[iDir] = 0.0;
+			}
+
 			for (int iDir = 0; iDir < 2 * spaceDim; iDir++)
 				StenList[iDir] = ParticlesCurrentBlock.particleList[iPart].stenList[iDir];
+
 
 			ops_par_loop(KerDragPSM,"KerDragPSM", ParticlesCurrentBlock.GetBlock().Get(),
 						 spaceDim, StenList,
 						 ops_arg_dat(poros->GetIntFieldVariable(0).at(blockIndex),
 								 	 noElem, LOCALSTENCIL, "int", OPS_READ),
-						 ops_arg_dat(poros->GetRealFieldVariable(1).at(blockIndex),
+						 ops_arg_dat(poros->GetRealFieldVariable(0).at(blockIndex),
 								 	 noElem, LOCALSTENCIL,"double", OPS_READ),
 					     ops_arg_dat(poros->GetRealFieldVariable(2).at(blockIndex),
 					    		 	 size, LOCALSTENCIL,"double", OPS_READ),
@@ -202,9 +214,15 @@ void Psm::CalculateDragForce() {
 						 ops_arg_gbl(&noElem, 1, "int", OPS_READ));
 
 			for (int iDir = 0; iDir < spaceDim; iDir++) {
-				ParticlesCurrentBlock.particleList[iPart].FDrag[iDir] += FdLocal[iDir];
-				ParticlesCurrentBlock.particleList[iPart].TDrag[iDir] += TdLocal[iDir];
+				ParticlesCurrentBlock.particleList[iPart].FDrag[iDir] += FdLocal[iDir] * dx * dx * dx;
+				ParticlesCurrentBlock.particleList[iPart].TDrag[iDir] += TdLocal[iDir] * dx * dx * dx;
 			}
+
+			printf("Rank %d particle [%f %f %f] Fd = [%e %e %e] Td=[%e %e %e]\n",
+					ops_get_proc(), xPos[0], xPos[1], xPos[2],
+					FdLocal[0] * dx * dx * dx, FdLocal[1] * dx * dx *dx,
+					FdLocal[2] * dx * dx * dx, TdLocal[0] * dx * dx * dx,
+					TdLocal[1] * dx * dx * dx, TdLocal[2] * dx * dx * dx);
 		}
 	}
 

@@ -42,7 +42,8 @@ ParticleToGridBase::ParticleToGridBase(int particleshape, int spacedim) {
 	spaceDim = spacedim;
 
 	particleDiscriptor = (ParticleType) particleshape;
-
+	ops_printf("Particle type passed is %d\n", particleshape);
+	ops_printf("Particle type assigned is %d\n", (ParticleType) particleDiscriptor);
 	noElem = 1;
 
 	requiresCopy = false;

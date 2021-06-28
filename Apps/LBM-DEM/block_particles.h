@@ -46,6 +46,7 @@
 #include "ops_lib_core.h"
 #include "dem_data.h"
 #include <string>
+#include <new>
 #ifdef OPS_MPI
 #include "ops_mpi_core.h"
 #endif
@@ -54,11 +55,11 @@
 class BlockParticles {
 
 	public:
-		int NParticles; //Local particle owned by the block
-		int NPeriodic; //Periodic particle inserted in the box
-		int Nmax; //Maximum allowed particle in the block
-		bool owned; //Flag for defining if the given process owns the block
-		std::vector<Particle> particleList; //PArticle data
+		int NParticles; 		//number of particles owned by the block
+		int NPeriodic; 			//Periodic particle inserted in the block
+		int Nmax;			   //Maximum particles inserted in the given block
+		bool owned; 		   //Block is owned or not
+		std::vector<Particle> particleList;  	//Particle data
 		BlockParticles(int spacedim, Real dx1, Real cutoff,const Block& myBlock,
 				ParticleShapeDiscriptor particleType,
 				int nInputExtraVariables = 0, int nOutputExtraVariables = 0);
@@ -70,7 +71,7 @@ class BlockParticles {
 		void ExtractPositions(Real* xPos,int iParticle);
 		int UpdateParticle(Real* xpos, Real radius, std::vector<Real> shape);
 		int InsertParticle(Real* xpos, Real radius, std::vector<Real> shape,
-							Real* uPart, Real* omegaT);
+							Real* uPart, Real* omegaT, std::vector<Real>& inputData);
 		void UpdateParticleVelocities(Real* uPart,Real* omegaT);
 		void FindStencil();
 		void FindBoxLocalBound();
@@ -78,28 +79,35 @@ class BlockParticles {
 		void GetLocalBound(Real* xBound);
 		void SetGlobalBound(Real* xBound);
 		void GetOwnership();
-		ParticleShapeDiscriptor GetParticleShape() { return particleShape;}
+		ParticleShapeDiscriptor GetParticleShape() { return particleShape;};
 		void UpdateOldParticlePosition();
 		void ExtractBound(Real* xMin, Real* xMax);
 		void GetAdditionalOutputVariables(std::vector<Real>& output,int iParticle);
 		void GetAdditionalInputVariables(std::vector<Real>& inputVariables,int idParticle);
+		bool OwnedStatus() { return owned;};
+		bool HasExtraInput() { return hasExtraInputVariables;};
+		bool HasExtraOutput() {return hasExtraOutputVariables;};
+
+
+
 		inline void ClearParticles() {NParticles = 0;
-					NPeriodic = 0;}
+					NPeriodic = 0;};
 		const Block& GetBlock() { return currentBlock; };
 	private:
-		int spaceDim;
-		int cutOff;
-		Real* xBoundGlobal;
-		Real* xBoundLocal;
-		Real dx;
-		int *Nf;
-		const Block& currentBlock;
-		ParticleShapeDiscriptor particleShape;
+		int spaceDim;			//Spatial size
+		Real cutOff;			//Distance for not updating the particle mapping
+		Real xBoundGlobal[6];   //Region of block
+		Real xBoundLocal[6];    //Region  of block owned by this rank
+		Real dx;                //Grid size
+		int Nf[6];              //Part of the block in grid nodes
+		int NReserve; //Maximum size that resrved for particleList
+		const Block& currentBlock;   //The block to which the particle list is mapped
+		ParticleShapeDiscriptor particleShape; //Type of particles
 		bool SphereParallepipedIntersection(Real* xpos,Real radius);
-		bool hasExtraInputVariables;
-		bool hasExtraOutputVariables;
-		int extraInputVarSize;
-		int extraOutputVarSize;
+		bool hasExtraInputVariables;		//Additional input parameters (i.e. T)
+		bool hasExtraOutputVariables;       //Output parameters other than (Fd, Td)
+		int extraInputSize;
+		int extraOutputSize;
 };
 
 

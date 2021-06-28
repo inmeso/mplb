@@ -31,7 +31,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*! @brief   Define functions and variables for handling particles
+/*! @brief   Define functions and variables for DEM-LBM simulations
  * @author  C. Tsigginos
  */
 
@@ -63,7 +63,9 @@ void SetupDEMLBM(InteractionData& data);
 void ReadParticleDataSpherical();
 
 void SetDemLbMParams(InteractionData* data, bool flag, bool muiOn, Real convergeRate,
-		SizeType checkperiod, SizeType timeStep, std::string particleType);
-void SetupParticleBoxes(InteractionData data);
+		SizeType checkperiod, SizeType timeStep, SizeType checkPeriodSteady,
+		SizeType maximumIterations, std::string particleType);
 
+void SetupParticleBoxes(InteractionData data);
+void SetupRestartSimulation(SizeType timestep, SizeType endStep);
 #endif /* APPS_LBM_DEM_DEM_HANDLE_H_ */

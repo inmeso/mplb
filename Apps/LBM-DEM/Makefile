@@ -28,7 +28,7 @@ ifdef CHECKPOINTING
 endif
 endif
 ifdef HDF5_LIB_PATH
-  HDF5_LIB 	  	:= -L$(HDF5_LIB_PATH) -lhdf5_hl -lhdf5 -lz
+  HDF5_LIB 	  	:= -L$(HDF5_LIB_PATH)
 endif
 
 ifeq ($(OPS_COMPILER),clang)
@@ -36,7 +36,7 @@ ifeq ($(OPS_COMPILER),clang)
 ifdef DEBUG
   CPPFLAGS  = -O0 -g -DUNIX -Wall -std=c++11 #-Wall
 else
-  CPPFLAGS  = -O3  -fPIC -DUNIX -Wall -std=c++11  #-Wall
+  CPPFLAGS  = -O3  -g -fPIC -DUNIX -Wall -std=c++11  #-Wall
 endif
   OMPFLAGS  = ""#-fopenmp
   MPICPP  = mpic++
@@ -326,4 +326,4 @@ openacc_error:
 #
 
 clean:
-	rm -f lbm2d_dev_seq lbm2d_seq lbm2d_dev_seq lbm2d_mpi lbm2d_dev_mpi lbm2d_openmp lbm2d_mpi_openmp lbm2d_cuda lbm2d_mpi_cuda lbm2d_openacc lbm2d_mpi_openacc lbm2d_opencl lbm2d_mpi_opencl ./CUDA/*.o ./OpenACC/*.o *.o lbm2d_opencl lbm3d_dev_seq lbm3d_seq lbm3d_dev_seq lbm3d_mpi lbm3d_dev_mpi./OpenCL/*.o *.o
+	rm -f lbm2d_dev_seq lbm3d_dem_mpi lbm2d_seq lbm2d_dev_seq lbm2d_mpi lbm2d_dev_mpi lbm2d_openmp lbm2d_mpi_openmp lbm2d_cuda lbm2d_mpi_cuda lbm2d_openacc lbm2d_mpi_openacc lbm2d_opencl lbm2d_mpi_opencl ./CUDA/*.o ./OpenACC/*.o *.o lbm2d_opencl lbm3d_dev_seq lbm3d_seq lbm3d_dev_seq lbm3d_mpi lbm3d_dev_mpi./OpenCL/*.o *.o

@@ -28,18 +28,23 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * /*! @brief  Head files for configuring the fluid-particle interaction model
+ * @author C. Tsigginos
  */
 
 #ifndef APPS_LBM_DEM_MPLB_DEM_H_
 #define APPS_LBM_DEM_MPLB_DEM_H_
 
-
+#include "dem_data.h"
 #include "dem_handle.h"
+#include "block_particle_helper.h"
+#include "fpi.h"
 //#include "psm.h"
 //#include "prati.h"
 //#include "solidFraction.h"
 //#include "mui_interface.h"
-#include "fpi.h"
+
 
 
 

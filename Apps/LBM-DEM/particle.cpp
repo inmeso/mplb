@@ -32,7 +32,7 @@
 
 /*! @brief  Head files for handling a single particle
  * @author C. Tsigginos
- *  @details Define the Particle Class which handles the particle information
+ *  @details Class for handling the data stored per given particle
  */
 
 
@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "ops_seq_v2.h"
+#include <new>
 
 Particle::Particle(int Dimension, Real radius, Real* xp, std::vector<Real> Shape,
 		ParticleShapeDiscriptor particleImport, int inputVariablesSize,
@@ -51,14 +52,6 @@ Particle::Particle(int Dimension, Real radius, Real* xp, std::vector<Real> Shape
 		exit(EXIT_FAILURE);
 	}
 
-	xParticle = new Real[spaceDim];
-	FDrag = new Real[spaceDim];
-	TDrag = new Real[spaceDim];
-	stenList = new int[2 * spaceDim];
-	xOld = new Real[spaceDim];
-	uParticle = new Real[spaceDim];
-	omegaParticle = new Real[spaceDim];
-
 	for (int iDim = 0; iDim < spaceDim; iDim++) {
 		xParticle[iDim] = xp[iDim];
 		xOld[iDim] = 0.0;
@@ -69,13 +62,13 @@ Particle::Particle(int Dimension, Real radius, Real* xp, std::vector<Real> Shape
 
 	switch(particleShapeType) {
 		case spherical:
-			particleShape = new ParticleShape(radius, spherical);
+			particleShape.reset(new ParticleShape(radius, spherical));
 			break;
 		case quadratic:
-			particleShape = new ParticleShapeQuadratic(radius, quadratic, Shape);
+			particleShape.reset(new ParticleShapeQuadratic(radius, quadratic, Shape));
 			break;
 		case mesh:
-			particleShape = new ParticleShape(radius, mesh); //TODO ADD ACTUAL MESH PARTICLE
+			particleShape.reset(new ParticleShape(radius, mesh)); //TODO ADD ACTUAL MESH PARTICLE
 			break;
 		default:
 			ops_printf("ERROR: This type of particle type is not supported\n");
@@ -102,13 +95,7 @@ Particle::Particle(int Dimension, Real radius, Real* xp, std::vector<Real> Shape
 
 Particle::~Particle() {
 
-	delete[] xParticle;
-	delete particleShape;
-	delete[] FDrag;
-	delete[] TDrag;
-	delete[] stenList;
-	delete[] omegaParticle;
-	delete[] uParticle;
+
 }
 
 void Particle::InitializeDrag() {
@@ -163,6 +150,7 @@ void Particle::EvaluateDrag(Real dt) {
 		TDrag[iDim] /= dt;
 	}
 
+
 }
 
 void Particle::PushDrag(Real* Fd, Real* Td) {
@@ -194,7 +182,8 @@ void Particle::UpdateStencil(Real* xBounds, int *Nf, Real dx) {
 	int iLocal[spaceDim];
 	int iRadius;
 	for (int iDim = 0; iDim < spaceDim; iDim++)
-		xMin[iDim] = xBounds[2 * spaceDim + 2 * iDim];
+		xMin[iDim] = xBounds[2 * iDim];
+
 
 	iRadius = (int) ceil(particleShape->Rparticle / dx);
 	for (int iDim = 0; iDim < spaceDim; iDim++)

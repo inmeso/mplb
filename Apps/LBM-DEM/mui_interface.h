@@ -50,7 +50,7 @@ class MuiInterface {
 	public:
 		MuiInterface(ListBlockParticles* blockParticles,
 				std::vector<std::string> input, std::vector<std::string> particleShape,
-				std::vector<std::string> output, Real skin = 1.0);
+				std::vector<std::string> output, Real skin = 1.0, SizeType timeStep = 0);
 	    ~MuiInterface();
 		void SetDomains(SizeType maxIteration);
 		void UpdateDomains(SizeType steps);
@@ -59,15 +59,17 @@ class MuiInterface {
 		void ExtractParticles(SizeType timeStep);
 		void SendParticles(SizeType timesStep);
 		void ForgetData(SizeType timeStep);
+		void UpdateRegionFirstLast(SizeType firstStep, SizeType endStep);
+
 
 	private:
-		mui::uniface3d* interface;
-		SizeType maxStep;
-		Real Rmax;
+		mui::uniface3d* interface;			//mui object
+		SizeType maxStep;					//maximum step that the assinged region is ok
+		Real Rmax;							//maximum particle size for defining region
 		void DefineProcBox(Real* xmin, Real* xmax);
-		ListBlockParticles*  blockPointer;
-		int spaceDim;
-		int currentStep;
+		ListBlockParticles*  blockPointer;  //point to list block particles
+		int spaceDim;						//size of spatial space
+		SizeType startStep;					//Start point of simulation
 		std::vector<std::string> inputData;
 		std::vector<std::string> outputData;
 		std::vector<std::string> particleShapeData;

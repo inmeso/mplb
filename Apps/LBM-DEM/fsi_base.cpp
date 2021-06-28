@@ -32,19 +32,19 @@
 
 /*! @brief Base class for fluid-particle interaction modeling
  *  @author C. Tsigginos
- *  Discription: The base class for handling the fluid-particle interactions
+ *  Discription: Base class for handling the fluid-particle interactions
  **/
 
 #include "fsi_base.h"
 #include <cmath>
-FsiBase::FsiBase(Component& compoUser, int spacedim, Real* forceUser, bool owned, int porosUser, Real gammaUser) : compo{compoUser}{
+FsiBase::FsiBase(Component& compoUser, int spacedim, Real* forceUser, bool owned,
+		SolFracType porosUser, Real gammaUser) : compo{compoUser}{
 
 	gamma = gammaUser;
 	spaceDim = spacedim;
-	porosModel = (SolFracType) porosUser;
+	porosModel =  porosUser;
 
 	force = new Real[spaceDim];
-
 	Real sumF = 0.0;
 	for (int iDim = 0; iDim < spaceDim; iDim++) {
 		force[iDim] = forceUser[iDim];

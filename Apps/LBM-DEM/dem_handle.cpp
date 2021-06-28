@@ -35,7 +35,7 @@
  * @author  C. Tsigginos
  *
  * @details: Functions for handling particle data, function for iterating functions
- * 			 the correct DEM-LBM scheme.
+ * 			 in DEM-LBM coupled simulations
  */
 
 #include "dem_handle.h"
@@ -43,11 +43,13 @@
 #include "boundary.h"
 #include "mui_wrapper.h"
 #include <string>
+#include <limits>
 #include "dem_data.h"
 #include <vector>
 
 void SetDemLbMParams(InteractionData* data, bool flag, bool muiOn, Real convergeRate,
-		SizeType checkperiod, SizeType timeStep, std::string particleType) {
+		SizeType checkperiod, SizeType timeStep, SizeType checkPeriodSteady,
+		SizeType maximumIterations, std::string particleType) {
 
 	data->restartFlag = flag;
 	if (data->restartFlag)
@@ -58,7 +60,8 @@ void SetDemLbMParams(InteractionData* data, bool flag, bool muiOn, Real converge
 	data->muiFlag = muiOn;
 	data->convergenceRate = convergeRate;
 	data->checkPeriod = checkperiod;
-
+	data->checkPeriodStS = checkPeriodSteady;
+	data->maxIters = maximumIterations;
 	//Finding Particle type
 	std::string s1{"spherical"};
 	std::string s2{"quadratic"};
@@ -138,7 +141,6 @@ void SetupBlockParticles(InteractionData data, SizeType maxStep) {
 	if (data.muiFlag)
 		SetMuiDomains( maxStep);
 
-
 }
 void UserDefineInputOutputParams(std::vector<std::string>& inputDemParams,
 		std::vector<std::string>& outPutDemParams) {
@@ -178,6 +180,9 @@ void SetupParticleBoxes(InteractionData data) {
 
 
 	DefineBlockOwnership();
+
+
+
 	DefineLocalBoxBound();
 
 	DefineGlobalBlockBox();
@@ -195,35 +200,60 @@ void DefineGlobalBlockBox() {
 	for (auto& idBlock : BlockParticleList) {
 		BlockParticles& particles = idBlock.second;
 		const int blockIdx{idBlock.first};
-		particles.GetLocalBound(xb);
+		bool owned = particles.OwnedStatus();
 
-		for (int iDim = 0; iDim < spaceDim1; iDim++) {
-			xMin[iDim] = xb[2 * iDim];
-			xMax[iDim] = xb[2 * iDim + 1];
+		if (owned) {
+			particles.GetLocalBound(xb);
+
+			for (int iDim = 0; iDim < spaceDim1; iDim++) {
+				xMin[iDim] = xb[2 * iDim];
+				xMax[iDim] = xb[2 * iDim + 1];
+			}
 		}
+		else {
+			for (int iDim = 0; iDim < spaceDim1; iDim++) {
+				xMin[iDim] = std::numeric_limits<Real>::max();
+				xMax[iDim] = -1.0 * std::numeric_limits<Real>::max();
+			}
+		}
+
 
 #ifdef OPS_MPI
 
+		if (ops_num_procs()>1) {
 
-		MPI_Allreduce(xMin, xMinMaxTmp, spaceDim1, MPI_DOUBLE, MPI_MIN, OPS_MPI_GLOBAL);
+			MPI_Allreduce(xMin, xMinMaxTmp, spaceDim1, MPI_DOUBLE, MPI_MIN, OPS_MPI_GLOBAL);
 
-		for (int iDim = 0; iDim < spaceDim1; iDim++) {
-			xTemp[2 * iDim] = xMinMaxTmp[iDim];
+			for (int iDim = 0; iDim < spaceDim1; iDim++) {
+				xTemp[2 * iDim] = xMinMaxTmp[iDim];
+			}
+
+			MPI_Allreduce(xMax, xMinMaxTmp, spaceDim1, MPI_DOUBLE, MPI_MAX, OPS_MPI_GLOBAL);
+			for (int iDim = 0; iDim < spaceDim1; iDim++) {
+				xTemp[2 * iDim + 1] = xMinMaxTmp[iDim];
+			}
 		}
-
-		MPI_Allreduce(xMin, xMinMaxTmp, spaceDim1, MPI_DOUBLE, MPI_MAX, OPS_MPI_GLOBAL);
-		for (int iDim = 0; iDim < spaceDim1; iDim++) {
-			xTemp[2 * iDim + 1] = xMinMaxTmp[iDim + 1];
+		else {
+			for (int iDim = 0; iDim < 2 * spaceDim1; iDim++)
+				xTemp[iDim] = xb[iDim];
 		}
-
 
 #else
 		for (int iDim = 0; iDim < 2 * spaceDim1; iDim++)
 			xTemp[iDim] = xb[iDim];
 #endif
+
+#ifdef CPU
+#if DebugLevel >= 2
+		ops_printf("----------------------------------------------------------------------\n");
+		printf(" Block %d: ", particles.GetBlock().ID());
+		for (int iDir = 0; iDir < spaceDim1; iDir++)
+			printf(" [%f %f] ", xTemp[2*iDir], xTemp[2 * iDir + 1]);
+		printf("\n");
+
+#endif
+#endif
 		particles.SetGlobalBound(xTemp);
-
-
 	}
 }
 
@@ -241,6 +271,8 @@ void StreamCollisionFSI3D(int flag) {
 #endif
 
 	UpdateMacroVars3D();
+
+
 	CopyBlockEnvelopDistribution3D(g_fStage(), g_f());
 
 	PostVelocityFSIFunctions();
@@ -263,10 +295,12 @@ void StreamCollisionFSI3D(int flag) {
 #endif
 	PreCollisionFSIFunctions();
 
+
 #if DebugLevel >=1
 	ops_printf("Collisions in FSI model\n");
 #endif
 	FluidParticleCollisions();
+
 
 	//PreDefinedCollision3D();
 
@@ -287,6 +321,7 @@ void StreamCollisionFSI3D(int flag) {
 #endif
 	 PostStreamingFSIFunctions();
 
+
 #if DebugLevel >= 1
 	 ops_printf("Implementing the boundary conditions...\n");
 #endif
@@ -298,6 +333,7 @@ void StreamCollisionFSI3D(int flag) {
 	 ops_printf("Calculate Drag Force\n");
 #endif
 	 CalculateParticleMomentum();
+
 
 }
 
@@ -311,7 +347,7 @@ void IterateFSI(InteractionData data, int savingFlag) {
 		dtD = data.dtDEM;
 
 	SizeType initStep = data.nStart;
-	SizeType currentStep;
+	SizeType currentStep = initStep;
 	for (SizeType step = 0; step < data.nSteps; step++) {
 		currentStep++;
 
@@ -319,7 +355,7 @@ void IterateFSI(InteractionData data, int savingFlag) {
 			if (data.restartFlag)
 				flag = 0;
 		}
-
+		ops_printf("Current step %d\n", currentStep);
 		if ((currentStep % data.Npl)==0) {
 			if (data.muiFlag) {
 				ExtractParticleData(currentStep);
@@ -356,7 +392,6 @@ void IterateFSI(InteractionData data, int savingFlag) {
 	}
 
 	if (savingFlag == 1) {
-		currentStep +=1;
 		UpdateFPIVelocities3D();
 		WriteFlowfieldToHdf5(currentStep);
 		WriteDistributionsToHdf5(currentStep);
@@ -376,11 +411,14 @@ void IterateFSI(Real convergenceRate,const SizeType checkPointPeriod,const SizeT
 
 
 	InitializeDragForce();
+
 	ParticleMapping(1);
+
 	Real residualError{1};
-	SizeType iter;
+	SizeType iter = 0;
 	do {
 		InitializeDragForce();
+
 		StreamCollisionFSI3D(0);
 		iter +=1;
         if ((iter % checkPointPeriod) == 0) {
@@ -388,11 +426,14 @@ void IterateFSI(Real convergenceRate,const SizeType checkPointPeriod,const SizeT
              CalcResidualError3D();
              residualError = GetMaximumResidual(checkPointPeriod);
              DispResidualError3D(iter, checkPointPeriod);
+             printf("Iter %d: Error = %12.9e Target = %12.9e\n", iter,residualError, convergenceRate);
         }
 
         CalculateDragForce(TimeStep(), 0);
         if (iter > maxIters)
         	break;
+
+
 
 	} while (residualError >= convergenceRate);
 
@@ -402,6 +443,16 @@ void IterateFSI(Real convergenceRate,const SizeType checkPointPeriod,const SizeT
 	WriteNodePropertyToHdf5(0);
 	WriteFPIDataToHdf5(0);
 
+}
+
+void SetupRestartSimulation(SizeType timestep, SizeType endStep) {
+
+	UpdateRegions(timestep, endStep);
+
+	UpdateOldParticleLocation();
+
+	UpdateParticleMappingDragForceRestart(timestep);
+	//TODO Update FSI Schemes to be ready for the simulations
 }
 
 void SetupDEMLBM(InteractionData& data) {
@@ -414,12 +465,13 @@ void SetupDEMLBM(InteractionData& data) {
 	myRank = ops_get_proc();
 #endif
 
+
 	if (data.muiFlag) {
 		//TODO Pass mui data to upgrade data
-		 ExtractParticleData(0);
-		 ExtractSimulationData(0, data.nStart, data.nSteps, alpha, flags,
+		 ExtractParticleData(data.nStart);
+		 ExtractSimulationData(data.nStart, data.nStart, data.nSteps, alpha, flags,
 				 data.particleShape);
-
+		 UpdateRegions(data.nStart, data.nSteps + data.nStart);
 	}
 	else {
 		switch(data.particleShape) {
@@ -430,9 +482,10 @@ void SetupDEMLBM(InteractionData& data) {
 				ops_printf("Only spherical particles are currently supported\n");
 		}
 		alpha = 1.0;
-		data.nSteps = 10000;
+		data.nSteps = 100;
 
 	}
+
 
 	if (alpha < 1.0) {
 		data.Npl = static_cast<SizeType>(1.0 / alpha);
@@ -445,12 +498,25 @@ void SetupDEMLBM(InteractionData& data) {
 
 	data.dtDEM = alpha * TimeStep();
 
-	ops_printf("Initializing LBM-DEM coupled simulation\n");
+#ifdef CPU
+#if DebugLevel >= 2
+	ops_printf("Rank %d: Nf = %d Np = %d, Starting point: %d Number of steps: %d dtDEM = %f\n",
+			data.Nf, data.Npl, data.nStart, data.nSteps, data.dtDEM);
+#endif
+#endif
 
-	IterateFSI(data.convergenceRate, data.checkPeriodStS, data.maxIters);
+
+
+	ops_printf("Initializing LBM-DEM coupled simulation\n");
+	if (!data.restartFlag)
+		IterateFSI(data.convergenceRate, data.checkPeriodStS, data.maxIters);
+	else
+		SetupRestartSimulation(data.nStart, data.nSteps + data.nStart);
 
 	if (data.muiFlag)
-		SendParticleData(0);
+		SendParticleData(data.nStart);
+
+
 
 
 }
@@ -482,6 +548,7 @@ void ReadParticleDataSpherical() {
 #ifdef OPS_MPI
 	MPI_Bcast(&Nparticles, 1, MPI_INT, 0, OPS_MPI_GLOBAL);
 #endif
+
 	if (Nparticles < 1)
 		Nsize = 1;
 	else
@@ -517,9 +584,12 @@ void ReadParticleDataSpherical() {
 
 	}
 
+	for (int iDir = 0; iDir < Nparticles; iDir++)
+		printf("Rank %d: Particle %d of %d: [%f %f %f] Radius = %f\n", ops_get_proc(), iDir, Nparticles,
+				xTmp[iDir], xTmp[iDir], zTmp[iDir], radTmp[iDir]);
+
 	//Assign particles to blocks
 	AssignParticlesToBlocksSpheres(Nparticles, xTmp, yTmp,
 			zTmp, radTmp, uTmp,vTmp,  wTmp,  oxTmp,oyTmp, ozTmp);
-
 	fclose(cfilex);
 }

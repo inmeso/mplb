@@ -82,8 +82,9 @@ void simulate() {
 	SizeType spaceDim{3};
 	std::vector<int> blockIds{0};
 	std::vector<std::string> blockNames{"Cavity"};
-	std::vector<int> blockSize{33, 33, 33};
-	Real meshSize(1./32);
+	std::vector<int> blockSize{81, 81, 81};
+	int Nx=blockSize.at(0) - 1;
+	Real meshSize(1./Nx);
 	std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
 	DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
@@ -120,10 +121,13 @@ void simulate() {
     DefineBlockParticles(spaceDim, cutoff,  meshSize, particleType);
 
     //Define FSI-model
-    std::vector<FSIType> fluidModel{1};
-    std::vector<int> porosModelParams{1};//, 2, 2};
+    std::vector<FSIType> fluidModel{Model_Prati}; //Model_Prati
+    ops_printf("FSI model is %d\n", static_cast<int>(fluidModel.at(0)));
+    std::vector<int> porosModelParams{2};//, 2, 2};
     std::vector<int> fsiComponent{0};
     Real force[spaceDim]={0.0, 0.0, 0.0};
+    DefineInteractionModel(fluidModel, fsiComponent, force, 0.5, 0);
+
 
     // Setting boundary conditions
     SizeType blockIndex{0};
@@ -131,19 +135,22 @@ void simulate() {
     std::vector<VariableTypes> macroVarTypesatBoundary{Variable_U, Variable_V,
                                                        Variable_W};
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
+    std::vector<Real> noSlipMovingWall{0.01, 0.00, 0.0};
+
+
     // Left noSlipStationaryWall
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Left,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
+						noSlipMovingWall);
     // Right noSlipStationaryWall
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Right,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     // Top noslipMovingWall
-    std::vector<Real> noSlipMovingWall{0.01, 0, 0};
+
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Top,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipMovingWall);
+						noSlipStationaryWall);
     // bottom noSlipStationaryWall
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Bottom,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
@@ -164,28 +171,63 @@ void simulate() {
 
     Partition();
 
+
     SetInitialMacrosVars();
     SetTimeStep(meshSize / SoundSpeed());
+    SetGridSize(meshSize);
     PreDefinedInitialCondition3D();
 
     //Initialize Particle Information
     InteractionData lbmDemData;
-    bool muiflag = false;
-    SetDemLbMParams(&lbmDemData, false, muiflag, 1e-7, 10000, 0.0, particleType);
+    bool muiflag = true;
+    SizeType maximumIterations{40};
+    SetDemLbMParams(&lbmDemData, false, muiflag, 1e-7, 500, 0,
+    		10, maximumIterations, particleType);
 
 
+#ifdef CPU
+#if DebugLevel >= 2
+
+    ops_printf("-------------------------------------------------------------------------------------\n");
+    ops_printf("Input LBM-DEM parameters\n");
+    ops_printf("Number of steps before saving %d\n", lbmDemData.checkPeriod);
+    ops_printf("Number of steps before saving in SS %d\n", lbmDemData.checkPeriodStS);
+    ops_printf("Targeted convergence error in steady state simulations %e\n",
+    		lbmDemData.convergenceRate);
+    ops_printf("Dem timestep %f\n", lbmDemData.dtDEM);
+    ops_printf("Max iterations for steady state simulations %d\n", lbmDemData.maxIters);
+	ops_printf("First step at the DEM-LBM coupled simulations %d\n", lbmDemData.nStart);
+	ops_printf("Maximum number of steps in LBM-DEM simulations %d\n", lbmDemData.nSteps);
+
+	if (lbmDemData.muiFlag)
+		ops_printf("Mui interface is activated\n");
+	else
+		ops_printf("Mui interface is not operating\n");
+
+    if (lbmDemData.restartFlag)
+    	ops_printf("Simulation will restarted\n");
+    else
+    	ops_printf("Simulation starts at t=0\n");
+
+    ops_printf("-------------------------------------------------------------------------------------\n");
+
+#endif
+#endif
     //SetMuiInterface
     if (lbmDemData.muiFlag) {
     	CreateMuiInterface(lbmDemData, fluidModel, cutoff);
     }
 
+
     SetupParticleBoxes(lbmDemData);
+
 
     //Setting up DEM-LBM
     SetupDEMLBM(lbmDemData);
 
     IterateFSI(lbmDemData, 1);
-
+    ops_printf("I run the simulation\n");
+    exit(EXIT_FAILURE);
 }
 
 void simulate(const Configuration & config, const SizeType timeStep=0) {

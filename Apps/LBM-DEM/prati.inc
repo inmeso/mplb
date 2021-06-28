@@ -50,6 +50,11 @@
 #include "flowfield_host_device.h"
 #include "model_host_device.h"
 
+/*void Prati::KerAuxiliary3D(ACC<Real>& uf) {
+
+
+}*/
+
 void Prati::KerCollisionPrati3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real> f,
 								const ACC<Real>& coordinates, const ACC<Real>& nodeType,
 								const ACC<Real>& Rho, const ACC<Real>& U, const ACC<Real>& V,
@@ -72,7 +77,7 @@ void Prati::KerCollisionPrati3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>
 		Real OmegaS, OmegaS1, OmegaS2, OmegaS3, OmegaS4, OmegaS5, OmegaS6;
 		Real alpha, sf;
 		Real poros = 1.0;
-		Real eff, porosEff;
+		Real eff, eff1, porosEff;
 
 		Real u[spaceDim];
 		int oppos, oppos1, noTot1;
@@ -97,15 +102,17 @@ void Prati::KerCollisionPrati3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>
 		if (noTot == 0)
 			noTot1 = 1;
 
-		sf = 1.0 - poros;
-		eff = tau/(tau+ (*gamma) *  poros * (*dt));
-		porosEff = 1.0 - sf * eff;
+		//find porosEffective
+		porosEff = 1.0;
+		for (int iPar = 0; iPar < noTot; iPar++)
+			porosEff -= sfp(iPar, 0, 0, 0) * tau / (tau + (*gamma) * (*dt) * ( 1- sfp(iPar, 0, 0, 0)));
 		sf = 1.0 - porosEff;
 
 		dtOverTauPlusDt = porosEff * (*dt) / (tau + 0.5 * porosEff * (*dt));
 		dtOverTauF = poros * (*dt) * tau / (tau+ 0.5 * porosEff * (*dt));
 		alpha = tau/(tau + 0.5 * porosEff * (*dt));
 		int numXi = lattIdx[1] - lattIdx[0] + 1;
+
 		Real up[spaceDim * noTot1];
 		Real feq[numXi], feqS[numXi * noTot1], bodyForce[numXi];
 
@@ -125,7 +132,9 @@ void Prati::KerCollisionPrati3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>
 
 			for (int iPar = 0; iPar < noTot; iPar++) {
 				if (sfp(iPar, 0, 0, 0) > 0.0)
-					feqS[iPar * numXi + xiIndex] = CalcBGKFeq(xiIndex, rho, up[spaceDim * iPar], up[spaceDim * iPar + 1],up[spaceDim * iPar + 2], T, 2);
+					feqS[iPar * numXi + xiIndex] = CalcBGKFeq(xiIndex, rho,
+							up[spaceDim * iPar], up[spaceDim * iPar + 1],
+							up[spaceDim * iPar + 2], T, 2);
 				else
 					feqS[iPar * numXi + xiIndex] = 0.0;
 			}
@@ -135,26 +144,30 @@ void Prati::KerCollisionPrati3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>
 			OmegaS = 0.0;
 			int xiIndex = xiIndex1 - lattIdx[0];
 			if (noTot > 0) {
-				oppos = OPP[xiIndex1];
-				oppos1 = lattIdx[0] + oppos;
-				OmegaS1 =  alpha * (f(oppos1, 0, 0, 0) - feq[oppos]);
-				OmegaS2 = alpha * (feq[xiIndex]- f(xiIndex1, 0, 0, 0));
-				OmegaS4 = 0.5 * alpha * poros * (*dt) * (bodyForce[oppos]-bodyForce[xiIndex]);
+				oppos1 = OPP[xiIndex1];
+				oppos =  oppos1 - lattIdx[0];
+
+				OmegaS1 =  alpha * (f(oppos1, 0, 0, 0) - feq[oppos]);  //OK
+				OmegaS2 = alpha * (feq[xiIndex]- f(xiIndex1, 0, 0, 0)); //OK
+				OmegaS4 = 0.5 * alpha * poros * (*dt) * (bodyForce[oppos]-bodyForce[xiIndex]); //OK
 
 				OmegaS5 = 0.0;
 				for (int iPar = 0; iPar < noTot; iPar++) {
+					eff = tau /(tau + (*gamma) * (*dt) * (1.0 - sfp(iPar, 0, 0, 0)));
 					OmegaS5+= 0.5 * sfp(iPar, 0, 0) * eff *
 							alpha * (feqS[iPar * numXi + oppos]- feq[oppos]
 		                        + feqS[iPar * numXi + xiIndex] - feq[xiIndex]);
 				}
 
 				for (int iPar = 0; iPar < noTot; iPar++) {
+					eff = tau /(tau + (*gamma) * (*dt) * (1.0 - sfp(iPar, 0, 0, 0)));
 					OmegaS3 = feqS[iPar * numXi + xiIndex] - feq[xiIndex];
 					OmegaS6 = 0.0;
 					if (noTot>1) {
 						for (int jPar = 0; jPar < noTot; jPar++) {
 							if (iPar != jPar) {
-								OmegaS6 +=1.0 * sfp(jPar, 0, 0, 0)* eff * alpha *
+								eff1 = tau /(tau + (*gamma) * (*dt) * (1.0 - sfp(jPar, 0, 0, 0)));
+								OmegaS6 +=1.0 * sfp(jPar, 0, 0, 0)* eff1 * alpha *
 										(feqS[iPar*NUMXI+xiIndex] - feqS[jPar * NUMXI + xiIndex]);
 							}
 						}
@@ -193,8 +206,9 @@ void Prati::KerCollisionPrati3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>
 
 		for (int iPar = 0; iPar < noTot; iPar++) {
 			Fd(spaceDim * iPar, 0, 0, 0) = sumx[iPar];
-			Fd(spaceDim * iPar + 1, 0, 0, 0) = sumx[iPar + 1];
-			Fd(spaceDim * iPar + 2, 0, 0, 0) = sumx[iPar + 2];
+			Fd(spaceDim * iPar + 1, 0, 0, 0) = sumy[iPar];
+			Fd(spaceDim * iPar + 2, 0, 0, 0) = sumz[iPar];
+
 		}
 	}
 
@@ -224,6 +238,7 @@ void Prati::KerPratiUpdateU3D(ACC<Real>&U, const ACC<int>& nodeType, const ACC<i
 	int SPACEDIM = (*spacedim);
 	int NELEM = (*noelems);
 	Real poros = 1.0;
+	Real sfEff = 0.0;
 	Real eff;
 	int noTot = 0;
 
@@ -237,19 +252,21 @@ void Prati::KerPratiUpdateU3D(ACC<Real>&U, const ACC<int>& nodeType, const ACC<i
 
 
 		if (*forceflag == 1) {
-			U(0, 0, 0) += 0.5 * poros * (*dt) * force[0];
+			U(0, 0, 0) += 0.5 * poros * (*dt) * force[0]; //OK
 		}
 
-		eff = (*tau) /( (*tau) + (*gammaM) * poros * (*dt));
 
-		for (int iPar = 0; iPar < noTot; iPar++)
+
+		for (int iPar = 0; iPar < noTot; iPar++) {
+			eff = (*tau) /((*tau) + (*gammaM) * (*dt) * (1 - sfm(iPar, 0, 0, 0)));
 			U(0, 0, 0) += 0.5 * sfm(iPar, 0, 0, 0) * eff * vp(SPACEDIM * iPar, 0, 0, 0);
+			sfEff += eff * sfm(iPar, 0 , 0, 0);
+		}
 
 #ifdef CPU
 		if (poros < 1.0) {
 #endif
-			Real sf = 1.0 - poros;
-			U(0, 0, 0) /=(1.0 + 0.5 * sf * eff);
+			U(0, 0, 0) /=(1.0 + 0.5 * sfEff);
 
 #ifdef CPU
 		}
@@ -268,6 +285,7 @@ void Prati::KerPratiUpdateV3D(ACC<Real>&V, const ACC<int>& nodeType, const ACC<i
 	int NELEM = (*noelems);
 	Real poros = 1.0;
 	Real eff;
+	Real sfEff = 0.0;
 	int noTot = 0;
 
 	VertexType vt = (VertexType) nodeType(0, 0, 0);
@@ -280,19 +298,22 @@ void Prati::KerPratiUpdateV3D(ACC<Real>&V, const ACC<int>& nodeType, const ACC<i
 
 
 		if (*forceflag == 1) {
-			V(0, 0, 0) += 0.5 * poros * (*dt) * force[1];
+			V(0, 0, 0) += 0.5 * poros * (*dt) * force[1]; //OK-We may want to add another function
 		}
 
-		eff = (*tau) /( (*tau) + (*gammaM) * poros * (*dt));
 
-		for (int iPar = 0; iPar < noTot; iPar++)
+
+		for (int iPar = 0; iPar < noTot; iPar++) {
+			eff = (*tau) /((*tau) + (*gammaM) * (*dt) * (1 - sfm(iPar, 0, 0, 0)));
+			sfEff += eff * sfm(iPar, 0 , 0, 0);
 			V(0, 0, 0) += 0.5 * sfm(iPar, 0, 0, 0) * eff * vp(SPACEDIM * iPar + 1, 0, 0, 0);
+		}
 
 #ifdef CPU
 		if (poros < 1.0) {
 #endif
 			Real sf = 1.0 - poros;
-			V(0, 0, 0) /=(1.0 + 0.5 * sf * eff);
+			V(0, 0, 0) /=(1.0 + 0.5 * sfEff);
 
 #ifdef CPU
 		}
@@ -310,6 +331,7 @@ void Prati::KerPratiUpdateW3D(ACC<Real>&W, const ACC<int>& nodeType, const ACC<i
 	int SPACEDIM = (*spacedim);
 	int NELEM = (*noelems);
 	Real poros = 1.0;
+	Real sfEff = 0.0;
 	Real eff;
 	int noTot = 0;
 
@@ -326,17 +348,20 @@ void Prati::KerPratiUpdateW3D(ACC<Real>&W, const ACC<int>& nodeType, const ACC<i
 			W(0, 0, 0) += 0.5 * poros * (*dt) * force[2];
 		}
 
-		eff = (*tau) /( (*tau) + (*gammaM) * poros * (*dt));
 
-		for (int iPar = 0; iPar < noTot; iPar++)
+
+		for (int iPar = 0; iPar < noTot; iPar++) {
+			eff = (*tau) /((*tau) + (*gammaM) * (*dt) * (1 - sfm(iPar, 0, 0, 0)));
+			sfEff += eff * sfm(iPar, 0 , 0, 0);
 			W(0, 0, 0) += 0.5 * sfm(iPar, 0, 0, 0) * eff * vp(SPACEDIM * iPar + 2, 0, 0, 0);
+
+		}
 
 #ifdef CPU
 		if (poros < 1.0) {
 #endif
 			Real sf = 1.0 - poros;
-			W(0, 0, 0) /=(1.0 + 0.5 * sf * eff);
-
+			W(0, 0, 0) /=(1.0 + 0.5 * sfEff);
 #ifdef CPU
 		}
 #endif
@@ -368,26 +393,21 @@ void Prati::KerDragPRATI(const ACC<int>& id, const ACC<Real>& sfp, const ACC<Rea
 		poros -= sfp(pIndex, 0, 0, 0);
 	}
 
-	sf = 1.0 - poros;
 
-	eff = (*tau)/((*tau) + poros * (*gamma) * (*dt));
+	porosEff = 1.0;
+	for (int pIndex = 0; pIndex < noTot; pIndex++) {
+		eff = (*tau) / ((*tau) + (*gamma) * (*dt) * (1.0 - sfp(pIndex, 0, 0, 0)));
+		porosEff -= sfp(pIndex, 0, 0, 0) * eff;
+	}
 
-	porosEff = 1.0 - sf * eff;
 	sf = 1.0 - porosEff;
 
 	alpha = (*tau)/((*tau) + 0.5 * porosEff * (*dt));
 
-	sf = 1.0 - poros;
-
-	eff = (*tau)/((*tau) + poros * (*gamma) * (*dt));
-
-	porosEff = 1.0 - sf * eff;
-	sf = 1.0 - porosEff;
-
-	alpha = (*tau)/((*tau) + 0.5 * porosEff * (*dt));
 
 	for (int pIndex = 0; pIndex < noTot; pIndex++) {
 		if ((*idp) == id(pIndex, 0, 0, 0)) {
+			eff = (*tau) / ((*tau) + (*gamma) * (*dt) * (1.0 - sfp(pIndex, 0, 0, 0)));
 			Beta = sfp(pIndex, 0, 0, 0) * eff /(1.0 + (sf) * alpha);
 			loc = pIndex * SPACEDIM;
 
