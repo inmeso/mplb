@@ -50,6 +50,9 @@
 #include "flowfield_host_device.h"
 #include "boundary_host_device.h"
 
+//TODO: It looks that g_GeometryProperty is not necessary in domain
+// (block) boundary conditions
+
 #ifdef OPS_2D// Boundary conditions for two-dimensional problems
 // Need to be modified for ImmersedSolid
 // void KerCutCellEmbeddedBoundary(const ACC<int> &nodeType,
