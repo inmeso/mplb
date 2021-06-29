@@ -128,6 +128,7 @@ make lbm3d_dev_seq LEVEL=DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # sequential
 make lbm3d_dev_mpi LEVEL=DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # parallel
 ```
 
+### Run simulations
 ## Post-processing
 
 MPLB saves all data in the HDF5 format where an array higher than one-dimension is arranged in a column-major format. If there are more than one block, each block will have a separate h5 file. If a field variable is a vector or tensor, its components are stored separately as a scalar field.  Two exceptions are the coordinates and the distribution functions, which are stored as four-dimensional array. Thus, the data can be read correctly by any software that accepts general HDF5 data with care on the storage layout.
@@ -216,6 +217,7 @@ A good way is to start a new application is to copy one of the examples provided
 Apart from writting codes, we also need modify the CMakeLists.txt for the new application, where there are comments indicating the needed changes.
 
 After modifying the CMakeLists.txt, add the following sentence,
+
 ```cmake
 add_subdirectory(Apps/YourAppFolder)
 ```
@@ -286,10 +288,23 @@ void SetInitialMacrosVars() {
     }
 }
 ```
-In this example warp function, ``ops_arg_idx()`` gives the global indexes, ``g_CoordinateXYZ()[blockIdx]`` passes the corrdinates. The ops_par_loop function distrbutes the kernel
+
+In this example warp function, ``ops_arg_idx()`` gives the global indexes, ``g_CoordinateXYZ()[blockIdx]`` passes the corrdinates. The ops_par_loop function distributes the kernel. The ops_arg_dat function shall be explicitly present as an argument, otherwise, there will be potential issues for the Python translator. The LOCALSTENCIL indicates that only the current grid node is needed for the operations defined by the kernel function. If the neighbours are needed, other stencils are needed. There are a few predefined stencils at the scheme module. Customised stencils can be defined similarly.
+
 ### Specify macroscopic body force
 
-### Implement a boundary condition
+### Implement a domain (block) boundary condition
+
+The domain boundary might be cumbersome to implement if the geometry is relevant. In this case, the g_GeometryProperty array is provided for storing the normal direction (see ``enum VertexGeometryType`` at the flowfiled_host_device.h) of the boundary grid node. Meanwhile, the g_NodeType, a hash table using the component ID as key, is used for specifying the type (see ``enum class VertexType`` at the flowfiled_host_device.h) of a grid point.
+A typical boundary kernel function can be defined as
+```c++
+void KerCutCellExtrapolPressure1ST3D(ACC<Real> &f, const ACC<int> &nodeType,
+                                     const ACC<int> &geometryProperty,
+                                     const Real *givenBoundaryVars,
+                                     const int *surface,
+                                     const int *lattIdx) {
+```
+where lattIdx is for the index range of the distribution function belonging to a component, surface the block boundary surface, and givenBoundaryVars for the specified boundary values (say the velocity for a inlet boundary). Based on these variables, a kernel function can be written using the relative indexation scheme discussed previously. We provided a few typicall boundary kernels at the boundary_kernel.inc and their wrap functions at the boundary_wrapper.cpp.
 
 ## Coupling MPLB with LIGGGHTS
 
@@ -299,45 +314,6 @@ The MPLB is coupled with LIGGGHTS with the use of the MUI library. With the MUI,
 
 Based on the above each code must use its own communication world that is the offspring of the MPI_COMM_WORLD. In this section, the required modifications of the OPS library and LIGGGHTS are presented.
 
-#### Modification of the OPS library
-
-The first step is the introduction of communication world that is only accessible from the OPS library. The OPS communication world, **OPS_MPI_GLOBAL** must be declared in the file "ops_mpi_core.h"
-
-``` c++
-extern MPI_Comm OPS_MPI_GLOBAL;
-
-```
-and defined in the file "ops_mpi_partition.cpp"
-
-```  c++
-
-MPI_Comm OPS_MPI_GLOBAL;
-
-```
- The next task is to seperate the communication world of the OPS library from the global one. For that, the following code must be added  in all the function **ops_init**.  These functions can be found in the files **"ops_mpi_decl.cpp"**, **"ops_mpi_decl_cuda.cpp"**,**"ops_mpi_decl_opencl.cpp"**.
-
-
- ``` c++
-    void *v;
-    int flag1;
-
-    MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_APPNUM, &v, &flag1);
-
-    if (!flag1) {//Only one OPS based code is executed
-        MPI_Comm_dup(MPI_COMM_WORLD, &OPS_MPI_GLOBAL);
-    }
-    else { //Split the worlds based on application
-        int appnum = *(int *) v;
-        int rank;
-	    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	    MPI_Comm_split(MPI_COMM_WORLD,appnum,rank,&OPS_MPI_GLOBAL);
-    }
-
-    MPI_Comm_rank(OPS_MPI_GLOBAL, &ops_my_global_rank); //MPI_COMM_WORLD replaced by OPS_MPI_GLOBAL
-    MPI_Comm_size(OPS_MPI_GLOBAL, &ops_comm_global_size); // MPI_COMM_WORLD replaced by OPS_MPI_GLOBAL
-
- ````
-The rest of the required modifications are to replace any call to MPI_COMM_WORLD with the OPS_MPI_GLOBAL. In practice, it requires all the matches with the MPI_COMM_WORLD to be replaced with the OPS_MPI_GLOBAL. In particular the MPI_COMM_WORLD must be replaced from additional 43 locations in the files "ops_mpi_core.cpp", "ops_mpi_hdf5.cpp" and "ops_mpi_rt_support.cpp"
 
 #### Modification in LIGGGHTS
 
