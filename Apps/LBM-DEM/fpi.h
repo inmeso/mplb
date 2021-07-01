@@ -39,7 +39,6 @@
 #define FPI_H_
 
 #include "fsi_base.h"
-#include "prati.h"
 #include "psm.h"
 
 

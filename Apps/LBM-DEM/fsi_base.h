@@ -44,7 +44,7 @@
 #include "model.h"
 
 
-enum FSIType { Model_Prati = 2, Model_PSM = 1, Model_None = 0};
+enum FSIType {Model_PSM = 1, Model_None = 0};
 enum SolFracType {Mode_None = 0, Mode_Spherical = 1, Mode_Grid = 2, Mode_Copy = 3};
 
 
