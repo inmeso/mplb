@@ -121,7 +121,7 @@ void simulate() {
     DefineBlockParticles(spaceDim, cutoff,  meshSize, particleType);
 
     //Define FSI-model
-    std::vector<FSIType> fluidModel{Model_Prati}; //Model_Prati
+    std::vector<FSIType> fluidModel{Model_PSM}; //Model_Prati
     ops_printf("FSI model is %d\n", static_cast<int>(fluidModel.at(0)));
     std::vector<int> porosModelParams{2};//, 2, 2};
     std::vector<int> fsiComponent{0};

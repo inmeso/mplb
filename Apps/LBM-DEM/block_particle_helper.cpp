@@ -113,7 +113,7 @@ void DefineInteractionModel(std::vector<FSIType> FluidParticleInteractionType,
 	int iter  = 0;
 	for (int iComp = 0; iComp < noComp; iComp++) {
 		fsiModel =  FluidParticleInteractionType.at(iComp);
-		if (fsiModel == Model_Prati || fsiModel == Model_PSM) {
+		if ( fsiModel == Model_PSM) {
 			if (iter == 0) {
 				if (particleType == spherical)
 					porosModel.push_back(Mode_Spherical);
@@ -165,18 +165,6 @@ void DefineInteractionModel(std::vector<FSIType> FluidParticleInteractionType,
 //	#endif
 //#endif
 				std::shared_ptr<FsiBase> model(new Psm(components.at(iComp), SpaceDim(),
-						forceUser, true , porosModel.at(iComp), gamma, nelem,
-						particleType));
-				fluidPartInteractionModels.insert(std::make_pair(idCompo, model));
-				}
-				break;
-			case Model_Prati: {
-//#ifdef CPU
-//#if DebugLevel >= 2
-				ops_printf("PRATI model invoked for component %d\n", idCompo);
-//#endif
-//#endif
-				std::shared_ptr<FsiBase> model(new Prati(components.at(iComp), SpaceDim(),
 						forceUser, true , porosModel.at(iComp), gamma, nelem,
 						particleType));
 				fluidPartInteractionModels.insert(std::make_pair(idCompo, model));
@@ -281,21 +269,6 @@ void ParticleEnvelopes() {
 		if (blockParticle.second.OwnedStatus())
 			blockParticle.second.FindStencil();
 	}
-
-	/*	for (auto &blockParticle : BlockParticleList) {
-			int iD = blockParticle.second.GetBlock().ID();
-				if (blockParticle.second.OwnedStatus()) {
-					int Np = blockParticle.second.NParticles;
-					for (int iPar = 0; iPar < Np ; iPar++) {
-						Particle& particle = blockParticle.second.particleList.at(iPar);
-						printf("Rank %d at block %d: Stencil of Particle %d ([%f %f %f])[%d %d] x [%d %d] x [%d %d] cells\n",
-								ops_get_proc(), iD, iPar, particle.xParticle[0], particle.xParticle[1], particle.xParticle[2],
-								particle.stenList[0], particle.stenList[1], particle.stenList[2],
-								particle.stenList[3], particle.stenList[4], particle.stenList[5]);
-					}
-				}
-			}*/
-
 }
 
 void MappingParticlesToLBMGrid() {
@@ -374,7 +347,7 @@ void FluidParticleCollisions() {
 		else {
 			//TODO need to obtain the id of the
 			fsi.second->ObtainID(velId, loop, tauRef, collisionModel,componentId, rhoId, Tid);
-			PreDefineCollision3DComponent(velId, loop, tauRef, collisionModel, componentId, rhoId, Tid);
+			PreDefinedCollision3D(velId, loop, tauRef, collisionModel, componentId, rhoId, Tid);
 		}
 
 	}
