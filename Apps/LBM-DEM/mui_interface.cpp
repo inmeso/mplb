@@ -30,230 +30,262 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 /*!
- * @brief   Class for handling data exchange between LBM-DEM code
- * @author  Chrysovalantis Tsigginos
- * @details Default class for handling data exchange between MP-LBM and DEM codes. The current version
- * handles only momentum exchange data
+ * @brief   Class for data exchange between MPLB and DEM solver
+ * @author  C. Tsigginos
+ * @details: Functions for intersolver communications via MUI
  */
 
 
 #include "mui_interface.h"
-#include <limits>
+#include <map>
 #include <vector>
-using namespace std;
 
-muiInterface::muiInterface(Real skin) {
+MuiInterface::MuiInterface( ListBlockParticles* blockParticles,
+		std::vector<std::string> input, std::vector<std::string> particleShape,
+		std::vector<std::string> output, Real skin, SizeType timeStep)
+{
+
 
 	interface = new mui::uniface3d("mpi://LBM/ifs");
 	maxStep = 0;
 	Rmax = skin;
+
+	startStep = timeStep;
+	blockPointer = blockParticles;
+	spaceDim = 2;
+#ifdef OPS_3D
+	spaceDim = 3;
+#endif
+
+	inputData = input;
+	outputData = output;
+	particleShapeData = particleShape;
+
+	inputDataSize = inputData.size();
+	outputDataSize = outputData.size();
+	inputParticleSize = particleShapeData.size();
+
 }
 
-muiInterface::~muiInterface() {
+MuiInterface::~MuiInterface() {
 
 	delete interface;
 }
 
-void muiInterface::setDomains(int maxIteration) {
+void MuiInterface::SetDomains(SizeType maxIteration) {
 
-	maxStep = 2 * maxIteration;
-
-	//Find minimum-maximum proc size
-	Real xmin[SPACEDIM], xmax[SPACEDIM];
+	maxStep = 2 * maxIteration + startStep;
+	Real xmin[spaceDim], xmax[spaceDim];
+	long int firstStep = static_cast<long int>(startStep);
+	long int lastStep = static_cast<long int>(maxStep);
 
 	DefineProcBox(xmin, xmax);
 
+	mui::geometry::box3d send_recv_region({xmin[0], xmin[1], xmin[2]},
+			{xmax[0], xmax[1], xmax[2]});
 
-	mui::geometry::box3d send_recv_region({xmin[0], xmin[1], xmin[2]}, {xmax[0], xmax[1], xmax[2]});
-
-
-	interface->announce_send_span(0, maxStep, send_recv_region);
-	interface->announce_recv_span(0, maxStep, send_recv_region);
-
-	printf("Rank %d announces region [%f %f] x[%f %f] x[%f %f]\n",ops_get_proc(), xmin[0], xmax[0], xmin[1], xmax[1], xmin[2], xmax[2]);
-}
-
-void muiInterface::updateDomains(int step) {
-
-	if (step == maxStep) {
-		maxStep = 2 * step;
-
-		Real xmin[SPACEDIM], xmax[SPACEDIM];
-
-
-		DefineProcBox(xmin, xmax);
-
-
-		mui::geometry::box3d send_recv_region({xmin[0], xmin[1], xmin[2]}, {xmax[0], xmax[1], xmax[2]});
-
-
-		interface->announce_send_span(step, maxStep, send_recv_region);
-		interface->announce_recv_span(step, maxStep, send_recv_region);
-
-		ops_printf("OPS-LBM: Update region");
-		printf("Rank %d announces region [%f %f] x[%f %f] x[%f %f]\n",ops_get_proc(), xmin[0], xmax[0], xmin[1], xmax[1], xmin[2], xmax[2]);
-
-	}
+	interface->announce_send_span(firstStep, lastStep, send_recv_region);
+	interface->announce_recv_span(firstStep, lastStep, send_recv_region);
 
 }
 
-void muiInterface::DefineProcBox(Real* xMin, Real* xMax) {
+void MuiInterface::DefineProcBox(Real* xMin, Real* xMax) {
 
+	Real xMinTmp[spaceDim], xMaxTmp[spaceDim];
 	xMin[0] = std::numeric_limits<Real>::max();
 	xMin[1] = xMin[0];
 	xMin[2] = xMin[0];
 
-	xMax[0] = -1.0 * std::numeric_limits<Real>::max();
+	xMax[0] = -1.0 * xMin[0];
 	xMax[1] = xMax[0];
 	xMax[2] = xMax[0];
 
-	for (int blockIndex = 0 ; blockIndex < BlockNum(); blockIndex++) {
-#ifdef OPS_MPI
-		sub_block_list sb = OPS_sub_block_list[blockIndex];
-		if (!sb->owned) continue;
+
+	for (auto particleBlock  = blockPointer->begin(); particleBlock != blockPointer->end();
+			++particleBlock) {
+		particleBlock->second.ExtractBound(xMinTmp, xMaxTmp);
+
+		for (int iDir = 0; iDir < spaceDim; iDir++) {
+			if (xMinTmp[iDir] < xMin[iDir])
+				xMin[iDir] = xMinTmp[iDir];
+			if (xMaxTmp[iDir] > xMax[iDir])
+				xMax[iDir] = xMaxTmp[iDir];
+		}
+	}
+
+#ifdef CPU
+#if DebugLevel >= 2
+	printf("Send MUI region of rank %d: [(%e %e %e), (%e %e %e])]\n", ops_get_proc(),
+			xMin[0], xMin[1], xMin[2], xMax[0], xMax[1], xMax[2]);
 #endif
-
-		if  (xBoundLocal[6 * blockIndex] < xMin[0])
-			xMin[0] = xBoundLocal[6 * blockIndex];
-
-		if (xBoundLocal[6 * blockIndex + 2] < xMin[1])
-			xMin[1] = xBoundLocal[6 * blockIndex + 2];
-
-		if (xBoundLocal[6 * blockIndex + 4] < xMin[2])
-			xMin[2] = xBoundLocal[6 * blockIndex + 4];
-
-		if (xBoundLocal[6 * blockIndex + 1] > xMax[0])
-			xMax[0] = xBoundLocal[6 * blockIndex + 1];
-
-		if (xBoundLocal[6 * blockIndex + 3] > xMax[1])
-			xMax[1] = xBoundLocal[6 * blockIndex + 3];
-
-		if (xBoundLocal[6 * blockIndex + 5] > xMax[2])
-			xMax[2] = xBoundLocal[6 * blockIndex + 5];
-
-	}
-
-	for (int iDim = 0; iDim < SPACEDIM; iDim++) {
-		xMin[iDim] -= Rmax;
-		xMax[iDim] += Rmax;
-	}
-
+#endif
 }
 
-void muiInterface::extractData(long int timestep,long int& maxStep, Real& alpha, int* Flags) {
+void MuiInterface::ExtractData(SizeType currentStep, SizeType &firstStep, SizeType& maxIter,
+		Real& alpha, int* flags, ParticleShapeDiscriptor& particleShape) {
 
 	std::vector<mui::point3d> posMUI;
 	mui::chrono_sampler_exact3d time_sampler;
-	posMUI = interface->fetch_points<double, mui::chrono_sampler_exact3d>("radius", timestep, time_sampler);
+	posMUI = interface->fetch_points<double, mui::chrono_sampler_exact3d>("radius", currentStep, time_sampler);
 
 	auto maxIter1 = interface->fetch<long int>("Nsteps");
 	auto alpha1 = interface->fetch<Real>("alpha1");
-
-	maxStep = maxIter1;
+	auto particleCase = interface->fetch<int>("particleShape");
+	auto firstStep1 = interface->fetch<long int>("firstStep");
+	firstStep = static_cast<SizeType>(firstStep1);
+	maxIter = static_cast<SizeType>(maxIter1) - firstStep;
 	alpha = alpha1;
-
-	auto perFlagX = interface->fetch<int>("xPerFlag");
-	auto perFlagY = interface->fetch<int>("yPerFlag");
-	auto perFlagZ = interface->fetch<int>("zPerFlag");
-
-	Flags[0] = perFlagX;
-	Flags[1] = perFlagY;
-	Flags[2] = perFlagZ;
-
+	particleShape = (ParticleShapeDiscriptor) particleCase;
 }
 
-void muiInterface::extractDataPeriodic(Real* xper, Real* xcutOff) {
+void MuiInterface::ExtractParticles(SizeType timestep) {
 
 
-
-	auto xper1 = interface->fetch<Real>("xper");
-	auto yper1 = interface->fetch<Real>("yper");
-	auto zper1 = interface->fetch<Real>("zper");
-
-
-	auto xCutOff = interface->fetch<Real>("xCutOff");
-	auto yCutOff = interface->fetch<Real>("yCutOff");
-	auto zCutOff = interface->fetch<Real>("zCutoff");
-
-	xcutOff[0] = xCutOff;
-	xcutOff[1] = yCutOff;
-	xcutOff[2] = zCutOff;
-
-	xper[0] = xper1;
-	xper[1] = yper1;
-	xper[2] = zper1;
-
-
-}
-
-void muiInterface::updateParticles(int timeStep, vector<Real> &xTemp, vector<Real> &yTemp, vector<Real> &zTemp, vector<Real> &radTmp,
-						   vector<Real> &uTemp, vector<Real> &vTemp, vector<Real> &wTemp,
-						   vector<Real> &omXTemp, vector<Real> &omYTemp, vector<Real> &omZTemp) {
-
+	Real uTmp[spaceDim], oTmp[spaceDim];
+	Real xTemp[spaceDim], radTmp;
+	Real partTemp;
+	std::vector<Real> particleShape;
+	particleShape.reserve(inputParticleSize);
+	std::vector<Real> inputVariables;
+	inputVariables.reserve(inputDataSize);
+	long int timeframe = static_cast<long int>(timestep);
 	std::vector<mui::point3d> posMUI;
-	mui::chrono_sampler_exact3d time_sampler;
+	int iDir;
+
+	mui::chrono_sampler_exact3d timeSampler;
 	mui::sampler_exact3d<Real> s1;
 
-	posMUI = interface->fetch_points<Real, mui::chrono_sampler_exact3d>("radius", timeStep, time_sampler);
+	posMUI = interface->fetch_points<Real, mui::chrono_sampler_exact3d>("radius",
+			timeframe, timeSampler);
 
-	radTmp = interface->fetch_values<double, mui::chrono_sampler_exact3d>("radius", timeStep, time_sampler);
-
-	uTemp = interface->fetch_values<double, mui::chrono_sampler_exact3d>("u", timeStep, time_sampler);
-
-	vTemp = interface->fetch_values<double, mui::chrono_sampler_exact3d>("v", timeStep, time_sampler);
-
-	wTemp = interface->fetch_values<double, mui::chrono_sampler_exact3d>("w", timeStep, time_sampler);
-
-	omXTemp = interface->fetch_values<double, mui::chrono_sampler_exact3d>("ox", timeStep, time_sampler);
-
-	omYTemp = interface->fetch_values<double, mui::chrono_sampler_exact3d>("oy", timeStep, time_sampler);
-
-	omZTemp = interface->fetch_values<double, mui::chrono_sampler_exact3d>("oz", timeStep, time_sampler);
-
+	for (auto particleBlock  = blockPointer->begin(); particleBlock != blockPointer->end(); ++particleBlock)
+		particleBlock->second.ClearParticles();
 
 	//Copy particles to correct location
 	for (auto iVec = 0; iVec < posMUI.size(); ++iVec) {
 		auto pointTmp = posMUI[iVec];//check  access
 
+		xTemp[0] = pointTmp[0];
+		xTemp[1] = pointTmp[1];
+		xTemp[2] = pointTmp[2];
 
-		Real xtemp = pointTmp[0];
-		Real ytemp = pointTmp[1];
-		Real ztemp = pointTmp[2];
+		//fetch other parameters
+		radTmp = interface->fetch("radius", {xTemp[0], xTemp[1], xTemp[2]}, timeframe,
+				s1, timeSampler);
+		uTmp[0] = interface->fetch("u", {xTemp[0], xTemp[1], xTemp[2]}, timeframe,
+				s1, timeSampler);
+		uTmp[1] = interface->fetch("v", {xTemp[0], xTemp[1], xTemp[2]}, timeframe,
+				s1, timeSampler);
+		uTmp[2] = interface->fetch("w", {xTemp[0], xTemp[1], xTemp[2]}, timeframe,
+				s1, timeSampler);
 
-		xTemp.push_back(xtemp);
-		yTemp.push_back(ytemp);
-		zTemp.push_back(ztemp);
-    }
+		oTmp[0] = interface->fetch("ox", {xTemp[0], xTemp[1], xTemp[2]}, timeframe,
+				s1, timeSampler);
+		oTmp[1] = interface->fetch("oy", {xTemp[0], xTemp[1], xTemp[2]}, timeframe,
+				s1, timeSampler);
+		oTmp[2] = interface->fetch("oz", {xTemp[0], xTemp[1], xTemp[2]}, timeframe,
+				s1, timeSampler);
+#ifdef CPU
+#if DebugLevel >= 2
+		printf("Rank %d: [%f %f %f] R= %f u =[%f %f %f] omega=[%f %f %f]\n",
+				ops_get_proc(), xTemp[0], xTemp[1], xTemp[2], radTmp, uTmp[0],
+				uTmp[1], uTmp[2], oTmp[0], oTmp[1], oTmp[2]);
+#endif
+#endif
+		if (inputParticleSize > 0) {
+			ops_printf("Additional particle data are passed to MPLB via MUI\n");
 
-	interface->forget(timeStep);
-}
-
-void muiInterface::forgetData(int timestep) {
-
-	interface->forget(timestep);
-}
-
-void muiInterface::sendParticles(int timestep) {
-
-	for (int blockIndex = 0; blockIndex < BlockNum(); blockIndex++) {
-	#ifdef OPS_MPI
-			sub_block_list sb = OPS_sub_block_list[blockIndex];
-			if (!sb->owned) continue;
-	#endif
-			for (int iPar = 0; iPar < Nparticles[blockIndex]; iPar++) {
-				interface->push("Fdx",{xp[blockIndex][iPar],yp[blockIndex][iPar],zp[blockIndex][iPar]},FDrag[blockIndex][6 * iPar]);
-				interface->push("Fdy",{xp[blockIndex][iPar],yp[blockIndex][iPar],zp[blockIndex][iPar]},FDrag[blockIndex][6 * iPar + 1]);
-				interface->push("Fdz",{xp[blockIndex][iPar],yp[blockIndex][iPar],zp[blockIndex][iPar]},FDrag[blockIndex][6 * iPar + 2]);
-				interface->push("Mdx",{xp[blockIndex][iPar],yp[blockIndex][iPar],zp[blockIndex][iPar]},FDrag[blockIndex][6 * iPar + 3]);
-				interface->push("Mdy",{xp[blockIndex][iPar],yp[blockIndex][iPar],zp[blockIndex][iPar]},FDrag[blockIndex][6 * iPar + 4]);
-				interface->push("Mdz",{xp[blockIndex][iPar],yp[blockIndex][iPar],zp[blockIndex][iPar]},FDrag[blockIndex][6 * iPar + 5]);
-
-			//printf("Iter %d, Rank %d: Fd [%12.9e %12.9e %12.9e]\n",t, ops_get_proc(), FDrag[blockIndex][6 * iPar],FDrag[blockIndex][6 * iPar +1], FDrag[blockIndex][6 * iPar +2] );
+			iDir = 0;
+			for (auto& input : particleShapeData) {
+				iDir += 1;
+				auto dataTmp = interface->fetch(input, {xTemp[0], xTemp[1], xTemp[2]}, timeframe, s1, timeSampler);
+				particleShape.at(iDir) = dataTmp;
 			}
+		}
+
+		if (inputDataSize > 0) {
+			ops_printf("Additional input are passed to MPLB via MUI\n");
+			iDir = 0;
+			for (auto& input: inputData) {
+				iDir += 1;
+				auto dataTmp = interface->fetch(input, {xTemp[0], xTemp[1], xTemp[2]}, timeframe, s1, timeSampler);
+				inputVariables.at(iDir) = dataTmp;
+			}
+		}
+
+
+		for (auto particleBlock  = blockPointer->begin(); particleBlock != blockPointer->end(); ++particleBlock) {
+
+			int idParticle = particleBlock->second.InsertParticle(xTemp, radTmp, particleShape,
+					uTmp, oTmp, inputVariables);
+			//TODO ADD the additional parameters.
+			if (inputParticleSize > 0 && idParticle > -1)
+				particleBlock->second.GetAdditionalInputVariables(inputVariables, idParticle);
+		}
+
+
 	}
 
-	interface->commit(timestep);
+	interface->forget(timeframe);
+
 }
 
+void MuiInterface::SendParticles(SizeType timeStep) {
+
+	if (timeStep > maxStep)
+		SetDomains(10 * maxStep );
+	long int timeframe = static_cast<long int>(timeStep);
+	Real Fd[spaceDim], Td[spaceDim], xPos[spaceDim];
+	std::vector<Real> output;
+	output.reserve(outputDataSize);
+	int Nparticles;
+	for (auto particleBlock =  blockPointer->begin(); particleBlock != blockPointer->end(); ++particleBlock) {
+		Nparticles = particleBlock->second.NParticles;
+		for (int iParticle = 0; iParticle < Nparticles; iParticle++) {
+			particleBlock->second.ExtractDragForce(Fd, Td, iParticle);
+			particleBlock->second.ExtractPositions(xPos, iParticle);
+
+			printf("Rank %d at timestep %d: Sends for particle [%f %f %f], Fd=[%12.9e %12.9e %12.9e] Td=[%12.9e %12.9e %12.9e\n",
+					ops_get_proc(), timeStep, xPos[0], xPos[1], xPos[2], Fd[0], Fd[1], Fd[2], Td[0], Td[1], Td[2]);
+			interface->push("Fdx", {xPos[0], xPos[1], xPos[2]}, Fd[0]);
+			interface->push("Fdy", {xPos[0], xPos[1], xPos[2]}, Fd[1]);
+			interface->push("Fdz", {xPos[0], xPos[1], xPos[2]}, Fd[2]);
+			interface->push("Mdx", {xPos[0], xPos[1], xPos[2]}, Td[0]);
+			interface->push("Mdy", {xPos[0], xPos[1], xPos[2]}, Td[1]);
+			interface->push("Mdz", {xPos[0], xPos[1], xPos[2]}, Td[2]);
+
+			if (outputDataSize > 0) {
+				particleBlock->second.GetAdditionalOutputVariables(output, iParticle);
+				for (int iDir = 0; iDir < outputDataSize; iDir++)
+					interface->push(outputData[iDir], {xPos[0], xPos[1], xPos[2]}, output[iDir]);
+			}
+		}
+
+	}
+
+	interface->commit(timeframe);
+}
+
+void MuiInterface::UpdateRegionFirstLast(SizeType firstStep, SizeType endStep) {
+
+	int a1  = 0;
+	int a2 = 0;
+	if (firstStep > startStep) {
+		a1 = 1;
+		startStep = firstStep;
+	}
+	if (endStep > maxStep) {
+		a2 = 1;
+		maxStep = endStep;
+
+	}
+
+	if  ((a1 == 1) || (a2 == 1)) {
+		SizeType iters= maxStep - firstStep;
+		SetDomains(iters);
+	}
+
+}
+
+	
