@@ -79,8 +79,7 @@ class MuiInterface {
 		void SendExtraParameters();
 		void ReceiveExtraParameters();
 		void ReceiveParticleDetails();
+
 };
-
-
 
 #endif /* APPS_LBM_DEM_MUI_INTERFACE_BASE_H_ */

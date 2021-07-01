@@ -119,8 +119,8 @@ def ReadVariableFromHDF5(fileName,varName,varLen=1,haloNum=1,withHalo=False):
             else:
                 res = data
     if spaceDim==2:
-        nx = int(rawData.shape[2]/varLen)-2*haloNum
-        ny = rawData.shape[1]-2*haloNum
+        nx = int(rawData.shape[1]/varLen)-2*haloNum
+        ny = rawData.shape[0]-2*haloNum
         if (varLen == 1):
             if not withHalo:
                 data = rawData[haloNum:-haloNum, haloNum:-haloNum]

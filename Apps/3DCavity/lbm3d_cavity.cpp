@@ -141,13 +141,14 @@ void simulate() {
     std::vector<SizeType> initalCompoId{0};
     DefineInitialCondition(initType,initalCompoId);
     Partition();
+    ops_diagnostic_output();
     SetInitialMacrosVars();
     PreDefinedInitialCondition3D();
     SetTimeStep(meshSize / SoundSpeed());
 
     const Real convergenceCriteria{1E-7};
     const SizeType checkPeriod{1000};
-    Iterate(StreamCollision3D,convergenceCriteria, checkPeriod);
+    Iterate(StreamCollision,convergenceCriteria, checkPeriod);
 }
 
 void simulate(const Configuration & config, const SizeType timeStep=0) {

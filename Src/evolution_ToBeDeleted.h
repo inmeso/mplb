@@ -28,24 +28,21 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- */
+*/
 
-/*! @brief   Head file for wrap functions.
+/*! @brief  Head file for wrap functions.
  * @author  Jianping Meng
- * @details Declare wrap functions for implementing the main evolution
- * cycle
+ * @details Declare wrap functions for implementing the main evolution cycle
  */
 
-#ifndef EVOLUTION3D_H_
-#define EVOLUTION3D_H_
-//#include "boundary.h"
-//#include "flowfield.h"
-//#include "model.h"
-//#include "scheme.h"
-#include "type.h"
-#include "field.h"
+#ifndef EVOLUTION_H_
+#define EVOLUTION_H_
+#include "boundary.h"
 #include "flowfield.h"
+#include "scheme.h"
+#include "type.h"
 #include "model.h"
+#include "hilemms.h"
 
 /*!
  * In this module, we provide subroutines that implement a update system over
@@ -62,62 +59,27 @@
  *    modules.  Instead, the kernel functions should be used. This mechanism
  *    allows the subroutines to directly read variables such as g_f
  */
-
-#ifdef OPS_3D
-// Stream-collision scheme related
+// Routines for the stream-collision scheme.
+void Stream();
+void Collision();
+void ImplementBoundary();
+void CalcResidualError();
 /*!
- * Overall wrap for stream-collision scheme
+ * Routine for completing one full time step
  */
-void StreamCollision3D(const Real time);
-
-
-void Iterate(const SizeType steps, const SizeType checkPointPeriod,
-             const SizeType start = 0);
-void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
-             const SizeType start = 0);
-
-template <typename T>
-void Iterate(void (*cycle)(T), const SizeType steps,
-             const SizeType checkPointPeriod, const SizeType start = 0) {
-    ops_printf("Starting the iteration...\n");
-    for (SizeType iter = start; iter < start + steps; iter++) {
-        const Real time{iter * TimeStep()};
-        cycle(time);
-        if (((iter + 1) % checkPointPeriod) == 0) {
-            ops_printf("%d iterations!\n", iter + 1);
-            UpdateMacroVars3D();
-            WriteFlowfieldToHdf5((iter + 1));
-            WriteDistributionsToHdf5((iter + 1));
-            WriteNodePropertyToHdf5((iter + 1));
-        }
-    }
-    ops_printf("Simulation finished! Exiting...\n");
-    DestroyModel();
-}
-
-template <typename T>
-void Iterate(void (*cycle)(T), const Real convergenceCriteria,
-             const SizeType checkPointPeriod, const SizeType start = 0) {
-    SizeType iter{start};
-    Real residualError{1};
-    do {
-        const Real time{iter * TimeStep()};
-        cycle(time);
-        iter = iter + 1;
-        if ((iter % checkPointPeriod) == 0) {
-            UpdateMacroVars3D();
-            CalcResidualError3D();
-            residualError = GetMaximumResidual(checkPointPeriod);
-            DispResidualError3D(iter, checkPointPeriod);
-            WriteFlowfieldToHdf5(iter);
-            WriteDistributionsToHdf5(iter);
-            WriteNodePropertyToHdf5(iter);
-        }
-    } while (residualError >= convergenceCriteria);
-
-    ops_printf("Simulation finished! Exiting...\n");
-    DestroyModel();
-}
-
-#endif /* OPS_3D */
-#endif /* EVOLUTION3D_H_ */
+void StreamCollision();
+// Routines for the general finite-difference scheme.
+void UpdateBoundary();
+void TimeMarching();
+// Common routines
+void InitialiseSolution();
+void UpdateMacroVars();
+void UpdateFeqandBodyforce();
+void UpdateHalos();
+void CopyDistribution(const ops_dat *fSrc, ops_dat *fDest);
+void DispResidualError(const int iter, const SizeType timePeriod);
+void NormaliseF(Real *ratio);
+void TreatDomainBoundary(const int blockIndex, const int componentID,
+                         const Real *givenVars, int *range,
+                         const BoundaryScheme boundaryScheme);
+#endif /* EVOLUTION_H_ */

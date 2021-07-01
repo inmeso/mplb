@@ -168,12 +168,11 @@ void DefineInitialCondition(std::vector<InitialType> types,
 void UpdateMacroVars3D();
 void PreDefinedBodyForce3D();
 void PreDefinedInitialCondition3D();
-/*!
- * Ops_par_loop for the collision step
- */
 void PreDefinedCollision3D();
 void PreDefinedCollision3D(int* velID, int* loop, Real tauRef,
 		CollisionType collisionType, int compoId, int rhoId, int Tid);
 
 #endif //OPS_3D
+
+
 #endif

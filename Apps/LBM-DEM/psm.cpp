@@ -246,5 +246,3 @@ void Psm::WriteToHdf5(const std::string& caseName, const SizeType timeStep) {
 	poros->WriteToHdf5(caseName, timeStep);
 
 }
-
-

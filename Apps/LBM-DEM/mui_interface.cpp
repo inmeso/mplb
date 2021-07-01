@@ -46,9 +46,11 @@ MuiInterface::MuiInterface( ListBlockParticles* blockParticles,
 		std::vector<std::string> output, Real skin, SizeType timeStep)
 {
 
+
 	interface = new mui::uniface3d("mpi://LBM/ifs");
 	maxStep = 0;
 	Rmax = skin;
+
 	startStep = timeStep;
 	blockPointer = blockParticles;
 	spaceDim = 2;
@@ -91,7 +93,6 @@ void MuiInterface::SetDomains(SizeType maxIteration) {
 void MuiInterface::DefineProcBox(Real* xMin, Real* xMax) {
 
 	Real xMinTmp[spaceDim], xMaxTmp[spaceDim];
-
 	xMin[0] = std::numeric_limits<Real>::max();
 	xMin[1] = xMin[0];
 	xMin[2] = xMin[0];
@@ -286,3 +287,5 @@ void MuiInterface::UpdateRegionFirstLast(SizeType firstStep, SizeType endStep) {
 	}
 
 }
+
+	
