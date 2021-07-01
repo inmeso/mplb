@@ -35,7 +35,7 @@
  **/
 #ifndef MODEL_H
 #define MODEL_H
-#include <cmath>
+#include <math.h>
 #include <string>
 #include <vector>
 #include <list>
@@ -172,6 +172,8 @@ void PreDefinedInitialCondition3D();
  * Ops_par_loop for the collision step
  */
 void PreDefinedCollision3D();
+void PreDefinedCollision3D(int* velID, int* loop, Real tauRef,
+		CollisionType collisionType, int compoId, int rhoId, int Tid);
 
 #endif //OPS_3D
 #endif
