@@ -32,7 +32,7 @@
 
 /*! @brief  Head files for configuration
  * @author  Jianping Meng
- * @details Declaring date structure for holding configuration parameters.
+ * @details Declaring data structure for holding configuration parameters.
  * The configuration currently follows the HiLeMMS definition.
  * Usage: use Config() to get the constant pointer of the data structure.
  */
@@ -57,7 +57,8 @@
 #include "flowfield_host_device.h"
 #include "boundary.h"
 
-/** Structure for holding various input parameters
+/**
+ * Structure for holding various input parameters.
 */
 
 struct Configuration {
@@ -67,7 +68,6 @@ struct Configuration {
     std::vector<SizeType> compoIds;
     std::vector<std::string> lattNames;
 //The following is optional
-//TODO to write Query() method very soon.
     std::vector<VariableTypes> macroVarTypes;
     std::vector<std::string> macroVarNames;
     std::vector<SizeType> macroVarIds;
@@ -113,5 +113,15 @@ void Query(T& value, std::string key) {
     };
     value = jsonConfig[key].get<T>();
 }
+
+/**
+ * @brief Get the Config File From Cmd object.
+ * @param findConfig if a configuration file is specified.
+ * @param fileName the configuration file name.
+ * @param argc the command line argument number.
+ * @param argv the command line arguments.
+ */
+void GetConfigFileFromCmd(bool& findConfig, std::string& fileName,
+                          const int argc, const char** argv);
 
 #endif  // CONFIGURATION_H

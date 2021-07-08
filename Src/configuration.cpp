@@ -481,3 +481,18 @@ void ReadConfiguration(std::string& configFileName) {
     jsonConfig = json::parse(configString);
     ParseJson();
 }
+
+void GetConfigFileFromCmd(bool& findConfig, std::string& fileName,
+                          const int argc, const char** argv) {
+    findConfig = false;
+    for (int i = 1; i < argc; i++) {
+        const std::string arg{argv[i]};
+        std::cout << arg << std::endl;
+        SizeType found{arg.find("Config=")};
+        if (found == 0){
+            findConfig = true;
+            fileName = arg.substr(found+7);
+            break;
+        }
+    }
+}
