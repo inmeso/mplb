@@ -164,6 +164,13 @@ void ParseJson() {
     }
     Query(config.blockNum, "BlockNum");
     Query(config.blockSize, "BlockSize");
+    if (config.blockNum > 1) {
+        Query(config.fromBlockIds, "FromBlockIds");
+        Query(config.toBlockIds, "ToBlockIds");
+        Query(config.fromBoundarySurface, "FromBoundarySurface");
+        Query(config.toBoundarySurface, "ToBoundarySurface");
+        Query(config.blockConnectionType, "BlockConnectionType");
+    }
     Query(config.tauRef, "TauRef");
     Query(config.startPos, "StartPos");
     Query(config.checkPeriod, "CheckPeriod");
