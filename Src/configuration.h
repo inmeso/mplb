@@ -67,7 +67,6 @@ struct Configuration {
     std::vector<std::string> compoNames;
     std::vector<SizeType> compoIds;
     std::vector<std::string> lattNames;
-//The following is optional
     std::vector<VariableTypes> macroVarTypes;
     std::vector<std::string> macroVarNames;
     std::vector<SizeType> macroVarIds;
@@ -90,10 +89,13 @@ struct Configuration {
     SizeType checkPeriod{1000};
     std::vector<BlockBoundary> blockBoundaryConfig;
 };
-
-/** Reading the parameters from a input file in the json format
- *  In the MPI mode, the whole input file will be broadcasted to all nodes by
+/**
+ * @brief Reading the parameters from a input file in the json format
+ *
+ * @details In the MPI mode, the whole input file will be broadcasted to all nodes by
  *  the root rank 0
+ *
+ * @param configFileName configuration file name
  */
 void ReadConfiguration(std::string& configFileName);
 
@@ -104,7 +106,7 @@ const Configuration& Config();
 const nlohmann::json& JsonConfig();
 
 template <typename T>
-void Query(T& value, std::string key) {
+void Query(T& value, const std::string& key) {
     const nlohmann::json& jsonConfig{JsonConfig()};
     if (jsonConfig[key].is_null()) {
         ops_printf("Error! Please insert the %s item into the configuration!\n",
@@ -112,6 +114,18 @@ void Query(T& value, std::string key) {
         assert(jsonConfig[key].is_null());
     };
     value = jsonConfig[key].get<T>();
+}
+
+template <typename T>
+void Query(T& value, const std::string& key0,const std::string & key1) {
+    const nlohmann::json& jsonConfig{JsonConfig()};
+    if (jsonConfig[key0][key1].is_null()) {
+        ops_printf(
+            "Error! Please insert the %s->%s item into the configuration!\n",
+            key0.c_str(), key1.c_str);
+        assert(jsonConfig[key0][key1].is_null());
+    };
+    value = jsonConfig[key0][key1].get<T>();
 }
 
 /**
