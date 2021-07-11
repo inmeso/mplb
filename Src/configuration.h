@@ -80,6 +80,11 @@ struct Configuration {
     SchemeType schemeType{Scheme_StreamCollision};
     SizeType blockNum{1};
     std::vector<SizeType> blockSize;
+    std::vector<int> fromBlockIds;
+    std::vector<int> toBlockIds;
+    std::vector<BoundarySurface> fromBoundarySurface;
+    std::vector<BoundarySurface> toBoundarySurface;
+    std::vector<VertexType> blockConnectionType;
     std::vector<Real> startPos;
     Real meshSize;
     std::vector<Real> tauRef;
