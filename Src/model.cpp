@@ -73,8 +73,12 @@ lattice d2q36{2, 36, 1};
 std::map<std::string, lattice> latticeSet{
     {"d2q9", d2q9}, {"d3q19", d3q19}, {"d3q15", d3q15}, {"d2q36", d2q36}};
 
-// Find particles with opposite directions, for bounce-back type boundary
-// Brute-force method, could be slow for large lattice
+/**
+ * @brief Find particles with opposite directions for bounce-back type boundary
+ * using brute-force method. It could be slow for large lattice/discrete velocity set
+ * @param startPos the start postion of a set of lattice in XI
+ * @param latticeSize the total number of discrete/lattice velocity
+ */
 void FindReverseXi(const int startPos, const int latticeSize) {
     for (int i = 0; i < latticeSize; i++) {
         for (int j = 0; j < latticeSize; j++) {
