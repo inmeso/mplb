@@ -123,6 +123,7 @@ void ParseJson() {
     Query(config.compoNames, "CompoNames");
     Query(config.lattNames, "LatticeName");
     Query(config.compoIds, "CompoIds");
+    Query(config.tauRef, "TauRef");
     Query(config.macroVarNames, "MacroVarNames");
     Query(config.macroVarIds, "MacroVarIds");
     Query(config.macroCompoIds, "MacroCompoIds");
@@ -134,8 +135,26 @@ void ParseJson() {
     Query(config.bodyForceCompoIds, "BodyForceCompoId");
     Query(config.bodyForceTypes, "BodyForceType");
     Query(config.schemeType, "SchemeType");
+    Query(config.blockIds, "BlockIds");
+    Query(config.blockNames, "BlockNames");
+    Query(config.blockSize, "BlockSize");
+    if (config.blockNames.size() > 1) {
+        Query(config.fromBlockIds, "FromBlockIds");
+        Query(config.toBlockIds, "ToBlockIds");
+        Query(config.fromBoundarySurface, "FromBoundarySurface");
+        Query(config.toBoundarySurface, "ToBoundarySurface");
+        Query(config.blockConnectionType, "BlockConnectionType");
+    }
 
-    SizeType boundaryConditionNum{2 * config.spaceDim * config.blockNum};
+    for (const auto id : config.blockIds) {
+        std::vector<Real> pos;
+        Query(pos, "StartPos", std::to_string(id));
+        config.startPos.emplace(id, pos);
+    }
+    Query(config.checkPeriod, "CheckPeriod");
+    Query(config.meshSize, "MeshSize");
+    int boundaryConditionNum{2 * config.spaceDim *
+                                  config.blockNames.size()};
     config.blockBoundaryConfig.resize(boundaryConditionNum);
     for (int bcIdx = 0; bcIdx < boundaryConditionNum; bcIdx++) {
         std::string bcName{"BoundaryCondition" + std::to_string(bcIdx)};
@@ -155,30 +174,18 @@ void ParseJson() {
             Query(config.blockBoundaryConfig[bcIdx].boundaryScheme, bcName,
                   "BoundaryScheme");
             Query(config.blockBoundaryConfig[bcIdx].givenVars, bcName,
-                  "BoundaryType");
-            Query(config.blockBoundaryConfig[bcIdx].componentID, bcName,
                   "GivenVars");
+            Query(config.blockBoundaryConfig[bcIdx].boundaryType, bcName,
+                  "BoundaryType");
             Query(config.blockBoundaryConfig[bcIdx].macroVarTypesatBoundary,
                   bcName, "MacroVarTypesatBoundary");
         }
     }
-    Query(config.blockNum, "BlockNum");
-    Query(config.blockSize, "BlockSize");
-    if (config.blockNum > 1) {
-        Query(config.fromBlockIds, "FromBlockIds");
-        Query(config.toBlockIds, "ToBlockIds");
-        Query(config.fromBoundarySurface, "FromBoundarySurface");
-        Query(config.toBoundarySurface, "ToBoundarySurface");
-        Query(config.blockConnectionType, "BlockConnectionType");
-    }
-    Query(config.tauRef, "TauRef");
-    Query(config.startPos, "StartPos");
-    Query(config.checkPeriod, "CheckPeriod");
-    Query(config.meshSize, "MeshSize");
+    Query(config.currentTimeStep, "CurrentTimeStep");
     Query(config.transient, "Transient");
 
     if (config.transient) {
-        Query(config.timeSteps, "TimeSteps");
+        Query(config.timeStepsToRun, "TimeStepsToRun");
 
     } else {
         Query(config.convergenceCriteria, "ConvergenceCriteria");
