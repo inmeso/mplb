@@ -82,12 +82,12 @@ void simulate() {
         {1, {0.0, 0.0, 0.0}}, {2, {1.0, 0.0, 0.0}}, {0, {0.0, 1.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
-    std::vector<int> fromBlock{0, 1, 1, 2};
-    std::vector<int> toBlock{1, 0, 2, 1};
-    std::vector<BoundarySurface> fromSurface{
+    std::vector<int> fromBlockIds{0, 1, 1, 2};
+    std::vector<int> toBlockIds{1, 0, 2, 1};
+    std::vector<BoundarySurface> fromBoundarySurface{
         BoundarySurface::Bottom, BoundarySurface::Top, BoundarySurface::Right,
         BoundarySurface::Left};
-    std::vector<BoundarySurface> toSurface{
+    std::vector<BoundarySurface> toBoundarySurface{
         BoundarySurface::Top, BoundarySurface::Bottom, BoundarySurface::Left,
         BoundarySurface::Right
     };
@@ -95,9 +95,8 @@ void simulate() {
         VertexType::VirtualBoundary, VertexType::VirtualBoundary,
         VertexType::VirtualBoundary, VertexType::VirtualBoundary};
 
-    DefineBlockConnection(fromBlock, fromSurface, toBlock, toSurface,
-                          connectionType);
-
+    DefineBlockConnection(fromBlockIds, fromBoundarySurface, toBlockIds,
+                          toBoundarySurface, connectionType);
 
     std::vector<std::string> compoNames{"Fluid"};
     std::vector<int> compoid{0};
@@ -251,7 +250,7 @@ void simulate(const Configuration & config, const SizeType timeStep=0) {
     // SetTauRef(config.tauRef);
     // SetTimeStep(config.meshSize / SoundSpeed());
     // if (config.transient){
-    //     Iterate(config.timeSteps, config.checkPeriod,timeStep);
+    //     Iterate(config.timeStepsToRun, config.checkPeriod,timeStep);
     // } else{
     //     Iterate(config.convergenceCriteria, config.checkPeriod,timeStep);
     // }
