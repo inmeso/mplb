@@ -240,7 +240,6 @@ void GetConfigFileFromCmd(bool& findConfig, std::string& fileName,
     findConfig = false;
     for (int i = 1; i < argc; i++) {
         const std::string arg{argv[i]};
-        std::cout << arg << std::endl;
         SizeType found{arg.find("Config=")};
         if (found == 0) {
             findConfig = true;
