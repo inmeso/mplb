@@ -239,6 +239,9 @@ void PrepareFlowField() {
         AssignCoordinates(block, COORDINATES.at(blockId));
     }
     SetBoundaryNodeType();
+    if (!IsTransient()) {
+        CopyCurrentMacroVar();
+    }
 }
 
 void DispResidualError(const int iter, const SizeType checkPeriod) {
