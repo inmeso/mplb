@@ -495,7 +495,7 @@ void DefineBodyForce(std::vector<BodyForceType> types,
 }
 
 void DefineInitialCondition(std::vector<InitialType> types,
-                            std::vector<SizeType> compoId) {
+                            std::vector<int> compoId) {
     if (components.size() < 1) {
         ops_printf("Error:please call DefineComponent first!\n");
         assert(components.size() == 0);

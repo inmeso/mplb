@@ -65,32 +65,34 @@ struct Configuration {
     std::string caseName;
     SizeType spaceDim{3};
     std::vector<std::string> compoNames;
-    std::vector<SizeType> compoIds;
+    std::vector<int> compoIds;
     std::vector<std::string> lattNames;
     std::vector<VariableTypes> macroVarTypes;
     std::vector<std::string> macroVarNames;
-    std::vector<SizeType> macroVarIds;
-    std::vector<SizeType> macroCompoIds;
+    std::vector<int> macroVarIds;
+    std::vector<int> macroCompoIds;
     std::vector<CollisionType> CollisionTypes;
-    std::vector<SizeType> CollisionCompoIds;
+    std::vector<int> CollisionCompoIds;
     std::vector<BodyForceType> bodyForceTypes;
     std::vector<SizeType> bodyForceCompoIds;
     std::vector<InitialType> initialTypes;
-    std::vector<SizeType> initialConditionCompoId;
+    std::vector<int> initialConditionCompoId;
     SchemeType schemeType{Scheme_StreamCollision};
-    SizeType blockNum{1};
-    std::vector<SizeType> blockSize;
+    std::vector<std::string> blockNames;
+    std::vector<int> blockIds;
+    std::vector<int> blockSize;
     std::vector<int> fromBlockIds;
     std::vector<int> toBlockIds;
     std::vector<BoundarySurface> fromBoundarySurface;
     std::vector<BoundarySurface> toBoundarySurface;
     std::vector<VertexType> blockConnectionType;
-    std::vector<Real> startPos;
+    std::map<int,std::vector<Real>> startPos;
     Real meshSize;
     std::vector<Real> tauRef;
     bool transient{true};
     Real convergenceCriteria{-1};
-    SizeType timeSteps{0};
+    SizeType timeStepsToRun{0};
+    SizeType currentTimeStep{0};
     SizeType checkPeriod{1000};
     std::vector<BlockBoundary> blockBoundaryConfig;
 };
@@ -127,7 +129,7 @@ void Query(T& value, const std::string& key0,const std::string & key1) {
     if (jsonConfig[key0][key1].is_null()) {
         ops_printf(
             "Error! Please insert the %s->%s item into the configuration!\n",
-            key0.c_str(), key1.c_str);
+            key0.c_str(), key1.c_str());
         assert(jsonConfig[key0][key1].is_null());
     };
     value = jsonConfig[key0][key1].get<T>();

@@ -157,7 +157,7 @@ void DefineBodyForce(std::vector<BodyForceType> types,
                      std::vector<SizeType> compoId);
 
 void DefineInitialCondition(std::vector<InitialType> types,
-                            std::vector<SizeType> compoId);
+                            std::vector<int> compoId);
 #ifdef OPS_3D
 void UpdateMacroVars3D();
 void PreDefinedBodyForce3D();
