@@ -41,4 +41,11 @@ void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
     v(0, 0, 0) = 0;
     w(0, 0, 0) = 0;
 }
+
+void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& coordinates,
+                            const int* idx) {
+    force(0, 0, 0, 0) = 0.001;
+    force(1, 0, 0, 0) = 0;
+    force(2, 0, 0, 0) = 0;
+}
 #endif // CAVITY3D_KERNEL_INC

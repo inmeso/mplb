@@ -300,6 +300,7 @@ add_subdirectory(Apps/3DCavity)
 add_subdirectory(Apps/2DCavity)
 add_subdirectory(Apps/3DLChannel)
 add_subdirectory(Tests/FieldBlock)
+add_subdirectory(Apps/Poiseuille)
 
 
 

@@ -39,7 +39,7 @@
 #include <string>
 #include "mplb.h"
 #include "ops_seq_v2.h"
-#include "LChannel_kernel.inc"
+#include "Poiseuille_kernel.inc"
 //Provide macroscopic initial conditions
 void SetInitialMacrosVars() {
     for (auto idBlock : g_Block()) {
@@ -67,7 +67,7 @@ void SetInitialMacrosVars() {
     }
 }
 
-void SetInitialMacrosVars() {
+void UpdateMacroscopicBodyForce(const Real time) {
     for (auto idBlock : g_Block()) {
         Block& block{idBlock.second};
         std::vector<int> iterRng;
@@ -76,53 +76,28 @@ void SetInitialMacrosVars() {
         for (auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
 
-            ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
+            ops_par_loop(KerUpdateMacroBodyForce, "KerUpdateMacroBodyForce",
                          block.Get(), SpaceDim(), iterRng.data(),
-                         ops_arg_dat(g_MacroVars().at(rhoId).at(blockIdx), 1,
+                         ops_arg_dat(g_MacroBodyforce().at(compo.id).at(blockIdx), 3,
                                      LOCALSTENCIL, "Real", OPS_RW),
-                         ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIdx),
-                                     1, LOCALSTENCIL, "Real", OPS_RW),
-                         ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIdx),
-                                     1, LOCALSTENCIL, "Real", OPS_RW),
-                         ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIdx),
-                                     1, LOCALSTENCIL, "Real", OPS_RW),
                          ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
                                      LOCALSTENCIL, "Real", OPS_READ),
                          ops_arg_idx());
         }
     }
 }
-//Provide macroscopic body-force term
-void UpdateMacroscopicBodyForce(const Real time) {}
 
 void simulate() {
 
-    std::string caseName{"3DLChannel"};
+    std::string caseName{"Poiseuille"};
     SizeType spaceDim{3};
     DefineCase(caseName, spaceDim);
-    std::vector<int> blockIds{0,1,2};
-    std::vector<std::string> blockNames{"Top","Middle","Right"};
-    std::vector<int> blockSize{33, 33, 33, 33, 33, 33, 33, 33, 33};
+    std::vector<int> blockIds{0};
+    std::vector<std::string> blockNames{"Cavity"};
+    std::vector<int> blockSize{33, 33, 33};
     Real meshSize{1. / 32};
-    std::map<int, std::vector<Real>> startPos{
-        {1, {0.0, 0.0, 0.0}}, {2, {1.0, 0.0, 0.0}}, {0, {0.0, 1.0, 0.0}}};
+    std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
-
-    std::vector<int> fromBlock{0, 1, 1, 2};
-    std::vector<int> toBlock{1, 0, 2, 1};
-    std::vector<BoundarySurface> fromSurface{
-        BoundarySurface::Bottom, BoundarySurface::Top, BoundarySurface::Right,
-        BoundarySurface::Left};
-    std::vector<BoundarySurface> toSurface{
-        BoundarySurface::Top, BoundarySurface::Bottom, BoundarySurface::Left,
-        BoundarySurface::Right
-    };
-    std::vector<VertexType> connectionType{
-        VertexType::VirtualBoundary, VertexType::VirtualBoundary,
-        VertexType::VirtualBoundary, VertexType::VirtualBoundary};
-
-    DefineBlockConnection(fromBlock, fromSurface, toBlock, toSurface,
-                          connectionType);
 
 
     std::vector<std::string> compoNames{"Fluid"};
@@ -142,7 +117,7 @@ void simulate() {
     std::vector<int> collisionCompoId{0};
     DefineCollision(collisionTypes, collisionCompoId);
 
-    std::vector<BodyForceType> bodyForceTypes{BodyForce_None};
+    std::vector<BodyForceType> bodyForceTypes{BodyForce_1st};
     std::vector<SizeType> bodyForceCompoId{0};
     DefineBodyForce(bodyForceTypes, bodyForceCompoId);
 
@@ -154,76 +129,29 @@ void simulate() {
     std::vector<VariableTypes> macroVarTypesatBoundary{Variable_U, Variable_V,
                                                        Variable_W};
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
-    // Left noSlipStationaryWall
-    DefineBlockBoundary(0, componentId, BoundarySurface::Left,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    // Right noSlipStationaryWall
-    DefineBlockBoundary(0, componentId, BoundarySurface::Right,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
 
-    std::vector<Real> noSlipMovingWall{0, -0.001, 0};
+    //Top and Bottom No Slip Walls
     DefineBlockBoundary(0, componentId, BoundarySurface::Top,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipMovingWall);
-    // bottom noSlipStationaryWall
-    DefineBlockBoundary(0, componentId, BoundarySurface::Bottom);
-    // front noSlipStationaryWall
+                        noSlipStationaryWall);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Bottom,
+                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+
+    //Periodic Boundary Conditions
     DefineBlockBoundary(0, componentId, BoundarySurface::Front,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall);
-    // back noSlipStationaryWall
     DefineBlockBoundary(0, componentId, BoundarySurface::Back,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Left,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Right,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
-     DefineBlockBoundary(1, componentId, BoundarySurface::Left,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    // Right noSlipStationaryWall
-    DefineBlockBoundary(1, componentId, BoundarySurface::Right);
-
-    DefineBlockBoundary(1, componentId, BoundarySurface::Top);
-    DefineBlockBoundary(1, componentId, BoundarySurface::RightTop,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    // bottom noSlipStationaryWall
-    DefineBlockBoundary(1, componentId, BoundarySurface::Bottom,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    // front noSlipStationaryWall
-    DefineBlockBoundary(1, componentId, BoundarySurface::Front,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    // back noSlipStationaryWall
-    DefineBlockBoundary(1, componentId, BoundarySurface::Back,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-
-    DefineBlockBoundary(2, componentId, BoundarySurface::Left);
-    // pressure boundary condition
-    std::vector<VariableTypes> pressureType{Variable_Rho};
-    std::vector<Real> pressureOutLet{1};
-    DefineBlockBoundary(2, componentId, BoundarySurface::Right,
-                        BoundaryScheme::ExtrapolPressure1ST, pressureType,
-                        pressureOutLet, VertexType::OutLet);
-
-    DefineBlockBoundary(2, componentId, BoundarySurface::Top,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    // bottom noSlipStationaryWall
-    DefineBlockBoundary(2, componentId, BoundarySurface::Bottom,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    // front noSlipStationaryWall
-    DefineBlockBoundary(2, componentId, BoundarySurface::Front,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    // back noSlipStationaryWall
-    DefineBlockBoundary(2, componentId, BoundarySurface::Back,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
 
     std::vector<InitialType> initType{Initial_BGKFeq2nd};
     std::vector<SizeType> initalCompoId{0};
