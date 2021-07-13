@@ -59,16 +59,18 @@ NLOHMANN_JSON_SERIALIZE_ENUM(VariableTypes,
                                  {Variable_W_Force, "Variable_W_Force"},
                              });
 
-NLOHMANN_JSON_SERIALIZE_ENUM(VertexType,
-                             {{VertexType::Inlet, "Inlet"},
-                              {VertexType::OutLet, "OutLet"},
-                              {VertexType::MDPeriodic, "MDPeriodic"},
-                              {VertexType::FDPeriodic, "FDPeriodic"},
-                              {VertexType::Symmetry, "Symmetry"},
-                              {VertexType::Wall, "Wall"},
-                              {VertexType::ImmersedSolid, "ImmersedSolid"},
-                              {VertexType::ImmersedBoundary,
-                               "ImmersedBoundary"}});
+NLOHMANN_JSON_SERIALIZE_ENUM(
+    VertexType, {
+                    {VertexType::Inlet, "Inlet"},
+                    {VertexType::OutLet, "OutLet"},
+                    {VertexType::MDPeriodic, "MDPeriodic"},
+                    {VertexType::FDPeriodic, "FDPeriodic"},
+                    {VertexType::Symmetry, "Symmetry"},
+                    {VertexType::Wall, "Wall"},
+                    {VertexType::VirtualBoundary, "VirtualBoundary"},
+                    {VertexType::ImmersedSolid, "ImmersedSolid"},
+                    {VertexType::ImmersedBoundary, "ImmersedBoundary"},
+                });
 
 NLOHMANN_JSON_SERIALIZE_ENUM(
     BoundaryScheme,
@@ -82,6 +84,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(
         {BoundaryScheme::FreeFlux, "FreeFlux"},
         {BoundaryScheme::ZouHeVelocity, "ZouHeVelocity"},
         {BoundaryScheme::EQMDiffuseRefl, "EQMDiffuseREfl"},
+        {BoundaryScheme::None, "None"},
     });
 
 NLOHMANN_JSON_SERIALIZE_ENUM(
@@ -94,28 +97,55 @@ NLOHMANN_JSON_SERIALIZE_ENUM(BodyForceType,
                               {BodyForce_None, "BodyForce_None"}});
 
 NLOHMANN_JSON_SERIALIZE_ENUM(BoundarySurface,
-                             {{BoundarySurface::Left, "Left"},
-                              {BoundarySurface::Right, "Right"},
-                              {BoundarySurface::Top, "Top"},
-                              {BoundarySurface::Bottom, "Bottom"}
+                             {
+                                 {BoundarySurface::Left, "Left"},
+                                 {BoundarySurface::Right, "Right"},
+                                 {BoundarySurface::Top, "Top"},
+                                 {BoundarySurface::Bottom, "Bottom"},
 #ifdef OPS_3D
-                              ,
-                              {BoundarySurface::Front, "Front"},
-                              {BoundarySurface::Back, "Back"}
+                                 {BoundarySurface::Front, "Front"},
+                                 {BoundarySurface::Back, "Back"},
+                                 {BoundarySurface::LeftBack, "LeftBack"},
+                                 {BoundarySurface::LeftFront, "LeftFront"},
+                                 {BoundarySurface::RightBack, "RightBack"},
+                                 {BoundarySurface::RightFront, "RightFront"},
+                                 {BoundarySurface::TopBack, "TopBack"},
+                                 {BoundarySurface::TopFront, "TopFront"},
+                                 {BoundarySurface::BottomBack, "BottomBack"},
+                                 {BoundarySurface::BottomFront, "BottomFront"},
 #endif
+                                 {BoundarySurface::LeftTop, "LeftTop"},
+                                 {BoundarySurface::LeftBottom, "LeftBottom"},
+                                 {BoundarySurface::RightTop, "RightTop"},
+                                 {BoundarySurface::RightBottom, "RightBottom"},
                              });
 
 NLOHMANN_JSON_SERIALIZE_ENUM(InitialType,
-                             {{Initial_BGKFeq2nd, "Initial_BGKFeq2nd"}});
+                             {
+                                 {Initial_BGKFeq2nd, "Initial_BGKFeq2nd"},
+                             });
 
-NLOHMANN_JSON_SERIALIZE_ENUM(SchemeType, {{Scheme_E1st2nd, "Scheme_E1st2nd"},
-                                          {Scheme_StreamCollision,
-                                           "Scheme_StreamCollision"},
-                                          {Scheme_I1st2nd, " Scheme_I1st2nd"}});
+NLOHMANN_JSON_SERIALIZE_ENUM(SchemeType,
+                             {
+                                 {Scheme_E1st2nd, "Scheme_E1st2nd"},
+                                 {Scheme_StreamCollision,
+                                  "Scheme_StreamCollision"},
+                                 {Scheme_I1st2nd, " Scheme_I1st2nd"},
+                             });
 
 const Configuration& Config() { return config; }
 
 const json& JsonConfig() { return jsonConfig; }
+
+int GetBlockBoundaryConditionNum() {
+    int num{0};
+    std::string key{"BoundaryCondition" + std::to_string(num)};
+    while (jsonConfig.contains(key) && (!jsonConfig[key].is_null())) {
+        num++;
+        key = "BoundaryCondition" + std::to_string(num);
+    }
+    return num;
+}
 
 void ParseJson() {
     Query(config.caseName, "CaseName");
@@ -153,8 +183,7 @@ void ParseJson() {
     }
     Query(config.checkPeriod, "CheckPeriod");
     Query(config.meshSize, "MeshSize");
-    int boundaryConditionNum{2 * config.spaceDim *
-                                  config.blockNames.size()};
+    int boundaryConditionNum{GetBlockBoundaryConditionNum()};
     config.blockBoundaryConfig.resize(boundaryConditionNum);
     for (int bcIdx = 0; bcIdx < boundaryConditionNum; bcIdx++) {
         std::string bcName{"BoundaryCondition" + std::to_string(bcIdx)};
