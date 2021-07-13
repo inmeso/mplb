@@ -59,7 +59,7 @@
 
 /**
  * Structure for holding various input parameters.
-*/
+ */
 
 struct Configuration {
     std::string caseName;
@@ -86,7 +86,7 @@ struct Configuration {
     std::vector<BoundarySurface> fromBoundarySurface;
     std::vector<BoundarySurface> toBoundarySurface;
     std::vector<VertexType> blockConnectionType;
-    std::map<int,std::vector<Real>> startPos;
+    std::map<int, std::vector<Real>> startPos;
     Real meshSize;
     std::vector<Real> tauRef;
     bool transient{true};
@@ -99,8 +99,8 @@ struct Configuration {
 /**
  * @brief Reading the parameters from a input file in the json format
  *
- * @details In the MPI mode, the whole input file will be broadcasted to all nodes by
- *  the root rank 0
+ * @details In the MPI mode, the whole input file will be broadcasted to all
+ * nodes by the root rank 0
  *
  * @param configFileName configuration file name
  */
@@ -115,17 +115,34 @@ const nlohmann::json& JsonConfig();
 template <typename T>
 void Query(T& value, const std::string& key) {
     const nlohmann::json& jsonConfig{JsonConfig()};
-    if (jsonConfig[key].is_null()) {
-        ops_printf("Error! Please insert the %s item into the configuration!\n",
+    if (jsonConfig.contains(key)) {
+        if (jsonConfig[key].is_null()) {
+            ops_printf(
+                "Error! Please insert the %s item into the configuration!\n",
+                key.c_str());
+            assert(jsonConfig[key].is_null());
+        };
+        value = jsonConfig[key].get<T>();
+    } else {
+        ops_printf("Error! Please supply %s in the configuration!\n",
                    key.c_str());
-        assert(jsonConfig[key].is_null());
-    };
-    value = jsonConfig[key].get<T>();
+        assert(jsonConfig.contains(key));
+    }
 }
 
 template <typename T>
-void Query(T& value, const std::string& key0,const std::string & key1) {
+void Query(T& value, const std::string& key0, const std::string& key1) {
     const nlohmann::json& jsonConfig{JsonConfig()};
+    if (!jsonConfig.contains(key0)) {
+        ops_printf("Error! Please supply %s in the configuration!\n",
+                   key0.c_str());
+        assert(jsonConfig.contains(key0));
+    }
+    if (!jsonConfig[key0].contains(key1)) {
+        ops_printf("Error! Please supply %s : %s in the configuration!\n",
+                   key0.c_str(), key1.c_str());
+        assert(jsonConfig[key0].contains(key1));
+    }
     if (jsonConfig[key0][key1].is_null()) {
         ops_printf(
             "Error! Please insert the %s->%s item into the configuration!\n",
