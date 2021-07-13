@@ -294,7 +294,7 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     ops_decl_const("OPP", NUMXI, "int", OPP);
 
     for (const auto& pair : components) {
-        IntField nodeType{"NodeType" + pair.second.name};
+        IntField nodeType{"NodeType_" + pair.second.name};
         g_NodeType().emplace(pair.second.id, nodeType);
     }
 
@@ -479,7 +479,7 @@ void DefineBodyForce(std::vector<BodyForceType> types,
             "The body force function type %i is chosen for Component %i\n",
             types.at(idx), compoId.at(idx));
         components.at(compoId.at(idx)).bodyForceType = types.at(idx);
-        RealField force{"Force" + std::to_string(compoId.at(idx))};
+        RealField force{"Force_" + components.at(compoId.at(idx)).name};
         g_MacroBodyforce().emplace(compoId.at(idx), force);
     }
     if (compoSize < NUMCOMPONENTS) {
