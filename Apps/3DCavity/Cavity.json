@@ -179,7 +179,7 @@
     ]
   },
   "TimeStepsToRun": 3,
-  "CurrentTimeSTep": 0,
+  "CurrentTimeStep": 0,
   "ConvergenceCriteria": 1e-8,
   "CheckPeriod": 1000
 }
