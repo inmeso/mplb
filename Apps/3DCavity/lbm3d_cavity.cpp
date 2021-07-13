@@ -202,14 +202,6 @@ int main(int argc, const char** argv) {
         ReadConfiguration(configFileName);
         simulate(Config());
     }
-    // restart from the time step specified by argv[2]
-    // if (argc>2 && argc <=3){
-    //     std::string configFileName(argv[1]);
-    //     ReadConfiguration(configFileName);
-    //     const SizeType timeStep{static_cast<SizeType>(std::stoi(argv[2]))};
-    //     simulate(Config(),timeStep);
-    // }
-
     ops_timers(&ct1, &et1);
     ops_printf("\nTotal Wall time %lf\n", et1 - et0);
     // Print OPS performance details to output stream
