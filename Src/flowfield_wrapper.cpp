@@ -28,7 +28,7 @@ void CopyCurrentMacroVar() {
     }
 }
 
-void CalcResidualError3D() {
+void CalcResidualError() {
     std::map<int, Real> diff;
     for (const auto& pair : g_MacroVars()) {
         const int varId{pair.first};
@@ -88,7 +88,7 @@ void CalcResidualError3D() {
     }
 }
 
-void CopyDistribution3D(RealField& fDest, RealField& fSrc) {
+void CopyDistribution(RealField& fDest, RealField& fSrc) {
     for (const auto& idBlock : g_Block()) {
         const Block& block{idBlock.second};
         std::vector<int> iterRng;
@@ -110,7 +110,7 @@ void CopyDistribution3D(RealField& fDest, RealField& fSrc) {
 // which needs the information at halo points.
 // The routine shall be removed if the stream process can be implemented in a
 // way that f_stage is not necessary.
-void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
+void CopyBlockEnvelopDistribution(Field<Real>& fDest, Field<Real>& fSrc) {
     // int haloIterRng[]{0, 0, 0, 0, 0, 0};
     for (const auto& idBlock : g_Block()) {
         const Block& block{idBlock.second};
@@ -190,6 +190,7 @@ void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
                                  "double", OPS_WRITE),
                      ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_READ));
+#ifdef OPS_3D
         iterRng.assign(
             block.BoundarySurfaceRange().at(BoundarySurface::Back).begin(),
             block.BoundarySurfaceRange().at(BoundarySurface::Back).end());
@@ -226,10 +227,11 @@ void CopyBlockEnvelopDistribution3D(Field<Real>& fDest, Field<Real>& fSrc) {
                                  "double", OPS_WRITE),
                      ops_arg_dat(fSrc[blockIndex], NUMXI, LOCALSTENCIL,
                                  "double", OPS_READ));
+#endif  // OPS_3D
     }
 }
 
-void NormaliseF3D(Real* ratio) {
+void NormaliseF(Real* ratio) {
     for (auto idBlock : g_Block()) {
         Block& block{idBlock.second};
         std::vector<int> iterRng;
@@ -254,7 +256,7 @@ void AssignCoordinates(const Block& block,
         const int sizeY{block.Size().at(1)};
         ops_par_loop(KerSetCoordinates, "KerSetCoordinates", block.Get(),
                      SpaceDim(), range.data(),
-                     ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                     ops_arg_dat(g_CoordinateXYZ()[block.ID()], SpaceDim(),
                                  LOCALSTENCIL, "double", OPS_WRITE),
                      ops_arg_idx(),
                      ops_arg_gbl(coordinateX, sizeX, "double", OPS_READ),
@@ -306,10 +308,10 @@ void SetBlockGeometryProperty(const Block& block) {
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] - 1;
     haloIterRng[3] = iterRange[3] - 1;
-    if (3 == SpaceDim()) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
+#ifdef OPS_3D
+    haloIterRng[4] = iterRange[4] - 1;
+    haloIterRng[5] = iterRange[5] + 1;
+#endif
     ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
                  haloIterRng,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
@@ -322,10 +324,10 @@ void SetBlockGeometryProperty(const Block& block) {
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] + 1;
     haloIterRng[3] = iterRange[3] + 1;
-    if (3 == SpaceDim()) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
+#ifdef OPS_3D
+    haloIterRng[4] = iterRange[4] - 1;
+    haloIterRng[5] = iterRange[5] + 1;
+#endif
     ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
                  haloIterRng,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
@@ -338,10 +340,10 @@ void SetBlockGeometryProperty(const Block& block) {
     haloIterRng[1] = iterRange[1] - 1;
     haloIterRng[2] = iterRange[2] - 1;
     haloIterRng[3] = iterRange[3] + 1;
-    if (3 == SpaceDim()) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
+#ifdef OPS_3D
+    haloIterRng[4] = iterRange[4] - 1;
+    haloIterRng[5] = iterRange[5] + 1;
+#endif
     ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
                  haloIterRng,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
@@ -354,45 +356,45 @@ void SetBlockGeometryProperty(const Block& block) {
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] - 1;
     haloIterRng[3] = iterRange[3] + 1;
-    if (3 == SpaceDim()) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
+#ifdef OPS_3D
+    haloIterRng[4] = iterRange[4] - 1;
+    haloIterRng[5] = iterRange[5] + 1;
+#endif
     ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
                  haloIterRng,
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
-    if (3 == SpaceDim()) {
-        iterRange.assign(
-            block.BoundarySurfaceRange().at(BoundarySurface::Back).begin(),
-            block.BoundarySurfaceRange().at(BoundarySurface::Back).end());
-        haloIterRng[0] = iterRange[0] - 1;
-        haloIterRng[1] = iterRange[1] + 1;
-        haloIterRng[2] = iterRange[2] - 1;
-        haloIterRng[3] = iterRange[3] + 1;
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] - 1;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     haloIterRng,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        iterRange.assign(
-            block.BoundarySurfaceRange().at(BoundarySurface::Front).begin(),
-            block.BoundarySurfaceRange().at(BoundarySurface::Front).end());
-        haloIterRng[0] = iterRange[0] - 1;
-        haloIterRng[1] = iterRange[1] + 1;
-        haloIterRng[2] = iterRange[2] - 1;
-        haloIterRng[3] = iterRange[3] + 1;
-        haloIterRng[4] = iterRange[4] + 1;
-        haloIterRng[5] = iterRange[5] + 1;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     haloIterRng,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-    }
+#ifdef OPS_3D
+    iterRange.assign(
+        block.BoundarySurfaceRange().at(BoundarySurface::Back).begin(),
+        block.BoundarySurfaceRange().at(BoundarySurface::Back).end());
+    haloIterRng[0] = iterRange[0] - 1;
+    haloIterRng[1] = iterRange[1] + 1;
+    haloIterRng[2] = iterRange[2] - 1;
+    haloIterRng[3] = iterRange[3] + 1;
+    haloIterRng[4] = iterRange[4] - 1;
+    haloIterRng[5] = iterRange[5] - 1;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 haloIterRng,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    iterRange.assign(
+        block.BoundarySurfaceRange().at(BoundarySurface::Front).begin(),
+        block.BoundarySurfaceRange().at(BoundarySurface::Front).end());
+    haloIterRng[0] = iterRange[0] - 1;
+    haloIterRng[1] = iterRange[1] + 1;
+    haloIterRng[2] = iterRange[2] - 1;
+    haloIterRng[3] = iterRange[3] + 1;
+    haloIterRng[4] = iterRange[4] + 1;
+    haloIterRng[5] = iterRange[5] + 1;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 haloIterRng,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+#endif  // OPS_3D
 
     // specify domain
     geometryProperty = VG_JP;
@@ -431,209 +433,193 @@ void SetBlockGeometryProperty(const Block& block) {
                  ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
                  ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
                              "int", OPS_WRITE));
-    if (3 == SpaceDim()) {
-        geometryProperty = VG_KP;
-        iterRange.assign(
-            block.BoundarySurfaceRange().at(BoundarySurface::Back).begin(),
-            block.BoundarySurfaceRange().at(BoundarySurface::Back).end());
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iterRange.data(),
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        geometryProperty = VG_KM;
-        iterRange.assign(
-            block.BoundarySurfaceRange().at(BoundarySurface::Front).begin(),
-            block.BoundarySurfaceRange().at(BoundarySurface::Front).end());
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iterRange.data(),
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-    }
+#ifdef OPS_3D
+    geometryProperty = VG_KP;
+    iterRange.assign(
+        block.BoundarySurfaceRange().at(BoundarySurface::Back).begin(),
+        block.BoundarySurfaceRange().at(BoundarySurface::Back).end());
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iterRange.data(),
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    geometryProperty = VG_KM;
+    iterRange.assign(
+        block.BoundarySurfaceRange().at(BoundarySurface::Front).begin(),
+        block.BoundarySurfaceRange().at(BoundarySurface::Front).end());
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iterRange.data(),
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+#endif  // OPS_3D
 
     const int nx{(int)block.Size().at(0)};
     const int ny{(int)block.Size().at(1)};
     // 2D Domain corner points four types
-    if (2 == SpaceDim()) {
-        int iminjmin[]{0, 1, 0, 1};
-        geometryProperty = VG_IPJP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iminjmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int iminjmax[] = {0, 1, ny - 1, ny};
-        geometryProperty = VG_IPJM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iminjmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int imaxjmax[] = {nx - 1, nx, ny - 1, ny};
-        geometryProperty = VG_IMJM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     imaxjmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int imaxjmin[] = {nx - 1, nx, 0, 1};
-        geometryProperty = VG_IMJP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     imaxjmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-    }
+#ifdef OPS_2D
+    int iminjmin[]{0, 1, 0, 1};
+    geometryProperty = VG_IPJP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iminjmin, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int iminjmax[] = {0, 1, ny - 1, ny};
+    geometryProperty = VG_IPJM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iminjmax, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int imaxjmax[] = {nx - 1, nx, ny - 1, ny};
+    geometryProperty = VG_IMJM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 imaxjmax, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int imaxjmin[] = {nx - 1, nx, 0, 1};
+    geometryProperty = VG_IMJP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 imaxjmin, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+#endif  // OPS_2D
 
-    if (3 == SpaceDim()) {
-        const int nz{(int)block.Size().at(2)};
-        // 3D Domain edges 12 types
-        int iminjmin[]{0, 1, 0, 1, 0, nz};
-        geometryProperty = VG_IPJP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iminjmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int iminjmax[]{0, 1, ny - 1, ny, 0, nz};
-        geometryProperty = VG_IPJM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iminjmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int imaxjmax[]{nx - 1, nx, ny - 1, ny, 0, nz};
-        geometryProperty = VG_IMJM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     imaxjmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int imaxjmin[]{nx - 1, nx, 0, 1, 0, nz};
-        geometryProperty = VG_IMJP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     imaxjmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
+#ifdef OPS_3D
+    const int nz{(int)block.Size().at(2)};
+    // 3D Domain edges 12 types
+    int iminjmin[]{0, 1, 0, 1, 0, nz};
+    geometryProperty = VG_IPJP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iminjmin, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int iminjmax[]{0, 1, ny - 1, ny, 0, nz};
+    geometryProperty = VG_IPJM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iminjmax, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int imaxjmax[]{nx - 1, nx, ny - 1, ny, 0, nz};
+    geometryProperty = VG_IMJM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 imaxjmax, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int imaxjmin[]{nx - 1, nx, 0, 1, 0, nz};
+    geometryProperty = VG_IMJP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 imaxjmin, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
 
-        int iminkmin[]{0, 1, 0, ny, 0, 1};
-        geometryProperty = VG_IPKP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iminkmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int iminkmax[]{0, 1, 0, ny, nz - 1, nz};
-        geometryProperty = VG_IPKM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iminkmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int imaxkmax[]{nx - 1, nx, 0, ny, nz - 1, nz};
-        geometryProperty = VG_IMKM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     imaxkmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int imaxkmin[]{nx - 1, nx, 0, ny, 0, 1};
-        geometryProperty = VG_IMKP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     imaxkmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
+    int iminkmin[]{0, 1, 0, ny, 0, 1};
+    geometryProperty = VG_IPKP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iminkmin, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int iminkmax[]{0, 1, 0, ny, nz - 1, nz};
+    geometryProperty = VG_IPKM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iminkmax, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int imaxkmax[]{nx - 1, nx, 0, ny, nz - 1, nz};
+    geometryProperty = VG_IMKM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 imaxkmax, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int imaxkmin[]{nx - 1, nx, 0, ny, 0, 1};
+    geometryProperty = VG_IMKP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 imaxkmin, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
 
-        int jminkmin[]{0, nx, 0, 1, 0, 1};
-        geometryProperty = VG_JPKP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     jminkmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int jminkmax[]{0, nx, 0, 1, nz - 1, nz};
-        geometryProperty = VG_JPKM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     jminkmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int jmaxkmax[]{0, nx, ny - 1, ny, nz - 1, nz};
-        geometryProperty = VG_JMKM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     jmaxkmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int jmaxkmin[]{0, nx, ny - 1, ny, 0, 1};
-        geometryProperty = VG_JMKP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     jmaxkmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
+    int jminkmin[]{0, nx, 0, 1, 0, 1};
+    geometryProperty = VG_JPKP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 jminkmin, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int jminkmax[]{0, nx, 0, 1, nz - 1, nz};
+    geometryProperty = VG_JPKM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 jminkmax, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int jmaxkmax[]{0, nx, ny - 1, ny, nz - 1, nz};
+    geometryProperty = VG_JMKM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 jmaxkmax, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int jmaxkmin[]{0, nx, ny - 1, ny, 0, 1};
+    geometryProperty = VG_JMKP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 jmaxkmin, ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
 
-        // 3D domain corners 8 types
-        int iminjminkmin[]{0, 1, 0, 1, 0, 1};
-        geometryProperty = VG_IPJPKP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iminjminkmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int iminjminkmax[]{0, 1, 0, 1, nz - 1, nz};
-        geometryProperty = VG_IPJPKM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iminjminkmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int iminjmaxkmin[]{0, 1, ny - 1, ny, 0, 1};
-        geometryProperty = VG_IPJMKP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iminjmaxkmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int iminjmaxkmax[]{0, 1, ny - 1, ny, nz - 1, nz};
-        geometryProperty = VG_IPJMKM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     iminjmaxkmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int imaxjminkmin[]{nx - 1, nx, 0, 1, 0, 1};
-        geometryProperty = VG_IMJPKP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     imaxjminkmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int imaxjminkmax[]{nx - 1, nx, 0, 1, nz - 1, nz};
-        geometryProperty = VG_IMJPKM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     imaxjminkmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int imaxjmaxkmin[]{nx - 1, nx, ny - 1, ny, 0, 1};
-        geometryProperty = VG_IMJMKP_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     imaxjmaxkmin,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-        int imaxjmaxkmax[]{nx - 1, nx, ny - 1, ny, nz - 1, nz};
-        geometryProperty = VG_IMJMKM_I;
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     imaxjmaxkmax,
-                     ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
-                     ops_arg_dat(g_GeometryProperty()[block.ID()], 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-    }
+    // 3D domain corners 8 types
+    int iminjminkmin[]{0, 1, 0, 1, 0, 1};
+    geometryProperty = VG_IPJPKP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iminjminkmin,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int iminjminkmax[]{0, 1, 0, 1, nz - 1, nz};
+    geometryProperty = VG_IPJPKM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iminjminkmax,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int iminjmaxkmin[]{0, 1, ny - 1, ny, 0, 1};
+    geometryProperty = VG_IPJMKP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iminjmaxkmin,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int iminjmaxkmax[]{0, 1, ny - 1, ny, nz - 1, nz};
+    geometryProperty = VG_IPJMKM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 iminjmaxkmax,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int imaxjminkmin[]{nx - 1, nx, 0, 1, 0, 1};
+    geometryProperty = VG_IMJPKP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 imaxjminkmin,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int imaxjminkmax[]{nx - 1, nx, 0, 1, nz - 1, nz};
+    geometryProperty = VG_IMJPKM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 imaxjminkmax,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int imaxjmaxkmin[]{nx - 1, nx, ny - 1, ny, 0, 1};
+    geometryProperty = VG_IMJMKP_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 imaxjmaxkmin,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+    int imaxjmaxkmax[]{nx - 1, nx, ny - 1, ny, nz - 1, nz};
+    geometryProperty = VG_IMJMKM_I;
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 imaxjmaxkmax,
+                 ops_arg_gbl(&geometryProperty, 1, "int", OPS_READ),
+                 ops_arg_dat(g_GeometryProperty()[block.ID()], 1, LOCALSTENCIL,
+                             "int", OPS_WRITE));
+#endif  // OPS_3D
 }
 
 void SetBoundaryNodeType() {
@@ -670,8 +656,8 @@ void SetBoundaryNodeType() {
                 iterRange.at(1)--;
                 iterRange.at(2)++;
                 iterRange.at(3)--;
-#endif
             }
+#endif
         }
         // Specify general boundary type
         ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
@@ -701,10 +687,10 @@ void SetBulkandHaloNodesType(const Block& block, int compoId) {
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] - 1;
     haloIterRng[3] = iterRange[3] - 1;
-    if (3 == SpaceDim()) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
+#ifdef OPS_3D
+    haloIterRng[4] = iterRange[4] - 1;
+    haloIterRng[5] = iterRange[5] + 1;
+#endif
     ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
                  haloIterRng,
                  ops_arg_gbl(&immersedSolidType, 1, "int", OPS_READ),
@@ -718,10 +704,10 @@ void SetBulkandHaloNodesType(const Block& block, int compoId) {
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] + 1;
     haloIterRng[3] = iterRange[3] + 1;
-    if (3 == SpaceDim()) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
+#ifdef OPS_3D
+    haloIterRng[4] = iterRange[4] - 1;
+    haloIterRng[5] = iterRange[5] + 1;
+#endif
     // Specify halo points
     ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
                  haloIterRng,
@@ -736,10 +722,10 @@ void SetBulkandHaloNodesType(const Block& block, int compoId) {
     haloIterRng[1] = iterRange[1] - 1;
     haloIterRng[2] = iterRange[2] - 1;
     haloIterRng[3] = iterRange[3] + 1;
-    if (3 == SpaceDim()) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
+#ifdef OPS_3D
+    haloIterRng[4] = iterRange[4] - 1;
+    haloIterRng[5] = iterRange[5] + 1;
+#endif
     // Specify halo points
     ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
                  haloIterRng,
@@ -754,10 +740,10 @@ void SetBulkandHaloNodesType(const Block& block, int compoId) {
     haloIterRng[1] = iterRange[1] + 1;
     haloIterRng[2] = iterRange[2] - 1;
     haloIterRng[3] = iterRange[3] + 1;
-    if (3 == SpaceDim()) {
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] + 1;
-    }
+#ifdef OPS_3D
+    haloIterRng[4] = iterRange[4] - 1;
+    haloIterRng[5] = iterRange[5] + 1;
+#endif
     // Specify halo points
     ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
                  haloIterRng,
@@ -765,38 +751,38 @@ void SetBulkandHaloNodesType(const Block& block, int compoId) {
                  ops_arg_dat(g_NodeType().at(compoId).at(block.ID()), 1,
                              LOCALSTENCIL, "int", OPS_WRITE));
 
-    if (3 == SpaceDim()) {
-        iterRange.assign(
-            block.BoundarySurfaceRange().at(BoundarySurface::Back).begin(),
-            block.BoundarySurfaceRange().at(BoundarySurface::Back).end());
-        haloIterRng[0] = iterRange[0] - 1;
-        haloIterRng[1] = iterRange[1] + 1;
-        haloIterRng[2] = iterRange[2] - 1;
-        haloIterRng[3] = iterRange[3] + 1;
-        haloIterRng[4] = iterRange[4] - 1;
-        haloIterRng[5] = iterRange[5] - 1;
-        // Specify halo points
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     haloIterRng,
-                     ops_arg_gbl(&immersedSolidType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType().at(compoId).at(block.ID()), 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
+#ifdef OPS_3D
+    iterRange.assign(
+        block.BoundarySurfaceRange().at(BoundarySurface::Back).begin(),
+        block.BoundarySurfaceRange().at(BoundarySurface::Back).end());
+    haloIterRng[0] = iterRange[0] - 1;
+    haloIterRng[1] = iterRange[1] + 1;
+    haloIterRng[2] = iterRange[2] - 1;
+    haloIterRng[3] = iterRange[3] + 1;
+    haloIterRng[4] = iterRange[4] - 1;
+    haloIterRng[5] = iterRange[5] - 1;
+    // Specify halo points
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 haloIterRng,
+                 ops_arg_gbl(&immersedSolidType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType().at(compoId).at(block.ID()), 1,
+                             LOCALSTENCIL, "int", OPS_WRITE));
 
-        iterRange.assign(
-            block.BoundarySurfaceRange().at(BoundarySurface::Front).begin(),
-            block.BoundarySurfaceRange().at(BoundarySurface::Front).end());
-        haloIterRng[0] = iterRange[0] - 1;
-        haloIterRng[1] = iterRange[1] + 1;
-        haloIterRng[2] = iterRange[2] - 1;
-        haloIterRng[3] = iterRange[3] + 1;
-        haloIterRng[4] = iterRange[4] + 1;
-        haloIterRng[5] = iterRange[5] + 1;
-        // Specify halo points
-        ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
-                     haloIterRng,
-                     ops_arg_gbl(&immersedSolidType, 1, "int", OPS_READ),
-                     ops_arg_dat(g_NodeType().at(compoId).at(block.ID()), 1,
-                                 LOCALSTENCIL, "int", OPS_WRITE));
-    }
+    iterRange.assign(
+        block.BoundarySurfaceRange().at(BoundarySurface::Front).begin(),
+        block.BoundarySurfaceRange().at(BoundarySurface::Front).end());
+    haloIterRng[0] = iterRange[0] - 1;
+    haloIterRng[1] = iterRange[1] + 1;
+    haloIterRng[2] = iterRange[2] - 1;
+    haloIterRng[3] = iterRange[3] + 1;
+    haloIterRng[4] = iterRange[4] + 1;
+    haloIterRng[5] = iterRange[5] + 1;
+    // Specify halo points
+    ops_par_loop(KerSetIntField, "KerSetIntField", block.Get(), SpaceDim(),
+                 haloIterRng,
+                 ops_arg_gbl(&immersedSolidType, 1, "int", OPS_READ),
+                 ops_arg_dat(g_NodeType().at(compoId).at(block.ID()), 1,
+                             LOCALSTENCIL, "int", OPS_WRITE));
+#endif  // OPS_3D
     FreeArrayMemory(haloIterRng);
 }

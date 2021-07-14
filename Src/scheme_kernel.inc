@@ -39,7 +39,6 @@
  *  supported currently
  **/
 
-
 #ifndef SCHEME_KERNEL_INC
 #define SCHEME_KERNEL_INC
 #include "ops_lib_core.h"
@@ -51,896 +50,913 @@
 #include "model.h"
 #ifdef OPS_2D  // two dimensional code
 
-void KerCollide(const Real* dt, const int* nodeType, const Real* f,
-                const Real* feq, const Real* relaxationTime,
-                const Real* bodyForce, Real* fStage) {
-    VertexType vt = (VertexType)nodeType(0, 0);
-    // collisionRequired: means if collision is required at boundary
-    // e.g., the ZouHe boundary condition explicitly requires collision
-    bool collisionRequired = (vt != VertexType::ImmersedSolid);
-    if (collisionRequired) {
-        for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-            Real tau = relaxationTime(compoIndex, 0, 0);
-            Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
-            for (int xiIndex = COMPOINDEX[2 * compoIndex];
-                 xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-                fStage(xiIndex, 0, 0) =
-                    f(xiIndex, 0, 0) -
-                    dtOvertauPlusdt * (f(xiIndex, 0, 0) - feq(xiIndex, 0, 0)) +
-                    tau * dtOvertauPlusdt * bodyForce(xiIndex, 0, 0);
-            }
-        }
-    }
-}
-
-void KerStream(ACC<Real>& f, const ACC<Real>& fStage, const ACC<int>& nodeType,
-               const ACC<int>& geometry) {
-#ifdef OPS_2D
-    // ops_printf("Inside stream kernel!!!!!. \n");
-    VertexType vt = (VertexType)nodeType(0, 0);
-    VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        for (int xiIndex = COMPOINDEX[2 * compoIndex];
-             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-            int cx = (int)XI[xiIndex * LATTDIM];
-            int cy = (int)XI[xiIndex * LATTDIM + 1];
-
-            if (vt == VertexType::Fluid) {
-                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                continue;
-            }
-            //Block boundary and immersed boundary
-            if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
-                // TODO te be determined if necessary
-                bool streamRequired{true};
-
-                if (streamRequired) {
-                    if ((cx == 0) && (cy == 0)) {
-                        f(xiIndex, 0, 0) = fStage(xiIndex, 0, 0);
-                        continue;
-                    }
-                }
-                switch (vg) {
-                    case VG_IP:
-                        // (cx=0 means stream is implemented at i=0,so here we
-                        //  disable the step at boundary)
-                        if (streamRequired) {
-                            if (cx <= 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        } else {
-                            if (cx < 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        }
-                        break;
-                    case VG_IM:
-                        if (streamRequired) {
-                            if (cx >= 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        } else {
-                            if (cx > 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        }
-                        break;
-                    case VG_JP:
-                        if (streamRequired) {
-                            if (cy <= 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        } else {
-                            if (cy < 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        }
-                        break;
-                    case VG_JM:
-                        if (streamRequired) {
-                            if (cy >= 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        } else {
-                            if (cy > 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        }
-                        break;
-                    case VG_IPJP_I:
-                        if (streamRequired) {
-                            if (cy <= 0 && cx <= 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        } else {
-                            if (cy < 0 && cx < 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        }
-                        break;
-                    case VG_IPJM_I:
-                        if (streamRequired) {
-                            if (cy >= 0 && cx <= 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        } else {
-                            if (cy > 0 && cx < 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        }
-                        break;
-                    case VG_IMJP_I:
-                        if (streamRequired) {
-                            if (cy <= 0 && cx >= 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        } else {
-                            if (cy < 0 && cx > 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        }
-                        break;
-                    case VG_IMJM_I:
-                        if (streamRequired) {
-                            if (cy >= 0 && cx >= 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        } else {
-                            if (cy > 0 && cx > 0) {
-                                f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                            }
-                        }
-                        break;
-                    case VG_IPJP_O:
-                        if (cy < 0 || cx < 0) {
-                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                        }
-                        break;
-                    case VG_IPJM_O:
-                        if (cy > 0 || cx < 0) {
-                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                        }
-                        break;
-                    case VG_IMJP_O:
-                        if (cy < 0 || cx > 0) {
-                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                        }
-                        break;
-                    case VG_IMJM_O:
-                        if (cy > 0 || cx > 0) {
-                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-
-#endif  // OPS_2D
-    }
-}
-
-void KerCutCellCVTUpwind1st(const ACC<Real>& coordinateXYZ,
-                            const ACC<int>& nodeType, const ACC<int>& geometry,
-                            const ACC<Real>& f, ACC<Real>& fGradient) {
+void KerStream(ACC<Real>&f, const ACC<Real>&fStage, const ACC<int>&nodeType,
+    const ACC<int>&geometry, const int *lattIdx) {
 #ifdef OPS_2D
     VertexType vt = (VertexType)nodeType(0, 0);
-    VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        for (int xiIndex = COMPOINDEX[2 * compoIndex];
-             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-            Real cx{XI[xiIndex * LATTDIM]};
-            Real cy{XI[xiIndex * LATTDIM + 1]};
-            // setting a initial value
-            fGradient(xiIndex, 0, 0) = 0;
-            // make sure no calculation occurring at boundary when unnecessary
-            // this can avoid access undefined memory if the halo point is set
-            // incorrectly
-            bool needCalc{true};
-            if (vt == VertexType::ImmersedSolid) {
-                needCalc = false;
+    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0);
+    for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
+        int cx = (int)XI[xiIndex * LATTDIM];
+        int cy = (int)XI[xiIndex * LATTDIM + 1];
+
+        if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
+            vt == VertexType::VirtualBoundary) {
+            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+            continue;
+        }
+        // Block boundary and immersed boundary
+        if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid &&
+            vt != VertexType::VirtualBoundary && vt != VertexType::MDPeriodic) {
+            // this is reserved in case some boundary conditions
+            // might not allow stream
+            bool streamRequired{true};
+
+            if (streamRequired) {
+                if ((cx == 0) && (cy == 0)) {
+                    f(xiIndex, 0, 0) = fStage(xiIndex, 0, 0);
+                    continue;
+                }
             }
-            //Block and immersed boundary nodes
-            if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
-                switch (vg) {
-                    case VG_IP:
-                        if (cx > 0) {
-                            needCalc = false;
+            switch (vg) {
+                case VG_IP:
+                    // (cx=0 means stream is implemented at i=0,so here we
+                    //  disable the step at boundary)
+                    if (streamRequired) {
+                        if (cx <= 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
                         }
-                        break;
-                    case VG_IM:
+                    } else {
                         if (cx < 0) {
-                            needCalc = false;
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
                         }
-                        break;
-                    case VG_JP:
-                        if (cy > 0) {
-                            needCalc = false;
+                    }
+                    break;
+                case VG_IM:
+                    if (streamRequired) {
+                        if (cx >= 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
                         }
-                        break;
-                    case VG_JM:
+                    } else {
+                        if (cx > 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    }
+                    break;
+                case VG_JP:
+                    if (streamRequired) {
+                        if (cy <= 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    } else {
                         if (cy < 0) {
-                            needCalc = false;
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
                         }
-                        break;
-                    case VG_IPJP_I:
-                        if (cy > 0 || cx > 0) {
-                            needCalc = false;
+                    }
+                    break;
+                case VG_JM:
+                    if (streamRequired) {
+                        if (cy >= 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
                         }
-                        break;
-                    case VG_IPJM_I:
-                        if (cy < 0 || cx > 0) {
-                            needCalc = false;
+                    } else {
+                        if (cy > 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
                         }
-                        break;
-                    case VG_IMJP_I:
-                        if (cy > 0 || cx < 0) {
-                            needCalc = false;
-                        }
-                        break;
-                    case VG_IMJM_I:
-                        if (cy < 0 || cx < 0) {
-                            needCalc = false;
-                        }
-                        break;
-                    // It appears that the information is well defined for the
-                    // outer corners
-                    // which is quite different from the inner corners
-                    case VG_IPJP_O:
-                        if (cy >= 0 && cx >= 0) {
-                            needCalc = false;
-                        }
-                        break;
-                    case VG_IPJM_O:
-                        if (cy <= 0 && cx >= 0) {
-                            needCalc = false;
-                        }
-                        break;
-                    case VG_IMJP_O:
-                        if (cy >= 0 && cx <= 0) {
-                            needCalc = false;
-                        }
-                        break;
-                    case VG_IMJM_O:
+                    }
+                    break;
+                case VG_IPJP_I:
+                    if (streamRequired) {
                         if (cy <= 0 && cx <= 0) {
-                            needCalc = false;
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
                         }
-                        break;
-                    default:
-                        break;
-                }
-            }
-            if (needCalc) {
-                if (cx > 0) {
-                    fGradient(xiIndex, 0, 0) +=
-                        CS * cx *
-                        ((f(xiIndex, 0, 0) - f(xiIndex, -1, 0)) /
-                         (coordinateXYZ(0, 0, 0) - coordinateXYZ(0, -1, 0)));
-                }
-                if (cx < 0) {
-                    fGradient(xiIndex, 0, 0) +=
-                        CS * cx *
-                        ((f(xiIndex, 1, 0) - f(xiIndex, 0, 0)) /
-                         (coordinateXYZ(0, 1, 0) - coordinateXYZ(0, 0, 0)));
-                }
-                if (cy > 0) {
-                    fGradient(xiIndex, 0, 0) +=
-                        CS * cy *
-                        ((f(xiIndex, 0, 0) - f(xiIndex, 0, -1)) /
-                         (coordinateXYZ(1, 0, 0) - coordinateXYZ(1, 0, -1)));
-                }
-                if (cy < 0) {
-                    fGradient(xiIndex, 0, 0) +=
-                        CS * cy *
-                        ((f(xiIndex, 0, 1) - f(xiIndex, 0, 0)) /
-                         (coordinateXYZ(1, 0, 1) - coordinateXYZ(1, 0, 0)));
-                }
+                    } else {
+                        if (cy < 0 && cx < 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    }
+                    break;
+                case VG_IPJM_I:
+                    if (streamRequired) {
+                        if (cy >= 0 && cx <= 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    } else {
+                        if (cy > 0 && cx < 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    }
+                    break;
+                case VG_IMJP_I:
+                    if (streamRequired) {
+                        if (cy <= 0 && cx >= 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    } else {
+                        if (cy < 0 && cx > 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    }
+                    break;
+                case VG_IMJM_I:
+                    if (streamRequired) {
+                        if (cy >= 0 && cx >= 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    } else {
+                        if (cy > 0 && cx > 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    }
+                    break;
+                case VG_IPJP_O:
+                    if (streamRequired) {
+                        if (cy <= 0 || cx <= 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    } else {
+                        if (cy < 0 || cx < 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    }
+                    break;
+                case VG_IPJM_O:
+                    if (streamRequired) {
+                        if (cy >= 0 || cx <= 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    } else {
+                        if (cy > 0 || cx < 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    }
+                    break;
+                case VG_IMJP_O:
+                    if (streamRequired) {
+                        if (cy <= 0 || cx >= 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    } else {
+                        if (cy < 0 || cx > 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    }
+                    break;
+                case VG_IMJM_O:
+                    if (streamRequired) {
+                        if (cy >= 0 || cx >= 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    } else {
+                        if (cy > 0 || cx > 0) {
+                            f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+                        }
+                    }
+                    break;
+                default:
+                    break;
             }
         }
     }
 #endif  // OPS_2D
 }
 
-void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
-                            const ACC<int> nodeType, const ACC<int>& geometry,
-                            const ACC<Real>& f, ACC<Real>& fGradient) {
-#ifdef OPS_2D
-    VertexType vt = (VertexType)nodeType(0, 0);
-    VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        for (int xiIndex = COMPOINDEX[2 * compoIndex];
-             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-            Real cx{XI[xiIndex * LATTDIM]};
-            Real cy{XI[xiIndex * LATTDIM + 1]};
-            bool reduceOrderX{false};
-            bool reduceOrderY{false};
-            bool needCalc{true};
-            // setting a initial value
-            fGradient(xiIndex, 0, 0) = 0;
-            if (vt == VertexType::ImmersedSolid) {
-                needCalc = false;
-            }
-            // make sure no calculation occurring at boundary when unnecessary
-            // this can avoid access undefined memory if the halo point is set
-            // incorrectly
-            if (vt == VertexType::Fluid) {
-                // current node is a fluid point
-                if (cx > 0) {
-                    VertexType vtUpwind = (VertexType)nodeType(-1, 0);
-                    VertexGeometryTypes vgUpwind =
-                        (VertexGeometryTypes)geometry(-1, 0);
-                    if (vtUpwind != VertexType::Fluid && vgUpwind == VG_IP) {
-                        // if the upwind node is boundary and VG_IP point
-                        reduceOrderX = true;
-                    }
-                }  // cx >0
-                if (cx < 0) {
-                    VertexType vtUpwind = (VertexType)nodeType(1, 0);
-                    VertexGeometryTypes vgUpwind =
-                        (VertexGeometryTypes)geometry(1, 0);
-                    if (vtUpwind != VertexType::Fluid  && vgUpwind == VG_IM) {
-                        // if the upwind node is boundary and VG_IM point
-                        reduceOrderX = true;
-                    }
-                }  // Cx<0
-                if (cy > 0) {
-                    VertexType vtUpwind = (VertexType)nodeType(0, -1);
-                    VertexGeometryTypes vgUpwind =
-                        (VertexGeometryTypes)geometry(0, -1);
-                    if (vtUpwind != VertexType::Fluid  && vgUpwind == VG_JP) {
-                        reduceOrderY = true;
-                    }
-                }  // cy >0
-                if (cy < 0) {
-                    VertexType vtUpwind = (VertexType)nodeType(0, 1);
-                    VertexGeometryTypes vgUpwind =
-                        (VertexGeometryTypes)geometry(0, 1);
-                    if (vtUpwind != VertexType::Fluid  && vgUpwind == VG_JM) {
-                        reduceOrderY = true;
-                    }
-                }  // cy < 0
-            }      // current node is a fluid point
-            // Current node is a boundary node or a immersed boundary node
-            if (vt != VertexType::Fluid && vt != VertexType::ImmersedSolid) {
-                switch (vg) {
-                    case VG_IP:
-                        if (cx > 0) {
-                            needCalc = false;
-                        } else {
-                            if (cy > 0) {
-                                VertexGeometryTypes vgUpwind =
-                                    (VertexGeometryTypes)geometry(0, -1);
-                                if (((vgUpwind == VG_IPJM_O ||
-                                      vgUpwind == VG_IPJP_O) &&
-                                     (((VertexType)nodeType(0, -2)) ==
-                                      VertexType::ImmersedSolid)) ||
-                                    (vgUpwind == VG_IPJM_I) ||
-                                    (vgUpwind == VG_IPJP_I)) {
-                                    reduceOrderY = true;
-                                }
-                            }  // cy > 0 VG_IP
-                            if (cy < 0) {
-                                VertexGeometryTypes vgUpwind =
-                                    (VertexGeometryTypes)geometry(0, 1);
-                                if (((vgUpwind == VG_IPJM_O ||
-                                      vgUpwind == VG_IPJP_O) &&
-                                     (((VertexType)nodeType(0, 2)) ==
-                                      VertexType::ImmersedSolid)) ||
-                                    (vgUpwind == VG_IPJM_I) ||
-                                    (vgUpwind == VG_IPJP_I)) {
-                                    reduceOrderY = true;
-                                }
-                            }  // Cy < 0 VG_IP
-                        }
-                        break;
-                    case VG_IM:
-                        if (cx < 0) {
-                            needCalc = false;
-                        } else {
-                            if (cy > 0) {
-                                VertexGeometryTypes vgUpwind =
-                                    (VertexGeometryTypes)geometry(0, -1);
-                                if (((vgUpwind == VG_IMJM_O ||
-                                      vgUpwind == VG_IMJP_O) &&
-                                     (((VertexType)nodeType(0, -2)) ==
-                                      VertexType::ImmersedSolid)) ||
-                                    (vgUpwind == VG_IMJM_I) ||
-                                    (vgUpwind == VG_IMJP_I)) {
-                                    reduceOrderY = true;
-                                }
-                            }  // cy > 0 VG_IM
-                            if (cy < 0) {
-                                VertexGeometryTypes vgUpwind =
-                                    (VertexGeometryTypes)geometry(0, 1);
-                                if (((vgUpwind == VG_IMJM_O ||
-                                      vgUpwind == VG_IMJP_O) &&
-                                     (((VertexType)nodeType(0, 2)) ==
-                                      VertexType::ImmersedSolid)) ||
-                                    (vgUpwind == VG_IMJM_I) ||
-                                    (vgUpwind == VG_IMJP_I)) {
-                                    reduceOrderY = true;
-                                }
-                            }  // cy < 0 VG_IM
-                        }
-                        break;
-                    case VG_JP:
-                        if (cy > 0) {
-                            needCalc = false;
-                        } else {
-                            if (cx > 0) {
-                                VertexGeometryTypes vgUpwind =
-                                    (VertexGeometryTypes)geometry(-1, 0);
-                                if (((vgUpwind == VG_IMJP_O ||
-                                      vgUpwind == VG_IPJP_O) &&
-                                     (((VertexType)nodeType(-2, 0)) ==
-                                      VertexType::ImmersedSolid)) ||
-                                    (vgUpwind == VG_IMJP_I) ||
-                                    (vgUpwind == VG_IPJP_I)) {
-                                    reduceOrderX = true;
-                                }
-                            }  // cx > 0  VG_JP
-                            if (cx < 0) {
-                                VertexGeometryTypes vgUpwind =
-                                    (VertexGeometryTypes)geometry(1, 0);
-                                if (((vgUpwind == VG_IMJP_O ||
-                                      vgUpwind == VG_IPJP_O) &&
-                                     (((VertexType)nodeType(2, 0)) ==
-                                      VertexType::ImmersedSolid)) ||
-                                    (vgUpwind == VG_IMJP_I) ||
-                                    (vgUpwind == VG_IPJP_I)) {
-                                    reduceOrderX = true;
-                                }
-                            }  // cx <0 VG_JP
-                        }
-                        break;
-                    case VG_JM:
-                        if (cy < 0) {
-                            needCalc = false;
-                        } else {
-                            if (cx > 0) {
-                                VertexGeometryTypes vgUpwind =
-                                    (VertexGeometryTypes)geometry(-1, 0);
-                                if (((vgUpwind == VG_IMJM_O ||
-                                      vgUpwind == VG_IPJM_O) &&
-                                     (((VertexType)nodeType(-2, 0)) ==
-                                      VertexType::ImmersedSolid)) ||
-                                    (vgUpwind == VG_IMJM_I) ||
-                                    (vgUpwind == VG_IPJM_I)) {
-                                    reduceOrderX = true;
-                                }
-                            }  // cx > 0 VG_JM
-                            if (cx < 0) {
-                                VertexGeometryTypes vgUpwind =
-                                    (VertexGeometryTypes)geometry(1, 0);
-                                if (((vgUpwind == VG_IPJM_O ||
-                                      vgUpwind == VG_IMJM_O) &&
-                                     (((VertexType)nodeType(2, 0)) ==
-                                      VertexType::ImmersedSolid)) ||
-                                    (vgUpwind == VG_IMJM_I) ||
-                                    (vgUpwind == VG_IPJM_I)) {
-                                    reduceOrderX = true;
-                                }
-                            }  // cx > 0 VG_JM
-                        }
-                        break;
-                    case VG_IPJP_I:
-                        if (cy > 0 || cx > 0) {
-                            needCalc = false;
-                        } else {
-                            VertexGeometryTypes vgUpwind =
-                                (VertexGeometryTypes)geometry(1, 0);
-                            if (vgUpwind == VG_IMJP_I) {
-                                reduceOrderX = true;
-                            }
-                            vgUpwind = (VertexGeometryTypes)geometry(0, 1);
-                            if (vgUpwind == VG_IPJM_I) {
-                                reduceOrderY = true;
-                            }
-                        }
-                        break;
-                    case VG_IPJM_I:
-                        if (cy < 0 || cx > 0) {
-                            needCalc = false;
-                        } else {
-                            VertexGeometryTypes vgUpwind =
-                                (VertexGeometryTypes)geometry(1, 0);
-                            if (vgUpwind == VG_IMJM_I) {
-                                reduceOrderX = true;
-                            }
-                            vgUpwind = (VertexGeometryTypes)geometry(0, -1);
-                            if (vgUpwind == VG_IPJP_I) {
-                                reduceOrderY = true;
-                            }
-                        }
-                        break;
-                    case VG_IMJP_I:
-                        if (cy > 0 || cx < 0) {
-                            needCalc = false;
-                        } else {
-                            VertexGeometryTypes vgUpwind =
-                                (VertexGeometryTypes)geometry(-1, 0);
-                            if (vgUpwind == VG_IPJP_I) {
-                                reduceOrderX = true;
-                            }
-                            vgUpwind = (VertexGeometryTypes)geometry(0, 1);
-                            if (vgUpwind == VG_IMJM_I) {
-                                reduceOrderY = true;
-                            }
-                        }
-                        break;
-                    case VG_IMJM_I:
-                        if (cy < 0 || cx < 0) {
-                            needCalc = false;
-                        } else {
-                            VertexGeometryTypes vgUpwind =
-                                (VertexGeometryTypes)geometry(-1, 0);
-                            if (vgUpwind == VG_IPJM_I) {
-                                reduceOrderX = true;
-                            }
-                            vgUpwind = (VertexGeometryTypes)geometry(0, -1);
-                            if (vgUpwind == VG_IMJP_I) {
-                                reduceOrderY = true;
-                            }
-                        }
-                        break;
-                    case VG_IPJP_O:
-                        if (cy >= 0 && cx >= 0) {
-                            needCalc = false;
-                        } else {
-                            VertexGeometryTypes vgUpwind =
-                                (VertexGeometryTypes)geometry(1, 0);
-                            if (vgUpwind == VG_IM) {
-                                reduceOrderX = true;
-                            }
-                            vgUpwind = (VertexGeometryTypes)geometry(0, 1);
-                            if (vgUpwind == VG_JM) {
-                                reduceOrderY = true;
-                            }
-                        }
-                        break;
-                    case VG_IPJM_O:
-                        if (cy <= 0 && cx >= 0) {
-                            needCalc = false;
-                        } else {
-                            VertexGeometryTypes vgUpwind =
-                                (VertexGeometryTypes)geometry(1, 0);
-                            if (vgUpwind == VG_IM) {
-                                reduceOrderX = true;
-                            }
-                            vgUpwind = (VertexGeometryTypes)geometry(0, -1);
-                            if (vgUpwind == VG_JP) {
-                                reduceOrderY = true;
-                            }
-                        }
-                        break;
-                    case VG_IMJP_O:
-                        if (cy >= 0 && cx <= 0) {
-                            needCalc = false;
-                        } else {
-                            VertexGeometryTypes vgUpwind =
-                                (VertexGeometryTypes)geometry(-1, 0);
-                            if (vgUpwind == VG_IP) {
-                                reduceOrderX = true;
-                            }
-                            vgUpwind = (VertexGeometryTypes)geometry(0, 1);
-                            if (vgUpwind == VG_JM) {
-                                reduceOrderY = true;
-                            }
-                        }
-                        break;
-                    case VG_IMJM_O:
-                        if (cy <= 0 && cx <= 0) {
-                            needCalc = false;
-                        } else {
-                            VertexGeometryTypes vgUpwind =
-                                (VertexGeometryTypes)geometry(-1, 0);
-                            if (vgUpwind == VG_IP) {
-                                reduceOrderX = true;
-                            }
-                            vgUpwind = (VertexGeometryTypes)geometry(0, -1);
-                            if (vgUpwind == VG_JP) {
-                                reduceOrderY = true;
-                            }
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }  // if the current node is a boundary node
-            if (needCalc) {
-                if (cx > 0) {
-                    if (reduceOrderX) {
-                        fGradient(xiIndex, 0, 0) +=
-                            CS * cx *
-                            ((f(xiIndex, 0, 0) - f(xiIndex, -1, 0)) /
-                             (coordinateXYZ(0, 0, 0) -
-                              coordinateXYZ(0, -1, 0)));
-                    } else {
-                        Real x_2{coordinateXYZ(0, -2, 0)};
-                        Real x_1{coordinateXYZ(0, -1, 0)};
-                        Real x_0{coordinateXYZ(0, 0, 0)};
-                        // ops_printf("x_2=%f x_1=%f x_0=%f\n",x_2,x_1,x_0);
-                        fGradient(xiIndex, 0, 0) +=
-                            CS * cx *
-                            (f(xiIndex, -2, 0) *
-                                 (1 / (x_2 - x_0) - 1 / (x_2 - x_1)) +
-                             f(xiIndex, -1, 0) *
-                                 (1 / (x_1 - x_0) - 1 / (x_1 - x_2)) +
-                             f(xiIndex, 0, 0) *
-                                 (1 / (x_0 - x_1) + 1 / (x_0 - x_2)));
-                    }
-                }
-                if (cx < 0) {
-                    if (reduceOrderX) {
-                        fGradient(xiIndex, 0, 0) +=
-                            CS * cx *
-                            ((f(xiIndex, 1, 0) - f(xiIndex, 0, 0)) /
-                             (coordinateXYZ(0, 1, 0) - coordinateXYZ(0, 0, 0)));
-                    } else {
-                        Real xp2{coordinateXYZ(0, 2, 0)};
-                        Real xp1{coordinateXYZ(0, 1, 0)};
-                        Real x0{coordinateXYZ(0, 0, 0)};
-                        fGradient(xiIndex, 0, 0) +=
-                            CS * cx *
-                            (f(xiIndex, 0, 0) *
-                                 (1 / (x0 - xp2) + 1 / (x0 - xp1)) +
-                             f(xiIndex, 1, 0) *
-                                 (1 / (xp2 - xp1) + 1 / (xp1 - x0)) +
-                             f(xiIndex, 2, 0) *
-                                 (1 / (xp2 - x0) + 1 / (xp1 - xp2)));
-                    }
-                }
-                if (cy > 0) {
-                    if (reduceOrderY) {
-                        fGradient(xiIndex, 0, 0) +=
-                            CS * cy *
-                            ((f(xiIndex, 0, 0) - f(xiIndex, 0, -1)) /
-                             (coordinateXYZ(1, 0, 0) -
-                              coordinateXYZ(1, 0, -1)));
-                    } else {
-                        Real y_2{coordinateXYZ(1, 0, -2)};
-                        Real y_1{coordinateXYZ(1, 0, -1)};
-                        Real y_0{coordinateXYZ(1, 0, 0)};
-                        fGradient(xiIndex, 0, 0) +=
-                            CS * cy *
-                            (f(xiIndex, 0, -2) *
-                                 (1 / (y_2 - y_0) - 1 / (y_2 - y_1)) +
-                             f(xiIndex, 0, -1) *
-                                 (1 / (y_1 - y_0) - 1 / (y_1 - y_2)) +
-                             f(xiIndex, 0, 0) *
-                                 (1 / (y_0 - y_1) + 1 / (y_0 - y_2)));
-                    }
-                }
-                if (cy < 0) {
-                    if (reduceOrderY) {
-                        fGradient(xiIndex, 0, 0) +=
-                            CS * cy *
-                            ((f(xiIndex, 0, 1) - f(xiIndex, 0, 0)) /
-                             (coordinateXYZ(1, 0, 1) - coordinateXYZ(1, 0, 0)));
-                    } else {
-                        Real yp2{coordinateXYZ(1, 0, 2)};
-                        Real yp1{coordinateXYZ(1, 0, 1)};
-                        Real y0{coordinateXYZ(1, 0, 0)};
-                        fGradient(xiIndex, 0, 0) +=
-                            CS * cy *
-                            (f(xiIndex, 0, 0) *
-                                 (1 / (y0 - yp2) + 1 / (y0 - yp1)) +
-                             f(xiIndex, 0, 1) *
-                                 (1 / (yp2 - yp1) + 1 / (yp1 - y0)) +
-                             f(xiIndex, 0, 2) *
-                                 (1 / (yp2 - y0) + 1 / (yp1 - yp2)));
-                    }
-                }
-            }
-        }
-    }
-#endif  // OPS_2D
-}
+// void KerCutCellCVTUpwind1st(const ACC<Real>& coordinateXYZ,
+//                             const ACC<int>& nodeType, const ACC<int>&
+//                             geometry, const ACC<Real>& f, ACC<Real>&
+//                             fGradient) {
+// #ifdef OPS_2D
+//     VertexType vt = (VertexType)nodeType(0, 0);
+//     VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
+//     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+//         for (int xiIndex = COMPOINDEX[2 * compoIndex];
+//              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+//             Real cx{XI[xiIndex * LATTDIM]};
+//             Real cy{XI[xiIndex * LATTDIM + 1]};
+//             // setting a initial value
+//             fGradient(xiIndex, 0, 0) = 0;
+//             // make sure no calculation occurring at boundary when
+//             unnecessary
+//             // this can avoid access undefined memory if the halo point is
+//             set
+//             // incorrectly
+//             bool needCalc{true};
+//             if (vt == VertexType::ImmersedSolid) {
+//                 needCalc = false;
+//             }
+//             // Block and immersed boundary nodes
+//             if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
+//                 switch (vg) {
+//                     case VG_IP:
+//                         if (cx > 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     case VG_IM:
+//                         if (cx < 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     case VG_JP:
+//                         if (cy > 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     case VG_JM:
+//                         if (cy < 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     case VG_IPJP_I:
+//                         if (cy > 0 || cx > 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     case VG_IPJM_I:
+//                         if (cy < 0 || cx > 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     case VG_IMJP_I:
+//                         if (cy > 0 || cx < 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     case VG_IMJM_I:
+//                         if (cy < 0 || cx < 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     // It appears that the information is well defined for
+//                     the
+//                     // outer corners
+//                     // which is quite different from the inner corners
+//                     case VG_IPJP_O:
+//                         if (cy >= 0 && cx >= 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     case VG_IPJM_O:
+//                         if (cy <= 0 && cx >= 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     case VG_IMJP_O:
+//                         if (cy >= 0 && cx <= 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     case VG_IMJM_O:
+//                         if (cy <= 0 && cx <= 0) {
+//                             needCalc = false;
+//                         }
+//                         break;
+//                     default:
+//                         break;
+//                 }
+//             }
+//             if (needCalc) {
+//                 if (cx > 0) {
+//                     fGradient(xiIndex, 0, 0) +=
+//                         CS * cx *
+//                         ((f(xiIndex, 0, 0) - f(xiIndex, -1, 0)) /
+//                          (coordinateXYZ(0, 0, 0) - coordinateXYZ(0, -1, 0)));
+//                 }
+//                 if (cx < 0) {
+//                     fGradient(xiIndex, 0, 0) +=
+//                         CS * cx *
+//                         ((f(xiIndex, 1, 0) - f(xiIndex, 0, 0)) /
+//                          (coordinateXYZ(0, 1, 0) - coordinateXYZ(0, 0, 0)));
+//                 }
+//                 if (cy > 0) {
+//                     fGradient(xiIndex, 0, 0) +=
+//                         CS * cy *
+//                         ((f(xiIndex, 0, 0) - f(xiIndex, 0, -1)) /
+//                          (coordinateXYZ(1, 0, 0) - coordinateXYZ(1, 0, -1)));
+//                 }
+//                 if (cy < 0) {
+//                     fGradient(xiIndex, 0, 0) +=
+//                         CS * cy *
+//                         ((f(xiIndex, 0, 1) - f(xiIndex, 0, 0)) /
+//                          (coordinateXYZ(1, 0, 1) - coordinateXYZ(1, 0, 0)));
+//                 }
+//             }
+//         }
+//     }
+// #endif  // OPS_2D
+// }
 
-void KerCutCellSemiImplicitTimeMach(
-    const Real* dt, const Real* schemeCoeff, const ACC<int>& nodeType,
-    const ACC<int>& geometry, const ACC<Real>& fGradient, const ACC<Real>& feq,
-    const ACC<Real>& relaxationTime, const ACC<Real>& bodyForce, Real* f) {
-    /*
-    dt(0), schemeCoeff(1),nodeType(2),geometry(3), fGradient (4),
-    feq(5),
-    relaxationTime(6), bodyForce(7), f(8)
-    */
-    VertexType vt = (VertexType)nodeType(0, 0);
-    VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        Real tau = relaxationTime(compoIndex, 0, 0);
-        for (int xiIndex = COMPOINDEX[2 * compoIndex];
-             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-            Real cx{XI[xiIndex * LATTDIM]};
-            Real cy{XI[xiIndex * LATTDIM + 1]};
-            bool needMarch{true};
-            if (vt == VertexType::ImmersedSolid) {
-                needMarch = false;
-            }
-            //Block or immersed boundary
-            if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
-                switch (vg) {
-                    case VG_IP:
-                        if (cx > 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IM:
-                        if (cx < 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_JP:
-                        if (cy > 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_JM:
-                        if (cy < 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IPJP_I:
-                        if (cy > 0 || cx > 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IPJM_I:
-                        if (cy < 0 || cx > 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IMJP_I:
-                        if (cy > 0 || cx < 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IMJM_I:
-                        if (cy < 0 || cx < 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IPJP_O:
-                        if (cy >= 0 && cx >= 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IPJM_O:
-                        if (cy <= 0 && cx >= 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IMJP_O:
-                        if (cy >= 0 && cx <= 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IMJM_O:
-                        if (cy <= 0 && cx <= 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-            if (needMarch) {
-                f(xiIndex, 0, 0) = (feq(xiIndex, 0, 0) * (*dt) +
-                                    bodyForce(xiIndex, 0, 0) * (*dt) * tau -
-                                    fGradient(xiIndex, 0, 0) * (*dt) * tau +
-                                    f(xiIndex, 0, 0) * tau) /
-                                   ((*dt) + tau);
-            }
-        }
-    }
-}
+// void KerCutCellCVTUpwind2nd(const ACC<Real>& coordinateXYZ,
+//                             const ACC<int> nodeType, const ACC<int>&
+//                             geometry, const ACC<Real>& f, ACC<Real>&
+//                             fGradient) {
+// #ifdef OPS_2D
+//     VertexType vt = (VertexType)nodeType(0, 0);
+//     VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
+//     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+//         for (int xiIndex = COMPOINDEX[2 * compoIndex];
+//              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+//             Real cx{XI[xiIndex * LATTDIM]};
+//             Real cy{XI[xiIndex * LATTDIM + 1]};
+//             bool reduceOrderX{false};
+//             bool reduceOrderY{false};
+//             bool needCalc{true};
+//             // setting a initial value
+//             fGradient(xiIndex, 0, 0) = 0;
+//             if (vt == VertexType::ImmersedSolid) {
+//                 needCalc = false;
+//             }
+//             // make sure no calculation occurring at boundary when
+//             unnecessary
+//             // this can avoid access undefined memory if the halo point is
+//             set
+//             // incorrectly
+//             if (vt == VertexType::Fluid) {
+//                 // current node is a fluid point
+//                 if (cx > 0) {
+//                     VertexType vtUpwind = (VertexType)nodeType(-1, 0);
+//                     VertexGeometryTypes vgUpwind =
+//                         (VertexGeometryTypes)geometry(-1, 0);
+//                     if (vtUpwind != VertexType::Fluid && vgUpwind == VG_IP) {
+//                         // if the upwind node is boundary and VG_IP point
+//                         reduceOrderX = true;
+//                     }
+//                 }  // cx >0
+//                 if (cx < 0) {
+//                     VertexType vtUpwind = (VertexType)nodeType(1, 0);
+//                     VertexGeometryTypes vgUpwind =
+//                         (VertexGeometryTypes)geometry(1, 0);
+//                     if (vtUpwind != VertexType::Fluid && vgUpwind == VG_IM) {
+//                         // if the upwind node is boundary and VG_IM point
+//                         reduceOrderX = true;
+//                     }
+//                 }  // Cx<0
+//                 if (cy > 0) {
+//                     VertexType vtUpwind = (VertexType)nodeType(0, -1);
+//                     VertexGeometryTypes vgUpwind =
+//                         (VertexGeometryTypes)geometry(0, -1);
+//                     if (vtUpwind != VertexType::Fluid && vgUpwind == VG_JP) {
+//                         reduceOrderY = true;
+//                     }
+//                 }  // cy >0
+//                 if (cy < 0) {
+//                     VertexType vtUpwind = (VertexType)nodeType(0, 1);
+//                     VertexGeometryTypes vgUpwind =
+//                         (VertexGeometryTypes)geometry(0, 1);
+//                     if (vtUpwind != VertexType::Fluid && vgUpwind == VG_JM) {
+//                         reduceOrderY = true;
+//                     }
+//                 }  // cy < 0
+//             }      // current node is a fluid point
+//             // Current node is a boundary node or a immersed boundary node
+//             if (vt != VertexType::Fluid && vt != VertexType::ImmersedSolid) {
+//                 switch (vg) {
+//                     case VG_IP:
+//                         if (cx > 0) {
+//                             needCalc = false;
+//                         } else {
+//                             if (cy > 0) {
+//                                 VertexGeometryTypes vgUpwind =
+//                                     (VertexGeometryTypes)geometry(0, -1);
+//                                 if (((vgUpwind == VG_IPJM_O ||
+//                                       vgUpwind == VG_IPJP_O) &&
+//                                      (((VertexType)nodeType(0, -2)) ==
+//                                       VertexType::ImmersedSolid)) ||
+//                                     (vgUpwind == VG_IPJM_I) ||
+//                                     (vgUpwind == VG_IPJP_I)) {
+//                                     reduceOrderY = true;
+//                                 }
+//                             }  // cy > 0 VG_IP
+//                             if (cy < 0) {
+//                                 VertexGeometryTypes vgUpwind =
+//                                     (VertexGeometryTypes)geometry(0, 1);
+//                                 if (((vgUpwind == VG_IPJM_O ||
+//                                       vgUpwind == VG_IPJP_O) &&
+//                                      (((VertexType)nodeType(0, 2)) ==
+//                                       VertexType::ImmersedSolid)) ||
+//                                     (vgUpwind == VG_IPJM_I) ||
+//                                     (vgUpwind == VG_IPJP_I)) {
+//                                     reduceOrderY = true;
+//                                 }
+//                             }  // Cy < 0 VG_IP
+//                         }
+//                         break;
+//                     case VG_IM:
+//                         if (cx < 0) {
+//                             needCalc = false;
+//                         } else {
+//                             if (cy > 0) {
+//                                 VertexGeometryTypes vgUpwind =
+//                                     (VertexGeometryTypes)geometry(0, -1);
+//                                 if (((vgUpwind == VG_IMJM_O ||
+//                                       vgUpwind == VG_IMJP_O) &&
+//                                      (((VertexType)nodeType(0, -2)) ==
+//                                       VertexType::ImmersedSolid)) ||
+//                                     (vgUpwind == VG_IMJM_I) ||
+//                                     (vgUpwind == VG_IMJP_I)) {
+//                                     reduceOrderY = true;
+//                                 }
+//                             }  // cy > 0 VG_IM
+//                             if (cy < 0) {
+//                                 VertexGeometryTypes vgUpwind =
+//                                     (VertexGeometryTypes)geometry(0, 1);
+//                                 if (((vgUpwind == VG_IMJM_O ||
+//                                       vgUpwind == VG_IMJP_O) &&
+//                                      (((VertexType)nodeType(0, 2)) ==
+//                                       VertexType::ImmersedSolid)) ||
+//                                     (vgUpwind == VG_IMJM_I) ||
+//                                     (vgUpwind == VG_IMJP_I)) {
+//                                     reduceOrderY = true;
+//                                 }
+//                             }  // cy < 0 VG_IM
+//                         }
+//                         break;
+//                     case VG_JP:
+//                         if (cy > 0) {
+//                             needCalc = false;
+//                         } else {
+//                             if (cx > 0) {
+//                                 VertexGeometryTypes vgUpwind =
+//                                     (VertexGeometryTypes)geometry(-1, 0);
+//                                 if (((vgUpwind == VG_IMJP_O ||
+//                                       vgUpwind == VG_IPJP_O) &&
+//                                      (((VertexType)nodeType(-2, 0)) ==
+//                                       VertexType::ImmersedSolid)) ||
+//                                     (vgUpwind == VG_IMJP_I) ||
+//                                     (vgUpwind == VG_IPJP_I)) {
+//                                     reduceOrderX = true;
+//                                 }
+//                             }  // cx > 0  VG_JP
+//                             if (cx < 0) {
+//                                 VertexGeometryTypes vgUpwind =
+//                                     (VertexGeometryTypes)geometry(1, 0);
+//                                 if (((vgUpwind == VG_IMJP_O ||
+//                                       vgUpwind == VG_IPJP_O) &&
+//                                      (((VertexType)nodeType(2, 0)) ==
+//                                       VertexType::ImmersedSolid)) ||
+//                                     (vgUpwind == VG_IMJP_I) ||
+//                                     (vgUpwind == VG_IPJP_I)) {
+//                                     reduceOrderX = true;
+//                                 }
+//                             }  // cx <0 VG_JP
+//                         }
+//                         break;
+//                     case VG_JM:
+//                         if (cy < 0) {
+//                             needCalc = false;
+//                         } else {
+//                             if (cx > 0) {
+//                                 VertexGeometryTypes vgUpwind =
+//                                     (VertexGeometryTypes)geometry(-1, 0);
+//                                 if (((vgUpwind == VG_IMJM_O ||
+//                                       vgUpwind == VG_IPJM_O) &&
+//                                      (((VertexType)nodeType(-2, 0)) ==
+//                                       VertexType::ImmersedSolid)) ||
+//                                     (vgUpwind == VG_IMJM_I) ||
+//                                     (vgUpwind == VG_IPJM_I)) {
+//                                     reduceOrderX = true;
+//                                 }
+//                             }  // cx > 0 VG_JM
+//                             if (cx < 0) {
+//                                 VertexGeometryTypes vgUpwind =
+//                                     (VertexGeometryTypes)geometry(1, 0);
+//                                 if (((vgUpwind == VG_IPJM_O ||
+//                                       vgUpwind == VG_IMJM_O) &&
+//                                      (((VertexType)nodeType(2, 0)) ==
+//                                       VertexType::ImmersedSolid)) ||
+//                                     (vgUpwind == VG_IMJM_I) ||
+//                                     (vgUpwind == VG_IPJM_I)) {
+//                                     reduceOrderX = true;
+//                                 }
+//                             }  // cx > 0 VG_JM
+//                         }
+//                         break;
+//                     case VG_IPJP_I:
+//                         if (cy > 0 || cx > 0) {
+//                             needCalc = false;
+//                         } else {
+//                             VertexGeometryTypes vgUpwind =
+//                                 (VertexGeometryTypes)geometry(1, 0);
+//                             if (vgUpwind == VG_IMJP_I) {
+//                                 reduceOrderX = true;
+//                             }
+//                             vgUpwind = (VertexGeometryTypes)geometry(0, 1);
+//                             if (vgUpwind == VG_IPJM_I) {
+//                                 reduceOrderY = true;
+//                             }
+//                         }
+//                         break;
+//                     case VG_IPJM_I:
+//                         if (cy < 0 || cx > 0) {
+//                             needCalc = false;
+//                         } else {
+//                             VertexGeometryTypes vgUpwind =
+//                                 (VertexGeometryTypes)geometry(1, 0);
+//                             if (vgUpwind == VG_IMJM_I) {
+//                                 reduceOrderX = true;
+//                             }
+//                             vgUpwind = (VertexGeometryTypes)geometry(0, -1);
+//                             if (vgUpwind == VG_IPJP_I) {
+//                                 reduceOrderY = true;
+//                             }
+//                         }
+//                         break;
+//                     case VG_IMJP_I:
+//                         if (cy > 0 || cx < 0) {
+//                             needCalc = false;
+//                         } else {
+//                             VertexGeometryTypes vgUpwind =
+//                                 (VertexGeometryTypes)geometry(-1, 0);
+//                             if (vgUpwind == VG_IPJP_I) {
+//                                 reduceOrderX = true;
+//                             }
+//                             vgUpwind = (VertexGeometryTypes)geometry(0, 1);
+//                             if (vgUpwind == VG_IMJM_I) {
+//                                 reduceOrderY = true;
+//                             }
+//                         }
+//                         break;
+//                     case VG_IMJM_I:
+//                         if (cy < 0 || cx < 0) {
+//                             needCalc = false;
+//                         } else {
+//                             VertexGeometryTypes vgUpwind =
+//                                 (VertexGeometryTypes)geometry(-1, 0);
+//                             if (vgUpwind == VG_IPJM_I) {
+//                                 reduceOrderX = true;
+//                             }
+//                             vgUpwind = (VertexGeometryTypes)geometry(0, -1);
+//                             if (vgUpwind == VG_IMJP_I) {
+//                                 reduceOrderY = true;
+//                             }
+//                         }
+//                         break;
+//                     case VG_IPJP_O:
+//                         if (cy >= 0 && cx >= 0) {
+//                             needCalc = false;
+//                         } else {
+//                             VertexGeometryTypes vgUpwind =
+//                                 (VertexGeometryTypes)geometry(1, 0);
+//                             if (vgUpwind == VG_IM) {
+//                                 reduceOrderX = true;
+//                             }
+//                             vgUpwind = (VertexGeometryTypes)geometry(0, 1);
+//                             if (vgUpwind == VG_JM) {
+//                                 reduceOrderY = true;
+//                             }
+//                         }
+//                         break;
+//                     case VG_IPJM_O:
+//                         if (cy <= 0 && cx >= 0) {
+//                             needCalc = false;
+//                         } else {
+//                             VertexGeometryTypes vgUpwind =
+//                                 (VertexGeometryTypes)geometry(1, 0);
+//                             if (vgUpwind == VG_IM) {
+//                                 reduceOrderX = true;
+//                             }
+//                             vgUpwind = (VertexGeometryTypes)geometry(0, -1);
+//                             if (vgUpwind == VG_JP) {
+//                                 reduceOrderY = true;
+//                             }
+//                         }
+//                         break;
+//                     case VG_IMJP_O:
+//                         if (cy >= 0 && cx <= 0) {
+//                             needCalc = false;
+//                         } else {
+//                             VertexGeometryTypes vgUpwind =
+//                                 (VertexGeometryTypes)geometry(-1, 0);
+//                             if (vgUpwind == VG_IP) {
+//                                 reduceOrderX = true;
+//                             }
+//                             vgUpwind = (VertexGeometryTypes)geometry(0, 1);
+//                             if (vgUpwind == VG_JM) {
+//                                 reduceOrderY = true;
+//                             }
+//                         }
+//                         break;
+//                     case VG_IMJM_O:
+//                         if (cy <= 0 && cx <= 0) {
+//                             needCalc = false;
+//                         } else {
+//                             VertexGeometryTypes vgUpwind =
+//                                 (VertexGeometryTypes)geometry(-1, 0);
+//                             if (vgUpwind == VG_IP) {
+//                                 reduceOrderX = true;
+//                             }
+//                             vgUpwind = (VertexGeometryTypes)geometry(0, -1);
+//                             if (vgUpwind == VG_JP) {
+//                                 reduceOrderY = true;
+//                             }
+//                         }
+//                         break;
+//                     default:
+//                         break;
+//                 }
+//             }  // if the current node is a boundary node
+//             if (needCalc) {
+//                 if (cx > 0) {
+//                     if (reduceOrderX) {
+//                         fGradient(xiIndex, 0, 0) +=
+//                             CS * cx *
+//                             ((f(xiIndex, 0, 0) - f(xiIndex, -1, 0)) /
+//                              (coordinateXYZ(0, 0, 0) -
+//                               coordinateXYZ(0, -1, 0)));
+//                     } else {
+//                         Real x_2{coordinateXYZ(0, -2, 0)};
+//                         Real x_1{coordinateXYZ(0, -1, 0)};
+//                         Real x_0{coordinateXYZ(0, 0, 0)};
+//                         // ops_printf("x_2=%f x_1=%f x_0=%f\n",x_2,x_1,x_0);
+//                         fGradient(xiIndex, 0, 0) +=
+//                             CS * cx *
+//                             (f(xiIndex, -2, 0) *
+//                                  (1 / (x_2 - x_0) - 1 / (x_2 - x_1)) +
+//                              f(xiIndex, -1, 0) *
+//                                  (1 / (x_1 - x_0) - 1 / (x_1 - x_2)) +
+//                              f(xiIndex, 0, 0) *
+//                                  (1 / (x_0 - x_1) + 1 / (x_0 - x_2)));
+//                     }
+//                 }
+//                 if (cx < 0) {
+//                     if (reduceOrderX) {
+//                         fGradient(xiIndex, 0, 0) +=
+//                             CS * cx *
+//                             ((f(xiIndex, 1, 0) - f(xiIndex, 0, 0)) /
+//                              (coordinateXYZ(0, 1, 0) - coordinateXYZ(0, 0,
+//                              0)));
+//                     } else {
+//                         Real xp2{coordinateXYZ(0, 2, 0)};
+//                         Real xp1{coordinateXYZ(0, 1, 0)};
+//                         Real x0{coordinateXYZ(0, 0, 0)};
+//                         fGradient(xiIndex, 0, 0) +=
+//                             CS * cx *
+//                             (f(xiIndex, 0, 0) *
+//                                  (1 / (x0 - xp2) + 1 / (x0 - xp1)) +
+//                              f(xiIndex, 1, 0) *
+//                                  (1 / (xp2 - xp1) + 1 / (xp1 - x0)) +
+//                              f(xiIndex, 2, 0) *
+//                                  (1 / (xp2 - x0) + 1 / (xp1 - xp2)));
+//                     }
+//                 }
+//                 if (cy > 0) {
+//                     if (reduceOrderY) {
+//                         fGradient(xiIndex, 0, 0) +=
+//                             CS * cy *
+//                             ((f(xiIndex, 0, 0) - f(xiIndex, 0, -1)) /
+//                              (coordinateXYZ(1, 0, 0) -
+//                               coordinateXYZ(1, 0, -1)));
+//                     } else {
+//                         Real y_2{coordinateXYZ(1, 0, -2)};
+//                         Real y_1{coordinateXYZ(1, 0, -1)};
+//                         Real y_0{coordinateXYZ(1, 0, 0)};
+//                         fGradient(xiIndex, 0, 0) +=
+//                             CS * cy *
+//                             (f(xiIndex, 0, -2) *
+//                                  (1 / (y_2 - y_0) - 1 / (y_2 - y_1)) +
+//                              f(xiIndex, 0, -1) *
+//                                  (1 / (y_1 - y_0) - 1 / (y_1 - y_2)) +
+//                              f(xiIndex, 0, 0) *
+//                                  (1 / (y_0 - y_1) + 1 / (y_0 - y_2)));
+//                     }
+//                 }
+//                 if (cy < 0) {
+//                     if (reduceOrderY) {
+//                         fGradient(xiIndex, 0, 0) +=
+//                             CS * cy *
+//                             ((f(xiIndex, 0, 1) - f(xiIndex, 0, 0)) /
+//                              (coordinateXYZ(1, 0, 1) - coordinateXYZ(1, 0,
+//                              0)));
+//                     } else {
+//                         Real yp2{coordinateXYZ(1, 0, 2)};
+//                         Real yp1{coordinateXYZ(1, 0, 1)};
+//                         Real y0{coordinateXYZ(1, 0, 0)};
+//                         fGradient(xiIndex, 0, 0) +=
+//                             CS * cy *
+//                             (f(xiIndex, 0, 0) *
+//                                  (1 / (y0 - yp2) + 1 / (y0 - yp1)) +
+//                              f(xiIndex, 0, 1) *
+//                                  (1 / (yp2 - yp1) + 1 / (yp1 - y0)) +
+//                              f(xiIndex, 0, 2) *
+//                                  (1 / (yp2 - y0) + 1 / (yp1 - yp2)));
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// #endif  // OPS_2D
+// }
 
-void KerCutCellExplicitTimeMach(
-    const Real* dt, const Real* schemeCoeff, const ACC<int>& nodeType,
-    const ACC<int>& geometry, const ACC<Real>& fGradient, const ACC<Real>& feq,
-    const ACC<Real>& relaxationTime, const ACC<Real>& bodyForce, ACC<Real>& f) {
-    /*
-    dt(0), schemeCoeff(1),nodeType(2),geometry(3), fGradient (4),
-    feq(5),
-    relaxationTime(6), bodyForce(7), f(8)
-    */
-    VertexType vt = (VertexType)nodeType(0, 0);
-    VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
-    for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
-        Real tau = relaxationTime(compoIndex, 0, 0);
-        for (int xiIndex = COMPOINDEX[2 * compoIndex];
-             xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
-            Real cx{XI[xiIndex * LATTDIM]};
-            Real cy{XI[xiIndex * LATTDIM + 1]};
-            bool needMarch{true};
-            if (vt == VertexType::ImmersedSolid) {
-                needMarch = false;
-            }
-            //Block or immersed boundary
-            if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) { {
-                switch (vg) {
-                    case VG_IP:
-                        if (cx > 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IM:
-                        if (cx < 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_JP:
-                        if (cy > 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_JM:
-                        if (cy < 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IPJP_I:
-                        if (cy > 0 || cx > 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IPJM_I:
-                        if (cy < 0 || cx > 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IMJP_I:
-                        if (cy > 0 || cx < 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IMJM_I:
-                        if (cy < 0 || cx < 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IPJP_O:
-                        if (cy >= 0 && cx >= 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IPJM_O:
-                        if (cy <= 0 && cx >= 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IMJP_O:
-                        if (cy >= 0 && cx <= 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    case VG_IMJM_O:
-                        if (cy <= 0 && cx <= 0) {
-                            needMarch = false;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-            }
-            if (needMarch) {
-                f(xiIndex, 0, 0) =
-                    f(xiIndex, 0, 0) +
-                    (*dt) * (*schemeCoeff) *
-                        (bodyForce(xiIndex, 0, 0) - fGradient(xiIndex, 0, 0) +
-                         (feq(xiIndex, 0, 0) - f(xiIndex, 0, 0)) / tau);
-            }
-        }
-    }
-}
+// void KerCutCellSemiImplicitTimeMach(
+//     const Real* dt, const Real* schemeCoeff, const ACC<int>& nodeType,
+//     const ACC<int>& geometry, const ACC<Real>& fGradient, const ACC<Real>&
+//     feq, const ACC<Real>& relaxationTime, const ACC<Real>& bodyForce, Real*
+//     f) {
+// #ifdef OPS_2D
+//     /*
+//     dt(0), schemeCoeff(1),nodeType(2),geometry(3), fGradient (4),
+//     feq(5),
+//     relaxationTime(6), bodyForce(7), f(8)
+//     */
+//     VertexType vt = (VertexType)nodeType(0, 0);
+//     VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
+//     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+//         Real tau = relaxationTime(compoIndex, 0, 0);
+//         for (int xiIndex = COMPOINDEX[2 * compoIndex];
+//              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+//             Real cx{XI[xiIndex * LATTDIM]};
+//             Real cy{XI[xiIndex * LATTDIM + 1]};
+//             bool needMarch{true};
+//             if (vt == VertexType::ImmersedSolid) {
+//                 needMarch = false;
+//             }
+//             // Block or immersed boundary
+//             if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
+//                 switch (vg) {
+//                     case VG_IP:
+//                         if (cx > 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     case VG_IM:
+//                         if (cx < 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     case VG_JP:
+//                         if (cy > 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     case VG_JM:
+//                         if (cy < 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     case VG_IPJP_I:
+//                         if (cy > 0 || cx > 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     case VG_IPJM_I:
+//                         if (cy < 0 || cx > 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     case VG_IMJP_I:
+//                         if (cy > 0 || cx < 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     case VG_IMJM_I:
+//                         if (cy < 0 || cx < 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     case VG_IPJP_O:
+//                         if (cy >= 0 && cx >= 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     case VG_IPJM_O:
+//                         if (cy <= 0 && cx >= 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     case VG_IMJP_O:
+//                         if (cy >= 0 && cx <= 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     case VG_IMJM_O:
+//                         if (cy <= 0 && cx <= 0) {
+//                             needMarch = false;
+//                         }
+//                         break;
+//                     default:
+//                         break;
+//                 }
+//             }
+//             if (needMarch) {
+//                 f(xiIndex, 0, 0) = (feq(xiIndex, 0, 0) * (*dt) +
+//                                     bodyForce(xiIndex, 0, 0) * (*dt) * tau -
+//                                     fGradient(xiIndex, 0, 0) * (*dt) * tau +
+//                                     f(xiIndex, 0, 0) * tau) /
+//                                    ((*dt) + tau);
+//             }
+//         }
+//     }
+// #endif  // OPS_2D
+// }
+
+// void KerCutCellExplicitTimeMach(
+//     const Real* dt, const Real* schemeCoeff, const ACC<int>& nodeType,
+//     const ACC<int>& geometry, const ACC<Real>& fGradient, const ACC<Real>&
+//     feq, const ACC<Real>& relaxationTime, const ACC<Real>& bodyForce,
+//     ACC<Real>& f) {
+// #ifdef OPS_2D
+//     /*
+//     dt(0), schemeCoeff(1),nodeType(2),geometry(3), fGradient (4),
+//     feq(5),
+//     relaxationTime(6), bodyForce(7), f(8)
+//     */
+//     VertexType vt = (VertexType)nodeType(0, 0);
+//     VertexGeometryTypes vg = (VertexGeometryTypes)geometry(0, 0);
+//     for (int compoIndex = 0; compoIndex < NUMCOMPONENTS; compoIndex++) {
+//         Real tau = relaxationTime(compoIndex, 0, 0);
+//         for (int xiIndex = COMPOINDEX[2 * compoIndex];
+//              xiIndex <= COMPOINDEX[2 * compoIndex + 1]; xiIndex++) {
+//             Real cx{XI[xiIndex * LATTDIM]};
+//             Real cy{XI[xiIndex * LATTDIM + 1]};
+//             bool needMarch{true};
+//             if (vt == VertexType::ImmersedSolid) {
+//                 needMarch = false;
+//             }
+//             // Block or immersed boundary
+//             if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid) {
+//                 {
+//                     switch (vg) {
+//                         case VG_IP:
+//                             if (cx > 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         case VG_IM:
+//                             if (cx < 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         case VG_JP:
+//                             if (cy > 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         case VG_JM:
+//                             if (cy < 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         case VG_IPJP_I:
+//                             if (cy > 0 || cx > 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         case VG_IPJM_I:
+//                             if (cy < 0 || cx > 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         case VG_IMJP_I:
+//                             if (cy > 0 || cx < 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         case VG_IMJM_I:
+//                             if (cy < 0 || cx < 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         case VG_IPJP_O:
+//                             if (cy >= 0 && cx >= 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         case VG_IPJM_O:
+//                             if (cy <= 0 && cx >= 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         case VG_IMJP_O:
+//                             if (cy >= 0 && cx <= 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         case VG_IMJM_O:
+//                             if (cy <= 0 && cx <= 0) {
+//                                 needMarch = false;
+//                             }
+//                             break;
+//                         default:
+//                             break;
+//                     }
+//                 }
+//                 if (needMarch) {
+//                     f(xiIndex, 0, 0) =
+//                         f(xiIndex, 0, 0) +
+//                         (*dt) * (*schemeCoeff) *
+//                             (bodyForce(xiIndex, 0, 0) -
+//                              fGradient(xiIndex, 0, 0) +
+//                              (feq(xiIndex, 0, 0) - f(xiIndex, 0, 0)) / tau);
+//                 }
+//             }
+//         }
+// #endif  // OPS_2D
+//     }
 
 #endif  // OPS_2D outter
 
 #ifdef OPS_3D  // three dimensional code
 
-void KerStream3D(ACC<Real> & f, const ACC<Real>& fStage,
+void KerStream3D(ACC<Real>& f, const ACC<Real>& fStage,
                  const ACC<int>& nodeType, const ACC<int>& geometry,
                  const int* lattIdx) {
 #ifdef OPS_3D
@@ -960,7 +976,6 @@ void KerStream3D(ACC<Real> & f, const ACC<Real>& fStage,
 
         if (vt != VertexType::ImmersedSolid && vt != VertexType::Fluid &&
             vt != VertexType::VirtualBoundary && vt != VertexType::MDPeriodic) {
-            // TODO to be determined if necessary
             bool streamRequired{true};
             if (streamRequired) {
                 if ((cx == 0) && (cy == 0) && (cz == 0)) {
@@ -1597,4 +1612,4 @@ void KerStream3D(ACC<Real> & f, const ACC<Real>& fStage,
 
 #endif  // OPS_3D outter
 
-#endif // SCHEME_KERNEL.inc
+#endif  // SCHEME_KERNEL.inc

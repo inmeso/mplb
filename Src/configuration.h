@@ -32,7 +32,7 @@
 
 /*! @brief  Head files for configuration
  * @author  Jianping Meng
- * @details Declaring date structure for holding configuration parameters.
+ * @details Declaring data structure for holding configuration parameters.
  * The configuration currently follows the HiLeMMS definition.
  * Usage: use Config() to get the constant pointer of the data structure.
  */
@@ -57,43 +57,52 @@
 #include "flowfield_host_device.h"
 #include "boundary.h"
 
-/** Structure for holding various input parameters
-*/
+/**
+ * Structure for holding various input parameters.
+ */
 
 struct Configuration {
     std::string caseName;
     SizeType spaceDim{3};
     std::vector<std::string> compoNames;
-    std::vector<SizeType> compoIds;
+    std::vector<int> compoIds;
     std::vector<std::string> lattNames;
-//The following is optional
-//TODO to write Query() method very soon.
     std::vector<VariableTypes> macroVarTypes;
     std::vector<std::string> macroVarNames;
-    std::vector<SizeType> macroVarIds;
-    std::vector<SizeType> macroCompoIds;
+    std::vector<int> macroVarIds;
+    std::vector<int> macroCompoIds;
     std::vector<CollisionType> CollisionTypes;
-    std::vector<SizeType> CollisionCompoIds;
+    std::vector<int> CollisionCompoIds;
     std::vector<BodyForceType> bodyForceTypes;
     std::vector<SizeType> bodyForceCompoIds;
     std::vector<InitialType> initialTypes;
-    std::vector<SizeType> initialConditionCompoId;
+    std::vector<int> initialConditionCompoId;
     SchemeType schemeType{Scheme_StreamCollision};
-    SizeType blockNum{1};
-    std::vector<SizeType> blockSize;
-    std::vector<Real> startPos;
+    std::vector<std::string> blockNames;
+    std::vector<int> blockIds;
+    std::vector<int> blockSize;
+    std::vector<int> fromBlockIds;
+    std::vector<int> toBlockIds;
+    std::vector<BoundarySurface> fromBoundarySurface;
+    std::vector<BoundarySurface> toBoundarySurface;
+    std::vector<VertexType> blockConnectionType;
+    std::map<int, std::vector<Real>> startPos;
     Real meshSize;
     std::vector<Real> tauRef;
     bool transient{true};
     Real convergenceCriteria{-1};
-    SizeType timeSteps{0};
+    SizeType timeStepsToRun{0};
+    SizeType currentTimeStep{0};
     SizeType checkPeriod{1000};
     std::vector<BlockBoundary> blockBoundaryConfig;
 };
-
-/** Reading the parameters from a input file in the json format
- *  In the MPI mode, the whole input file will be broadcasted to all nodes by
- *  the root rank 0
+/**
+ * @brief Reading the parameters from a input file in the json format
+ *
+ * @details In the MPI mode, the whole input file will be broadcasted to all
+ * nodes by the root rank 0
+ *
+ * @param configFileName configuration file name
  */
 void ReadConfiguration(std::string& configFileName);
 
@@ -104,14 +113,53 @@ const Configuration& Config();
 const nlohmann::json& JsonConfig();
 
 template <typename T>
-void Query(T& value, std::string key) {
+void Query(T& value, const std::string& key) {
     const nlohmann::json& jsonConfig{JsonConfig()};
-    if (jsonConfig[key].is_null()) {
-        ops_printf("Error! Please insert the %s item into the configuration!\n",
+    if (jsonConfig.contains(key)) {
+        if (jsonConfig[key].is_null()) {
+            ops_printf(
+                "Error! Please insert the %s item into the configuration!\n",
+                key.c_str());
+            assert(jsonConfig[key].is_null());
+        };
+        value = jsonConfig[key].get<T>();
+    } else {
+        ops_printf("Error! Please supply %s in the configuration!\n",
                    key.c_str());
-        assert(jsonConfig[key].is_null());
-    };
-    value = jsonConfig[key].get<T>();
+        assert(jsonConfig.contains(key));
+    }
 }
+
+template <typename T>
+void Query(T& value, const std::string& key0, const std::string& key1) {
+    const nlohmann::json& jsonConfig{JsonConfig()};
+    if (!jsonConfig.contains(key0)) {
+        ops_printf("Error! Please supply %s in the configuration!\n",
+                   key0.c_str());
+        assert(jsonConfig.contains(key0));
+    }
+    if (!jsonConfig[key0].contains(key1)) {
+        ops_printf("Error! Please supply %s : %s in the configuration!\n",
+                   key0.c_str(), key1.c_str());
+        assert(jsonConfig[key0].contains(key1));
+    }
+    if (jsonConfig[key0][key1].is_null()) {
+        ops_printf(
+            "Error! Please insert the %s->%s item into the configuration!\n",
+            key0.c_str(), key1.c_str());
+        assert(jsonConfig[key0][key1].is_null());
+    };
+    value = jsonConfig[key0][key1].get<T>();
+}
+
+/**
+ * @brief Get the Config File From Cmd object.
+ * @param findConfig if a configuration file is specified.
+ * @param fileName the configuration file name.
+ * @param argc the command line argument number.
+ * @param argv the command line arguments.
+ */
+void GetConfigFileFromCmd(bool& findConfig, std::string& fileName,
+                          const int argc, const char** argv);
 
 #endif  // CONFIGURATION_H

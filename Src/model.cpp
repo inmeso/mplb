@@ -73,8 +73,12 @@ lattice d2q36{2, 36, 1};
 std::map<std::string, lattice> latticeSet{
     {"d2q9", d2q9}, {"d3q19", d3q19}, {"d3q15", d3q15}, {"d2q36", d2q36}};
 
-// Find particles with opposite directions, for bounce-back type boundary
-// Brute-force method, could be slow for large lattice
+/**
+ * @brief Find particles with opposite directions for bounce-back type boundary
+ * using brute-force method. It could be slow for large lattice/discrete velocity set
+ * @param startPos the start postion of a set of lattice in XI
+ * @param latticeSize the total number of discrete/lattice velocity
+ */
 void FindReverseXi(const int startPos, const int latticeSize) {
     for (int i = 0; i < latticeSize; i++) {
         for (int j = 0; j < latticeSize; j++) {
@@ -290,7 +294,7 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     ops_decl_const("OPP", NUMXI, "int", OPP);
 
     for (const auto& pair : components) {
-        IntField nodeType{"NodeType" + pair.second.name};
+        IntField nodeType{"NodeType_" + pair.second.name};
         g_NodeType().emplace(pair.second.id, nodeType);
     }
 
@@ -298,7 +302,6 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     if (timeStep == 0) {
         g_f().CreateFieldFromScratch(g_Block());
         for (auto& pair : g_NodeType()) {
-            ops_printf("Create Nodetype %d\n", pair.first);
             pair.second.CreateFieldFromScratch(g_Block());
         }
     } else {
@@ -476,7 +479,7 @@ void DefineBodyForce(std::vector<BodyForceType> types,
             "The body force function type %i is chosen for Component %i\n",
             types.at(idx), compoId.at(idx));
         components.at(compoId.at(idx)).bodyForceType = types.at(idx);
-        RealField force{"Force" + std::to_string(compoId.at(idx))};
+        RealField force{"Force_" + components.at(compoId.at(idx)).name};
         g_MacroBodyforce().emplace(compoId.at(idx), force);
     }
     if (compoSize < NUMCOMPONENTS) {
@@ -492,7 +495,7 @@ void DefineBodyForce(std::vector<BodyForceType> types,
 }
 
 void DefineInitialCondition(std::vector<InitialType> types,
-                            std::vector<SizeType> compoId) {
+                            std::vector<int> compoId) {
     if (components.size() < 1) {
         ops_printf("Error:please call DefineComponent first!\n");
         assert(components.size() == 0);

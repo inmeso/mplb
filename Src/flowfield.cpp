@@ -239,9 +239,12 @@ void PrepareFlowField() {
         AssignCoordinates(block, COORDINATES.at(blockId));
     }
     SetBoundaryNodeType();
+    if (!IsTransient()) {
+        CopyCurrentMacroVar();
+    }
 }
 
-void DispResidualError3D(const int iter, const SizeType checkPeriod) {
+void DispResidualError(const int iter, const SizeType checkPeriod) {
     ops_printf("##########Residual Error at %i time step##########\n", iter);
     for (auto& compo : g_Components()) {
         for (auto& macroVar : compo.second.macroVars) {

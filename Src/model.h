@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
 */
 
-/*! @brief Declare functions for constructing discrete velocity model
+/** @brief Declare functions for constructing lattice models
  *  @author Jianping Meng
  **/
 #ifndef MODEL_H
@@ -42,51 +42,49 @@
 #include <map>
 #include "type.h"
 
-/*!
- * Most of variables in this module will not change when the code is running.
- */
-
-/*!
- *NUMXI:total number of discrete velocity/lattice
+/**
+ * @brief total number of discrete velocity/lattice
  */
 extern int NUMXI;
 
-/*!
- *dimension of lattice model
+/**
+ * @brief LATTDIM the dimension of lattice model
  */
 extern int LATTDIM;
-/*!
- * Speed of Sound
- * Note: for multiple-component applications, the sound speed must be same.
+/**
+ * @brief CS a coefficient for the convience of writting unifed equilibrium
+ *           function with different lattice
+ * @details CS The equilibrium function can be written using \f$ \sqrt{R T_0}\f$
+ *          as reference velocity where CS is the magnitude of a lattice
+ *          velocity component in this reference system, see SHan, Yuan and Chen
+ *          J. Fluid Mech. (2006)
  */
 extern Real CS;
-/*!
- * The start index and end index of each component in the XI and WEIGHTS;
- */
-//extern int* COMPOINDEX;
-/*!
- * XI: if using stream-collision scheme XI should integers actually\n
- * XI: if using finite difference scheme, it may be real and CS=1 accordingly\n
+/**
+ * @brief lattice set stored in a linear array
+ * @details XI the storage looks like \f$ c^0_x \f$, \f$ c^0_y \f$, \f$ c^0_z \f$,
+ * \f$ c^1_x \f$, \f$ c^1_y \f$,\f$ c^1_z \f$.... If there are multiple components
+ * they are orgranised in the order when they are defined in the DefineComponent
+ * call.
  */
 extern Real* XI;
-/*!
- * XIMAXVALUE: maximum value of particle speed, for calculating the CFL.
+/**
+ * @brief XIMAXVALUE maximum value of particle speed for calculating the CFL.
  */
 extern Real XIMAXVALUE;
 /*!
  * Quadrature weights
  */
 extern Real* WEIGHTS;
-/*!
- * Total number of components for multiple-component applications
+/**
+ * @brief NUMBCOMPONENTS Total number of components for multiple-component applications
  */
 extern int NUMCOMPONENTS;
-/*!
- * OPP: the index of opposite directions of a discrete velocities\n
- * OPP: it is only useful for regular cartesian mesh\n
- * OPP: may not be initialised for complex mesh,as they needed to be
- * calculated\n
- * according to the tangential line\n
+/**
+ * @brief OPP The index of opposite directions of a discrete velocities
+ * @details OPP It is only useful for regular cartesian mesh.
+ * It may not be initialised for general structured mesh, as they needed to be
+ * calculated according to the tangential line.
  */
 extern int* OPP;
 
@@ -129,15 +127,11 @@ inline const int ComponentNum() { return NUMCOMPONENTS; }
 inline const int SizeF() { return NUMXI; }
 inline const Real SoundSpeed() { return CS; }
 inline const Real MaximumSpeed() { return XIMAXVALUE; }
-/*!
+/**
  * Free the pointer memory
  */
 void DestroyModel();
-/*!
- * In theory the size of Tau should be equal to NUMCOMPONENTS.
- */
-inline const int SizeofTau() { return NUMCOMPONENTS; }
-// HiLeMMS interface, https://gitlab.com/jpmeng/hilemms
+
 
 void DefineComponents(const std::vector<std::string>& compoNames,
                       const std::vector<int>& compoId,
@@ -163,15 +157,17 @@ void DefineBodyForce(std::vector<BodyForceType> types,
                      std::vector<SizeType> compoId);
 
 void DefineInitialCondition(std::vector<InitialType> types,
-                            std::vector<SizeType> compoId);
+                            std::vector<int> compoId);
 #ifdef OPS_3D
 void UpdateMacroVars3D();
 void PreDefinedBodyForce3D();
 void PreDefinedInitialCondition3D();
-/*!
- * Ops_par_loop for the collision step
- */
 void PreDefinedCollision3D();
-
-#endif //OPS_3D
+#endif
+#ifdef OPS_2D
+void UpdateMacroVars();
+void PreDefinedBodyForce();
+void PreDefinedInitialCondition();
+void PreDefinedCollision();
+#endif
 #endif

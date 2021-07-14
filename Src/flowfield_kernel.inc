@@ -102,9 +102,10 @@ void KerCopyCoordinateXYZ(const ACC<Real>& src, ACC<Real>& dest) {
 #ifdef OPS_3D
     for (int idx = 0; idx < 3; idx++) {
         dest(idx, 0, 0, 0) = src(idx, 0, 0, 0);
-#endif
     }
+#endif
 }
+
 void KerCopyDispf(const ACC<Real>& src, ACC<Real>& dest, const int* disp) {
     for (int xiIndex = 0; xiIndex < NUMXI; xiIndex++) {
 #ifdef OPS_2D

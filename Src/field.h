@@ -177,8 +177,8 @@ template <typename T>
 void Field<T>::CreateFieldFromFile(const std::string& caseName,
                                    const Block& block,
                                    const SizeType timeStep) {
-    std::string fileName{caseName + "_" + block.Name() + "_" +
-                         std::to_string(timeStep)};
+    std::string fileName{caseName + "_" + block.Name() + "_T" +
+                         std::to_string(timeStep) + ".h5"};
     CreateFieldFromFile(fileName, block);
 }
 
@@ -229,7 +229,7 @@ void Field<T>::CreateHalos() {
 #ifdef OPS_2D
         const int d_p[]{haloDepth, haloDepth};
         const int d_m[]{-haloDepth, -haloDepth};
-        const int dir[] { 1, 2 }
+        int dir[]{1, 2};
 #endif
         for (const auto& surfaceNeighbor : block.Neighbors()) {
             const Neighbor& neighbor{surfaceNeighbor.second};
