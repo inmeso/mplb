@@ -30,11 +30,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*! @brief   Implementing functions related to the flow field
+/** @brief   Store all variables in the flow field
  * @author  Jianping Meng
- * @details Implementing functions related to create the flow
- * field (allocate memory), set up the geometry and the boundary
- * property, and deallocate the memory.
+ * @details This module is set for defining blocks and variables on a block
+ * including distribution functions, macroscopic variables, node properties,
+ * and relevant parameters.
+ * The responsibilities including:
+ * 1. Create all variables from files or annually written subroutines
+ * 2. Initialise the required macroscopic variables and thereby the
+ *    distribution functions.
+ * 3. Provide some tools for accessing variables.
  */
 #ifndef FLOWFIELD_H
 #define FLOWFIELD_H
@@ -44,17 +49,6 @@
 #include "block.h"
 #include "field.h"
 
-
-/*!
- * This module is set for defining blocks and variables defined on a block
- * including distribution functions, macroscopic variables, node properties,
- * and relevant parameters.
- * The responsibilities including:
- * 1. Create all variables from files or annually written subroutines
- * 2. Initialise the required macroscopic variables and thereby the
- *    distribution functions.
- * 3. Provide some tools for accessing variables.
- */
 const BlockGroup& g_Block();
 RealField& g_f();
 RealField& g_fStage();
@@ -73,7 +67,7 @@ Real TotalMeshSize();
 const std::map<std::string,ops_halo_group>& HaloGroups();
 void SetTimeStep(Real dt);
 
-/*!
+/**
  * the residual error for steady flows
  * for each macroscopic variable, there are two values: the absolute
  * and relative
@@ -82,8 +76,6 @@ void SetTimeStep(Real dt);
 std::map<int, Real>& g_ResidualError();
 std::map<int, ops_reduction>& g_ResidualErrorHandle();
 
-// TODO This function is temporary, will be removed in the near future
-//void AllocateMemory();
 void WriteFlowfieldToHdf5(const SizeType timeStep);
 void WriteDistributionsToHdf5(const SizeType timeStep);
 void WriteNodePropertyToHdf5(const SizeType timeStep);

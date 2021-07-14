@@ -129,6 +129,40 @@ make lbm3d_dev_mpi LEVEL=DebugLevel=0 MAINCPP=lbm3d_cavity.cpp # parallel
 ```
 
 ### Run simulations
+#### Mode
+The code can be written and run using the styles as follows.
+
+* Hard coding
+
+In this mode, the changes, even simulation parameters like ``MeshSize``, are made in the source code so that the code needs to be compiled for every change. This mode may often be used when we are developing new functionalities and debuging.
+
+The mode is demonstrated by the ``Simulate()`` function in the Apps direction.
+
+To enable this mode, just run the programme without extra arguments.
+
+* JSON input
+
+In this mode, most of things are customised in a configuration file in the [JSON](https://en.wikipedia.org/wiki/JSON) format. Thus, no compilation is needed everytime and the mode is suitable for production running.
+
+The mode is demonstrated by the ``simulate(const Configuration& config)`` function.
+
+To enable this mode, the programme is run with an extra arguments Config=XXX.json where the XXX.json is the configuration file.
+
+For information of how to write the JSON configuration, see [here](#json-configuration)
+
+#### Restart from previous running
+
+To restart the simulation from previous running, we need to supply the time step for starting when calling ``DefineComponents`` and ``DefineMacroVars```, e.g.,
+
+```c++
+DefineComponents(config.compoNames, config.compoIds, config.lattNames,
+                     config.tauRef, config.currentTimeStep);
+DefineMacroVars(config.macroVarTypes, config.macroVarNames,
+                    config.macroVarIds, config.macroCompoIds,
+                    config.currentTimeStep);
+```
+
+For this purpose, the results in HDF5 format at the timepoint shall be placed in the running directory.
 ## Post-processing
 
 MPLB saves all data in the HDF5 format where an array higher than one-dimension is arranged in a column-major format. If there are more than one block, each block will have a separate h5 file. If a field variable is a vector or tensor, its components are stored separately as a scalar field.  Two exceptions are the coordinates and the distribution functions, which are stored as four-dimensional array. Thus, the data can be read correctly by any software that accepts general HDF5 data with care on the storage layout.
@@ -202,6 +236,204 @@ The boundary module defines various schemes for treating the block boundaries, i
 
 The evolution module mainly defines a few functions (e.g., Iterate()) that wrap up the time cycles.
 
+#### JSON configuration
+
+These lattice Boltzmann elements can also be customised in a JSON configuration file if the relevant capabilities are already provided. An example for a 3D lid-driven cavity flows is as follows.
+
+**Notes** the comments (i.e., lines with //) shall be deleted if using this as a template, which can cause complaints when the code is parsing it.
+
+```json
+{
+  "CaseName": "Cavity",
+  "SpaceDim": 3,
+  // if the problem is transient or not
+  "Transient": false,
+  "BlockIds": [
+    0
+  ],
+  "BlockNames": [
+    "Cavity"
+  ],
+  "BlockSize": [
+    33,
+    33,
+    33
+  ],
+  "MeshSize": 0.03125,
+  //The coordinates of the left, bottom and (back) points.
+  "StartPos": {
+    "0": [
+      0,
+      0,
+      0
+    ]
+  },
+  "CompoNames": [
+    "Fluid"
+  ],
+  "CompoIds": [
+    0
+  ],
+  "LatticeName": [
+    "d3q19"
+  ],
+  "TauRef": [
+    0.01
+  ],
+  "MacroVarNames": [
+    "rho",
+    "u",
+    "v",
+    "w"
+  ],
+  "MacroVarIds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "MacroCompoIds": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "MacroVarTypes": [
+    "Variable_Rho",
+    "Variable_U",
+    "Variable_V",
+    "Variable_W"
+  ],
+  "CollisionType": [
+    "Collision_BGKIsothermal2nd"
+  ],
+  "CollisionCompoIds": [
+    0
+  ],
+  "InitialType": [
+    "Initial_BGKFeq2nd"
+  ],
+  "InitialCompoIds": [
+    0
+  ],
+  "BodyForceType": [
+    "BodyForce_None"
+  ],
+  "BodyForceCompoId": [
+    0
+  ],
+  "SchemeType": "Scheme_StreamCollision",
+  "BoundaryCondition0": {
+    "BlockIndex": 0,
+    "ComponentId": 0,
+    // to specify the wall speed
+    "GivenVars": [
+      0.01,
+      0,
+      0
+    ],
+    "BoundarySurface": "Top",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
+    "MacroVarTypesatBoundary": [
+      "Variable_U",
+      "Variable_V",
+      "Variable_W"
+    ]
+  },
+  "BoundaryCondition1": {
+    "BlockIndex": 0,
+    "ComponentId": 0,
+    "GivenVars": [
+      0,
+      0,
+      0
+    ],
+    "BoundarySurface": "Bottom",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
+    "MacroVarTypesatBoundary": [
+      "Variable_U",
+      "Variable_V",
+      "Variable_W"
+    ]
+  },
+  "BoundaryCondition2": {
+    "BlockIndex": 0,
+    "ComponentId": 0,
+    "GivenVars": [
+      0.0,
+      0,
+      0
+    ],
+    "BoundarySurface": "Left",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
+    "MacroVarTypesatBoundary": [
+      "Variable_U",
+      "Variable_V",
+      "Variable_W"
+    ]
+  },
+  "BoundaryCondition3": {
+    "BlockIndex": 0,
+    "ComponentId": 0,
+    "GivenVars": [
+      0,
+      0,
+      0
+    ],
+    "BoundarySurface": "Right",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
+    "MacroVarTypesatBoundary": [
+      "Variable_U",
+      "Variable_V",
+      "Variable_W"
+    ]
+  },
+  "BoundaryCondition4": {
+    "BlockIndex": 0,
+    "ComponentId": 0,
+    "GivenVars": [
+      0,
+      0,
+      0
+    ],
+    "BoundarySurface": "Front",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
+    "MacroVarTypesatBoundary": [
+      "Variable_U",
+      "Variable_V",
+      "Variable_W"
+    ]
+  },
+  "BoundaryCondition5": {
+    "BlockIndex": 0,
+    "ComponentId": 0,
+    "GivenVars": [
+      0,
+      0,
+      0
+    ],
+    "BoundarySurface": "Back",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
+    "MacroVarTypesatBoundary": [
+      "Variable_U",
+      "Variable_V",
+      "Variable_W"
+    ]
+  },
+  //iteration to run
+  "TimeStepsToRun": 3,
+  //The time point when the simulation starts at
+  "CurrentTimeStep": 0,
+  "ConvergenceCriteria": 1e-8,
+  "CheckPeriod": 1000
+}
+```
 ### Immersed body
 
 #### Rigid body
