@@ -177,8 +177,8 @@ template <typename T>
 void Field<T>::CreateFieldFromFile(const std::string& caseName,
                                    const Block& block,
                                    const SizeType timeStep) {
-    std::string fileName{caseName + "_" + block.Name() + "_" +
-                         std::to_string(timeStep)};
+    std::string fileName{caseName + "_" + block.Name() + "_T" +
+                         std::to_string(timeStep) + ".h5"};
     CreateFieldFromFile(fileName, block);
 }
 

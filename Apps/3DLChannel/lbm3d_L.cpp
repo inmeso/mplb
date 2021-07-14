@@ -82,22 +82,21 @@ void simulate() {
         {1, {0.0, 0.0, 0.0}}, {2, {1.0, 0.0, 0.0}}, {0, {0.0, 1.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
-    std::vector<int> fromBlock{0, 1, 1, 2};
-    std::vector<int> toBlock{1, 0, 2, 1};
-    std::vector<BoundarySurface> fromSurface{
+    std::vector<int> fromBlockIds{0, 1, 1, 2};
+    std::vector<int> toBlockIds{1, 0, 2, 1};
+    std::vector<BoundarySurface> fromBoundarySurface{
         BoundarySurface::Bottom, BoundarySurface::Top, BoundarySurface::Right,
         BoundarySurface::Left};
-    std::vector<BoundarySurface> toSurface{
+    std::vector<BoundarySurface> toBoundarySurface{
         BoundarySurface::Top, BoundarySurface::Bottom, BoundarySurface::Left,
         BoundarySurface::Right
     };
-    std::vector<VertexType> connectionType{
+    std::vector<VertexType> blockConnectionType{
         VertexType::VirtualBoundary, VertexType::VirtualBoundary,
         VertexType::VirtualBoundary, VertexType::VirtualBoundary};
 
-    DefineBlockConnection(fromBlock, fromSurface, toBlock, toSurface,
-                          connectionType);
-
+    DefineBlockConnection(fromBlockIds, fromBoundarySurface, toBlockIds,
+                          toBoundarySurface, blockConnectionType);
 
     std::vector<std::string> compoNames{"Fluid"};
     std::vector<int> compoid{0};
@@ -124,7 +123,7 @@ void simulate() {
     DefineScheme(scheme);
 
     // Setting boundary conditions
-    SizeType componentId{0};
+    int componentId{0};
     std::vector<VariableTypes> macroVarTypesatBoundary{Variable_U, Variable_V,
                                                        Variable_W};
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
@@ -200,89 +199,80 @@ void simulate() {
                         noSlipStationaryWall);
 
     std::vector<InitialType> initType{Initial_BGKFeq2nd};
-    std::vector<SizeType> initalCompoId{0};
+    std::vector<int> initalCompoId{0};
     DefineInitialCondition(initType,initalCompoId);
     Partition();
+    ops_diagnostic_output();
     SetInitialMacrosVars();
     PreDefinedInitialCondition3D();
     SetTimeStep(meshSize / SoundSpeed());
 
-    const Real convergenceCriteria{1E-5};
-    const SizeType checkPeriod{200};
+    const Real convergenceCriteria{1E-8};
+    const SizeType checkPeriod{1000};
     Iterate(StreamCollision,convergenceCriteria, checkPeriod);
 }
 
-void simulate(const Configuration & config, const SizeType timeStep=0) {
-    // DefineCase(config.caseName, config.spaceDim);
-    // DefineBlocks(config.blockNum, config.blockSize, config.meshSize,
-    //                     config.startPos);
-    // if (timeStep == 0) {
-    //     DefineComponents(config.compoNames, config.compoIds, config.lattNames);
-    //     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
-    //                     config.macroVarIds, config.macroCompoIds);
-    // } else {
-    //     // restart from a time step
-    //     DefineComponents(config.compoNames, config.compoIds, config.lattNames,
-    //                      timeStep);
-    //     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
-    //                     config.macroVarIds, config.macroCompoIds,timeStep);
-    // }
 
-    // DefineCollision(config.CollisionTypes, config.CollisionCompoIds);
-    // DefineBodyForce(config.bodyForceTypes, config.bodyForceCompoIds);
-    // DefineScheme(config.schemeType);
-    // DefineInitialCondition(config.initialTypes,config.initialConditionCompoId);
-    // for (auto& bcConfig : config.blockBoundaryConfig) {
-    //     DefineBlockBoundary(bcConfig.blockIndex, bcConfig.componentID,
-    //                         bcConfig.boundarySurface, bcConfig.boundaryScheme,
-    //                         bcConfig.macroVarTypesatBoundary,
-    //                         bcConfig.givenVars, bcConfig.boundaryType);
-    // }
-    // Partition();
-    // if (timeStep == 0) {
-    //     SetInitialMacrosVars();
-    //     PreDefinedInitialCondition3D();
-    // } else{
-    //     //Help function for restart a steady simulation
-    //     //Mainly make the residual calculation correct at first iteration.
-    //     RestartMacroVars4SteadySim();
-    // }
-
-    // SetTauRef(config.tauRef);
-    // SetTimeStep(config.meshSize / SoundSpeed());
-    // if (config.transient){
-    //     Iterate(config.timeSteps, config.checkPeriod,timeStep);
-    // } else{
-    //     Iterate(config.convergenceCriteria, config.checkPeriod,timeStep);
-    // }
+void simulate(const Configuration& config) {
+    DefineCase(config.caseName, config.spaceDim,config.transient);
+    DefineBlocks(config.blockIds, config.blockNames, config.blockSize,
+                 config.meshSize, config.startPos);
+    if (config.blockIds.size() >1){
+        DefineBlockConnection(config.fromBlockIds, config.fromBoundarySurface,
+                              config.toBlockIds, config.toBoundarySurface,
+                              config.blockConnectionType);
+    }
+    DefineComponents(config.compoNames, config.compoIds, config.lattNames,
+                     config.tauRef, config.currentTimeStep);
+    DefineMacroVars(config.macroVarTypes, config.macroVarNames,
+                    config.macroVarIds, config.macroCompoIds,
+                    config.currentTimeStep);
+    DefineCollision(config.CollisionTypes, config.CollisionCompoIds);
+    DefineBodyForce(config.bodyForceTypes, config.bodyForceCompoIds);
+    DefineScheme(config.schemeType);
+    DefineInitialCondition(config.initialTypes, config.initialConditionCompoId);
+    for (auto& bcConfig : config.blockBoundaryConfig) {
+        DefineBlockBoundary(bcConfig.blockIndex, bcConfig.componentID,
+                            bcConfig.boundarySurface, bcConfig.boundaryScheme,
+                            bcConfig.macroVarTypesatBoundary,
+                            bcConfig.givenVars, bcConfig.boundaryType);
+    }
+    Partition();
+    ops_diagnostic_output();
+    if (config.currentTimeStep == 0) {
+        SetInitialMacrosVars();
+        PreDefinedInitialCondition3D();
+    };
+    SetTimeStep(config.meshSize / SoundSpeed());
+    if (config.transient) {
+        Iterate(config.timeStepsToRun, config.checkPeriod, config.currentTimeStep);
+    } else {
+        Iterate(config.convergenceCriteria, config.checkPeriod,
+                config.currentTimeStep);
+    }
 }
 
 int main(int argc, const char** argv) {
-    // OPS initialisation
+    // OPS initialisation where a few arguments can be passed to set
+    // the simulation
     ops_init(argc, argv, 4);
+    bool configFileFound{false};
+    std::string configFileName;
+    GetConfigFileFromCmd(configFileFound, configFileName, argc, argv);
     double ct0, ct1, et0, et1;
     ops_timers(&ct0, &et0);
     // start a simulation by hard-coding
-    if (argc <= 1) {
+    if (!configFileFound) {
         simulate();
     }
     // start a new simulaton from a configuration file
-    if (argc>1 && argc <=2){
-        std::string configFileName(argv[1]);
+    if (configFileFound) {
         ReadConfiguration(configFileName);
         simulate(Config());
     }
-    // restart from the time step specified by argv[2]
-    if (argc>2 && argc <=3){
-        std::string configFileName(argv[1]);
-        ReadConfiguration(configFileName);
-        const SizeType timeStep{static_cast<SizeType>(std::stoi(argv[2]))};
-        simulate(Config(),timeStep);
-    }
-
     ops_timers(&ct1, &et1);
     ops_printf("\nTotal Wall time %lf\n", et1 - et0);
-    //Print OPS performance details to output stream
+    // Print OPS performance details to output stream
     ops_timing_output(std::cout);
     ops_exit();
 }
