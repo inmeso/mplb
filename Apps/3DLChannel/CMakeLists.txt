@@ -1,12 +1,16 @@
 
 cmake_minimum_required(VERSION 3.18)
+# Application name
 set(AppName "LChannel3D")
+# A list of C/C++ source files (.cpp) developed for the application
 set(AppSrc "lbm3d_L.cpp")
+# A list of C/C++ source and head files from the Src direction
+# (i.e. provided by MPLB) which are used in the application
 set(LibSrc evolution.cpp scheme.cpp scheme_wrapper.cpp configuration.cpp model.cpp model_wrapper.cpp block.cpp flowfield.cpp flowfield_wrapper.cpp boundary.cpp boundary_wrapper.cpp)
 set(LibHeadList type.h flowfield_host_device.h boundary_host_device.h model_host_device.h)
+# 2D or 3D application
 set(SpaceDim 3)
 if (NOT OPTIMISE)
-    # Set the path for LibSrc
     set(LibSrcPath "")
     foreach(Src IN LISTS LibSrc)
         list(APPEND LibSrcPath ${LibDir}/${Src})
@@ -14,9 +18,12 @@ if (NOT OPTIMISE)
     SeqDevTarget("${SpaceDim}" 0)
     MpiDevTarget("${SpaceDim}" 0)
 else()
-    #set the files needed to be translated by ops.py from the app side
+    # set the files needed to be translated by ops.py from the app side
+    # source file enclosing wrap function
     set(AppSrcGenList lbm3d_L.cpp)
+    # source file for kernel functions
     set(AppKernelGenList LChannel_kernel.inc)
+    # if any variables are declared in both CPU and GPU memory space.
     set(AppHeadGenList "")
     CreateTempDir()
     set(TMP_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp)
