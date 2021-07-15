@@ -162,7 +162,9 @@ void StreamCollision(const Real time) {
     PreDefinedCollision3D();
 #endif
 #ifdef OPS_2D
-    PreDefinedCollision();
+    UpdateTime(time);
+    UpdateConcentration();
+    PreDefinedCollisionAD();
 #endif
 
 #if DebugLevel >= 1

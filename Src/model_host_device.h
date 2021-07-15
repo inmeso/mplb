@@ -55,6 +55,30 @@ static inline OPS_FUN_PREFIX Real CalcBGKFeq(const int l, const Real rho, const 
     return WEIGHTS[l] * rho * res;
 }
 
+static inline OPS_FUN_PREFIX Real CalcBGKGeqAD(const int l, const Real C, const Real u, const Real v,
+                const Real T, const int polyOrder) {
+    Real cu{(CS * XI[l * LATTDIM] * u + CS * XI[l * LATTDIM + 1] * v)};
+    Real c2{(CS * XI[l * LATTDIM] * CS * XI[l * LATTDIM] +
+             CS * XI[l * LATTDIM + 1] * CS * XI[l * LATTDIM + 1])};
+    Real cu2{cu * cu};
+    Real u2{u * u + v * v};
+    Real res = 1.0 + cu + 0.5 * (cu2 - u2 + (T - 1.0) * (c2 - LATTDIM));
+    if ((polyOrder) >= 3) {
+        res = res +
+              cu * (cu2 - 3.0 * u2 + 3.0 * (T - 1.0) * (c2 - LATTDIM - 2.0)) /
+                  6.0;
+    }
+    if ((polyOrder) >= 4) {
+        res =
+            res + (cu2 * cu2 - 6.0 * cu2 * u2 + 3.0 * u2 * u2) / 24.0 +
+            (T - 1.0) * ((c2 - (LATTDIM + 2)) * (cu2 - u2) - 2.0 * cu2) / 4.0 +
+            (T - 1.0) * (T - 1.0) *
+                (c2 * c2 - 2.0 * (LATTDIM + 2) * c2 + LATTDIM * (LATTDIM + 2)) /
+                8.0;
+    }
+    return WEIGHTS[l] * C * res;
+}
+
 static inline OPS_FUN_PREFIX Real CalcBGKFeq(const int l, const Real rho, const Real u, const Real v,
                 const Real w, const Real T, const int polyOrder) {
     Real cu{(CS * XI[l * LATTDIM] * u + CS * XI[l * LATTDIM + 1] * v +

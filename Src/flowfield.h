@@ -61,6 +61,9 @@ RealField& g_fStage();
 RealFieldGroup& g_MacroVars();
 RealFieldGroup& g_MacroVarsCopy();
 
+RealField& g_Concentration();
+Real* g_Time();
+void UpdateTime(Real time);
 RealFieldGroup& g_MacroBodyforce();
 
 RealField& g_CoordinateXYZ();
@@ -120,6 +123,7 @@ void SetBlockGeometryProperty(const Block& block);
 void AssignCoordinates(const Block& block,
                        const std::vector<std::vector<Real>>& blockCoordinates);
 void UpdateMacroscopicBodyForce(const Real time);
+void UpdateConcentration();
 void SetInitialMacrosVars();
 void DefineBlockConnection(const std::vector<int>& fromBlock,
                            const std::vector<BoundarySurface>& fromSurface,

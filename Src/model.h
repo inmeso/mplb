@@ -96,6 +96,7 @@ enum CollisionType {
     Collision_BGKIsothermal2nd = 0,
     Collision_BGKThermal4th = 1,
     Collision_BGKSWE4th = 2,
+    Collision_BGKAD = 3,
 };
 
 enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };
@@ -175,5 +176,6 @@ void UpdateMacroVars();
 void PreDefinedBodyForce();
 void PreDefinedInitialCondition();
 void PreDefinedCollision();
+void PreDefinedCollisionAD();
 #endif
 #endif

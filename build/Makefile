@@ -262,6 +262,32 @@ PoiseuilleSeqDev/fast:
 	$(MAKE) $(MAKESILENT) -f Apps/Poiseuille/CMakeFiles/PoiseuilleSeqDev.dir/build.make Apps/Poiseuille/CMakeFiles/PoiseuilleSeqDev.dir/build
 .PHONY : PoiseuilleSeqDev/fast
 
+#=============================================================================
+# Target rules for targets named AdDiffMpiDev
+
+# Build rule for target.
+AdDiffMpiDev: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 AdDiffMpiDev
+.PHONY : AdDiffMpiDev
+
+# fast build rule for target.
+AdDiffMpiDev/fast:
+	$(MAKE) $(MAKESILENT) -f Apps/AdDiff/CMakeFiles/AdDiffMpiDev.dir/build.make Apps/AdDiff/CMakeFiles/AdDiffMpiDev.dir/build
+.PHONY : AdDiffMpiDev/fast
+
+#=============================================================================
+# Target rules for targets named AdDiffSeqDev
+
+# Build rule for target.
+AdDiffSeqDev: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 AdDiffSeqDev
+.PHONY : AdDiffSeqDev
+
+# fast build rule for target.
+AdDiffSeqDev/fast:
+	$(MAKE) $(MAKESILENT) -f Apps/AdDiff/CMakeFiles/AdDiffSeqDev.dir/build.make Apps/AdDiff/CMakeFiles/AdDiffSeqDev.dir/build
+.PHONY : AdDiffSeqDev/fast
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -270,6 +296,8 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... AdDiffMpiDev"
+	@echo "... AdDiffSeqDev"
 	@echo "... Cavity2DMpiDev"
 	@echo "... Cavity2DSeqDev"
 	@echo "... Cavity3DMpiDev"

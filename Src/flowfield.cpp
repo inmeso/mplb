@@ -76,6 +76,13 @@ RealField& g_f() { return f; };
 RealField& g_fStage() { return fStage; };
 RealFieldGroup& g_MacroVars() { return MacroVars; };
 RealFieldGroup& g_MacroVarsCopy() { return MacroVarsCopy; };
+
+RealField Concentration{"Concentration"};
+RealField& g_Concentration() { return Concentration; };
+Real Time{1};
+Real* g_Time() { return &Time; };
+void UpdateTime(Real time) { Time = time; };
+
 RealFieldGroup& g_MacroBodyforce() { return MacroBodyforce; };
 /**
  * DT: time step
