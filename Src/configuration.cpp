@@ -168,13 +168,12 @@ void ParseJson() {
     Query(config.blockIds, "BlockIds");
     Query(config.blockNames, "BlockNames");
     Query(config.blockSize, "BlockSize");
-    if (config.blockNames.size() > 1) {
-        Query(config.fromBlockIds, "FromBlockIds");
-        Query(config.toBlockIds, "ToBlockIds");
-        Query(config.fromBoundarySurface, "FromBoundarySurface");
-        Query(config.toBoundarySurface, "ToBoundarySurface");
-        Query(config.blockConnectionType, "BlockConnectionType");
-    }
+
+    Check(config.fromBlockIds, "FromBlockIds");
+    Check(config.toBlockIds, "ToBlockIds");
+    Check(config.fromBoundarySurface, "FromBoundarySurface");
+    Check(config.toBoundarySurface, "ToBoundarySurface");
+    Check(config.blockConnectionType, "BlockConnectionType");
 
     for (const auto id : config.blockIds) {
         std::vector<Real> pos;

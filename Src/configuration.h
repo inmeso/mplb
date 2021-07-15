@@ -129,6 +129,32 @@ void Query(T& value, const std::string& key) {
         assert(jsonConfig.contains(key));
     }
 }
+/**
+ * @brief Get non-mandatory options from JSON configuration file
+ *
+ * @tparam T Option type
+ * @param value Option value
+ * @param key Option name
+ */
+template <typename T>
+void Check(T& value, const std::string& key) {
+    const nlohmann::json& jsonConfig{JsonConfig()};
+    bool haveKey{true};
+    if (!jsonConfig.contains(key)) {
+        ops_printf("Warning! %s is not defined in the configuration!\n",
+                   key.c_str());
+        haveKey = false;
+    } else {
+        if (jsonConfig[key].is_null()) {
+            ops_printf("Warning! %s is empty in the configuration!\n",
+                       key.c_str());
+            haveKey = false;
+        };
+    }
+    if (haveKey) {
+        value = jsonConfig[key].get<T>();
+    };
+}
 
 template <typename T>
 void Query(T& value, const std::string& key0, const std::string& key1) {
