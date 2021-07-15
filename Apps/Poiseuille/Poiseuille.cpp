@@ -28,7 +28,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 /** @brief An example main source code of stimulating 3D lid-driven cavity flow
  *  @author Jianping Meng
@@ -40,7 +40,7 @@
 #include "mplb.h"
 #include "ops_seq_v2.h"
 #include "Poiseuille_kernel.inc"
-//Provide macroscopic initial conditions
+// Provide macroscopic initial conditions
 void SetInitialMacrosVars() {
     for (auto idBlock : g_Block()) {
         Block& block{idBlock.second};
@@ -76,38 +76,53 @@ void UpdateMacroscopicBodyForce(const Real time) {
         for (auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
 
-            ops_par_loop(KerUpdateMacroBodyForce, "KerUpdateMacroBodyForce",
-                         block.Get(), SpaceDim(), iterRng.data(),
-                         ops_arg_dat(g_MacroBodyforce().at(compo.id).at(blockIdx), 3,
-                                     LOCALSTENCIL, "Real", OPS_RW),
-                         ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
-                                     LOCALSTENCIL, "Real", OPS_READ),
-                         ops_arg_idx());
+            ops_par_loop(
+                KerUpdateMacroBodyForce, "KerUpdateMacroBodyForce", block.Get(),
+                SpaceDim(), iterRng.data(),
+                ops_arg_dat(g_MacroBodyforce().at(compo.id).at(blockIdx), 3,
+                            LOCALSTENCIL, "Real", OPS_RW),
+                ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
+                            LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_idx());
         }
     }
 }
 
 void simulate() {
-
     std::string caseName{"Poiseuille"};
     SizeType spaceDim{3};
     DefineCase(caseName, spaceDim);
     std::vector<int> blockIds{0};
-    std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{33, 33, 33};
-    Real meshSize{1. / 32};
+    std::vector<std::string> blockNames{"Channel"};
+    std::vector<int> blockSize{3, 101, 3};
+    Real meshSize{1. / 100};
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
+    std::vector<int> fromBlockIds{0, 0, 0, 0};
+    std::vector<int> toBlockIds{0, 0, 0, 0};
+
+    std::vector<BoundarySurface> fromBoundarySurface{
+        BoundarySurface::Left, BoundarySurface::Right, BoundarySurface::Front,
+        BoundarySurface::Back};
+    std::vector<BoundarySurface> toBoundarySurface{
+        BoundarySurface::Right, BoundarySurface::Left, BoundarySurface::Back,
+        BoundarySurface::Front};
+    std::vector<VertexType> blockConnectionType{
+        VertexType::MDPeriodic, VertexType::MDPeriodic, VertexType::MDPeriodic,
+        VertexType::MDPeriodic};
+
+    DefineBlockConnection(fromBlockIds, fromBoundarySurface, toBlockIds,
+                          toBoundarySurface, blockConnectionType);
 
     std::vector<std::string> compoNames{"Fluid"};
     std::vector<int> compoid{0};
     std::vector<std::string> lattNames{"d3q19"};
-    std::vector<Real> tauRef{0.01};
+    std::vector<Real> tauRef{0.001};
     DefineComponents(compoNames, compoid, lattNames, tauRef);
 
-    std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
-                                                 Variable_V, Variable_W};
+    std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U_Force,
+                                             Variable_V_Force, Variable_W_Force};
     std::vector<std::string> macroVarNames{"rho", "u", "v", "w"};
     std::vector<int> macroVarId{0, 1, 2, 3};
     std::vector<int> macroCompoId{0, 0, 0, 0};
@@ -126,11 +141,26 @@ void simulate() {
 
     // Setting boundary conditions
     SizeType componentId{0};
-    std::vector<VariableTypes> macroVarTypesatBoundary{Variable_U, Variable_V,
-                                                       Variable_W};
+    std::vector<VariableTypes> macroVarTypesatBoundary{
+        Variable_U, Variable_V, Variable_W};
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
+    std::vector<Real> noSlipMovingWall{0, 0, 0.01};
 
-    //Top and Bottom No Slip Walls
+    // Periodic Boundary Conditions
+    DefineBlockBoundary(0, componentId, BoundarySurface::Front,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Back,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Left,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Right,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+
+    // Top and Bottom No Slip Walls
     DefineBlockBoundary(0, componentId, BoundarySurface::Top,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
@@ -138,45 +168,33 @@ void simulate() {
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
-    //Periodic Boundary Conditions
-    DefineBlockBoundary(0, componentId, BoundarySurface::Front,
-                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    DefineBlockBoundary(0, componentId, BoundarySurface::Back,
-                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    DefineBlockBoundary(0, componentId, BoundarySurface::Left,
-                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    DefineBlockBoundary(0, componentId, BoundarySurface::Right,
-                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-
-
     std::vector<InitialType> initType{Initial_BGKFeq2nd};
-    std::vector<SizeType> initalCompoId{0};
-    DefineInitialCondition(initType,initalCompoId);
+    std::vector<int> initalCompoId{0};
+    DefineInitialCondition(initType, initalCompoId);
     Partition();
+    ops_diagnostic_output();
     SetInitialMacrosVars();
     PreDefinedInitialCondition3D();
     SetTimeStep(meshSize / SoundSpeed());
 
-    const Real convergenceCriteria{1E-5};
+    const Real convergenceCriteria{1E-10};
     const SizeType checkPeriod{200};
-    Iterate(StreamCollision,convergenceCriteria, checkPeriod);
+    Iterate(StreamCollision, convergenceCriteria, checkPeriod);
 }
 
-void simulate(const Configuration & config, const SizeType timeStep=0) {
+void simulate(const Configuration& config, const SizeType timeStep = 0) {
     // DefineCase(config.caseName, config.spaceDim);
     // DefineBlocks(config.blockNum, config.blockSize, config.meshSize,
     //                     config.startPos);
     // if (timeStep == 0) {
-    //     DefineComponents(config.compoNames, config.compoIds, config.lattNames);
-    //     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
+    //     DefineComponents(config.compoNames, config.compoIds,
+    //     config.lattNames); DefineMacroVars(config.macroVarTypes,
+    //     config.macroVarNames,
     //                     config.macroVarIds, config.macroCompoIds);
     // } else {
     //     // restart from a time step
-    //     DefineComponents(config.compoNames, config.compoIds, config.lattNames,
+    //     DefineComponents(config.compoNames, config.compoIds,
+    //     config.lattNames,
     //                      timeStep);
     //     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
     //                     config.macroVarIds, config.macroCompoIds,timeStep);
@@ -188,7 +206,8 @@ void simulate(const Configuration & config, const SizeType timeStep=0) {
     // DefineInitialCondition(config.initialTypes,config.initialConditionCompoId);
     // for (auto& bcConfig : config.blockBoundaryConfig) {
     //     DefineBlockBoundary(bcConfig.blockIndex, bcConfig.componentID,
-    //                         bcConfig.boundarySurface, bcConfig.boundaryScheme,
+    //                         bcConfig.boundarySurface,
+    //                         bcConfig.boundaryScheme,
     //                         bcConfig.macroVarTypesatBoundary,
     //                         bcConfig.givenVars, bcConfig.boundaryType);
     // }
@@ -221,22 +240,22 @@ int main(int argc, const char** argv) {
         simulate();
     }
     // start a new simulaton from a configuration file
-    if (argc>1 && argc <=2){
+    if (argc > 1 && argc <= 2) {
         std::string configFileName(argv[1]);
         ReadConfiguration(configFileName);
         simulate(Config());
     }
     // restart from the time step specified by argv[2]
-    if (argc>2 && argc <=3){
+    if (argc > 2 && argc <= 3) {
         std::string configFileName(argv[1]);
         ReadConfiguration(configFileName);
         const SizeType timeStep{static_cast<SizeType>(std::stoi(argv[2]))};
-        simulate(Config(),timeStep);
+        simulate(Config(), timeStep);
     }
 
     ops_timers(&ct1, &et1);
     ops_printf("\nTotal Wall time %lf\n", et1 - et0);
-    //Print OPS performance details to output stream
+    // Print OPS performance details to output stream
     ops_timing_output(std::cout);
     ops_exit();
 }
