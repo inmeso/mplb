@@ -264,6 +264,81 @@ void KerCollideBGKIsothermal(ACC<Real>& fStage, const ACC<Real>& f,
 #endif  // OPS_2D
 }
 
+void KerInitialiseBGKAD(ACC<Real>& g, const ACC<int>& nodeType,
+                         ACC<Real>& Conc, const ACC<Real>& U,
+                         const ACC<Real>& V, const int* lattIdx) {
+#ifdef OPS_2D
+    VertexType vt = (VertexType)nodeType(0, 0);
+    if (vt != VertexType::ImmersedSolid) {
+        Real u{U(0, 0)};
+        Real v{V(0, 0)};
+        const Real T{1};
+        const int polyOrder{2};
+        for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+            Real C{Conc(xiIdx,0)};
+            g(xiIdx, 0, 0) = CalcBGKGeqAD(xiIdx, C, u, v, T, polyOrder);
+#ifdef CPU
+            const Real res{g(xiIdx, 0, 0)};
+            if (isnan(res) || res <= 0 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes invalid at the "
+                    "lattice %i\n",
+                    res, xiIdx);
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
+            }
+#endif  // CPU
+        }
+    }
+#endif  // OPS_2D
+}
+
+void KerCollideBGKAD(ACC<Real>& fStage, const ACC<Real>& g,
+                             const ACC<Real>& coordinates,
+                             const ACC<int>& nodeType, const ACC<Real>& Conc,
+                             const ACC<Real>& U, const ACC<Real>& V, 
+                              const Real* tauRef,
+                             const Real* dt, const int* lattIdx) {
+#ifdef OPS_2D
+    VertexType vt = (VertexType)nodeType(0, 0);
+    // collisionRequired: means if collision is required at boundary
+    // e.g., the ZouHe boundary condition explicitly requires collision
+    bool collisionRequired = (vt != VertexType::ImmersedSolid);
+    if (collisionRequired) {
+        Real u{U(0, 0)};
+        Real v{V(0, 0)};
+
+        const Real T{1};
+        const int polyOrder{2};
+        Real tau = (*tauRef);
+        Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+        for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
+            Real C{Conc(xiIndex,0)};
+            const Real geq{CalcBGKGeqAD(xiIndex, C, u, v, T, polyOrder)};
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
+                fStage(xiIndex, 0, 0) =
+                    geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq) +
+                    tau * dtOvertauPlusdt * fStage(xiIndex, 0, 0);
+            } else {
+                fStage(xiIndex, 0, 0) =
+                    geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq);
+            }
+#ifdef CPU
+            const Real res{fStage(xiIndex, 0, 0)};
+            if (isnan(res) || res <= 0 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function = %e becomes invalid at  "
+                    "the lattice %i where feq=%e and rho=%e u=%e v=%e at "
+                    "x=%e y=%e\n",
+                    res, xiIndex, geq, Conc, u, v, coordinates(0, 0, 0),
+                    coordinates(1, 0, 0));
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
+            }
+#endif  // CPU
+        }
+    }
+#endif  // OPS_2D
+}
+
 void KerCollideBGKThermal(ACC<Real>& fStage, const ACC<Real>& f,
                           const ACC<int>& nodeType, const ACC<Real>& Rho,
                           const ACC<Real>& U, const ACC<Real>& V,

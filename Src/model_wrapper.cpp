@@ -422,6 +422,51 @@ void PreDefinedCollision() {
 }
 
 
+void PreDefinedCollisionAD() {
+#ifdef OPS_2D
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        for (const auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            const CollisionType collisionType{compo.collisionType};
+            const Real tau{compo.tauRef};
+            const Real* pdt{pTimeStep()};
+            switch (collisionType) {
+                case Collision_BGKAD:
+                    ops_par_loop(
+                        KerCollideBGKAD, "KerCollideBGKIsothermal",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_READ),
+                        ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                    LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_Concentration()[blockIndex],
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    break;
+                default:
+                    ops_printf(
+                        "The specified collision type is not implemented!\n");
+                    break;
+            }
+        }
+    }
+#endif // OPS_2D
+}
+
 
 void UpdateMacroVars() {
 #ifdef OPS_2D
