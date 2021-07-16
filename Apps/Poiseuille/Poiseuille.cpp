@@ -182,77 +182,64 @@ void simulate() {
     Iterate(StreamCollision, convergenceCriteria, checkPeriod);
 }
 
-void simulate(const Configuration& config, const SizeType timeStep = 0) {
-    // DefineCase(config.caseName, config.spaceDim);
-    // DefineBlocks(config.blockNum, config.blockSize, config.meshSize,
-    //                     config.startPos);
-    // if (timeStep == 0) {
-    //     DefineComponents(config.compoNames, config.compoIds,
-    //     config.lattNames); DefineMacroVars(config.macroVarTypes,
-    //     config.macroVarNames,
-    //                     config.macroVarIds, config.macroCompoIds);
-    // } else {
-    //     // restart from a time step
-    //     DefineComponents(config.compoNames, config.compoIds,
-    //     config.lattNames,
-    //                      timeStep);
-    //     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
-    //                     config.macroVarIds, config.macroCompoIds,timeStep);
-    // }
+void simulate(const Configuration& config) {
+    DefineCase(config.caseName, config.spaceDim, config.transient);
+    DefineBlocks(config.blockIds, config.blockNames, config.blockSize,
+                 config.meshSize, config.startPos);
 
-    // DefineCollision(config.CollisionTypes, config.CollisionCompoIds);
-    // DefineBodyForce(config.bodyForceTypes, config.bodyForceCompoIds);
-    // DefineScheme(config.schemeType);
-    // DefineInitialCondition(config.initialTypes,config.initialConditionCompoId);
-    // for (auto& bcConfig : config.blockBoundaryConfig) {
-    //     DefineBlockBoundary(bcConfig.blockIndex, bcConfig.componentID,
-    //                         bcConfig.boundarySurface,
-    //                         bcConfig.boundaryScheme,
-    //                         bcConfig.macroVarTypesatBoundary,
-    //                         bcConfig.givenVars, bcConfig.boundaryType);
-    // }
-    // Partition();
-    // if (timeStep == 0) {
-    //     SetInitialMacrosVars();
-    //     PreDefinedInitialCondition3D();
-    // } else{
-    //     //Help function for restart a steady simulation
-    //     //Mainly make the residual calculation correct at first iteration.
-    //     RestartMacroVars4SteadySim();
-    // }
+    DefineBlockConnection(config.fromBlockIds, config.fromBoundarySurface,
+                          config.toBlockIds, config.toBoundarySurface,
+                          config.blockConnectionType);
 
-    // SetTauRef(config.tauRef);
-    // SetTimeStep(config.meshSize / SoundSpeed());
-    // if (config.transient){
-    //     Iterate(config.timeSteps, config.checkPeriod,timeStep);
-    // } else{
-    //     Iterate(config.convergenceCriteria, config.checkPeriod,timeStep);
-    // }
+    DefineComponents(config.compoNames, config.compoIds, config.lattNames,
+                     config.tauRef, config.currentTimeStep);
+    DefineMacroVars(config.macroVarTypes, config.macroVarNames,
+                    config.macroVarIds, config.macroCompoIds,
+                    config.currentTimeStep);
+    DefineCollision(config.CollisionTypes, config.CollisionCompoIds);
+    DefineBodyForce(config.bodyForceTypes, config.bodyForceCompoIds);
+    DefineScheme(config.schemeType);
+    DefineInitialCondition(config.initialTypes, config.initialConditionCompoId);
+    for (auto& bcConfig : config.blockBoundaryConfig) {
+        DefineBlockBoundary(bcConfig.blockIndex, bcConfig.componentID,
+                            bcConfig.boundarySurface, bcConfig.boundaryScheme,
+                            bcConfig.macroVarTypesatBoundary,
+                            bcConfig.givenVars, bcConfig.boundaryType);
+    }
+    Partition();
+    ops_diagnostic_output();
+    if (config.currentTimeStep == 0) {
+        SetInitialMacrosVars();
+        PreDefinedInitialCondition3D();
+    };
+    SetTimeStep(config.meshSize / SoundSpeed());
+    if (config.transient) {
+        Iterate(config.timeStepsToRun, config.checkPeriod,
+                config.currentTimeStep);
+    } else {
+        Iterate(config.convergenceCriteria, config.checkPeriod,
+                config.currentTimeStep);
+    }
 }
 
 int main(int argc, const char** argv) {
-    // OPS initialisation
+    // OPS initialisation where a few arguments can be passed to set
+    // the simulation
     ops_init(argc, argv, 4);
+    bool configFileFound{false};
+    std::string configFileName;
+    GetConfigFileFromCmd(configFileFound, configFileName, argc, argv);
     double ct0, ct1, et0, et1;
     ops_timers(&ct0, &et0);
     // start a simulation by hard-coding
-    if (argc <= 1) {
+    if (!configFileFound) {
         simulate();
     }
     // start a new simulaton from a configuration file
-    if (argc > 1 && argc <= 2) {
-        std::string configFileName(argv[1]);
+    if (configFileFound) {
         ReadConfiguration(configFileName);
         simulate(Config());
     }
-    // restart from the time step specified by argv[2]
-    if (argc > 2 && argc <= 3) {
-        std::string configFileName(argv[1]);
-        ReadConfiguration(configFileName);
-        const SizeType timeStep{static_cast<SizeType>(std::stoi(argv[2]))};
-        simulate(Config(), timeStep);
-    }
-
     ops_timers(&ct1, &et1);
     ops_printf("\nTotal Wall time %lf\n", et1 - et0);
     // Print OPS performance details to output stream
