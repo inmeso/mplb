@@ -28,7 +28,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 /** @brief An example main source code of stimulating 3D lid-driven cavity flow
  *  @author Jianping Meng
@@ -40,7 +40,7 @@
 #include "mplb.h"
 #include "ops_seq_v2.h"
 #include "LChannel_kernel.inc"
-//Provide macroscopic initial conditions
+// Provide macroscopic initial conditions
 void SetInitialMacrosVars() {
     for (auto idBlock : g_Block()) {
         Block& block{idBlock.second};
@@ -66,16 +66,15 @@ void SetInitialMacrosVars() {
         }
     }
 }
-//Provide macroscopic body-force term
+// Provide macroscopic body-force term
 void UpdateMacroscopicBodyForce(const Real time) {}
 
 void simulate() {
-
     std::string caseName{"3DLChannel"};
     SizeType spaceDim{3};
     DefineCase(caseName, spaceDim);
-    std::vector<int> blockIds{0,1,2};
-    std::vector<std::string> blockNames{"Top","Middle","Right"};
+    std::vector<int> blockIds{0, 1, 2};
+    std::vector<std::string> blockNames{"Top", "Middle", "Right"};
     std::vector<int> blockSize{33, 33, 33, 33, 33, 33, 33, 33, 33};
     Real meshSize{1. / 32};
     std::map<int, std::vector<Real>> startPos{
@@ -89,8 +88,7 @@ void simulate() {
         BoundarySurface::Left};
     std::vector<BoundarySurface> toBoundarySurface{
         BoundarySurface::Top, BoundarySurface::Bottom, BoundarySurface::Left,
-        BoundarySurface::Right
-    };
+        BoundarySurface::Right};
     std::vector<VertexType> blockConnectionType{
         VertexType::VirtualBoundary, VertexType::VirtualBoundary,
         VertexType::VirtualBoundary, VertexType::VirtualBoundary};
@@ -105,7 +103,7 @@ void simulate() {
     DefineComponents(compoNames, compoid, lattNames, tauRef);
 
     std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
-                                                 Variable_V, Variable_W};
+                                             Variable_V, Variable_W};
     std::vector<std::string> macroVarNames{"rho", "u", "v", "w"};
     std::vector<int> macroVarId{0, 1, 2, 3};
     std::vector<int> macroCompoId{0, 0, 0, 0};
@@ -151,7 +149,7 @@ void simulate() {
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
-     DefineBlockBoundary(1, componentId, BoundarySurface::Left,
+    DefineBlockBoundary(1, componentId, BoundarySurface::Left,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     // Right noSlipStationaryWall
@@ -200,7 +198,7 @@ void simulate() {
 
     std::vector<InitialType> initType{Initial_BGKFeq2nd};
     std::vector<int> initalCompoId{0};
-    DefineInitialCondition(initType,initalCompoId);
+    DefineInitialCondition(initType, initalCompoId);
     Partition();
     ops_diagnostic_output();
     SetInitialMacrosVars();
@@ -209,19 +207,18 @@ void simulate() {
 
     const Real convergenceCriteria{1E-8};
     const SizeType checkPeriod{1000};
-    Iterate(StreamCollision,convergenceCriteria, checkPeriod);
+    Iterate(StreamCollision, convergenceCriteria, checkPeriod);
 }
 
-
 void simulate(const Configuration& config) {
-    DefineCase(config.caseName, config.spaceDim,config.transient);
+    DefineCase(config.caseName, config.spaceDim, config.transient);
     DefineBlocks(config.blockIds, config.blockNames, config.blockSize,
                  config.meshSize, config.startPos);
-    if (config.blockIds.size() >1){
-        DefineBlockConnection(config.fromBlockIds, config.fromBoundarySurface,
-                              config.toBlockIds, config.toBoundarySurface,
-                              config.blockConnectionType);
-    }
+
+    DefineBlockConnection(config.fromBlockIds, config.fromBoundarySurface,
+                          config.toBlockIds, config.toBoundarySurface,
+                          config.blockConnectionType);
+
     DefineComponents(config.compoNames, config.compoIds, config.lattNames,
                      config.tauRef, config.currentTimeStep);
     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
@@ -245,7 +242,8 @@ void simulate(const Configuration& config) {
     };
     SetTimeStep(config.meshSize / SoundSpeed());
     if (config.transient) {
-        Iterate(config.timeStepsToRun, config.checkPeriod, config.currentTimeStep);
+        Iterate(config.timeStepsToRun, config.checkPeriod,
+                config.currentTimeStep);
     } else {
         Iterate(config.convergenceCriteria, config.checkPeriod,
                 config.currentTimeStep);
