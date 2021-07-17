@@ -38,6 +38,8 @@
  */
 #ifndef FIELD_H
 #define FIELD_H
+
+#include <typeinfo>
 #include <list>
 #include <map>
 #include <string>

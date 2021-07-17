@@ -1,6 +1,6 @@
 OPS_INSTALL_PATH := $(OPS_INSTALL_PATH)/c
 OPS_INC   = -I$(OPS_INSTALL_PATH)/include
-OPS_LIB   = -L$(OPS_INSTALL_PATH)/lib
+OPS_LIB   = -L$(OPS_INSTALL_PATH)/lib/gnu
 CUDA_LIB = -L$(CUDA_INSTALL_PATH)/lib
 CUDA_INC = -I$(CUDA_INSTALL_PATH)/include
 
@@ -19,7 +19,7 @@ ifdef CHECKPOINTING
 endif
 endif
 ifdef HDF5_LIB_PATH
-  HDF5_LIB 	  	:= -L$(HDF5_LIB_PATH) -lhdf5_hl -lhdf5 -lz
+  HDF5_LIB 	  	:= -L$(HDF5_LIB_PATH)
 endif
 
 ifeq ($(OPS_COMPILER),clang)
@@ -133,6 +133,7 @@ endif
 endif
 endif
 endif
+
 NVCC  := $(CUDA_INSTALL_PATH)/bin/nvcc
 # flags for nvcc
 # set NV_ARCH to select the correct one
@@ -160,7 +161,9 @@ endif
 # master to make all versions
 #
 
-TARGETS = lbm2d_dev_seq lbm2d_seq lbm2d_dev_mpi lbm2d_mpi lbm2d_openmp lbm2d_mpi_openmp lbm2d_cuda lbm2d_mpi_cuda lbm2d_opencl lbm2d_mpi_opencl lbm3d_psm_dev_mpi
+
+TARGETS = lbm2d_dev_seq lbm2d_seq lbm2d_dev_mpi lbm2d_mpi lbm2d_openmp lbm2d_mpi_openmp lbm2d_cuda lbm2d_mpi_cuda lbm2d_opencl lbm2d_mpi_opencl
+
 
 ifeq ($(OPS_COMPILER),pgi)
 #TARGETS += lbm2d_openacc lbm2d_mpi_openacc
@@ -172,23 +175,23 @@ all: clean $(TARGETS)
 
 env:
 	@echo "MPLBDIR = $(MPLB_DIR)"
-	@echo "HDF5_INCLUDE_PATH = $(HDF5_INSTALL_PATH)"
+	@echo "HDF5_INCLUDE_PATH = $(HDF5_INCLUDE_PATH)"
 	@echo "HDF5_LIB_PATH = $(HDF5_LIB_PATH)"
 	@echo "OPS_INSTALL_PATH = $(OPS_INSTALL_PATH)"
 	@echo "Compiler = $(OPS_COMPILER)"
 
 lbm3d_dev_seq :
-	$(CPP) $(CPPFLAGS) $(MAINCPP) $(shell find $(MPLB_DIR) -type f \( -iname "*.cpp" ! -iname "setup*"  !  -iname "evolution.cpp"  \))  $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq
+	$(MPICPP) $(CPPFLAGS)  $(MAINCPP) ${MPLB_DIR}/evolution3d.cpp ${MPLB_DIR}/scheme.cpp ${MPLB_DIR}/scheme_wrapper.cpp ${MPLB_DIR}/configuration.cpp ${MPLB_DIR}/model.cpp ${MPLB_DIR}/model_wrapper.cpp ${MPLB_DIR}/block.cpp ${MPLB_DIR}/flowfield.cpp ${MPLB_DIR}/flowfield_wrapper.cpp ${MPLB_DIR}/boundary.cpp ${MPLB_DIR}/boundary_wrapper.cpp $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(HDF5_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lops_hdf5_seq -lops_seq -lhdf5_hl -lhdf5 -lz  -o lbm3d_dev_seq
 
 lbm3d_dev_seq_lib :
 	$(CPP) $(CPPFLAGS) $(MAINCPP) $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lmplb3d_seq -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_dev_seq
 
 lbm3d_dev_mpi :
-	$(MPICPP) $(MPIFLAGS) $(MAINCPP) $(shell find $(MPLB_DIR) -type f \( -iname "*.cpp" ! -iname "setup*"  ! -iname "evolution.cpp" \))  $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_MPI -DOPS_3D -DCPU -D$(LEVEL)  -lops_mpi -lops_hdf5_mpi  $(HDF5_LIB)  -o lbm3d_dev_mpi
+	$(MPICPP) $(CPPFLAGS)  $(MAINCPP) ${MPLB_DIR}/evolution3d.cpp ${MPLB_DIR}/scheme.cpp ${MPLB_DIR}/scheme_wrapper.cpp ${MPLB_DIR}/configuration.cpp ${MPLB_DIR}/model.cpp ${MPLB_DIR}/model_wrapper.cpp ${MPLB_DIR}/block.cpp ${MPLB_DIR}/flowfield.cpp ${MPLB_DIR}/flowfield_wrapper.cpp ${MPLB_DIR}/boundary.cpp ${MPLB_DIR}/boundary_wrapper.cpp $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) $(HDF5_LIB) -DOPS_3D -DOPS_MPI -DCPU -D$(LEVEL)  -lops_hdf5_mpi -lops_mpi -lhdf5_hl -lhdf5 -lz  -o lbm3d_dev_mpi
 
-lbm3d_psm_dev_mpi:
-	$(MPICPP) $(MPIFLAGS) $(MAINCPP) $(shell find $(MPLB_DIR) -type f \( -iname "*.cpp" ! -iname "setup*"  ! -iname "evolution.cpp" ! -iname "configuration.cpp" \)) box_handling.cpp dem_particles.cpp mui_interface.cpp read_input.cpp dem_handle3d.cpp periodic.cpp iterate_dem.cpp psm.cpp $(OPS_INC) $(HDF5_INC) -Imui $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_MPI -DOPS_3D -DCPU -D$(LEVEL) -lops_mpi -lops_hdf5_mpi $(HDF5_LIB) -o lbm3d_psm_mpi 
-		
+lbm3d_dem_mpi :
+	$(MPICPP) $(CPPFLAGS)  $(MAINCPP) ${MPLB_DIR}/evolution3d.cpp ${MPLB_DIR}/scheme.cpp ${MPLB_DIR}/scheme_wrapper.cpp ${MPLB_DIR}/configuration.cpp ${MPLB_DIR}/model.cpp ${MPLB_DIR}/model_wrapper.cpp ${MPLB_DIR}/block.cpp ${MPLB_DIR}/flowfield.cpp ${MPLB_DIR}/flowfield_wrapper.cpp ${MPLB_DIR}/boundary.cpp ${MPLB_DIR}/boundary_wrapper.cpp dem_handle.cpp block_particle_helper.cpp block_particle_helper_wrapper.cpp block_particles.cpp particle_mapping.cpp mapping_particles.cpp particle.cpp mui_wrapper.cpp mui_interface.cpp fpi_functions.cpp fpi_data.cpp psm_wrapper.cpp particle_mapping_wrapper.cpp particle_shape.cpp grid_mapping_wrapper.cpp poros_spherical_wrapper.cpp force_fsi.cpp -Imui $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) $(HDF5_LIB) -DOPS_3D -DOPS_MPI -DCPU -D$(LEVEL)  -lops_hdf5_mpi -lops_mpi -lhdf5_hl -lhdf5 -lz  -o lbm3d_dem_mpi
+
 lbm3d_dev_mpi_lib :
 	$(MPICPP) $(MPIFLAGS) $(MAINCPP) $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_MPI -DOPS_3D -DCPU -D$(LEVEL)  -lmplb3d_mpi -lops_mpi -lops_hdf5_mpi  $(HDF5_LIB)  -o lbm3d_dev_mpi
 
@@ -236,6 +239,9 @@ lbm2d_openmp: Makefile type_ops.cpp boundary_ops.cpp scheme_ops.cpp flowfield_op
 #
 # Sequential version
 #
+
+lbm3d_seq :
+	$(CPP) $(CPPFLAGS) ./MPI_OpenMP/lbm3d_cavity_cpu_kernels.cpp boundary.cpp evolution3d_ops.cpp scheme.cpp configuration.cpp model.cpp flowfield_ops.cpp lbm3d_cavity_ops.cpp type.cpp  $(OPS_INC) $(HDF5_INC) $(MPLB_INC) $(OPS_LIB) $(MPLB_LIB) -DOPS_3D -DCPU -D$(LEVEL)  -lops_seq -lops_hdf5_seq  $(HDF5_LIB)  -o lbm3d_seq
 
 lbm2d_seq: Makefile type_ops.cpp boundary_ops.cpp scheme_ops.cpp flowfield_ops.cpp  model_ops.cpp evolution_ops.cpp lbm2d_ops.cpp $(OPS_INSTALL_PATH)/lib/libops_seq.a
 	$(MPICPP) $(MPIFLAGS) $(OPS_INC) $(HDF5_INC) $(OPS_LIB) -I. ./MPI/$(SEQ_KERNELS) type_ops.cpp boundary_ops.cpp scheme_ops.cpp flowfield_ops.cpp  model_ops.cpp evolution_ops.cpp lbm2d_ops.cpp -lops_seq  $(HDF5_LIB) -o lbm2d_seq
@@ -326,4 +332,5 @@ openacc_error:
 #
 
 clean:
-	rm -f lbm2d_dev_seq lbm2d_seq lbm2d_dev_seq lbm2d_mpi lbm2d_dev_mpi lbm2d_openmp lbm2d_mpi_openmp lbm2d_cuda lbm2d_mpi_cuda lbm2d_openacc lbm2d_mpi_openacc lbm2d_opencl lbm2d_mpi_opencl ./CUDA/*.o ./OpenACC/*.o *.o lbm2d_opencl lbm3d_dev_seq lbm3d_seq lbm3d_dev_seq lbm3d_mpi lbm3d_psm_dev_mpi lbm3d_dev_mpi./OpenCL/*.o *.o
+	rm -f lbm2d_dev_seq lbm3d_dem_mpi lbm2d_seq lbm2d_dev_seq lbm2d_mpi lbm2d_dev_mpi lbm2d_openmp lbm2d_mpi_openmp lbm2d_cuda lbm2d_mpi_cuda lbm2d_openacc lbm2d_mpi_openacc lbm2d_opencl lbm2d_mpi_opencl ./CUDA/*.o ./OpenACC/*.o *.o lbm2d_opencl lbm3d_dev_seq lbm3d_seq lbm3d_dev_seq lbm3d_mpi lbm3d_dev_mpi./OpenCL/*.o *.o
+

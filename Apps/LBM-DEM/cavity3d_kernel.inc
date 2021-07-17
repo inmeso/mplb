@@ -28,34 +28,17 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
- */
+*/
 
-/*!
- * @brief   Functions for the implementation of the partially saturated method
- * @author  C. Tsigginos
- */
+#ifndef CAVITY3D_KERNEL_INC
+#define CAVITY3D_KERNEL_INC
 
-
-#ifndef PSM_H_
-#define PSM_H_
-
-#include "block_particles.h"
-#include "fpi_data.h"
-#include "mapping_particles.h"
-#include "particle_mapping.h"
-#include <memory>
-#include <vector>
-#include "dem_data.h"
-#include "block.h"
-#include "flowfield.h"
-#include "scheme.h"
-#include "type.h"
-
-void FsiInitializePSM(std::shared_ptr<FpiData>& fpiPtr);
-void FsiForcePSM(std::shared_ptr<FpiData>& fpiPtr);
-void FsiCollisionsPSM(std::shared_ptr<FpiData>& fpiPtr);
-void CalculateDragPSM(std::shared_ptr<FpiData>& fpiPtr);
-
-
-
-#endif /* APPS_LBM_DEM_NOP_PSM_H_ */
+void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
+                            ACC<Real>& w, const ACC<Real>& coordinates,
+                            const int* idx) {
+    rho(0, 0, 0) = 1;
+    u(0, 0, 0) = 0;
+    v(0, 0, 0) = 0;
+    w(0, 0, 0) = 0;
+}
+#endif // CAVITY3D_KERNEL_INC

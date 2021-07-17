@@ -81,6 +81,9 @@ RealFieldGroup& g_MacroBodyforce() { return MacroBodyforce; };
  * DT: time step
  */
 Real DT{1};
+Real DX{1};
+
+
 
 RealField CoordinateXYZ{"CoordinateXYZ"};
 RealField& g_CoordinateXYZ() { return CoordinateXYZ; };
@@ -137,11 +140,11 @@ const std::string& CaseName() { return CASENAME; }
 
 
 Real TotalMeshSize() { return 0; }
-
+Real GetDx() { return DX;}
 Real TimeStep() { return DT; }
 const Real* pTimeStep() { return &DT; }
 void SetTimeStep(Real dt) { DT = dt; }
-
+void SetGridSize(Real meshSize) {DX = meshSize;}
 Real GetMaximumResidual(const SizeType checkPeriod) {
     Real maxResError{0};
     Real relResErrorMacroVar{0};

@@ -35,7 +35,7 @@
  **/
 #ifndef MODEL_H
 #define MODEL_H
-#include <cmath>
+#include <math.h>
 #include <string>
 #include <vector>
 #include <list>
@@ -169,11 +169,8 @@ void UpdateMacroVars3D();
 void PreDefinedBodyForce3D();
 void PreDefinedInitialCondition3D();
 void PreDefinedCollision3D();
-#endif
-#ifdef OPS_2D
-void UpdateMacroVars();
-void PreDefinedBodyForce();
-void PreDefinedInitialCondition();
-void PreDefinedCollision();
-#endif
+void PreDefinedCollision3D(int* velID, int* loop, Real tauRef,
+		CollisionType collisionType, int compoId, int rhoId, int Tid);
+
+#endif //OPS_3D
 #endif

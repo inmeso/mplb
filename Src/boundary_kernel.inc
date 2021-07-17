@@ -1257,12 +1257,12 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
             2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
 #ifdef CPU
         const Real res{f(xiIdx, 0, 0, 0)};
-        if (isnan(res) || res <= 0 || isinf(res)) {
+        if (std::isnan(res) || res <= 0 || std::isinf(res)) {
             ops_printf(
                 "Error! Distribution function %f becomes invalid  at the "
                 "lattice %i\n",
                 res, xiIdx);
-            assert(!(isnan(res) || res <= 0 || isinf(res)));
+            assert(!(std::isnan(res) || res <= 0 || std::isinf(res)));
         }
 #endif
     }
@@ -1270,6 +1270,66 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
     delete[] incoming;
     delete[] parallel;
 #endif //OPS_3D
+}
+
+void KerCutCellNoslipEQN3D(ACC<Real> &f, const ACC<int> &nodeType,
+                           const Real *givenMacroVars, const int *lattIdx) {
+#ifdef OPS_3D
+    Real u = givenMacroVars[0];
+    Real v = givenMacroVars[1];
+    Real w = givenMacroVars[2];
+#ifdef CPU
+#if DebugLevel >= 2
+    ops_printf(
+        "KerCutCellNoslipEQN3D: We received the following "
+        "conditions:\n");
+    ops_printf("U=%f, V=%f, W=%f\n", u, v, w);
+#endif
+#endif
+    Real rhoIntermidate{0};
+    Real uIntermidate{0};
+    Real vIntermidate{0};
+    Real wIntermidate{0};
+
+    for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+        Real cx{CS * XI[xiIdx * LATTDIM]};
+        Real cy{CS * XI[xiIdx * LATTDIM + 1]};
+        Real cz{CS * XI[xiIdx * LATTDIM + 2]};
+        rhoIntermidate += f(xiIdx, 0, 0, 0);
+        uIntermidate += (cx * f(xiIdx, 0, 0, 0));
+        vIntermidate += (cy * f(xiIdx, 0, 0, 0));
+        wIntermidate += (cz * f(xiIdx, 0, 0, 0));
+    }
+    uIntermidate /= rhoIntermidate;
+    vIntermidate /= rhoIntermidate;
+    wIntermidate /= rhoIntermidate;
+#ifdef CPU
+#if DebugLevel >= 2
+    ops_printf("Calculated intermidate density =  %f\n", rhoIntermidate);
+    ops_printf("Calculated intermidate U =  %f\n", uIntermidate);
+    ops_printf("Calculated intermidate V =  %f\n", vIntermidate);
+    ops_printf("Calculated intermidate W =  %f\n", wIntermidate);
+#endif
+#endif
+    for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+        f(xiIdx, 0, 0, 0) =
+
+
+
+            CalcBGKFeq(xiIdx, rhoIntermidate, u, v, w, 1, 2);
+#ifdef CPU
+        const Real res{f(xiIdx, 0, 0, 0)};
+        if (std::isnan(res) || res <= 0 || std::isinf(res)) {
+            ops_printf(
+                "Error! Distribution function %f becomes invalid at the "
+                "lattice %i\n",
+                res, xiIdx);
+            assert(!(std::isnan(res) || res <= 0 || std::isinf(res)));
+        }
+#endif
+    }
+
+#endif  // OPS_3D
 }
 
 void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
@@ -1649,17 +1709,18 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
 #ifdef CPU
     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
         const Real res{f(xiIndex, 0, 0, 0)};
-        if (isnan(res) || res <= 0 || isinf(res)) {
+        if (std::isnan(res) || res <= 0 || std::isinf(res)) {
             ops_printf(
                 "Error! Distribution function %f becomes invalid  at the "
                 "lattice %i\n at the surface %i\n",
                 res, xiIndex, geometryProperty(0, 0, 0));
-            assert(!(isnan(res) || res <= 0 || isinf(res)));
+            assert(!(std::isnan(res) || res <= 0 || std::isinf(res)));
         }
     }
 #endif
 
 #endif  // OPS_3D
 }
-#endif //OPS_3D
+
 #endif // BOUNDARY_KERNEL_INC
+

@@ -30,6 +30,32 @@ static inline OPS_FUN_PREFIX Real CalcBodyForce(const int xiIndex, const Real rh
     }
     return WEIGHTS[xiIndex] * rho * cf;
 }
+//2nd order body force
+//Author: C Tsigginos 17/7/2021
+static inline OPS_FUN_PREFIX Real CalcBodyForce2ndOrder(const int xiIndex,const Real rho,
+			const Real u0, const Real u1, const Real u2, const Real*  accel) {
+
+	Real sum, sum1;
+	int SPACEDIM = LATTDIM;
+	Real u[SPACEDIM];
+	u[0] = u0;
+	u[1] = u1;
+	u[2] = u2;
+	sum = 0.0;
+
+	for (int iIndex = 0; iIndex < SPACEDIM; iIndex++) {
+		sum1 = XI[xiIndex * SPACEDIM + iIndex] * CS;
+		for (int jIndex = 0; jIndex < SPACEDIM; jIndex++) {
+			sum1 += XI[SPACEDIM * xiIndex + iIndex] * CS * XI[SPACEDIM * xiIndex + jIndex] * CS * u[jIndex];
+			if (iIndex == jIndex)
+				sum1 += -1.0 * u[jIndex];
+
+		}
+		sum += sum1 * accel[iIndex];
+	}
+
+	return sum * WEIGHTS[xiIndex] * rho;
+}
 
 static inline OPS_FUN_PREFIX Real CalcBGKFeq(const int l, const Real rho, const Real u, const Real v,
                 const Real T, const int polyOrder) {
