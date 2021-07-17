@@ -30,17 +30,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*! @brief  Head files for configuring the mapping models
- * @author C. Tsigginos
- * @details The header of any new mapping model must be inserted here in.
+/*!
+ * @brief   functions for force calculation in FSI models
+ * @author  C. Tsigginos
+ * @details: Handling of force implementation is FSI models
  */
-#ifndef MAPPING_MODELS_H_
-#define MAPPING_MODELS_H_
 
-#include "poros_spherical.h"
-#include "grid_mapping.h"
+#include "force_fsi.h"
+#include "force_fsi_host_device.h"
+Forces forceModel;
 
+void DefineForceModel(std::vector<Real>& params, ForceType forceScheme) {
 
+	if (params.size()>0) {
+		forceModel.model = forceScheme;
 
+		for (auto& parameter : params)  {
+			forceModel.forceDefinition.push_back(parameter);
+		}
+	}
+	else  {
+		forceModel.model = noForce;
 
-#endif /* APPS_LBM_DEM_MAPPING_MODELS_H_ */
+		forceModel.forceDefinition.push_back(0);
+	}
+}
+
+Forces& ForceModel() { return forceModel;};
+

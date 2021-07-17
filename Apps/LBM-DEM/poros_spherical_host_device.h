@@ -1,21 +1,14 @@
-/*
- * poros_spherical_device.h
- *
- *  Created on: May 29, 2021
- *      Author: jpd38567
- */
-
 #ifndef POROS_SPHERICAL_HOST_DEVICE_H_
-#define POROS_SPHERICAL_HOST_DEVICE_H_
+#define POROS_SPHERICAL_HOST_DEVICE_H
 
 #ifndef OPS_FUN_PREFIX
 #define OPS_FUN_PREFIX
 #endif
 
 #include <cmath>
-#include "poros_spherical.h"
 
-inline OPS_FUN_PREFIX Real PorosSpherical::CalculateSolidFractionSpheres(const Real* xfl,
+
+inline OPS_FUN_PREFIX Real CalculateSolidFractionSpheres(const Real* xfl,
 		const Real Ravg, const Real* xPos, const Real Rp, Real* xAvg) {
 
 
@@ -64,7 +57,5 @@ inline OPS_FUN_PREFIX Real PorosSpherical::CalculateSolidFractionSpheres(const R
 	xAvg[2] = -1.0;
 	return 0.0;
 }
-
-
 
 #endif

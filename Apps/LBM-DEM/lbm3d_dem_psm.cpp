@@ -39,10 +39,11 @@
 #include <string>
 #include "mplb.h"
 #include "ops_seq_v2.h"
-#include "mplb_dem.h"
-#include "fpi.h"
+#include "force_fsi.h"
 #include "cavity3d_kernel.inc"
 
+#include "dem_data.h"
+#include "LBM_DEM.h"
 void SetInitialMacrosVars() {
     for (auto idBlock : g_Block()) {
         Block& block{idBlock.second};
@@ -120,14 +121,23 @@ void simulate() {
     std::string particleType{"spherical"};
     DefineBlockParticles(spaceDim, cutoff,  meshSize, particleType);
 
-    //Define FSI-model
-    std::vector<FSIType> fluidModel{Model_PSM}; //Model_Prati
-    ops_printf("FSI model is %d\n", static_cast<int>(fluidModel.at(0)));
-    std::vector<int> porosModelParams{2};//, 2, 2};
-    std::vector<int> fsiComponent{0};
-    Real force[spaceDim]={0.0, 0.0, 0.0};
-    DefineInteractionModel(fluidModel, fsiComponent, force, 0.5, 0);
 
+    std::vector<ParticleMappingModel> modelParticles{sphericalMapping};
+    std::vector<int> copyFrom{-1};
+    std::vector<FluidParticleModel> componentModel{PSM};
+    std::vector<int>  componentFSI{0};
+    ParticleShapeDiscriptor particleShape{spherical};
+
+
+	DefineMappingModel(modelParticles, componentFSI, copyFrom, particleShape);
+
+	std::vector<Real> variables{0.5};
+	DefineFsiModel(componentModel, componentFSI, variables);
+
+
+    std::vector<Real> forceParams{0.0, 0.0, 0.0};
+    ForceType forceScheme{noForce};
+    DefineForceModel(forceParams, forceScheme);
 
     // Setting boundary conditions
     SizeType blockIndex{0};
@@ -179,8 +189,8 @@ void simulate() {
 
     //Initialize Particle Information
     InteractionData lbmDemData;
-    bool muiflag = true;
-    SizeType maximumIterations{40};
+    bool muiflag = false;
+    SizeType maximumIterations{400};
     SetDemLbMParams(&lbmDemData, false, muiflag, 1e-7, 500, 0,
     		10, maximumIterations, particleType);
 
@@ -215,19 +225,18 @@ void simulate() {
 #endif
     //SetMuiInterface
     if (lbmDemData.muiFlag) {
-    	CreateMuiInterface(lbmDemData, fluidModel, cutoff);
+    	CreateMuiInterface(lbmDemData, componentModel, cutoff);
     }
 
 
-    SetupParticleBoxes(lbmDemData);
+   SetupParticleBoxes(lbmDemData);
+
+   //Setting up DEM-LBM
+   SetupDEMLBM(lbmDemData);
 
 
-    //Setting up DEM-LBM
-    SetupDEMLBM(lbmDemData);
+   IterateFSI(lbmDemData, 1);
 
-    IterateFSI(lbmDemData, 1);
-    ops_printf("I run the simulation\n");
-    exit(EXIT_FAILURE);
 }
 
 void simulate(const Configuration & config, const SizeType timeStep=0) {

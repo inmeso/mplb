@@ -28,56 +28,32 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
-/*! @brief  Class for calculating the solid fraction for spherical particles
- * @author C. Tsigginos
+/*!
+ * @brief   Functions for particle mapping based on spherical control volumes
+ * @author  C. Tsigginos
+
  */
 
 #ifndef POROS_SPHERICAL_H_
 #define POROS_SPHERICAL_H_
 
-#include "particle_to_grid_base.h"
 #include "type.h"
-#include "flowfield_host_device.h"
-#include <cmath>
+#include "flowfield.h"
+#include "scheme.h"
+#include "dem_data.h"
+#include "mapping_particles.h"
+#include <vector>
+#include <memory>
 
-class PorosSpherical : public ParticleToGridBase {
-	public:
-	PorosSpherical(int ParticleType,int spaceDim);
-	virtual int  particleShape() {return 1;}
-	virtual void DefineVariables(int noElem, SizeType timestep = 0);
-	virtual void ParticleProjection();
-	virtual void UpdateProjection();
-	virtual void MappingFunction(bool flag);
-	virtual void InitializeVariables();
-	virtual void ReturnParticleShape() { ops_printf("Handles spherical particles only"); };
-	virtual void PrintMappingVariables();
-
-	protected:
-	static void KerSolidFracSphere(ACC<int>& id, ACC<Real>& sfp, ACC<Real>& vp,
-			ACC<Real>& xAvg, const ACC<Real>& xf, const Real* xPos, const Real* Radius,
-			const int* idP, const Real* vPart, const Real* omPart, const Real* dx,
-			const int* nelem, const int* spacedim);
-
-	static void KerSolidVelocitySphere(ACC<Real>& vP, const ACC<int>& id,
-			const ACC<Real>& xAvg, const int* idParticle,
-			const Real* xPos, const Real* radPart, const Real* velP, const Real* omP,
-			const Real* dx, const Real* spacedim, const Real* noelem);
-
-	static void KerInitializePorousSpherical(ACC<Real>&sfP, ACC<Real>& vP, ACC<Real>& xAvg,
-				ACC<int>& id, const int* spacedim, const int* noelem);
-
-	static inline OPS_FUN_PREFIX Real CalculateSolidFractionSpheres(const Real* xfl,
-			const Real Ravg, const Real* xPos, const Real Rp, Real* xAvg);
-
-	static void KerPrintPorousData(const ACC<Real>&sfP,const ACC<Real>& vP,
-			const ACC<Real>& xAvg, const ACC<int>& id, const ACC<Real>& xf,
-			const int* spacedim, const int* noelem);
-
-	private:
-		int sizeofData = 4;
-};
+void ParticleProjectionSphere(std::shared_ptr<MappingParticles>& mappingPtr,
+		  int component);
+void UpdateProjectionSphere(std::shared_ptr<MappingParticles>& mappingPtr,
+		   int component);
 
 
-#endif /* APPS_LBM_DEM_POROS_SPHERICAL_H_ */
+
+
+
+#endif /* APPS_LBM_DEM_NOP_POROS_SPHERICAL_H_ */

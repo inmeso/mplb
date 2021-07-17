@@ -30,17 +30,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*! @brief  Head files for configuring the fluid-particle interaction model
- * @author C. Tsigginos
- * @details And new fluid-particle (structure) interaction model must be
- * inserted here.
+/*!
+ * @brief   Functions for implementation of force into FSI models
+ * @author  C. Tsigginos
  */
-#ifndef FPI_H_
-#define FPI_H_
 
-#include "fsi_base.h"
-#include "psm.h"
+#ifndef FORCE_FSI_H_
+#define FORCE_FSI_H_
+
+#include "flowfield.h"
+#include "type.h"
+#include <vector>
+#include "force_fsi_host_device.h"
+
+struct Forces {
+	std::vector<Real> forceDefinition;
+	ForceType model;
+};
 
 
-
-#endif /* APPS_LBM_DEM_FPI_H_ */
+void DefineForceModel(std::vector<Real>& params, ForceType forceModel);
+Forces& ForceModel();
+#endif /* APPS_LBM_DEM_NOP_FORCE_FSI_H_ */

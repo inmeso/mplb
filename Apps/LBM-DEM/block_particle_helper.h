@@ -45,10 +45,10 @@
 #include "flowfield.h"
 #include "type.h"
 #include "ops_lib_core.h"
+#include "fpi_functions.h"
 #ifdef OPS_MPI
 #include "ops_mpi_core.h"
 #endif
-#include "fpi.h"
 #include <string>
 #include <vector>
 
@@ -57,8 +57,7 @@ void ParticleMapping(int flag);
 int CheckParticleDistance();
 void UpdateOldParticleLocation();
 void ParticleEnvelopes();
-void MappingParticlesToLBMGrid();
-void UpdateParticlesToLBMGrid();
+
 
 
 //Wrapper for FSI object functions
@@ -81,9 +80,13 @@ void UpdateParticleMappingDragForceRestart(SizeType currentStep);
 void DefineBlockParticles(int spacedim, Real cutoff, Real dx1,
 		std::string particleType);
 
-void DefineInteractionModel(std::vector<FSIType> FluidParticleInteractionType,
-		 std::vector<int> fsiCompoId, Real* forceUser,
-		 double gamma, SizeType timeStep);
+void DefineMappingModel(std::vector<ParticleMappingModel> mappingModels,
+						std::vector<int> compoId, std::vector<int> copyFrom,
+						ParticleShapeDiscriptor particleShape, SizeType timeStep = 0);
+
+void  DefineFsiModel(std::vector<FluidParticleModel> fsiModel, std::vector<int> compoId,
+			std::vector<Real> variable, SizeType timeStep = 0);
+
 
 //PArticle assigning wrappers
 void AssignParticlesToBlocksSpheres(int Nparticles,Real* xTmp, Real* yTmp,Real* zTmp,

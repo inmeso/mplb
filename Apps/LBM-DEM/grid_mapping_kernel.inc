@@ -1,15 +1,43 @@
-/*
- * poros_grid.inc
+/**
+ * Copyright 2019 United Kingdom Research and Innovation
  *
- *  Created on: May 29, 2021
- *      Author: jpd38567
+ * Authors: See AUTHORS
+ *
+ * Contact: [jianping.meng@stfc.ac.uk and/or jpmeng@gmail.com]
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * ANDANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef POROS_GRID_INC_
-#define POROS_GRID_INC_
+/*!
+ * @brief   Kernels for mapping particles via the subcell method
+ * @author  C. Tsigginos
+ * @details The kernels are used in conjuction with PSM or Prati schemes
+ */
 
-#include "poros_grid.h"
-#include "poros_grid_host_device.h"
+#ifndef GRID_MAPPING_KERNEL_INC_
+#define GRID_MAPPING_KERNEL_INC_
 
 #include "ops_lib_core.h"
 
@@ -17,16 +45,23 @@
 #include "ops_mpi_core.h"
 #endif
 #include "type.h"
+#include "model.h"
+#include "flowfield_host_device.h"
+#include "model_host_device.h"
+#include "grid_mapping.h"
+#include "grid_mapping_host_device.h"
+void KerMappingSphericalGrid(ACC<int>& idp, ACC<Real>& sfp, ACC<Real>& uPar,
+							 ACC<Real>& xAvg,const ACC<Real>& xF, const Real* xPart,
+							 const Real* Radius, const int* idParticle,
+							 const Real* vParticle, const Real* omParticle,
+							 const Real* dx, const int* Ngrid, const int* noelem,
+							 const int* spacedim) {
 
-
-void PorosGrid::KerSolidFracGridSphere(ACC<int>& idp, ACC<Real>& sfp, ACC<Real>& uPar,
-		ACC<Real>& xAvg,const ACC<Real>& xF, const Real* xPart, const Real* Radius,
-		const int* idParticle, const Real* vParticle, const Real* omParticle,
-		const Real* dx, const int* Ngrid, const int* noelem, const int* spacedim) {
 
 	const int SPACEDIM = (*spacedim);
 	const int NOELEM = (*noelem);
 	const int noGrid = (*Ngrid);
+
 	Real xfl[SPACEDIM];
 	Real xe, ye, ze;
 	Real dd;
@@ -113,11 +148,9 @@ void PorosGrid::KerSolidFracGridSphere(ACC<int>& idp, ACC<Real>& sfp, ACC<Real>&
 
 	}
 
-
-
 }
 
-void PorosGrid::KerSolidVelocityUpdate(ACC<Real>& vP, const ACC<int>& id,
+void KerSolidVelocityUpdateGridSphere(ACC<Real>& vP, const ACC<int>& id,
 		const ACC<Real>& xAvg, const int* idParticle,
 		const Real* xPos, const Real* radPart, const Real* velP, const Real* omP,
 		const Real* dx, const Real* spacedim, const Real* noelem) {
@@ -149,23 +182,4 @@ void PorosGrid::KerSolidVelocityUpdate(ACC<Real>& vP, const ACC<int>& id,
 	}
 }
 
-void PorosGrid::KerInitializePorousGrid(ACC<Real>&sfP, ACC<Real>& vP, ACC<Real>& xAvg,
-		ACC<int>& id, const int* spacedim, const int* noelem) {
-
-	const int SPACEDIM = (*spacedim);
-	const int NELEM = (*noelem);
-
-	for (int iPart = 0; iPart < NELEM; iPart++) {
-		sfP(iPart, 0, 0, 0) = 0.0;
-		for (int iDir = 0; iDir < SPACEDIM; iDir++) {
-			id(iPart * SPACEDIM + iDir, 0, 0, 0) = -1;
-			xAvg(iPart * SPACEDIM + iDir, 0, 0, 0) = -1.0;
-		}
-	}
-
-}
-
-
-
-
-#endif /* POROS_GRID_INC_ */
+#endif

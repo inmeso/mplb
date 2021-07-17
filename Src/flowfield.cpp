@@ -144,7 +144,7 @@ Real GetDx() { return DX;}
 Real TimeStep() { return DT; }
 const Real* pTimeStep() { return &DT; }
 void SetTimeStep(Real dt) { DT = dt; }
-
+void SetGridSize(Real meshSize) {DX = meshSize;}
 Real GetMaximumResidual(const SizeType checkPeriod) {
     Real maxResError{0};
     Real relResErrorMacroVar{0};

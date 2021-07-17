@@ -28,60 +28,34 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
-/*! @brief Partially saturated method
- *  @author C. Tsigginos
- **/
+/*!
+ * @brief   Functions for the implementation of the partially saturated method
+ * @author  C. Tsigginos
+ */
 
 
 #ifndef PSM_H_
 #define PSM_H_
 
-#include "fsi_base.h"
-#include "field.h"
-#include "block.h"
-#include "type.h"
-#include <string>
-#include "model.h"
 #include "block_particles.h"
-#include "particle_to_grid_base.h"
-#include "poros_spherical.h"
-#include "poros_grid.h"
+#include "fpi_data.h"
+#include "mapping_particles.h"
+#include "particle_mapping.h"
+#include <memory>
+#include <vector>
+#include "dem_data.h"
+#include "block.h"
+#include "flowfield.h"
+#include "scheme.h"
+#include "type.h"
 
-class Psm : public FsiBase {
-
-	protected:
-		RealField Fd;
-		ParticleToGridBase* poros; //TODO: Add the porosity model
-		int noElem = 1;
-
-	public:
-	Psm(Component componentUser, int spacedim, Real* forceUser, bool owned = false,
-		SolFracType porosModel = Mode_None, Real gammaUser = 0.0, int nelem = 2, int ParticleType = 1);
-	~Psm() {}
-	virtual void ModelCollision(); //Dpme
-	virtual void CalculateDragForce();//Done
-	virtual void MappingFunction(bool flag); //Done
-	virtual void DefineVariables(SizeType timestep = 0); //DONE
-    virtual void InitializeVariables(); //DONE
-    virtual void WriteToHdf5(const std::string& caseName, const SizeType timeStep);
-
-    static void KerCollisionPSM3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>& f,
-    		const ACC<Real>& coordinates, const ACC<Real>& nodeType,
-    		const ACC<Real>& Rho, const ACC<Real>& U, const ACC<Real>& V,
-    		const ACC<Real>& W,const ACC<int> &id,const ACC<Real>& sfp,
-    		const ACC<Real>& vp, const Real* dt, const Real* tauRef,
-    		const int* forceFlag, const Real* force,
-    		const int* nElem, const int* spacedim, const int* lattIdx);
-
-	static void KerDragPSM(const ACC<int>& id, const ACC<Real>& sfp, const ACC<Real>& xf,
-			const ACC<Real>& Fd, Real* FDp, Real* TDp, const int* idp, const Real* xp,
-			const Real* dt, const Real* tau,
-			const int* spacedim, const int* nelem);
-
-	static void KerInitialize(ACC<Real>& Fd, const int* size);
-};
+void FsiInitializePSM(std::shared_ptr<FpiData>& fpiPtr);
+void FsiForcePSM(std::shared_ptr<FpiData>& fpiPtr);
+void FsiCollisionsPSM(std::shared_ptr<FpiData>& fpiPtr);
+void CalculateDragPSM(std::shared_ptr<FpiData>& fpiPtr);
 
 
-#endif
+
+#endif /* APPS_LBM_DEM_NOP_PSM_H_ */

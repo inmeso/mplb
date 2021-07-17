@@ -41,7 +41,6 @@
 #include <stdlib.h>
 #include <limits>
 #include "ops_seq_v2.h"
-#include "block_particles.inc"
 
 ListBlockParticles BlockParticleList;
 
@@ -51,8 +50,7 @@ BlockParticles::BlockParticles(int spacedim, Real dx1, Real cutoff,const Block& 
 
 	spaceDim = spacedim;
 	int size = 2 * spaceDim;
-//	xBoundGlobal = new Real [size];
-//	xBoundLocal = new Real [size];
+
 
 	owned = true;
 	dx = dx1;
@@ -124,10 +122,6 @@ BlockParticles::BlockParticles(int spacedim, Real dx1, Real cutoff,const Block& 
 }
 
 BlockParticles::~BlockParticles() {
-
-//	delete[] xBoundGlobal;
-//	delete[] xBoundLocal;
-//	delete[] Nf;
 
 }
 
@@ -266,82 +260,6 @@ bool BlockParticles:: SphereParallepipedIntersection(Real* xpos,Real radius) {
 
 }
 
-void BlockParticles::FindBoxLocalBound() {
-
-	int start[spaceDim], end[spaceDim], range[2 * spaceDim], disp[spaceDim];
-	int size = 2 * spaceDim;
-	int iterRng[size];
-	Real xb[spaceDim];
-	for (int nDim = 0; nDim < spaceDim; nDim++) {
-		xBoundLocal[2 * nDim] = std::numeric_limits<Real>::max();
-		xBoundLocal[2 * nDim + 1] = -1.0 * std::numeric_limits<Real>::max();
-	}
-	int blockIndex = currentBlock.ID();
-
-	if (owned) {
-		//Find block ranges
-		std::vector<int> iterRng1;
-		iterRng1.assign(currentBlock.WholeRange().begin(), currentBlock.WholeRange().end());
-
-		for (int iDim = 0; iDim < 2 * spaceDim; iDim++)
-			range[iDim] = iterRng1.at(iDim);
-
-		 ops_get_abs_owned_range(currentBlock.Get(), range, start, end, disp);
-
-
-
-		for (int iDir = 0; iDir < spaceDim; iDir++) {
-			Nf[2 * iDir] = start[iDir];
-			Nf[2 * iDir + 1] = end[iDir];
-		}
-
-
-
-		for (int iDim = 0; iDim < spaceDim; iDim++) {
-			iterRng[2 * iDim] = Nf[2 *iDim];
-			iterRng[2 * iDim + 1] = Nf[2 * iDim] + 1;
-		}
-
-
-		int spacedim = spaceDim;
-		ops_par_loop(KerCarBound,"KerCarBound", currentBlock.Get(), spaceDim, iterRng,
-				ops_arg_dat(g_CoordinateXYZ()[blockIndex], spaceDim,
-							LOCALSTENCIL, "double", OPS_READ),
-				ops_arg_gbl(xb, spaceDim, "double", OPS_READ),
-				ops_arg_gbl(&spacedim, 1, "int", OPS_READ));
-
-		for (int iDim = 0; iDim < spaceDim; iDim++) {
-			xBoundLocal[2 * iDim] = xb[iDim] - 0.5 * dx;
-		}
-
-
-		//2nd point
-		for (int iDir = 0; iDir < spaceDim; iDir++) {
-			iterRng[2 * iDir] = Nf[2 * iDir + 1] - 1;
-			iterRng[2 * iDir + 1] = Nf[2 * iDir + 1];
-		}
-
-
-
-		ops_par_loop(KerCarBound, "KerCarBound", currentBlock.Get(), spaceDim, iterRng,
-				ops_arg_dat(g_CoordinateXYZ()[blockIndex], spaceDim,
-							LOCALSTENCIL, "double", OPS_READ),
-				ops_arg_gbl(xb, spaceDim, "double", OPS_READ),
-				ops_arg_gbl(&spacedim, 1, "int", OPS_READ));
-
-		for (int iDim = 0; iDim < spaceDim; iDim++)
-			xBoundLocal[2 * iDim + 1] = xb[iDim] + 0.5 * dx;
-#ifdef CPU
-#if DebugLevel >= 2
-		for (int iDim = 0; iDim < spaceDim; iDim++)
-			printf("Block %d: Current local Bound [%f %f]\n",currentBlock.ID(), xBoundLocal[2*iDim], xBoundLocal[2 * iDim+1]);
-#endif
-#endif
-	}
-
-}
-
-
 void BlockParticles::ExtractBound(Real* xMin, Real* xMax) {
 
 	for (int iDim = 0; iDim < spaceDim; iDim++) {
@@ -406,4 +324,17 @@ void BlockParticles::GetAdditionalOutputVariables(std::vector<Real>& output,int 
 void BlockParticles::GetAdditionalInputVariables(std::vector<Real>& input,int idParticle) {
 
 	particleList.at(idParticle).SetInputVariables(input);
+}
+
+void BlockParticles::SetNfLocal(int* Ndata) {
+
+	for (int iDir = 0; iDir < 2 * spaceDim; iDir++)
+		Nf[iDir] = Ndata[iDir];
+}
+
+
+void BlockParticles::SetLocalBound(Real* xBound) {
+
+	for (int iDir = 0; iDir < 2 * spaceDim; iDir++)
+		xBoundLocal[iDir] = xBound[iDir];
 }

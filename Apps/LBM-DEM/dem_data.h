@@ -34,14 +34,15 @@
  * @brief   Types used for DEM-LBM simulations
  * @author  C. Tsigginos
  */
-
-#ifndef DEM_DATA_H_
-#define DEM_DATA_H_
+#ifndef DEM_DATA_H
+#define DEM_DATA_H
 
 #include "type.h"
 
 
-enum ParticleShapeDiscriptor{spherical, quadratic, mesh};
+enum ParticleShapeDiscriptor{spherical=0, quadratic=1, mesh=2};
+enum ParticleMappingModel{noMapping=0, sphericalMapping=1, gridSpherical=2, gridQuadratic=3, gridMesh=4, copyData=5};
+enum FluidParticleModel{noModel=0, PSM=1};
 
 struct InteractionData {
 	SizeType nSteps;
@@ -58,7 +59,5 @@ struct InteractionData {
 	ParticleShapeDiscriptor particleShape;
 
 };
-
-
 
 #endif /* APPS_LBM_DEM_INTERACTION_DATA_H_ */

@@ -1732,12 +1732,12 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
             2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
 #ifdef CPU
         const Real res{f(xiIdx, 0, 0, 0)};
-        if (isnan(res) || res <= 0 || isinf(res)) {
+        if (std::isnan(res) || res <= 0 || std::isinf(res)) {
             ops_printf(
                 "Error! Distribution function %f becomes invalid  at the "
                 "lattice %i\n",
                 res, xiIdx);
-            assert(!(isnan(res) || res <= 0 || isinf(res)));
+            assert(!(std::isnan(res) || res <= 0 || std::isinf(res)));
         }
 #endif
     }
@@ -1794,12 +1794,12 @@ void KerCutCellNoslipEQN3D(ACC<Real> &f, const ACC<int> &nodeType,
             CalcBGKFeq(xiIdx, rhoIntermidate, u, v, w, 1, 2);
 #ifdef CPU
         const Real res{f(xiIdx, 0, 0, 0)};
-        if (isnan(res) || res <= 0 || isinf(res)) {
+        if (std::isnan(res) || res <= 0 || std::isinf(res)) {
             ops_printf(
                 "Error! Distribution function %f becomes invalid at the "
                 "lattice %i\n",
                 res, xiIdx);
-            assert(!(isnan(res) || res <= 0 || isinf(res)));
+            assert(!(std::isnan(res) || res <= 0 || std::isinf(res)));
         }
 #endif
     }
@@ -2184,12 +2184,12 @@ void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
 #ifdef CPU
     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
         const Real res{f(xiIndex, 0, 0, 0)};
-        if (isnan(res) || res <= 0 || isinf(res)) {
+        if (std::isnan(res) || res <= 0 || std::isinf(res)) {
             ops_printf(
                 "Error! Distribution function %f becomes invalid  at the "
                 "lattice %i\n at the surface %i\n",
                 res, xiIndex, geometryProperty(0, 0, 0));
-            assert(!(isnan(res) || res <= 0 || isinf(res)));
+            assert(!(std::isnan(res) || res <= 0 || std::isinf(res)));
         }
     }
 #endif

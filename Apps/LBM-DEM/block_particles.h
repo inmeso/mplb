@@ -74,7 +74,6 @@ class BlockParticles {
 							Real* uPart, Real* omegaT, std::vector<Real>& inputData);
 		void UpdateParticleVelocities(Real* uPart,Real* omegaT);
 		void FindStencil();
-		void FindBoxLocalBound();
 		static void  KerCarBound(const ACC<Real>& xf, Real* xb,const int* spacedim);
 		void GetLocalBound(Real* xBound);
 		void SetGlobalBound(Real* xBound);
@@ -87,7 +86,8 @@ class BlockParticles {
 		bool OwnedStatus() { return owned;};
 		bool HasExtraInput() { return hasExtraInputVariables;};
 		bool HasExtraOutput() {return hasExtraOutputVariables;};
-
+		void SetNfLocal(int* Ndata);
+		void SetLocalBound(Real* xBound);
 
 
 		inline void ClearParticles() {NParticles = 0;

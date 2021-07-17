@@ -31,41 +31,41 @@
  */
 
 /*!
- * @brief   Class for handling particles at various blocks
+ * @brief   Kernel for initializing ops lists for particle mapping
  * @author  C. Tsigginos
- * @Details Kernel function for finding box Bounds
+ *
  */
 
-#ifndef BLOCK_PARTICLES_INC_
-#define BLOCK_PARTICLES_INC_
 
-#include "ops_lib_core.h"
+#ifndef PARTICLE_MAPPING_KERNEL_INC
+#define PARTICLE_MAPPING_KERNEL_INC
+
 #ifdef OPS_MPI
 #include "ops_mpi_core.h"
 #endif
 #include "type.h"
-#include "block_particles.h"
+#include "model.h"
+#include "ops_seq_v2.h"
+#include "flowfield_host_device.h"
+#include "model_host_device.h"
 
-void BlockParticles::KerCarBound(const ACC<Real>& xf, Real* xb, const int* spacedim) {
+void KerInitializePorousGrid(ACC<Real>& sf, ACC<Real>& vP, ACC<Real>& xAvg, ACC<int>& idp,
+		const int* sizeReal, const int* sizeInt) {
 
-	int size = (* spacedim);
+	int sizeI = (*sizeInt);
 
+	for (int iDir = 0 ; iDir < sizeReal[0]; iDir++)
+		sf(iDir, 0, 0, 0) = 0.0;
 
-	for (int idx = 0; idx < size; idx++) {
-#ifdef OPS_2D
-		xb[idx] = xf(idx, 0, 0);
-#endif
+	for (int iDir = 0; iDir < sizeReal[1]; iDir++)
+		vP(iDir, 0, 0, 0) = 0.0;
 
-#ifdef OPS_3D
-		xb[idx] = xf(idx, 0 , 0, 0);
-#endif
+	for (int iDir = 0; iDir < sizeReal[2]; iDir++)
+		xAvg(iDir, 0, 0, 0) = -100.0;
 
-	}
-
-
-
+	for (int iDir = 0; iDir < sizeI; iDir++)
+		idp(iDir, 0, 0, 0) = -1;
 }
 
 
-
-#endif /* APPS_LBM_DEM_BLOCK_PARTICLES_INC_ */
+#endif

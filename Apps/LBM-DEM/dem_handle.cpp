@@ -146,7 +146,7 @@ void UserDefineInputOutputParams(std::vector<std::string>& inputDemParams,
 		std::vector<std::string>& outPutDemParams) {
 
 }
-void CreateMuiInterface(InteractionData data, std::vector<FSIType> models, Real skin) {
+void CreateMuiInterface(InteractionData data, std::vector<FluidParticleModel> models, Real skin) {
 
 
 	std::vector<std::string> inputDemParams;

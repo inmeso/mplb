@@ -30,17 +30,18 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*! @brief  Head files for configuring the mapping models
- * @author C. Tsigginos
- * @details The header of any new mapping model must be inserted here in.
+/*!
+ * @brief   Header for adding new FSI models that implemented in MPLB
+ * @author  C. Tsigginos
  */
-#ifndef MAPPING_MODELS_H_
-#define MAPPING_MODELS_H_
-
-#include "poros_spherical.h"
-#include "grid_mapping.h"
+#ifndef FSI_MODELS_H
+#define FSI_MODELS_H
 
 
+#include "psm.h"
 
 
-#endif /* APPS_LBM_DEM_MAPPING_MODELS_H_ */
+
+
+
+#endif /* APPS_LBM_DEM_NOP_FSI_MODELS_H_ */

@@ -28,46 +28,36 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
-
-/*! @brief   Base calls for mapping particles in the LBM grid
- * @author C. Tsigginos
- * @details Base consturctor and output files
  */
 
-#include "particle_to_grid_base.h"
-
-ParticleToGridBase::ParticleToGridBase(int particleshape, int spacedim) {
-
-	spaceDim = spacedim;
-
-	particleDiscriptor = (ParticleType) particleshape;
-	ops_printf("Particle type passed is %d\n", particleshape);
-	ops_printf("Particle type assigned is %d\n", (ParticleType) particleDiscriptor);
-	noElem = 1;
-
-	requiresCopy = false;
-
-}
-
-void ParticleToGridBase::WriteToHdf5(const std::string& caseName, const SizeType timeStep) {
-
-	for (auto& element : mappingRealVariableList )
-		element.WriteToHDF5(caseName, timeStep);
-
-	for (auto& element : mappingIntVariableList)
-		element.WriteToHDF5(caseName, timeStep);
-
-}
-
-RealField& ParticleToGridBase::GetRealFieldVariable(int index) {
-
-	return mappingRealVariableList.at(index);
-}
-
-IntField& ParticleToGridBase::GetIntFieldVariable(int index) {
-
-	return mappingIntVariableList.at(index);
-}
+/*!
+ * @brief   Functions for defining and handling particle mapping models
+ * @author  C. Tsigginos
+ */
 
 
+#ifndef PARTICLE_MAPPING_H_
+#define PARTICLE_MAPPING_H_
+
+#include <vector>
+#include <map>
+#include <string>
+#include <memory>
+#include "dem_data.h"
+#include "mapping_particles.h"
+#include "model.h"
+#include "flowfield.h"
+#include "mapping_models.h"
+
+void DefineParticleMappingModels(std::vector<ParticleMappingModel> particleMappingModels,
+		 std::vector<int> compoId, std::vector<int> copyFrom, ParticleShapeDiscriptor particleShape,
+		 SizeType timeStep);
+
+void InitializeMappingLists();
+void MappingParticlesToLBMGrid();
+void UpdateParticlesToLBMGrid();
+void WriteParticleMappingToHDF5(SizeType timestep);
+void InitializePorousLists(std::shared_ptr<MappingParticles>& mappingPtr,
+						   int component);
+std::map<int, std::shared_ptr<MappingParticles>>& GetMappingModels();
+#endif /* APPS_LBM_DEM_NOP_PARTICLE_MAPPING_H_ */

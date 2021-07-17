@@ -42,7 +42,6 @@
 #include "flowfield.h"
 #include <map>
 #include "block.h"
-#include "fpi.h"
 #include <vector>
 #include "model.h"
 #include "block_particle_helper.h"
@@ -54,7 +53,7 @@
 
 void SetupBlockParticles(InteractionData data, SizeType maxStep);
 void DefineGlobalBlockBox();
-void CreateMuiInterface(InteractionData data, std::vector<FSIType> models, Real skin);
+void CreateMuiInterface(InteractionData data, std::vector<FluidParticleModel> models, Real skin);
 void StreamCollisionFSI3D(int flag);
 void IterateFSI(InteractionData data, int savingFlag);
 void IterateFSI(Real convergenceRate,const SizeType checkPointPeriod,const SizeType maxIters);

@@ -42,11 +42,13 @@
 //#include "model_kernel.inc"
 #include "dem_data.h"
 #include "block_particles.h"
+#include "fpi_functions.h"
+#include "particle_mapping.h"
+#include "mapping_particles.h"
 #include <memory>
 
 //#include "particle.h"
 //#include <vector>
-std::map<int, std::shared_ptr<FsiBase>> fluidPartInteractionModels;
 
 void DefineBlockParticles( int spacedim, Real cutoff, Real dx1, std::string particleType) {
 
@@ -80,109 +82,19 @@ void DefineBlockParticles( int spacedim, Real cutoff, Real dx1, std::string part
 
 }
 
-void DefineInteractionModel(std::vector<FSIType> FluidParticleInteractionType,
-		 std::vector<int> fsiCompoId, Real* forceUser,
-		double gamma, SizeType timeStep) {
-
-	int noComp = FluidParticleInteractionType.size();
-	int noFSICompo = fsiCompoId.size();
-	FSIType fsiModel;
-	int idCompo;
-	std::vector<SolFracType> porosModel;
-	int nelem;
-
-	std::map<int, Component> components = g_Components();
-	int numComponents = ComponentNum();
+void DefineMappingModel(std::vector<ParticleMappingModel> mappingModels,
+						std::vector<int> compoId, std::vector<int> copyFrom,
+						ParticleShapeDiscriptor particleShape, SizeType timeStep) {
 
 
-	ops_printf("gamma = %f\n",gamma);
+	DefineParticleMappingModels(mappingModels, compoId,  copyFrom,  particleShape,
+								timeStep);
+}
 
-	if (noComp != numComponents) {
-		ops_printf("Error: Number of FSI components inconsistent with actual components\n");
-		assert(noComp != numComponents);
-	}
+void  DefineFsiModel(std::vector<FluidParticleModel> fsiModel, std::vector<int> compoId,
+			std::vector<Real> variable, SizeType timeStep) {
 
-	if (noFSICompo != numComponents) {
-		ops_printf("Error: Number of fsiCompoId differs from actual number of components\n");
-		assert(noFSICompo != numComponents);
-	}
-
-	ParticleShapeDiscriptor particleType = (ParticleShapeDiscriptor) BlockParticleList
-			.at(0).GetParticleShape();
-	//find particle mapping schemes
-	int iter  = 0;
-	for (int iComp = 0; iComp < noComp; iComp++) {
-		fsiModel =  FluidParticleInteractionType.at(iComp);
-		if ( fsiModel == Model_PSM) {
-			if (iter == 0) {
-				if (particleType == spherical)
-					porosModel.push_back(Mode_Spherical);
-				else
-					porosModel.push_back(Mode_Grid);
-				iter = 1;
-			}
-			else
-				porosModel.push_back(Mode_Copy);
-		}
-		else if (fsiModel == Model_None)
-			porosModel.push_back(Mode_None);
-		else {
-			ops_printf("This type of model is not supported\n");
-			exit(EXIT_FAILURE);
-		}
-
-
-	}
-
-	if (particleType == spherical)
-		nelem = 2;
-	else
-		nelem = 8;
-
-
-	for (int iComp = 0; iComp < noComp; iComp++) {
-		fsiModel = (FSIType) FluidParticleInteractionType.at(iComp);
-
-		idCompo = components.at(iComp).id;
-
-		switch (fsiModel) {
-			case Model_None: {
-#ifdef CPU
-	#if DebugLevel >= 2
-		ops_printf("Base scheme (no fluid-particle interactions assigned to component %d\n", idCompo);
-	#endif
-#endif
-				std::shared_ptr<FsiBase> model(new FsiBase( components.at(iComp),
-						SpaceDim(), forceUser, false,  porosModel.at(iComp), gamma));
-				fluidPartInteractionModels.insert(std::make_pair(idCompo, model));
-			}
-				break;
-			case Model_PSM: {
-
-//#ifdef CPU
-//	#if 	DebugLevel >= 2
-				ops_printf("PSM scheme used for component %d\n", idCompo);
-//	#endif
-//#endif
-				std::shared_ptr<FsiBase> model(new Psm(components.at(iComp), SpaceDim(),
-						forceUser, true , porosModel.at(iComp), gamma, nelem,
-						particleType));
-				fluidPartInteractionModels.insert(std::make_pair(idCompo, model));
-				}
-				break;
-			default:
-				ops_printf("The chosen model is not supported\n");
-				exit(EXIT_FAILURE);
-		}
-
-
-
-	}
-
-	for (auto& interactionModel : fluidPartInteractionModels) {
-		interactionModel.second->DefineVariables(timeStep);
-	}
-
+	DefineInteractionModels(fsiModel, compoId, variable, timeStep);
 }
 void UpdateParticleMappingDragForceRestart(SizeType currentStep) {
 
@@ -269,61 +181,73 @@ void ParticleEnvelopes() {
 		if (blockParticle.second.OwnedStatus())
 			blockParticle.second.FindStencil();
 	}
+
+	/*	for (auto &blockParticle : BlockParticleList) {
+			int iD = blockParticle.second.GetBlock().ID();
+				if (blockParticle.second.OwnedStatus()) {
+					int Np = blockParticle.second.NParticles;
+					for (int iPar = 0; iPar < Np ; iPar++) {
+						Particle& particle = blockParticle.second.particleList.at(iPar);
+						printf("Rank %d at block %d: Stencil of Particle %d ([%f %f %f])[%d %d] x [%d %d] x [%d %d] cells\n",
+								ops_get_proc(), iD, iPar, particle.xParticle[0], particle.xParticle[1], particle.xParticle[2],
+								particle.stenList[0], particle.stenList[1], particle.stenList[2],
+								particle.stenList[3], particle.stenList[4], particle.stenList[5]);
+					}
+				}
+			}*/
+
 }
 
-void MappingParticlesToLBMGrid() {
-
-	for (auto& fsi : fluidPartInteractionModels) {
-		fsi.second->MappingFunction(true);
-	}
 
 
-
-}
-
-void UpdateParticlesToLBMGrid() {
-	for (auto& fsi : fluidPartInteractionModels) {
-		fsi.second->MappingFunction(false);
-	}
-}
-
+//Modified
 void PostVelocityFSIFunctions() {
 
-	for (auto &fsi : fluidPartInteractionModels) {
-		fsi.second->PostVelocityCalculation();
+	for (auto& fsi : fpiModels) {
+		if (fsi.second->OwnedPostVelocity())
+			FSIVelocityFunctions(fsi.second);
 	}
 }
 
+//Modified
 void PreCollisionFSIFunctions() {
 
-	for (auto &fsi : fluidPartInteractionModels) {
-		fsi.second->PreCollision();
+	for (auto &fsi : fpiModels) {
+		if (fsi.second->OwnedPreCollision())
+			FsiPreCollisionFunction(fsi.second);
 	}
 
 }
 
+//modified
 void PostStreamingFSIFunctions() {
 
-	for (auto &fsi : fluidPartInteractionModels) {
-		fsi.second->PostStreaming();
+	for (auto &fsi : fpiModels) {
+		if (fsi.second->OwnedPostStreaming())
+			FsiPostCollisionFunction(fsi.second);
 	}
 
 }
-
+//modified
 void CalculateParticleMomentum() {
 
-	for (auto &fsi :  fluidPartInteractionModels) {
-		fsi.second->CalculateDragForce();
+	for (auto &fsi : fpiModels) {
+		if (fsi.second->OwnedDragForce())
+			FsiCalculateDragForce(fsi.second);
 	}
 }
 
+//modified
 void InitializeFSILists() {
 
-	for (auto &fsi : fluidPartInteractionModels) {
-		fsi.second->InitializeVariables();
+	for (auto &fsi : fpiModels) {
+		if (fsi.second->OwnedInitialize());
+		FsiInitializeFunction(fsi.second);
 	}
-}
 
+	InitializeMappingLists();
+}
+//modified.
 void FluidParticleCollisions() {
 
 	int loop[2];
@@ -339,14 +263,16 @@ void FluidParticleCollisions() {
 	CollisionType collisionModel;
 	Real tauRef;
 	int componentId, rhoId, Tid;
-	for (auto &fsi : fluidPartInteractionModels) {
+	for (auto &fsi : fpiModels) {
 
-		if (fsi.second->collisionOwned) {
-			fsi.second->ModelCollision();
+		if (fsi.second->OwnedCollisionModel()) {
+			FsiCollisionFunction(fsi.second);
 		}
 		else {
 			//TODO need to obtain the id of the
-			fsi.second->ObtainID(velId, loop, tauRef, collisionModel,componentId, rhoId, Tid);
+			ObtainData(fsi.second, velId,loop, tauRef, collisionModel, componentId, rhoId,
+					Tid);
+
 			PreDefinedCollision3D(velId, loop, tauRef, collisionModel, componentId, rhoId, Tid);
 		}
 
@@ -379,11 +305,14 @@ void UpdateFPIVelocities3D() {
 
 }
 
+
 void WriteFPIDataToHdf5(SizeType currentStep) {
 
-	for (auto &fsi : fluidPartInteractionModels) {
+	for (auto &fsi : fpiModels) {
 		fsi.second->WriteToHdf5(CaseName(), currentStep);
 	}
+
+	WriteParticleMappingToHDF5(currentStep);
 
 }
 
@@ -436,10 +365,11 @@ void DefineBlockOwnership() {
 
 }
 
-void DefineLocalBoxBound() {
+/*void DefineLocalBoxBound() {
 
 	for (auto& blockParticle : BlockParticleList) {
 		if (blockParticle.second.owned)
 			blockParticle.second.FindBoxLocalBound();
 	}
 }
+*/

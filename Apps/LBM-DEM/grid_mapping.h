@@ -28,62 +28,26 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
-/*! @brief Base class for fluid-particle interaction modeling
- *  @author C. Tsigginos
- *  Discription: Base class for handling the fluid-particle interactions
- **/
+/*!
+ * @brief   Wrapper functions for mapping particles into LBM grid via the subcell method
+ * @author  C. Tsigginos
+ */
+#ifndef GRID_MAPPING_H_
+#define GRID_MAPPING_H_
 
-#include "fsi_base.h"
-#include <cmath>
-FsiBase::FsiBase(Component& compoUser, int spacedim, Real* forceUser, bool owned,
-		SolFracType porosUser, Real gammaUser) : compo{compoUser}{
+#include "type.h"
+#include "flowfield.h"
+#include "scheme.h"
+#include "dem_data.h"
+#include "mapping_particles.h"
+#include <vector>
+#include <memory>
 
-	gamma = gammaUser;
-	spaceDim = spacedim;
-	porosModel =  porosUser;
+void ParticleProjectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
+								  int component);
+void UpdateProjectectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
+								   int component);
 
-	force = new Real[spaceDim];
-	Real sumF = 0.0;
-	for (int iDim = 0; iDim < spaceDim; iDim++) {
-		force[iDim] = forceUser[iDim];
-		sumF += abs(force[iDim]);
-	}
-
-	forceFlag = 0;
-	if (sumF != 0.0)
-		forceFlag = 1;
-	collisionOwned = owned;
-
-}
-
-FsiBase::~FsiBase() {
-
-	delete[] force;
-}
-
-void FsiBase::ObtainID(int* idVel, int* loop, Real& tauCompo, CollisionType& collisModel,
-		int& idComponent,int& rhoId,int &thId) {
-
-	idVel[0] = compo.uId;
-	idVel[1] = compo.vId;
-
-#if OPS_3D
-	idVel[2] = compo.wId;
-#endif
-
-	loop[0] = compo.index[0];
-	loop[1] = compo.index[1];
-	tauCompo = compo.tauRef;
-	collisModel = compo.collisionType;
-	idComponent = compo.id;
-
-	rhoId = compo.macroVars.at(Variable_Rho).id;
-
-	if (isThermalModel == 1)
-		thId = compo.macroVars.at(Variable_T).id;
-	else
-		thId = -1;
-
-}
+#endif /* APPS_LBM_DEM_NOP_SPHERICAL_MAPPING_H_ */
