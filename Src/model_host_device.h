@@ -62,6 +62,7 @@ static inline OPS_FUN_PREFIX Real CalcBGKGeqAD(const int l, const Real C, const 
              CS * XI[l * LATTDIM + 1] * CS * XI[l * LATTDIM + 1])};
     Real cu2{cu * cu};
     Real u2{u * u + v * v};
+
     Real res = 1.0 + cu + 0.5 * (cu2 - u2 + (T - 1.0) * (c2 - LATTDIM));
     if ((polyOrder) >= 3) {
         res = res +

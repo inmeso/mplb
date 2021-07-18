@@ -687,4 +687,46 @@ void PreDefinedInitialCondition() {
     }
 #endif // OPS_2D
 }
+
+void PreDefinedInitialConditionAD() {
+#ifdef OPS_2D
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        for (const auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            const int compoId{compo.id};
+            const InitialType initialType{compo.initialType};
+            switch (initialType) {
+                case Initial_BGKFeq2ndAD: {
+                    ops_par_loop(
+                        KerInitialiseBGKAD, "KerInitialiseBGK2nd",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(g_NodeType().at(compoId).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_Concentration()[blockIndex],
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                } break;
+                default:
+                    ops_printf(
+                        "The specified initial type is not implemented!\n");
+                    break;
+            }
+        }
+    }
+    // TODO this may be better arranged.
+    if (!IsTransient()) {
+        CopyCurrentMacroVar();
+    }
+#endif // OPS_2D
+}
 #endif //OPS_2D outter

@@ -99,13 +99,13 @@ void UpdateMacroscopicBodyForce(const Real time) {}
 
 void simulate() {
 
-    std::string caseName{"2D_lid_Driven_cavity"};
+    std::string caseName{"Advection_Diffusion"};
     SizeType spaceDim{2};
     DefineCase(caseName, spaceDim);
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{51, 51};
-    Real meshSize{1. / 50};
+    std::vector<int> blockSize{512, 512};
+    Real meshSize{1. / 511};
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
@@ -133,13 +133,16 @@ void simulate() {
     SchemeType scheme{Scheme_StreamCollision};
     DefineScheme(scheme);
 
-    std::vector<InitialType> initType{Initial_BGKFeq2nd};
+    std::vector<InitialType> initType{Initial_BGKFeq2ndAD};
     std::vector<SizeType> initalCompoId{0};
     DefineInitialCondition(initType,initalCompoId);
     Partition();
     ops_diagnostic_output();
     SetInitialMacrosVars();
-    PreDefinedInitialCondition();
+    std::cout << "test\n";
+    UpdateConcentration();
+    std::cout << "test1\n"; 
+    PreDefinedInitialConditionAD();
     SetTimeStep(meshSize / SoundSpeed());
 
     const Real convergenceCriteria{1E-7};

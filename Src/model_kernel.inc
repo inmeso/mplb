@@ -275,7 +275,7 @@ void KerInitialiseBGKAD(ACC<Real>& g, const ACC<int>& nodeType,
         const Real T{1};
         const int polyOrder{2};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            Real C{Conc(xiIdx,0)};
+            Real C{Conc(0,0)};
             g(xiIdx, 0, 0) = CalcBGKGeqAD(xiIdx, C, u, v, T, polyOrder);
 #ifdef CPU
             const Real res{g(xiIdx, 0, 0)};
@@ -312,7 +312,7 @@ void KerCollideBGKAD(ACC<Real>& fStage, const ACC<Real>& g,
         Real tau = (*tauRef);
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-            Real C{Conc(xiIndex,0)};
+            Real C{Conc(0,0)};
             const Real geq{CalcBGKGeqAD(xiIndex, C, u, v, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
                 fStage(xiIndex, 0, 0) =

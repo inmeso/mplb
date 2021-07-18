@@ -79,7 +79,7 @@ RealFieldGroup& g_MacroVarsCopy() { return MacroVarsCopy; };
 
 RealField Concentration{"Concentration"};
 RealField& g_Concentration() { return Concentration; };
-Real Time{1};
+Real Time{0.0};
 Real* g_Time() { return &Time; };
 void UpdateTime(Real time) { Time = time; };
 
@@ -126,6 +126,7 @@ void WriteFlowfieldToHdf5(const SizeType timeStep) {
     CoordinateXYZ.WriteToHDF5(CASENAME, timeStep);
     for (const auto& force : MacroBodyforce) {
         force.second.WriteToHDF5(CASENAME, timeStep);
+    Concentration.WriteToHDF5(CASENAME, timeStep);
     }
 }
 
@@ -227,6 +228,8 @@ void DefineBlocks(const std::vector<int>& blockIds,
     //NodeType.CreateFieldFromScratch(BLOCKS);
     CoordinateXYZ.SetDataDim(SPACEDIM);
     CoordinateXYZ.CreateFieldFromScratch(BLOCKS);
+    Concentration.SetDataDim(1);
+    Concentration.CreateFieldFromScratch(BLOCKS);
     GeometryProperty.CreateFieldFromScratch(BLOCKS);
 }
 void PrepareFlowField() {

@@ -101,7 +101,7 @@ enum CollisionType {
 
 enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };
 
-enum InitialType {Initial_BGKFeq2nd = 1};
+enum InitialType {Initial_BGKFeq2nd = 1, Initial_BGKFeq2ndAD = 2};
 
 struct MacroVariable {
     std::string name;
@@ -175,6 +175,7 @@ void PreDefinedCollision3D();
 void UpdateMacroVars();
 void PreDefinedBodyForce();
 void PreDefinedInitialCondition();
+void PreDefinedInitialConditionAD();
 void PreDefinedCollision();
 void PreDefinedCollisionAD();
 #endif
