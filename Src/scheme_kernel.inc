@@ -51,7 +51,7 @@
 #ifdef OPS_2D  // two dimensional code
 
 void KerStream(ACC<Real>&f, const ACC<Real>&fStage, const ACC<int>&nodeType,
-    const ACC<int>&geometry, const int *lattIdx) {
+    const ACC<int>&geometry, const int *lattIdx, const int *idx) {
 #ifdef OPS_2D
     VertexType vt = (VertexType)nodeType(0, 0);
     VertexGeometryType vg = (VertexGeometryType)geometry(0, 0);
@@ -62,6 +62,7 @@ void KerStream(ACC<Real>&f, const ACC<Real>&fStage, const ACC<int>&nodeType,
         if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
             vt == VertexType::VirtualBoundary) {
             f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
+            
             continue;
         }
         // Block boundary and immersed boundary

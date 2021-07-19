@@ -51,7 +51,8 @@ void Stream() {
                             LOCALSTENCIL, "int", OPS_READ),
                 ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
                             LOCALSTENCIL, "int", OPS_READ),
-                ops_arg_gbl(compo.second.index, 2, "int", OPS_READ));
+                ops_arg_gbl(compo.second.index, 2, "int", OPS_READ),
+                ops_arg_idx());
         }
     }
 #endif // OPS_2D

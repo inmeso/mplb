@@ -104,10 +104,27 @@ void simulate() {
     DefineCase(caseName, spaceDim);
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{512, 512};
-    Real meshSize{1. / 511};
+    std::vector<int> blockSize{50, 50};
+    Real meshSize{1. / 49};
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
+
+    std::vector<int> fromBlockIds{0, 0, 0, 0};
+    std::vector<int> toBlockIds{0, 0, 0, 0};
+
+    std::vector<BoundarySurface> fromBoundarySurface{
+        BoundarySurface::Left, BoundarySurface::Right, BoundarySurface::Top,
+        BoundarySurface::Bottom};
+    std::vector<BoundarySurface> toBoundarySurface{
+        BoundarySurface::Right, BoundarySurface::Left, BoundarySurface::Bottom,
+        BoundarySurface::Top};
+    std::vector<VertexType> blockConnectionType{
+        VertexType::MDPeriodic, VertexType::MDPeriodic, VertexType::MDPeriodic,
+        VertexType::MDPeriodic};
+
+    DefineBlockConnection(fromBlockIds, fromBoundarySurface, toBlockIds,
+                          toBoundarySurface, blockConnectionType);
+
 
     std::vector<std::string> compoNames{"Fluid"};
     std::vector<int> compoid{0};
@@ -132,6 +149,27 @@ void simulate() {
 
     SchemeType scheme{Scheme_StreamCollision};
     DefineScheme(scheme);
+
+    // Setting boundary conditions
+    SizeType componentId{0};
+    std::vector<VariableTypes> macroVarTypesatBoundary{
+        Variable_U, Variable_V};
+    std::vector<Real> noSlipStationaryWall{0, 0};
+
+    // Periodic Boundary Conditions
+    DefineBlockBoundary(0, componentId, BoundarySurface::Top,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Bottom,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Left,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Right,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+
 
     std::vector<InitialType> initType{Initial_BGKFeq2ndAD};
     std::vector<SizeType> initalCompoId{0};

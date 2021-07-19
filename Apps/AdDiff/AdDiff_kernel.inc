@@ -43,18 +43,19 @@ void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
 //ADCase
 
 void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex, const Real* TIME, const ACC<Real>& U, const ACC<Real>& V, const Real* Dt) {
-    Real Sig02{100.0};
-    Real DiffCFact{1.5};
+    Real Sig02{200.0};
+    Real DiffCFact{3.0};
     Real dt = {*Dt};
     Real time = {*TIME};
     Real DiffC{DiffCFact/dt};
     Real x0[2] = {200.0,200.0};
     Real Vel[2] = {U(0,0),V(0,0)};
-    Real SigD2{2*DiffC*time};
+    Real SigD2{2*DiffC*time*0};
     Real Pref{Sig02/(Sig02+SigD2)};
-    Real xiIndexVar[2] = {xiIndex(0,0)};
-    Real numeru{(xiIndexVar[0]-x0[0]-Vel[0]*time)};
-    Real numerv{(xiIndexVar[1]-x0[1]-Vel[1]*time)};
+    Real xiIndexVar1 = {xiIndex(0,0,0)};
+    Real xiIndexVar2 = {xiIndex(1,0,0)};
+    Real numeru{(24.0*xiIndexVar1-x0[0]-Vel[0]*time*0)};
+    Real numerv{(24.0*xiIndexVar2-x0[1]-Vel[1]*time*0)};
     Real numer2{numeru*numeru+numerv*numerv};
     Real Gauss{exp(-numer2/(2*(Sig02+SigD2)))};
 

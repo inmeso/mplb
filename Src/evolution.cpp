@@ -163,7 +163,7 @@ void StreamCollision(const Real time) {
 #endif
 #ifdef OPS_2D
     UpdateTime(time);
-    UpdateConcentration();
+    //UpdateConcentration();
     PreDefinedCollisionAD();
 #endif
 

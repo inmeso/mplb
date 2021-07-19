@@ -59,9 +59,10 @@ void KerCalcDensity(ACC<Real>& Rho, const ACC<Real>& f,
 #ifdef OPS_2D
     VertexType vt = (VertexType)nodeType(0, 0);
     if (vt != VertexType::ImmersedSolid) {
-        Real rho{0};
+        Real rho{1.0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            rho += f(xiIdx, 0, 0);
+        //    rho += f(xiIdx, 0, 0);
+        //    rho += 0;
         }
 #ifdef CPU
         if (isnan(rho) || rho <= 0 || isinf(rho)) {
@@ -331,6 +332,7 @@ void KerCollideBGKAD(ACC<Real>& fStage, const ACC<Real>& g,
                     "x=%e y=%e\n",
                     res, xiIndex, geq, Conc, u, v, coordinates(0, 0, 0),
                     coordinates(1, 0, 0));
+                std::cout << C << "Conc\n";
                 assert(!(isnan(res) || res <= 0 || isinf(res)));
             }
 #endif  // CPU
