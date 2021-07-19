@@ -1,0 +1,34 @@
+# Defines stages which are to be executed
+stages:
+  - Build
+
+# Stage "build"
+build:GNU:Dev:
+  stage: Build
+  tags:
+    - GPU
+  script:
+    - mkdir build
+    - cd build
+    - cmake ../  -DOPS_ROOT=/usr/local/OPSCMake -DOPTIMISE=OFF
+    - cmake --build .
+  artifacts:
+    expire_in: 1 week
+    paths:
+    - $CI_PROJECT_DIR/build/Apps
+
+build:GNU:Opt:
+  stage: Build
+  tags:
+    - GPU
+  script:
+    - mkdir build-opt
+    - cd build-opt
+    - cmake ../  -DOPS_ROOT=/usr/local/OPSCMake -DOPTIMISE=ON
+    - cmake --build .
+  artifacts:
+    expire_in: 1 week
+    paths:
+    - $CI_PROJECT_DIR/build-opt/Apps
+
+
