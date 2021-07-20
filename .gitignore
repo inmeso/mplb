@@ -24,6 +24,7 @@ UDF_Function.cpp
 /.cproject
 /.project
 /.vscode
+/build
 
 #Object files.
 lbm2d_hilemms_dev_seq

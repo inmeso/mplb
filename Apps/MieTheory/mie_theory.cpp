@@ -34,7 +34,7 @@
  * @brief The application is to demostrate how to calculate the Mie solution
  * of the Maxwell equation at a mesh.
  *
- * @author Sina Haeri and Jianping Meng
+ * @author Sina Haeri (s.haeri@ed.ac.uk) and Jianping Meng
  */
 
 #include <iostream>
