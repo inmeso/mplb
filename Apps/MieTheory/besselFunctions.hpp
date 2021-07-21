@@ -33,7 +33,8 @@
 /**
  * @brief This is a part of MieLAM software package. besselFunctions class
  * implements robust and stable algorithms for calculation of Bessel functions
- * of complex argument and integer degree with arbitrary precision. 
+ * of complex argument and integer degree (with arbitrary precision but this
+ * capability is removed here). 
  *
  * @author Sina Haeri (s.haeri@ed.ac.uk)
  * @author Soroosh Haeri (soroosh.haeri@gmail.com)
@@ -50,31 +51,31 @@
 #include <iostream>
 #include <exception>
 
-template<typename intType, typename floatType, typename complexType>
 class besselFunctions
 {
 private:
 
+    typedef std::complex<double> complexType;
     typedef Eigen::Array<complexType, Eigen::Dynamic, 1> array1DComplexType;
     const complexType c_i {"0.0e+00", "1.0e+00"};
     const complexType c_one {"1.0e+00", "0.0e+00"};
-    const floatType one = floatType("1.0");
-    const floatType zero = floatType("0.0");
-    const floatType two = floatType("2.0");
-    const floatType mtwo = floatType("-2.0");
-    const floatType half = floatType("0.5");
+    const double one = double("1.0");
+    const double zero = double("0.0");
+    const double two = double("2.0");
+    const double mtwo = double("-2.0");
+    const double half = double("0.5");
 
-    intType _maxOrder;
+    int _maxOrder;
     complexType _argument;
     array1DComplexType _sphBesselj, _sphBessely, _sphBesselk;
     array1DComplexType _riccatiBesselRatio;
-    floatType _minReal = std::numeric_limits<floatType>::min();
+    double _minReal = std::numeric_limits<double>::min();
 
-    void _calculateAllSphBessel(intType orderFrom)
+    void _calculateAllSphBessel(int orderFrom)
     {
-        intType maxRequired = _maxOrder + 1;
-        intType nelem = maxRequired - orderFrom + 1;
-        intType ii;
+        int maxRequired = _maxOrder + 1;
+        int nelem = maxRequired - orderFrom + 1;
+        int ii;
 
         complexType oneOArg = one / _argument;
         complexType sphBesselj0 = sin(_argument) * oneOArg;
@@ -86,7 +87,7 @@ private:
 
         for(ii = orderFrom; ii <= maxRequired; ++ii)
         {
-            _riccatiBesselRatio(ii) = floatType(-ii) / _argument +
+            _riccatiBesselRatio(ii) = double(-ii) / _argument +
                 _riccatiBesselRatioCFractions(ii, _argument);
         }
 
@@ -131,11 +132,11 @@ private:
         }
     }
 
-    complexType _sphBesseljCFractions(intType n, complexType z)
+    complexType _sphBesseljCFractions(int n, complexType z)
     {
         using boost::math::float_distance;
         complexType numProduct, denProduct, nextTermNum, nextTermDen;
-        intType ii,jj;
+        int ii,jj;
 
         if(!n) return one;
 
@@ -167,12 +168,12 @@ private:
         return denProduct / numProduct;
     }
 
-    complexType _riccatiBesselRatioCFractions(intType n, complexType z)
+    complexType _riccatiBesselRatioCFractions(int n, complexType z)
     {
         using boost::math::float_distance;
         complexType numProduct, denProduct, nextTermNum, nextTermDen;
-        floatType nu;
-        intType ii;
+        double nu;
+        int ii;
 
         nu = n + half;
         ii = 1;
@@ -202,12 +203,12 @@ private:
         return numProduct / denProduct;
     }
 
-    inline complexType _bnm(intType n, intType m, complexType z)
+    inline complexType _bnm(int n, int m, complexType z)
     {
         return two * (n + m - half) / z;
     }
 
-    inline complexType _anun(intType n, floatType nu, complexType z)
+    inline complexType _anun(int n, double nu, complexType z)
     {
         if(functions::isOdd(n+1))
         {
@@ -234,7 +235,7 @@ public:
         _calculateAllSphBessel(0);
     }
 
-    besselFunctions(intType n, complexType z)
+    besselFunctions(int n, complexType z)
     {
         BOOST_ASSERT_MSG(n >= 0,
             "The besselFunctions class is only defined for n >= 0.");
@@ -251,7 +252,7 @@ public:
         _calculateAllSphBessel(0);
     }
 
-    besselFunctions(intType n) :
+    besselFunctions(int n) :
     _argument(one)
     {
         BOOST_ASSERT_MSG(n >= 0,
@@ -298,14 +299,14 @@ public:
 
     }
 
-    void setMaxOrder(intType n)
+    void setMaxOrder(int n)
     {
         BOOST_ASSERT_MSG(n >= 0,
             "The besselFunctions class is only defined for n >= 0.");
 
         if( n > _maxOrder )
         {
-            intType oldOrder = _maxOrder;
+            int oldOrder = _maxOrder;
             _maxOrder = n;
             _sphBesselj.conservativeResize(_maxOrder+2);
             _sphBessely.conservativeResize(_maxOrder+2);
@@ -345,7 +346,7 @@ public:
         return _riccatiBesselRatio.segment(1,_maxOrder);
     }
 
-    array1DComplexType computeRiccatiBesselPsi(intType startFrom)
+    array1DComplexType computeRiccatiBesselPsi(int startFrom)
     {
         BOOST_ASSERT_MSG(startFrom == 1 || !startFrom,
             "The computeRiccatiBesselPsi function only takes 0 and 1");
@@ -357,7 +358,7 @@ public:
         return _argument * _sphBessely.segment(1,_maxOrder);
     }
 
-    array1DComplexType computeRiccatiBesselXi(intType startFrom)
+    array1DComplexType computeRiccatiBesselXi(int startFrom)
     {
         BOOST_ASSERT_MSG(startFrom == 1 || !startFrom,
             "The computeRiccatiBesselXi function only takes 0 and 1");

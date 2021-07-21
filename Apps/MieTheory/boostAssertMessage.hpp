@@ -31,9 +31,8 @@
  */
 
 /**
- * @brief This is a part of MieLAM software package. besselFunctions class
- * implements robust and stable algorithms for calculation of Bessel functions
- * of complex argument and integer degree with arbitrary precision. 
+ * @brief This is a part of MieLAM software package. assertion_failed_msg
+ * throws a full error message and terminates the application. 
  *
  * @author Sina Haeri (s.haeri@ed.ac.uk)
  * @author Soroosh Haeri (soroosh.haeri@gmail.com)
@@ -47,18 +46,19 @@
 #include <iostream>
 #include <exception>
 #include <boost/assert.hpp>
+#include "ops_lib_core.h"
 
 void boost::assertion_failed_msg(char const * expr,
                                  char const * msg,
                                  char const * function,
                                  char const * file, long line)
     {
-       std::cout << "Violating: " << expr << std::endl;
-       std::cout << "In function: " << function << std::endl;
-       std::cout << "In file: " << file << std::endl;
-       std::cout << "On line: " << line << std::endl;
-       std::cout << msg << std::endl;
-       throw std::exception();
-   }
+      ops_printf("\nViolating: %s\n", expr);
+      ops_printf("In function: %s\n", function);
+      ops_printf("In file: %s\n", file);
+      ops_printf("On Line: %s\n", line);
+      ops_printf("ERROR: %s\n", msg);
+      throw std::exception();
+    }
 
 #endif //BOOST_ASSERT_MSG_HPP
