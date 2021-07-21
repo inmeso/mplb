@@ -57,19 +57,21 @@ private:
 
     typedef std::complex<double> complexType;
     typedef Eigen::Array<complexType, Eigen::Dynamic, 1> array1DComplexType;
-    const complexType c_i {"0.0e+00", "1.0e+00"};
-    const complexType c_one {"1.0e+00", "0.0e+00"};
-    const double one = double("1.0");
-    const double zero = double("0.0");
-    const double two = double("2.0");
-    const double mtwo = double("-2.0");
-    const double half = double("0.5");
+    const double one = double(1.0);
+    const double zero = double(0.0);
+    const double two = double(2.0);
+    const double mtwo = double(-2.0);
+    const double half = double(0.5);
+    const complexType c_i = {zero, one};
+    const complexType c_one = {one, zero};
 
     int _maxOrder;
     complexType _argument;
     array1DComplexType _sphBesselj, _sphBessely, _sphBesselk;
     array1DComplexType _riccatiBesselRatio;
     double _minReal = std::numeric_limits<double>::min();
+
+    static inline int _isOdd(int x) { return x & 1; }
 
     void _calculateAllSphBessel(int orderFrom)
     {
@@ -210,7 +212,7 @@ private:
 
     inline complexType _anun(int n, double nu, complexType z)
     {
-        if(functions::isOdd(n+1))
+        if(_isOdd(n+1))
         {
             return mtwo * (nu + n - one) / z;
         }
@@ -226,7 +228,7 @@ private:
 public:
 
     besselFunctions() :
-        _argument(one), _maxOrder(0),
+        _maxOrder(0), _argument(one),
         _sphBesselj(array1DComplexType::Constant(2, 1, zero)),
         _sphBessely(array1DComplexType::Constant(2, 1, zero)),
         _sphBesselk(array1DComplexType::Constant(2, 1, zero)),
@@ -242,8 +244,8 @@ public:
         BOOST_ASSERT_MSG(abs(z.imag()) >= _minReal || abs(z.real()) >= _minReal,
                 "The besselFunctions class is only defined for abs(z) > 0");
 
-        _argument = z;
         _maxOrder = n;
+        _argument = z;
         _sphBesselj = array1DComplexType::Constant(n+2, 1, zero);
         _sphBessely = array1DComplexType::Constant(n+2, 1, zero);
         _sphBesselk = array1DComplexType::Constant(n+2, 1, zero);
@@ -268,8 +270,8 @@ public:
     }
 
     besselFunctions(const besselFunctions& other) :
-        _argument( other._argument ),
         _maxOrder( other._maxOrder ),
+        _argument( other._argument ),
         _sphBesselj( other._sphBesselj ),
         _sphBessely( other._sphBessely ),
         _sphBesselk( other._sphBesselk ),

@@ -1,5 +1,11 @@
 
 cmake_minimum_required(VERSION 3.18)
+find_package(Eigen3 3.2 REQUIRED)
+FIND_PACKAGE(Boost 1.68.0 REQUIRED)
+
+INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+
 set(AppName MieTheory)
 set(AppSrc mie_theory.cpp)
 set(LibSrc  block.cpp)

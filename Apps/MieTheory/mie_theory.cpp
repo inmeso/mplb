@@ -46,12 +46,21 @@
 #include <vector>
 #include <map>
 #include "mie_theory_kernel.inc"
+#include "besselFunctions.hpp"
 
 int main(int argc, const char** argv) {
     // OPS initialisation
+    typedef std::complex<double> complexType;
+
     ops_init(argc, argv, 4);
     double ct0, ct1, et0, et1;
     ops_timers(&ct0, &et0);
+    
+    // Bessel Function Container
+    int maxOrder {5};
+    complexType besselArgz (5.0e-01, 5.0e-01);
+    besselFunctions bessels(maxOrder, besselArgz);
+    
     // set the space dimension
     const int spaceDim{3};
     // Also define the variable in the GPU memory space.
