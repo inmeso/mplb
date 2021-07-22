@@ -223,8 +223,6 @@ private:
 
     }
 
-
-
 public:
 
     besselFunctions() :

@@ -1,0 +1,17 @@
+{
+  "CaseName": "SimpleMie",
+  "spaceDim": 3,
+  "blockSize": [101, 101, 101],
+  "partRadius": 1.0E-5,
+  "partPermeability": 1.0,
+  "envPermeability": 1.0,
+  "partRefractiveIndex":{
+    "real": 1.5,
+    "imag": 0.005
+  },
+  "envRefractiveIndex":{
+      "real": 1.0,
+      "imag": 0.0
+  },
+  "vaccumWaveLength": 1.0E-6
+}

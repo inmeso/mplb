@@ -45,8 +45,9 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "mie_theory_kernel.inc"
 #include "besselFunctions.hpp"
+#include "MieConfig.h"
+#include "mie_theory_kernel.inc"
 
 int main(int argc, const char** argv) {
     // OPS initialisation
@@ -56,59 +57,74 @@ int main(int argc, const char** argv) {
     double ct0, ct1, et0, et1;
     ops_timers(&ct0, &et0);
     
+    // start a simulation by hard-coding
+    BOOST_ASSERT_MSG(argc != 1,
+        "Provide the name of the input configuration file <input name>.json");
+        
+    // start a new simulaton from a configuration file
+    std::string configFileName(argv[1]);
+    ReadConfiguration(configFileName);
+    
+    std::cout << Config().vaccumWaveLength << std::endl;
+    std::cout << Config().partRefractiveIndex << std::endl;
+    std::cout << Config().spaceDim << std::endl;
+    for (std::vector<int>::const_iterator i = Config().blockSize.begin(); 
+         i != Config().blockSize.end(); ++i) std::cout << *i << ' ';
     // Bessel Function Container
     int maxOrder {5};
     complexType besselArgz (5.0e-01, 5.0e-01);
     besselFunctions bessels(maxOrder, besselArgz);
     
-    // set the space dimension
-    const int spaceDim{3};
     // Also define the variable in the GPU memory space.
-    ops_decl_const("spaceDim", 1, "int", &spaceDim);
-    const std::string caseName{"Mie"};
+    ops_decl_const("spaceDim", 1, "int", &(Config().spaceDim));
+    
     // Set a stencil for numerical schemes
     // here we only need the local(current) grid point
     int currentNode[]{0, 0, 0};
     ops_stencil LOCALSTENCIL = ops_decl_stencil(3, 1, currentNode, "000");
+   
     // input the mesh size here
     // we assume only one block in this simple case
-    std::vector<int> blockSize{101, 101, 101};
-    Block block(0, "Block", blockSize);
+    Block block(0, "Block", Config().blockSize);
     RealField coordinates("coordinates");
-    coordinates.SetDataDim(spaceDim);
+    coordinates.SetDataDim(Config().spaceDim);
     coordinates.CreateFieldFromScratch(block);
+    
     RealField E("E");
-    E.SetDataDim(spaceDim);
+    E.SetDataDim(Config().spaceDim);
     E.CreateFieldFromScratch(block);
+    
     RealField H("H");
-    H.SetDataDim(spaceDim);
+    H.SetDataDim(Config().spaceDim);
     H.CreateFieldFromScratch(block);
+    
     ops_partition("Mie");
     ops_diagnostic_output();
     std::vector<int> iterRng;
     iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+    
     // set the coordinates
-    ops_par_loop(KerSetSphericalCoord, "KerSetSphericalCoord", block.Get(), spaceDim,
-                 iterRng.data(),
-                 ops_arg_dat(coordinates[block.ID()], spaceDim, LOCALSTENCIL,
+    ops_par_loop(KerSetSphericalCoord, "KerSetSphericalCoord", block.Get(), 
+                 Config().spaceDim, iterRng.data(),
+                 ops_arg_dat(coordinates[block.ID()], Config().spaceDim, LOCALSTENCIL,
                              "double", OPS_RW),
                  ops_arg_idx());
 
     // calculate the Mie solution
     ops_par_loop(
         KerCalculateMieSolution, "KerCalculateMieSolution", block.Get(),
-        spaceDim, iterRng.data(),
-        ops_arg_dat(E[block.ID()], spaceDim, LOCALSTENCIL, "double", OPS_RW),
-        ops_arg_dat(H[block.ID()], spaceDim, LOCALSTENCIL, "double", OPS_RW),
-        ops_arg_dat(coordinates[block.ID()], spaceDim, LOCALSTENCIL, "double",
+        Config().spaceDim, iterRng.data(),
+        ops_arg_dat(E[block.ID()], Config().spaceDim, LOCALSTENCIL, "double", OPS_RW),
+        ops_arg_dat(H[block.ID()], Config().spaceDim, LOCALSTENCIL, "double", OPS_RW),
+        ops_arg_dat(coordinates[block.ID()], Config().spaceDim, LOCALSTENCIL, "double",
                     OPS_READ));
 
     ops_timers(&ct1, &et1);
     ops_printf("\nTotal Wall time %lf\n", et1 - et0);
     // Print OPS performance details to output stream
     ops_timing_output(std::cout);
-    coordinates.WriteToHDF5(caseName, 0);
-    E.WriteToHDF5(caseName, 0);
-    H.WriteToHDF5(caseName, 0);
+    coordinates.WriteToHDF5(Config().caseName, 0);
+    E.WriteToHDF5(Config().caseName, 0);
+    H.WriteToHDF5(Config().caseName, 0);
     ops_exit();
 }
