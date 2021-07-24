@@ -75,10 +75,11 @@ void simulate() {
     DefineCase(caseName, spaceDim);
     std::vector<int> blockIds{0, 1, 2};
     std::vector<std::string> blockNames{"Top", "Middle", "Right"};
-    std::vector<int> blockSize{33, 33, 33, 33, 33, 33, 33, 33, 33};
+    std::vector<int> blockSize{33, 32, 33, 33, 33, 33, 32, 33, 33};
     Real meshSize{1. / 32};
-    std::map<int, std::vector<Real>> startPos{
-        {1, {0.0, 0.0, 0.0}}, {2, {1.0, 0.0, 0.0}}, {0, {0.0, 1.0, 0.0}}};
+    std::map<int, std::vector<Real>> startPos{{0, {0.0, 1.0 + meshSize, 0.0}},
+                                              {1, {0.0, 0.0, 0.0}},
+                                              {2, {1.0 + meshSize, 0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
     std::vector<int> fromBlockIds{0, 1, 1, 2};
@@ -121,7 +122,9 @@ void simulate() {
     DefineScheme(scheme);
 
     // Setting boundary conditions
+    // There is only one component in this case
     int componentId{0};
+    // for the 0, top block
     std::vector<VariableTypes> macroVarTypesatBoundary{Variable_U, Variable_V,
                                                        Variable_W};
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
@@ -135,6 +138,7 @@ void simulate() {
                         noSlipStationaryWall);
 
     std::vector<Real> noSlipMovingWall{0, -0.001, 0};
+
     DefineBlockBoundary(0, componentId, BoundarySurface::Top,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipMovingWall);
@@ -149,6 +153,7 @@ void simulate() {
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
+    // for the 1, middle block
     DefineBlockBoundary(1, componentId, BoundarySurface::Left,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
@@ -156,6 +161,7 @@ void simulate() {
     DefineBlockBoundary(1, componentId, BoundarySurface::Right);
 
     DefineBlockBoundary(1, componentId, BoundarySurface::Top);
+    // To make sure that the RightTop edge is wall boundary
     DefineBlockBoundary(1, componentId, BoundarySurface::RightTop,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
@@ -172,6 +178,7 @@ void simulate() {
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
+    // for the 2, right block
     DefineBlockBoundary(2, componentId, BoundarySurface::Left);
     // pressure boundary condition
     std::vector<VariableTypes> pressureType{Variable_Rho};

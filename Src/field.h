@@ -243,7 +243,7 @@ void Field<T>::CreateHalos() {
                         disp = d_m[0];
                     }
                     if (type == VertexType::VirtualBoundary) {
-                        disp = d_m[0] - 1;
+                        disp = d_m[0];
                     }
 #ifdef OPS_3D
                     int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1],
@@ -270,7 +270,7 @@ void Field<T>::CreateHalos() {
                         disp = 0;
                     }
                     if (type == VertexType::VirtualBoundary) {
-                        disp = 1;
+                        disp = 0;
                     }
 #ifdef OPS_3D
                     int halo_iter[] = {haloDepth, ny + d_p[1] - d_m[1],
@@ -297,7 +297,7 @@ void Field<T>::CreateHalos() {
                         disp = 0;
                     }
                     if (type == VertexType::VirtualBoundary) {
-                        disp = 1;
+                        disp = 0;
                     }
 #ifdef OPS_3D
                     int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth,
@@ -323,7 +323,7 @@ void Field<T>::CreateHalos() {
                         disp = d_m[1];
                     }
                     if (type == VertexType::VirtualBoundary) {
-                        disp = d_m[1] - 1;
+                        disp = d_m[1];
                     }
 #ifdef OPS_3D
                     int halo_iter[] = {nx + d_p[0] - d_m[0], haloDepth,
@@ -351,7 +351,7 @@ void Field<T>::CreateHalos() {
                         disp = 0;
                     }
                     if (type == VertexType::VirtualBoundary) {
-                        disp = 1;
+                        disp = 0;
                     }
                     int halo_iter[] = {nx + d_p[0] - d_m[0],
                                        ny + d_p[1] - d_m[1], haloDepth};
@@ -371,7 +371,7 @@ void Field<T>::CreateHalos() {
                         disp = d_m[2];
                     }
                     if (type == VertexType::VirtualBoundary) {
-                        disp = d_m[2] - 1;
+                        disp = d_m[2];
                     }
                     int halo_iter[] = {nx + d_p[0] - d_m[0],
                                        ny + d_p[1] - d_m[1], haloDepth};
