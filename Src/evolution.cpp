@@ -145,6 +145,7 @@ void StreamCollision(const Real time) {
     UpdateMacroVars();
 #endif
     CopyBlockEnvelopDistribution(g_fStage(), g_f());
+    CopyBlockEnvelopDistribution(g_gStage(), g_g());
 #if DebugLevel >= 1
     ops_printf("Calculating the mesoscopic body force term...\n");
 #endif
@@ -162,9 +163,10 @@ void StreamCollision(const Real time) {
     PreDefinedCollision3D();
 #endif
 #ifdef OPS_2D
-    UpdateTime(time);
+    //UpdateTime(time);
     //UpdateConcentration();
     PreDefinedCollisionAD();
+    //PreDefinedCollision();
 #endif
 
 #if DebugLevel >= 1
@@ -180,6 +182,7 @@ void StreamCollision(const Real time) {
 #endif
 #ifdef OPS_2D
     Stream();
+    StreamAD();
 #endif
 
 #if DebugLevel >= 1

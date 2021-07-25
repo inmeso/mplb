@@ -59,10 +59,9 @@ void KerCalcDensity(ACC<Real>& Rho, const ACC<Real>& f,
 #ifdef OPS_2D
     VertexType vt = (VertexType)nodeType(0, 0);
     if (vt != VertexType::ImmersedSolid) {
-        Real rho{1.0};
+        Real rho{0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-        //    rho += f(xiIdx, 0, 0);
-        //    rho += 0;
+            rho += f(xiIdx, 0, 0);
         }
 #ifdef CPU
         if (isnan(rho) || rho <= 0 || isinf(rho)) {
@@ -97,7 +96,7 @@ void KerCalcU(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
             assert(!(isnan(u) || isinf(u)));
         }
 #endif
-        U(0, 0) = u;
+        //U(0, 0) = u;
     }
 #endif  // OPS_2D
 }
@@ -121,7 +120,7 @@ void KerCalcV(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
             assert(!(isnan(v) || isinf(v)));
         }
 #endif
-        V(0, 0) = v;
+        //V(0, 0) = v;
     }
 #endif  // OPS_2D
 }
@@ -271,12 +270,12 @@ void KerInitialiseBGKAD(ACC<Real>& g, const ACC<int>& nodeType,
 #ifdef OPS_2D
     VertexType vt = (VertexType)nodeType(0, 0);
     if (vt != VertexType::ImmersedSolid) {
+        Real C{Conc(0,0)};
         Real u{U(0, 0)};
         Real v{V(0, 0)};
         const Real T{1};
         const int polyOrder{2};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            Real C{Conc(0,0)};
             g(xiIdx, 0, 0) = CalcBGKGeqAD(xiIdx, C, u, v, T, polyOrder);
 #ifdef CPU
             const Real res{g(xiIdx, 0, 0)};
@@ -293,7 +292,7 @@ void KerInitialiseBGKAD(ACC<Real>& g, const ACC<int>& nodeType,
 #endif  // OPS_2D
 }
 
-void KerCollideBGKAD(ACC<Real>& fStage, const ACC<Real>& g,
+void KerCollideBGKAD(ACC<Real>& gStage, const ACC<Real>& g,
                              const ACC<Real>& coordinates,
                              const ACC<int>& nodeType, const ACC<Real>& Conc,
                              const ACC<Real>& U, const ACC<Real>& V, 
@@ -307,24 +306,23 @@ void KerCollideBGKAD(ACC<Real>& fStage, const ACC<Real>& g,
     if (collisionRequired) {
         Real u{U(0, 0)};
         Real v{V(0, 0)};
-
+        Real C{Conc(0,0)};
         const Real T{1};
         const int polyOrder{2};
         Real tau = (*tauRef);
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-            Real C{Conc(0,0)};
             const Real geq{CalcBGKGeqAD(xiIndex, C, u, v, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
-                fStage(xiIndex, 0, 0) =
+                gStage(xiIndex, 0, 0) =
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq) +
-                    tau * dtOvertauPlusdt * fStage(xiIndex, 0, 0);
+                    tau * dtOvertauPlusdt * gStage(xiIndex, 0, 0);
             } else {
-                fStage(xiIndex, 0, 0) =
+                gStage(xiIndex, 0, 0) =
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq);
             }
 #ifdef CPU
-            const Real res{fStage(xiIndex, 0, 0)};
+            const Real res{gStage(xiIndex, 0, 0)};
             if (isnan(res) || res <= 0 || isinf(res)) {
                 ops_printf(
                     "Error! Distribution function = %e becomes invalid at  "

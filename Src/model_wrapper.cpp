@@ -437,6 +437,28 @@ void PreDefinedCollisionAD() {
             switch (collisionType) {
                 case Collision_BGKAD:
                     ops_par_loop(
+                        KerCollideBGKAD, "KerCollideBGKAD",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_gStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(g_g()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_READ),
+                        ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                    LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_C).id)
+                                    .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    ops_par_loop(
                         KerCollideBGKAD, "KerCollideBGKIsothermal",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
@@ -447,7 +469,9 @@ void PreDefinedCollisionAD() {
                                     LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
                                     LOCALSTENCIL, "int", OPS_READ),
-                        ops_arg_dat(g_Concentration()[blockIndex],
+                        ops_arg_dat(g_MacroVars()
+                                        .at(compo.macroVars.at(Variable_Rho).id)
+                                        .at(blockIndex),
                                     1, LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
                                     1, LOCALSTENCIL, "double", OPS_READ),
@@ -467,7 +491,7 @@ void PreDefinedCollisionAD() {
 #endif // OPS_2D
 }
 
-
+//g_MacroVars().at(varId).at(blockIndex)
 void UpdateMacroVars() {
 #ifdef OPS_2D
     for (const auto& idBlock : g_Block()) {
@@ -579,6 +603,19 @@ void UpdateMacroVars() {
                                     .at(blockIndex),
                                 1, LOCALSTENCIL, "double", OPS_READ),
                             ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                            ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                        break;
+                    case Variable_C:
+                        ops_par_loop(
+                            KerCalcDensity, "KerCalcDensity", block.Get(),
+                            SpaceDim(), iterRng.data(),
+                            ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_C).id).at(blockIndex),
+                                        1, LOCALSTENCIL, "double", OPS_RW),
+                            ops_arg_dat(g_g()[blockIndex], NUMXI, LOCALSTENCIL,
+                                        "double", OPS_READ),
+                            ops_arg_dat(
+                                g_NodeType().at(compo.id).at(blockIndex), 1,
+                                LOCALSTENCIL, "int", OPS_READ),
                             ops_arg_gbl(compo.index, 2, "int", OPS_READ));
                         break;
                     default:
@@ -704,11 +741,29 @@ void PreDefinedInitialConditionAD() {
                     ops_par_loop(
                         KerInitialiseBGKAD, "KerInitialiseBGK2nd",
                         block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_g()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(g_NodeType().at(compoId).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_C).id)
+                                    .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    ops_par_loop(
+                        KerInitialiseBGK2nd, "KerInitialiseBGK2nd",
+                        block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
                         ops_arg_dat(g_NodeType().at(compoId).at(blockIndex), 1,
                                     LOCALSTENCIL, "int", OPS_READ),
-                        ops_arg_dat(g_Concentration()[blockIndex],
+                        ops_arg_dat(g_MacroVars()
+                                        .at(compo.macroVars.at(Variable_Rho).id)
+                                        .at(blockIndex),
                                     1, LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
                                     1, LOCALSTENCIL, "double", OPS_READ),

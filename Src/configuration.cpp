@@ -58,6 +58,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(VariableTypes,
                                  {Variable_U_Force, "Variable_U_Force"},
                                  {Variable_V_Force, "Variable_V_Force"},
                                  {Variable_W_Force, "Variable_W_Force"},
+                                 {Variable_C, "Variable_C"},
                              });
 
 NLOHMANN_JSON_SERIALIZE_ENUM(

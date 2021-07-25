@@ -159,7 +159,7 @@ void simulate() {
     Partition();
     SetInitialMacrosVars();
     PreDefinedInitialCondition3D();
-    SetTimeStep(meshSize / SoundSpeed());
+    SetTimeStep(meshSize/ SoundSpeed());
 
     const Real convergenceCriteria{1E-5};
     const SizeType checkPeriod{200};

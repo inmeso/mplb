@@ -61,6 +61,8 @@ int SPACEDIM{2};
 BlockGroup BLOCKS;
 RealField f{"f"};
 RealField fStage{"fStage"};
+RealField g{"g"};
+RealField gStage{"gStage"};
 RealFieldGroup MacroVars;
 RealFieldGroup MacroVarsCopy;
 std::map<int,Real> ResidualError;
@@ -74,6 +76,8 @@ RealFieldGroup MacroBodyforce;
 const BlockGroup& g_Block() { return BLOCKS; };
 RealField& g_f() { return f; };
 RealField& g_fStage() { return fStage; };
+RealField& g_g() { return g; };
+RealField& g_gStage() { return gStage; };
 RealFieldGroup& g_MacroVars() { return MacroVars; };
 RealFieldGroup& g_MacroVarsCopy() { return MacroVarsCopy; };
 
@@ -126,7 +130,7 @@ void WriteFlowfieldToHdf5(const SizeType timeStep) {
     CoordinateXYZ.WriteToHDF5(CASENAME, timeStep);
     for (const auto& force : MacroBodyforce) {
         force.second.WriteToHDF5(CASENAME, timeStep);
-    Concentration.WriteToHDF5(CASENAME, timeStep);
+    //Concentration.WriteToHDF5(CASENAME, timeStep);
     }
 }
 
@@ -164,6 +168,7 @@ Real GetMaximumResidual(const SizeType checkPeriod) {
 
 void TransferHalos() {
     fStage.TransferHalos();
+    gStage.TransferHalos();
 }
 
 void DefineBlocks(const std::vector<int>& blockIds,
@@ -228,8 +233,8 @@ void DefineBlocks(const std::vector<int>& blockIds,
     //NodeType.CreateFieldFromScratch(BLOCKS);
     CoordinateXYZ.SetDataDim(SPACEDIM);
     CoordinateXYZ.CreateFieldFromScratch(BLOCKS);
-    Concentration.SetDataDim(1);
-    Concentration.CreateFieldFromScratch(BLOCKS);
+    //Concentration.SetDataDim(1);
+    //Concentration.CreateFieldFromScratch(BLOCKS);
     GeometryProperty.CreateFieldFromScratch(BLOCKS);
 }
 void PrepareFlowField() {

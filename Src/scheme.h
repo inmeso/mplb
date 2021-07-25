@@ -78,5 +78,6 @@ void Stream3D();
 
 #ifdef OPS_2D
 void Stream();
+void StreamAD();
 #endif //OPS_2D
 #endif

@@ -244,6 +244,19 @@ void NormaliseF(Real* ratio) {
     }
 }
 
+void NormaliseG(Real* ratio) {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIdx{block.ID()};
+        ops_par_loop(KerNormaliseF, "KerNormaliseF", block.Get(), SpaceDim(),
+                     iterRng.data(), ops_arg_gbl(ratio, 1, "double", OPS_READ),
+                     ops_arg_dat(g_g()[blockIdx], NUMXI, LOCALSTENCIL, "double",
+                                 OPS_RW));
+    }
+}
+
 void AssignCoordinates(const Block& block,
                        const std::vector<std::vector<Real>>& blockCoordinates) {
 #ifdef OPS_2D

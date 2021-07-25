@@ -55,15 +55,17 @@ void UpdateConcentration() {
             ops_par_loop(
                 KerCalcConcentration, "KerCalcConcentration", block.Get(),
                 SpaceDim(), iterRng.data(),
-                ops_arg_dat(g_Concentration()[blockIndex], 1,
+                ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_C).id)
+                                    .at(blockIndex), 1,
                                      LOCALSTENCIL, "Real", OPS_RW),
                 ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
                                      LOCALSTENCIL, "Real", OPS_READ),
                 ops_arg_gbl(ttt, 1, "Real", OPS_READ),
                 ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
-                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                                     1, LOCALSTENCIL, "Real", OPS_READ),
                 ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
-                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                                     1, LOCALSTENCIL, "Real", OPS_READ),
                 ops_arg_gbl(pdt, 1, "double", OPS_READ));
             break;
         }
@@ -104,8 +106,8 @@ void simulate() {
     DefineCase(caseName, spaceDim);
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{50, 50};
-    Real meshSize{1. / 49};
+    std::vector<int> blockSize{200, 200};
+    Real meshSize{1.};
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
@@ -126,21 +128,25 @@ void simulate() {
                           toBoundarySurface, blockConnectionType);
 
 
-    std::vector<std::string> compoNames{"Fluid"};
-    std::vector<int> compoid{0};
-    std::vector<std::string> lattNames{"d2q9"};
-    std::vector<Real> tauRef{0.01};
+    std::vector<std::string> compoNames{"Fluid","Diffusion"};
+    std::vector<int> compoid{0,1};
+    std::vector<std::string> lattNames{"d2q9_diffusive","d2q9_diffusive"};
+    std::vector<Real> tauRef{1,1};
     DefineComponents(compoNames, compoid, lattNames, tauRef);
 
     std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
-                                             Variable_V};
-    std::vector<std::string> macroVarNames{"rho", "u", "v"};
-    std::vector<int> macroVarId{0, 1, 2};
-    std::vector<int> macroCompoId{0, 0, 0};
+                                             Variable_V, Variable_Rho};
+    std::vector<std::string> macroVarNames{"rho", "u", "v", "C"};
+    std::vector<int> macroVarId{0, 1, 2, 3};
+    std::vector<int> macroCompoId{0, 0, 0, 1};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
-    std::vector<CollisionType> collisionTypes{Collision_BGKAD};
+    std::vector<CollisionType> collisionTypes{Collision_BGKIsothermal};
     std::vector<int> collisionCompoId{0};
+    DefineCollision(collisionTypes, collisionCompoId);
+
+    std::vector<CollisionType> collisionTypes{Collision_BGKAD};
+    std::vector<int> collisionCompoId{1};
     DefineCollision(collisionTypes, collisionCompoId);
 
     std::vector<BodyForceType> bodyForceTypes{BodyForce_None};
@@ -179,12 +185,13 @@ void simulate() {
     SetInitialMacrosVars();
     std::cout << "test\n";
     UpdateConcentration();
-    std::cout << "test1\n"; 
+    std::cout << "test1\n";
+    //PreDefinedInitialCondition();
     PreDefinedInitialConditionAD();
-    SetTimeStep(meshSize / SoundSpeed());
+    SetTimeStep(1);
 
     const Real convergenceCriteria{1E-7};
-    const SizeType checkPeriod{1000};
+    const SizeType checkPeriod{5};
     Iterate(StreamCollision,convergenceCriteria, checkPeriod);
 }
 

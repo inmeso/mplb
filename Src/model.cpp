@@ -64,13 +64,14 @@ struct lattice {
     Real cs;
 };
 // Giving the parameters of commonly used lattices.
+lattice d2q9_diffusive{2, 9, 1};
 lattice d2q9{2, 9, sqrt(3)};
 lattice d3q19{3, 19, sqrt(3)};
 lattice d3q15{3, 15, sqrt(3)};
 lattice d2q16{2, 16, 1};
 lattice d2q36{2, 36, 1};
 
-std::map<std::string, lattice> latticeSet{
+std::map<std::string, lattice> latticeSet{{"d2q9_diffusive", d2q9_diffusive},
     {"d2q9", d2q9}, {"d3q19", d3q19}, {"d3q15", d3q15}, {"d2q36", d2q36}};
 
 // Find particles with opposite directions, for bounce-back type boundary
@@ -93,6 +94,21 @@ void FindReverseXi(const int startPos, const int latticeSize) {
 }
 
 void SetupD2Q9Latt(const int startPos) {
+    const int nc9{9};
+    Real t00 = 4.0 / 9.0, t01 = 1.0 / 9.0, t11 = 1.0 / 36.0;
+    Real t[nc9] = {t00, t01, t01, t01, t01, t11, t11, t11, t11};
+    int cxi[nc9] = {0, 1, 0, -1, 0, 1, -1, -1, 1};
+    int cyi[nc9] = {0, 0, 1, 0, -1, 1, 1, -1, -1};
+    int op9[nc9] = {0, 3, 4, 1, 2, 7, 8, 5, 6};
+    for (int l = 0; l < nc9; l++) {
+        XI[(startPos + l) * LATTDIM] = cxi[l];
+        XI[(startPos + l) * LATTDIM + 1] = cyi[l];
+        WEIGHTS[startPos + l] = t[l];
+        OPP[startPos + l] = op9[l];
+    }
+}
+
+void SetupD2Q9_diffusiveLatt(const int startPos) {
     const int nc9{9};
     Real t00 = 4.0 / 9.0, t01 = 1.0 / 9.0, t11 = 1.0 / 36.0;
     Real t[nc9] = {t00, t01, t01, t01, t01, t11, t11, t11, t11};
@@ -271,6 +287,9 @@ void DefineComponents(const std::vector<std::string>& compoNames,
             if ("d2q9" == lattNames[idx]) {
                 SetupD2Q9Latt(startPos);
             }
+            if ("d2q9_diffusive" == lattNames[idx]) {
+                SetupD2Q9_diffusiveLatt(startPos);
+            }
             startPos += latticeSet[lattNames[idx]].length;
             ops_printf("The %s lattice is employed for Component %i.\n",
                        lattNames[idx].c_str(), idx);
@@ -306,9 +325,24 @@ void DefineComponents(const std::vector<std::string>& compoNames,
             pair.second.CreateFieldFromFile(CaseName(), g_Block(), timeStep);
         }
     }
+    g_g().SetDataDim(NUMXI);
+    if (timeStep == 0) {
+        g_g().CreateFieldFromScratch(g_Block());
+        for (auto& pair : g_NodeType()) {
+            pair.second.CreateFieldFromScratch(g_Block());
+        }
+    } else {
+        g_g().CreateFieldFromFile(CaseName(), g_Block(), timeStep);
+        for (auto& pair : g_NodeType()) {
+            pair.second.CreateFieldFromFile(CaseName(), g_Block(), timeStep);
+        }
+    }
     g_fStage().SetDataDim(NUMXI);
     g_fStage().CreateFieldFromScratch(g_Block());
     g_fStage().CreateHalos();
+    g_gStage().SetDataDim(NUMXI);
+    g_gStage().CreateFieldFromScratch(g_Block());
+    g_gStage().CreateHalos();
 }
 
 void DefineMacroVars(std::vector<VariableTypes> types,

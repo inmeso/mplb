@@ -58,6 +58,8 @@
 const BlockGroup& g_Block();
 RealField& g_f();
 RealField& g_fStage();
+RealField& g_g();
+RealField& g_gStage();
 RealFieldGroup& g_MacroVars();
 RealFieldGroup& g_MacroVarsCopy();
 
@@ -116,6 +118,7 @@ void DispResidualError(const int iter, const SizeType checkPeriod);
 void CopyDistribution(RealField& fDest, RealField& fSrc);
 void CopyBlockEnvelopDistribution(Field<Real>& fDest, Field<Real>& fSrc);
 void NormaliseF(Real* ratio);
+void NormaliseG(Real* ratio);
 void CopyCurrentMacroVar();
 void SetBulkandHaloNodesType(const Block& block, int compoId);
 void SetBoundaryNodeType();
