@@ -101,16 +101,22 @@ void UpdateMacroscopicBodyForce(const Real time) {}
 
 void simulate() {
 
-    std::string caseName{"Advection_Diffusion"};
+    std::string caseName{"Advection_Diffusion_DS"}; //DS means diffusive scaling
     SizeType spaceDim{2};
     DefineCase(caseName, spaceDim);
+    //Define one block this application
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
+    // Note: let the blocksize{nx,ny}, we will have nx, ny grid points, adn
+    // nx-1, ny-1 cells in the simulations. Under the diffusive scaling, this
+    // also means that the length is nx-1 and ny-1 respectively.
     std::vector<int> blockSize{200, 200};
     Real meshSize{1.};
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
+    // Define the block "connection" to facilitate the periodice boundary
+    // condition later
     std::vector<int> fromBlockIds{0, 0, 0, 0};
     std::vector<int> toBlockIds{0, 0, 0, 0};
 
@@ -128,29 +134,34 @@ void simulate() {
                           toBoundarySurface, blockConnectionType);
 
 
-    std::vector<std::string> compoNames{"Fluid","Diffusion"};
-    std::vector<int> compoid{0,1};
-    std::vector<std::string> lattNames{"d2q9_diffusive","d2q9_diffusive"};
-    std::vector<Real> tauRef{1,1};
+    // Define two components for the application
+    std::vector<std::string> compoNames{"Fluid", "Diffusion"};
+    std::vector<int> compoid{0, 1};
+    std::vector<std::string> lattNames{"d2q9_diffusive", "d2q9_diffusive"};
+    std::vector<Real> tauRef{1, 1};
     DefineComponents(compoNames, compoid, lattNames, tauRef);
 
+    // Define the four macroscopic variables in the simulations
+    // the concertration is a zero-order moment, same the the density
     std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
                                              Variable_V, Variable_Rho};
     std::vector<std::string> macroVarNames{"rho", "u", "v", "C"};
     std::vector<int> macroVarId{0, 1, 2, 3};
+    // The conceration belong to component diffusion, 1
     std::vector<int> macroCompoId{0, 0, 0, 1};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
-    std::vector<CollisionType> collisionTypes{Collision_BGKIsothermal};
-    std::vector<int> collisionCompoId{0};
+    // Two components need different collision terms, insert appropriate one for
+    // each
+    std::vector<CollisionType> collisionTypes{Collision_BGKIsothermal,
+                                              Collision_BGKAD};
+    std::vector<int> collisionCompoId{0, 1};
     DefineCollision(collisionTypes, collisionCompoId);
 
-    std::vector<CollisionType> collisionTypes{Collision_BGKAD};
-    std::vector<int> collisionCompoId{1};
-    DefineCollision(collisionTypes, collisionCompoId);
-
-    std::vector<BodyForceType> bodyForceTypes{BodyForce_None};
-    std::vector<SizeType> bodyForceCompoId{0};
+    // Two components need different forcing terms, insert appropriate one for
+    // each
+    std::vector<BodyForceType> bodyForceTypes{BodyForce_None,BodyForce_None};
+    std::vector<SizeType> bodyForceCompoId{0, 1};
     DefineBodyForce(bodyForceTypes, bodyForceCompoId);
 
     SchemeType scheme{Scheme_StreamCollision};
@@ -162,7 +173,7 @@ void simulate() {
         Variable_U, Variable_V};
     std::vector<Real> noSlipStationaryWall{0, 0};
 
-    // Periodic Boundary Conditions
+    // Periodic Boundary Conditions for component Fluid 0
     DefineBlockBoundary(0, componentId, BoundarySurface::Top,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
@@ -176,9 +187,24 @@ void simulate() {
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
 
+    // Periodic Boundary Conditions for component Fluid 1
+    DefineBlockBoundary(1, componentId, BoundarySurface::Top,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(1, componentId, BoundarySurface::Bottom,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(1, componentId, BoundarySurface::Left,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(1, componentId, BoundarySurface::Right,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
 
+    // Two components will need initilasation scheme, insert appropriate one for
+    // each
     std::vector<InitialType> initType{Initial_BGKFeq2ndAD};
-    std::vector<SizeType> initalCompoId{0};
+    std::vector<SizeType> initalCompoId{0,1};
     DefineInitialCondition(initType,initalCompoId);
     Partition();
     ops_diagnostic_output();

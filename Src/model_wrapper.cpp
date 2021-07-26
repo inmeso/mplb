@@ -418,9 +418,8 @@ void PreDefinedCollision() {
             }
         }
     }
-#endif // OPS_2D
+#endif  // OPS_2D
 }
-
 
 void PreDefinedCollisionAD() {
 #ifdef OPS_2D
@@ -435,32 +434,20 @@ void PreDefinedCollisionAD() {
             const Real tau{compo.tauRef};
             const Real* pdt{pTimeStep()};
             switch (collisionType) {
-                case Collision_BGKAD:
+                case Collision_BGKAD: {
+                    // Here is a tricky part of DDF approach
+                    // In the following we take advantage of knowing the index
+                    // of U and V for macroscopic variables
+                    const RealField& UatCompo0{g_MacroVars().at(1)};
+                    const RealField& VatCompo0{g_MacroVars().at(2)};
+                    // we could also use component
+                    // const RealField& UatCompo0{
+                    //     g_MacroVars().at(g_Components().at(0).uId)};
+                    // const RealField& VatCompo0{
+                    //     g_MacroVars().at(g_Components().at(0).vId)};
                     ops_par_loop(
-                        KerCollideBGKAD, "KerCollideBGKAD",
-                        block.Get(), SpaceDim(), iterRng.data(),
-                        ops_arg_dat(g_gStage()[blockIndex], NUMXI, LOCALSTENCIL,
-                                    "double", OPS_WRITE),
-                        ops_arg_dat(g_g()[blockIndex], NUMXI, LOCALSTENCIL,
-                                    "double", OPS_READ),
-                        ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
-                                    LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
-                                    LOCALSTENCIL, "int", OPS_READ),
-                        ops_arg_dat(g_MacroVars()
-                                    .at(compo.macroVars.at(Variable_C).id)
-                                    .at(blockIndex),
-                                    1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
-                                    1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
-                                    1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
-                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
-                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
-                    ops_par_loop(
-                        KerCollideBGKAD, "KerCollideBGKIsothermal",
-                        block.Get(), SpaceDim(), iterRng.data(),
+                        KerCollideBGKAD, "KerCollideBGKAD", block.Get(),
+                        SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
                         ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
@@ -470,21 +457,52 @@ void PreDefinedCollisionAD() {
                         ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
                                     LOCALSTENCIL, "int", OPS_READ),
                         ops_arg_dat(g_MacroVars()
-                                        .at(compo.macroVars.at(Variable_Rho).id)
+                                        .at(compo.macroVars.at(Variable_C).id)
                                         .at(blockIndex),
                                     1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
-                                    1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
-                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(UatCompo0.at(blockIndex), 1, LOCALSTENCIL,
+                                    "double", OPS_READ),
+                        ops_arg_dat(VatCompo0.at(blockIndex), 1, LOCALSTENCIL,
+                                    "double", OPS_READ),
                         ops_arg_gbl(&tau, 1, "double", OPS_READ),
                         ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    }
                     break;
-                default:
-                    ops_printf(
-                        "The specified collision type is not implemented!\n");
-                    break;
+                    case Collision_BGKIsothermal2nd_diffusive:
+                        ops_par_loop(
+                            KerCollideBGKIsothermal, "KerCollideBGKIsothermal",
+                            block.Get(), SpaceDim(), iterRng.data(),
+                            ops_arg_dat(g_fStage()[blockIndex], NUMXI,
+                                        LOCALSTENCIL, "double", OPS_WRITE),
+                            ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                                        "double", OPS_READ),
+                            ops_arg_dat(g_CoordinateXYZ()[blockIndex],
+                                        SpaceDim(), LOCALSTENCIL, "double",
+                                        OPS_READ),
+                            ops_arg_dat(
+                                g_NodeType().at(compo.id).at(blockIndex), 1,
+                                LOCALSTENCIL, "int", OPS_READ),
+                            ops_arg_dat(
+                                g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                1, LOCALSTENCIL, "double", OPS_READ),
+                            ops_arg_dat(
+                                g_MacroVars().at(compo.uId).at(blockIndex), 1,
+                                LOCALSTENCIL, "double", OPS_READ),
+                            ops_arg_dat(
+                                g_MacroVars().at(compo.vId).at(blockIndex), 1,
+                                LOCALSTENCIL, "double", OPS_READ),
+                            ops_arg_gbl(&tau, 1, "double", OPS_READ),
+                            ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                            ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                        break;
+                    default:
+                        ops_printf(
+                            "The specified collision type is not "
+                            "implemented!\n");
+                        break;
             }
         }
     }
