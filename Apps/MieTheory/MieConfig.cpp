@@ -88,6 +88,16 @@ void ParseJson() {
             jsonConfig["blockSize"].get<std::vector<int>>();
     }
 
+    if (jsonConfig["blockExtent"].is_null()) {
+        ops_printf(
+            "Error! Please insert the blockExtent item into the "
+            "configuration!\n");
+        assert(jsonConfig["blockExtent"].is_null());
+    } else {
+        config.blockExtent =
+            jsonConfig["blockExtent"].get<std::vector<Real>>();
+    }
+
     if (jsonConfig["partRadius"].is_null()) {
         ops_printf(
             "Error! Please insert the partRadius item into the configuration!\n");

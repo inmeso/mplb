@@ -55,18 +55,17 @@ class besselFunctions
 {
 private:
 
-    typedef std::complex<double> complexType;
-    typedef Eigen::Array<complexType, Eigen::Dynamic, 1> array1DComplexType;
+    typedef Eigen::Array<complexd, Eigen::Dynamic, 1> array1DComplexType;
     const double one = double(1.0);
     const double zero = double(0.0);
     const double two = double(2.0);
     const double mtwo = double(-2.0);
     const double half = double(0.5);
-    const complexType c_i = {zero, one};
-    const complexType c_one = {one, zero};
+    const complexd c_i = {zero, one};
+    const complexd c_one = {one, zero};
 
     int _maxOrder;
-    complexType _argument;
+    complexd _argument;
     array1DComplexType _sphBesselj, _sphBessely, _sphBesselk;
     array1DComplexType _riccatiBesselRatio;
     double _minReal = std::numeric_limits<double>::min();
@@ -79,8 +78,8 @@ private:
         int nelem = maxRequired - orderFrom + 1;
         int ii;
 
-        complexType oneOArg = one / _argument;
-        complexType sphBesselj0 = sin(_argument) * oneOArg;
+        complexd oneOArg = one / _argument;
+        complexd sphBesselj0 = sin(_argument) * oneOArg;
 
         for(ii = orderFrom; ii <= maxRequired; ++ii)
         {
@@ -103,8 +102,8 @@ private:
                             _sphBesselj.segment(orderFrom-1, nelem);
         } else
         {
-            complexType _sphBesselym1 = _sphBesselj(0);
-            complexType _sphBesseljm1 = _sphBesselj(0) / _argument - _sphBesselj(1);
+            complexd _sphBesselym1 = _sphBesselj(0);
+            complexd _sphBesseljm1 = _sphBesselj(0) / _argument - _sphBesselj(1);
             _sphBessely(0) = ( _sphBesselj(0) * _sphBesselym1 -
                                 oneOArg * oneOArg ) / _sphBesseljm1;
 
@@ -134,10 +133,10 @@ private:
         }
     }
 
-    complexType _sphBesseljCFractions(int n, complexType z)
+    complexd _sphBesseljCFractions(int n, complexd z)
     {
         using boost::math::float_distance;
-        complexType numProduct, denProduct, nextTermNum, nextTermDen;
+        complexd numProduct, denProduct, nextTermNum, nextTermDen;
         int ii,jj;
 
         if(!n) return one;
@@ -170,10 +169,10 @@ private:
         return denProduct / numProduct;
     }
 
-    complexType _riccatiBesselRatioCFractions(int n, complexType z)
+    complexd _riccatiBesselRatioCFractions(int n, complexd z)
     {
         using boost::math::float_distance;
-        complexType numProduct, denProduct, nextTermNum, nextTermDen;
+        complexd numProduct, denProduct, nextTermNum, nextTermDen;
         double nu;
         int ii;
 
@@ -205,12 +204,12 @@ private:
         return numProduct / denProduct;
     }
 
-    inline complexType _bnm(int n, int m, complexType z)
+    inline complexd _bnm(int n, int m, complexd z)
     {
         return two * (n + m - half) / z;
     }
 
-    inline complexType _anun(int n, double nu, complexType z)
+    inline complexd _anun(int n, double nu, complexd z)
     {
         if(_isOdd(n+1))
         {
@@ -235,7 +234,7 @@ public:
         _calculateAllSphBessel(0);
     }
 
-    besselFunctions(int n, complexType z)
+    besselFunctions(int n, complexd z)
     {
         BOOST_ASSERT_MSG(n >= 0,
             "The besselFunctions class is only defined for n >= 0.");
@@ -290,7 +289,7 @@ public:
         return *this;
     }
 
-    void setArgument(complexType z)
+    void setArgument(complexd z)
     {
         BOOST_ASSERT_MSG(abs(z.imag()) >= _minReal || abs(z.real()) >= _minReal,
                 "The besselFunctions class is only defined for abs(z) > 0");
@@ -326,53 +325,53 @@ public:
         }
     }
 
-    array1DComplexType getSphBesselj()
+    array1DComplexType getSphBesselj() const
     {
         return _sphBesselj.segment(1,_maxOrder);
     }
 
-    array1DComplexType getSphBessely()
+    array1DComplexType getSphBessely() const
     {
         return _sphBessely.segment(1,_maxOrder);
     }
 
-    array1DComplexType getSphBesselk()
+    array1DComplexType getSphBesselk() const
     {
         return _sphBesselk.segment(1,_maxOrder);
     }
 
-    array1DComplexType getRiccatiBesselRatio()
+    array1DComplexType getRiccatiBesselRatio() const 
     {
         return _riccatiBesselRatio.segment(1,_maxOrder);
     }
 
-    array1DComplexType computeRiccatiBesselPsi(int startFrom)
+    array1DComplexType computeRiccatiBesselPsi(int startFrom) const
     {
         BOOST_ASSERT_MSG(startFrom == 1 || !startFrom,
             "The computeRiccatiBesselPsi function only takes 0 and 1");
         return _argument * _sphBesselj.segment( startFrom , _maxOrder );
     }
 
-    array1DComplexType computeRiccatiBesselChi()
+    array1DComplexType computeRiccatiBesselChi() const
     {
         return _argument * _sphBessely.segment(1,_maxOrder);
     }
 
-    array1DComplexType computeRiccatiBesselXi(int startFrom)
+    array1DComplexType computeRiccatiBesselXi(int startFrom) const
     {
         BOOST_ASSERT_MSG(startFrom == 1 || !startFrom,
             "The computeRiccatiBesselXi function only takes 0 and 1");
         return _argument * _sphBesselk.segment( startFrom , _maxOrder );
     }
 
-    array1DComplexType computeDRiccatiBesselPsi()
+    array1DComplexType computeDRiccatiBesselPsi() const
     {
         return half * ( _argument * ( _sphBesselj.segment(0,_maxOrder) -
                                       _sphBesselj.segment(2,_maxOrder) ) +
                                     _sphBesselj.segment(1,_maxOrder) );
     }
 
-    array1DComplexType computeDRiccatiBesselXi()
+    array1DComplexType computeDRiccatiBesselXi() const
     {
 
         return half * ( _argument * ( _sphBesselk.segment(0,_maxOrder) -

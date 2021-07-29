@@ -62,8 +62,9 @@
 // should at least be a double) 
 struct MieConfig {
     std::string caseName;
-    int spaceDim{3};
+    int spaceDim;
     std::vector<int> blockSize;
+    std::vector<Real> blockExtent;
     Real partRadius;
     Real partPermeability;
     Real envPermeability;

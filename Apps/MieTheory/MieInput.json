@@ -2,6 +2,7 @@
   "CaseName": "SimpleMie",
   "spaceDim": 3,
   "blockSize": [101, 101, 101],
+  "blockExtent": [1.0E-4, 1.0E-4, 1.0E-4],
   "partRadius": 1.0E-5,
   "partPermeability": 1.0,
   "envPermeability": 1.0,
