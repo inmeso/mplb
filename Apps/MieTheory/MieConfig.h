@@ -69,7 +69,7 @@ struct MieConfig {
     Real partPermeability;
     Real envPermeability;
     std::complex<Real> partRefractiveIndex;
-    std::complex<Real> envRefractiveIndex;
+    Real envRefractiveIndex;
     Real vaccumWaveLength;
 };
 

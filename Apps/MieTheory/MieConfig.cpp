@@ -141,7 +141,7 @@ void ParseJson() {
             "configuration!\n");
         assert(jsonConfig["envRefractiveIndex"].is_null());
     } else {
-        config.envRefractiveIndex = jsonConfig["envRefractiveIndex"].get<std::complex<Real>>();
+        config.envRefractiveIndex = jsonConfig["envRefractiveIndex"].get<Real>();
     }
 
     if (jsonConfig["vaccumWaveLength"].is_null()) {

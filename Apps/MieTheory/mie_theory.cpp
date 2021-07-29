@@ -66,7 +66,7 @@ int main(int argc, const char** argv) {
      
     // Bessel Function Container
     int maxOrder = 5;
-    complexd cdbesselArgz = complexd(1.0, 0.5);
+    complexd besselArgz = complexd(1.0, 0.5);
 
     bessels = new besselFunctions(maxOrder,besselArgz);
 
@@ -98,11 +98,15 @@ int main(int argc, const char** argv) {
     std::vector<int> iterRng;
     iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
     
+    blkExtent[0] = Config().blockExtent[0];
+    blkExtent[1] = Config().blockExtent[1];
+    blkExtent[2] = Config().blockExtent[2];
     // set the coordinates
     ops_par_loop(KerSetSphericalCoord, "KerSetSphericalCoord", block.Get(), 
                  Config().spaceDim, iterRng.data(),
                  ops_arg_dat(coordinates[block.ID()], Config().spaceDim, LOCALSTENCIL,
                              "double", OPS_RW),
+                 ops_arg_gbl(&blkExtent[0], 1, "double", OPS_READ),
                  ops_arg_idx());
 
     // calculate the Mie solution

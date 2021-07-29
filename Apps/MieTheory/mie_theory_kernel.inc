@@ -34,13 +34,16 @@
 #define MIE_THEORY_INC
 
 static besselFunctions* bessels;
+double blkExtent[3];
 
-void KerSetSphericalCoord(ACC<double>& coordinates, const int* idx) {
+void KerSetSphericalCoord(ACC<double>& coordinates, const double* blkExtent,
+                            const int* idx) {
     // get the index i, j, k for the current grid point
     const int i{idx[0]};
     const int j{idx[1]};
     const int k{idx[2]};
     // calculate the coorindate based on index i, j,k
+    std::cout << blkExtent[0] << blkExtent[2] << blkExtent[2] << std::endl;
     coordinates(0, 0, 0, 0) = i;
     coordinates(1, 0, 0, 0) = j;
     coordinates(2, 0, 0, 0) = k;
@@ -53,8 +56,6 @@ void KerCalculateMieSolution(ACC<double>& E, ACC<double>& H,
     const double y{coordinates(1, 0, 0, 0)};
     const double z{coordinates(2, 0, 0, 0)};
     // calculate the coorindate based on index i, j,k
-
-    std::cout << bessels->getSphBesselj() << std::endl;
 
     E(0, 0, 0, 0) = x;
     E(1, 0, 0, 0) = y;

@@ -66,16 +66,17 @@ private:
     typedef Eigen::Array<complexd, Eigen::Dynamic, 1> array1DComplexType;
     typedef Eigen::Array<double, Eigen::Dynamic, 1> array1DFloatType;
 
-    array1DComplexType _linArray;
     double _radius;
     complexd _relRefractiveIndex;
     double _beamWaveLength;
     double _envPermeability;
     double _particlePermeability;
     int _maxOrder;
-    complexd _alpha, _beta;
+    complexd _alpha;
     besselFunctions *_besselObjAlpha = NULL;
+    complexd _beta;
     besselFunctions *_besselObjBeta = NULL;
+    array1DComplexType _linArray;
 
     array1DComplexType _anDirect()
     {
@@ -167,7 +168,7 @@ public:
     }
 
     scatterer(int order, double radius, double lambda,
-              double mup, double mue, complexd envRefractiveInd,
+              double mup, double mue, double envRefractiveInd,
               complexd partRefractiveInd):
         _radius(radius),
         _relRefractiveIndex(partRefractiveInd/envRefractiveInd),
