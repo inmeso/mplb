@@ -44,14 +44,13 @@
 #include "field.h"
 #include <string>
 #include <vector>
-#include <map>
-#include "besselFunctions.hpp"
+//#include <map>
 #include "MieConfig.h"
+#include "scatterer.hpp"
 #include "mie_theory_kernel.inc"
 
 int main(int argc, const char** argv) {
     // OPS initialisation
-    typedef std::complex<double> complexType;
 
     ops_init(argc, argv, 4);
     double ct0, ct1, et0, et1;
@@ -64,20 +63,16 @@ int main(int argc, const char** argv) {
     // start a new simulaton from a configuration file
     std::string configFileName(argv[1]);
     ReadConfiguration(configFileName);
-    
-    std::cout << Config().vaccumWaveLength << std::endl;
-    std::cout << Config().partRefractiveIndex << std::endl;
-    std::cout << Config().spaceDim << std::endl;
-    for (std::vector<int>::const_iterator i = Config().blockSize.begin(); 
-         i != Config().blockSize.end(); ++i) std::cout << *i << ' ';
+     
     // Bessel Function Container
-    int maxOrder {5};
-    complexType besselArgz (5.0e-01, 5.0e-01);
-    besselFunctions bessels(maxOrder, besselArgz);
-    
+    int maxOrder = 5;
+    complexd cdbesselArgz = complexd(1.0, 0.5);
+
+    bessels = new besselFunctions(maxOrder,besselArgz);
+
     // Also define the variable in the GPU memory space.
     ops_decl_const("spaceDim", 1, "int", &(Config().spaceDim));
-    
+
     // Set a stencil for numerical schemes
     // here we only need the local(current) grid point
     int currentNode[]{0, 0, 0};
@@ -127,4 +122,5 @@ int main(int argc, const char** argv) {
     E.WriteToHDF5(Config().caseName, 0);
     H.WriteToHDF5(Config().caseName, 0);
     ops_exit();
+    delete bessels;
 }
