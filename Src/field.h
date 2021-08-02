@@ -41,6 +41,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <typeinfo>
 #include <vector>
 #include "block.h"
 #include "ops_lib_core.h"
