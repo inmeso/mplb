@@ -163,6 +163,8 @@ void UpdateMacroVars3D();
 void PreDefinedBodyForce3D();
 void PreDefinedInitialCondition3D();
 void PreDefinedCollision3D();
+void PreDefinedCollision3D(int* velID, int* loop, Real tauRef,
+		CollisionType collisionType,int componentId, int rhoId, int Tid);
 #endif
 #ifdef OPS_2D
 void UpdateMacroVars();

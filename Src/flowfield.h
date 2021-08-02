@@ -66,6 +66,8 @@ const std::string& CaseName();
 Real TotalMeshSize();
 const std::map<std::string,ops_halo_group>& HaloGroups();
 void SetTimeStep(Real dt);
+void  SetGridSize(Real dx);
+Real GetDx();
 
 /**
  * the residual error for steady flows

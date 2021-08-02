@@ -84,6 +84,82 @@ void PreDefinedCollision3D() {
 #endif // OPS_3D
 }
 
+void PreDefinedCollision3D(int* velID, int* loop, Real tauRef,
+		CollisionType collisionType,int componentId, int rhoId, int Tid) {
+#ifdef OPS_3D
+	int iDx = velID[0];
+	int iDy = velID[1];
+	int iDz = velID[2];
+
+	for (const auto& idBlock : g_Block()) {
+	     const Block& block{idBlock.second};
+	     std::vector<int> iterRng;
+	     iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+	     const int blockIndex{block.ID()};
+	     const Real* pdt{pTimeStep()};
+	     switch (collisionType) {
+         case Collision_BGKIsothermal2nd:
+               ops_par_loop(
+                   KerCollideBGKIsothermal3D, "KerCollideBGKIsothermal3D",
+                   block.Get(), SpaceDim(), iterRng.data(),
+                   ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                               "double", OPS_WRITE),
+                   ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                               "double", OPS_READ),
+                   ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                               LOCALSTENCIL, "double", OPS_READ),
+                   ops_arg_dat(g_NodeType().at(componentId).at(blockIndex), 1,
+                               LOCALSTENCIL, "int", OPS_READ),
+                   ops_arg_dat(g_MacroVars()
+                                   .at(rhoId).at(blockIndex),
+                               1, LOCALSTENCIL, "double", OPS_READ),
+                   ops_arg_dat(g_MacroVars().at(iDx).at(blockIndex),
+                               1, LOCALSTENCIL, "double", OPS_READ),
+                   ops_arg_dat(g_MacroVars().at(iDy).at(blockIndex),
+                               1, LOCALSTENCIL, "double", OPS_READ),
+                   ops_arg_dat(g_MacroVars().at(iDz).at(blockIndex),
+                               1, LOCALSTENCIL, "double", OPS_READ),
+                   ops_arg_gbl(&tauRef, 1, "double", OPS_READ),
+                   ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                   ops_arg_gbl(loop, 2, "int", OPS_READ));
+               break;
+           case Collision_BGKThermal4th:
+               ops_par_loop(
+                   KerCollideBGKThermal3D, "KerCollideBGKThermal3D",
+                   block.Get(), SpaceDim(), iterRng.data(),
+                   ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                               "double", OPS_WRITE),
+                   ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                               "double", OPS_READ),
+                   ops_arg_dat(g_NodeType().at(componentId).at(blockIndex), 1,
+                               LOCALSTENCIL, "int", OPS_READ),
+                   ops_arg_dat(g_MacroVars()
+                                   .at(rhoId).at(blockIndex),
+                               1, LOCALSTENCIL, "double", OPS_READ),
+                   ops_arg_dat(g_MacroVars().at(iDx).at(blockIndex),
+                               1, LOCALSTENCIL, "double", OPS_READ),
+                   ops_arg_dat(g_MacroVars().at(iDy).at(blockIndex),
+                               1, LOCALSTENCIL, "double", OPS_READ),
+                   ops_arg_dat(g_MacroVars().at(iDz).at(blockIndex),
+                               1, LOCALSTENCIL, "double", OPS_READ),
+                   ops_arg_dat(g_MacroVars()
+                                   .at(Tid).at(blockIndex),
+                               1, LOCALSTENCIL, "double", OPS_READ),
+                   ops_arg_gbl(&tauRef, 1, "double", OPS_READ),
+                   ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                   ops_arg_gbl(loop, 2, "int", OPS_READ));
+               break;
+           default:
+               ops_printf(
+                   "The specified collision type is not implemented!\n");
+               break;
+
+	     }
+
+	}
+#endif
+}
+
 void UpdateMacroVars3D() {
 #ifdef OPS_3D
     for (const auto& idBlock : g_Block()) {
