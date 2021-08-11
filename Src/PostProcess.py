@@ -177,6 +177,24 @@ def ReadBlockData(fileName,variables):
             res['X']=np.copy(res['CoordinateXYZ'][:,:,0])
             res['Y']=np.copy(res['CoordinateXYZ'][:,:,1])
         del res['CoordinateXYZ']
+    if "H" in res.keys():
+        if res['H'].shape[-1]==3:
+            res['Hx']=np.copy(res['H'][:,:,:,0])
+            res['Hy']=np.copy(res['H'][:,:,:,1])
+            res['Hz']=np.copy(res['H'][:,:,:,2])
+        if res['H'].shape[-1]==2:
+            res['Hx']=np.copy(res['H'][:,:,0])
+            res['Hy']=np.copy(res['H'][:,:,1])
+        del res['H']
+    if "E" in res.keys():
+        if res['E'].shape[-1]==3:
+            res['Ex']=np.copy(res['E'][:,:,:,0])
+            res['Ey']=np.copy(res['E'][:,:,:,1])
+            res['Ez']=np.copy(res['E'][:,:,:,2])
+        if res['E'].shape[-1]==2:
+            res['Ex']=np.copy(res['E'][:,:,0])
+            res['Ey']=np.copy(res['E'][:,:,1])
+        del res['E']
     return res
 
 def WriteVariablesToPlainHDF5(res, fileName):

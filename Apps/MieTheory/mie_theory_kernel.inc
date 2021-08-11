@@ -33,20 +33,56 @@
 #ifndef MIE_THEORY_INC
 #define MIE_THEORY_INC
 
-static besselFunctions* bessels;
-double blkExtent[3];
+#include <boost/math/constants/constants.hpp>
 
-void KerSetSphericalCoord(ACC<double>& coordinates, const double* blkExtent,
-                            const int* idx) {
+static besselFunctions* bessels;
+static scatterer* partScatt;
+
+void KerGridGen(ACC<double>& coordinates,
+                           const int* blkNx,
+                           const double* blkLx,
+                           const int* idx) {
+    
     // get the index i, j, k for the current grid point
     const int i{idx[0]};
     const int j{idx[1]};
     const int k{idx[2]};
-    // calculate the coorindate based on index i, j,k
-    std::cout << blkExtent[0] << blkExtent[2] << blkExtent[2] << std::endl;
-    coordinates(0, 0, 0, 0) = i;
-    coordinates(1, 0, 0, 0) = j;
-    coordinates(2, 0, 0, 0) = k;
+
+    // calculate the coorindate based on index i, j,k (avoid )
+    coordinates(0, 0, 0, 0) = (i - std::floor(blkNx[0]/2.0))*(blkLx[0]/double(blkNx[0]-blkNx[0]%2));
+    coordinates(1, 0, 0, 0) = (j - std::floor(blkNx[1]/2.0))*(blkLx[1]/double(blkNx[1]-blkNx[1]%2));
+    coordinates(2, 0, 0, 0) = (k - std::floor(blkNx[2]/2.0))*(blkLx[2]/double(blkNx[2]-blkNx[2]%2));
+
+}
+
+//(r, theta [polar], phi [azimuthal]) assumed
+void KerCart2Sph(ACC<double>& coordinates,
+                           const double* minDbl) {
+    
+    using boost::math::constants::pi;
+    
+    double x = coordinates(0, 0, 0, 0);
+    double y = coordinates(1, 0, 0, 0);
+    double denom = sqrt(x*x + y*y);
+
+    coordinates(0, 0, 0, 0) = sqrt(x*x + y*y + coordinates(2, 0, 0, 0) * 
+                                                coordinates(2, 0, 0, 0));
+    denom < minDbl[0] ? coordinates(1, 0, 0, 0) = 0.0 : 
+                        coordinates(1, 0, 0, 0) = pi<double>()/2.0 - 
+                        atan(coordinates(2, 0, 0, 0) / denom);
+    coordinates(2, 0, 0, 0) = atan2(y,x);
+    
+}
+
+void KerSph2Cart(ACC<double>& coordinates) {
+    
+    double r = coordinates(0, 0, 0, 0);
+    double thet = coordinates(1, 0, 0, 0);
+    
+    coordinates(0, 0, 0, 0) = r*cos(coordinates(2, 0, 0, 0))*sin(thet);
+    coordinates(1, 0, 0, 0) = r*sin(coordinates(2, 0, 0, 0))*sin(thet);
+    coordinates(2, 0, 0, 0) = r*cos(thet);
+    
 }
 
 void KerCalculateMieSolution(ACC<double>& E, ACC<double>& H,

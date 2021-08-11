@@ -199,8 +199,11 @@ void Field<T>::WriteToHDF5(const std::string& caseName,
         const Block& block{dataBlock.at(blockId)};
         std::string fileName = caseName + "_" + block.Name() + "_T" +
                                std::to_string(timeStep) + ".h5";
+        //std::string fileName2 = caseName + "_" + block.Name() + "_T" +
+        //                       std::to_string(timeStep) + ".txt";
         ops_fetch_block_hdf5_file(block.Get(), fileName.c_str());
         ops_fetch_dat_hdf5_file(idData.second, fileName.c_str());
+        //ops_print_dat_to_txtfile(idData.second, fileName2.c_str());
     }
 }
 /**

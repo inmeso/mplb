@@ -193,12 +193,12 @@ public:
     }
 
     scatterer(const scatterer& other) :
-    _maxOrder(other._maxOrder),
     _radius(other._radius),
     _relRefractiveIndex(other._relRefractiveIndex),
     _beamWaveLength(other._beamWaveLength),
     _envPermeability(other._envPermeability),
     _particlePermeability(other._particlePermeability),
+    _maxOrder(other._maxOrder),
     _alpha(other._alpha),
     _beta(other._beta),
     _linArray(other._linArray)
@@ -211,12 +211,12 @@ public:
     {
         if (this != &other)
         {
-            _maxOrder = other._maxOrder;
             _radius = other._radius;
             _relRefractiveIndex = other._relRefractiveIndex;
             _beamWaveLength = other._beamWaveLength;
             _envPermeability = other._envPermeability;
             _particlePermeability = other._particlePermeability;
+            _maxOrder = other._maxOrder;
             _alpha = other._alpha;
             _beta = other._beta;
             _linArray = other._linArray;

@@ -52,6 +52,9 @@
 int main(int argc, const char** argv) {
     // OPS initialisation
 
+    int blkNx[3];
+    double blkLx[3];
+    double minReal = std::numeric_limits<double>::min();
     ops_init(argc, argv, 4);
     double ct0, ct1, et0, et1;
     ops_timers(&ct0, &et0);
@@ -70,6 +73,12 @@ int main(int argc, const char** argv) {
 
     bessels = new besselFunctions(maxOrder,besselArgz);
 
+    partScatt = new scatterer(maxOrder, Config().partRadius, 
+                Config().vaccumWaveLength,
+                Config().partPermeability, Config().envPermeability,
+                Config().envRefractiveIndex,
+                Config().partRefractiveIndex);
+                
     // Also define the variable in the GPU memory space.
     ops_decl_const("spaceDim", 1, "int", &(Config().spaceDim));
 
@@ -81,10 +90,11 @@ int main(int argc, const char** argv) {
     // input the mesh size here
     // we assume only one block in this simple case
     Block block(0, "Block", Config().blockSize);
-    RealField coordinates("coordinates");
-    coordinates.SetDataDim(Config().spaceDim);
-    coordinates.CreateFieldFromScratch(block);
     
+    RealField CoordinateXYZ("CoordinateXYZ");
+    CoordinateXYZ.SetDataDim(Config().spaceDim);
+    CoordinateXYZ.CreateFieldFromScratch(block);
+
     RealField E("E");
     E.SetDataDim(Config().spaceDim);
     E.CreateFieldFromScratch(block);
@@ -98,16 +108,29 @@ int main(int argc, const char** argv) {
     std::vector<int> iterRng;
     iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
     
-    blkExtent[0] = Config().blockExtent[0];
-    blkExtent[1] = Config().blockExtent[1];
-    blkExtent[2] = Config().blockExtent[2];
-    // set the coordinates
-    ops_par_loop(KerSetSphericalCoord, "KerSetSphericalCoord", block.Get(), 
+    //Particle always at (0, 0, 0)
+    blkLx[0] = Config().blockExtent[0];
+    blkNx[0] = Config().blockSize[0];
+    blkLx[1] = Config().blockExtent[1];
+    blkNx[1] = Config().blockSize[1];
+    blkLx[2] = Config().blockExtent[2];
+    blkNx[2] = Config().blockSize[2];
+
+    // set the CoordinateXYZ
+    ops_par_loop(KerGridGen, "KerGridGen", block.Get(), 
                  Config().spaceDim, iterRng.data(),
-                 ops_arg_dat(coordinates[block.ID()], Config().spaceDim, LOCALSTENCIL,
+                 ops_arg_dat(CoordinateXYZ[block.ID()], Config().spaceDim, LOCALSTENCIL,
                              "double", OPS_RW),
-                 ops_arg_gbl(&blkExtent[0], 1, "double", OPS_READ),
+                 ops_arg_gbl(&blkNx[0], 1, "int", OPS_READ),
+                 ops_arg_gbl(&blkLx[0], 1, "double", OPS_READ),
                  ops_arg_idx());
+
+    // Convert to spherical
+    ops_par_loop(KerCart2Sph, "KerCart2Sph", block.Get(), 
+                 Config().spaceDim, iterRng.data(),
+                 ops_arg_dat(CoordinateXYZ[block.ID()], Config().spaceDim, LOCALSTENCIL,
+                             "double", OPS_RW),
+                 ops_arg_gbl(&minReal, 1, "double", OPS_READ));
 
     // calculate the Mie solution
     ops_par_loop(
@@ -115,16 +138,24 @@ int main(int argc, const char** argv) {
         Config().spaceDim, iterRng.data(),
         ops_arg_dat(E[block.ID()], Config().spaceDim, LOCALSTENCIL, "double", OPS_RW),
         ops_arg_dat(H[block.ID()], Config().spaceDim, LOCALSTENCIL, "double", OPS_RW),
-        ops_arg_dat(coordinates[block.ID()], Config().spaceDim, LOCALSTENCIL, "double",
+        ops_arg_dat(CoordinateXYZ[block.ID()], Config().spaceDim, LOCALSTENCIL, "double",
                     OPS_READ));
 
     ops_timers(&ct1, &et1);
     ops_printf("\nTotal Wall time %lf\n", et1 - et0);
     // Print OPS performance details to output stream
     ops_timing_output(std::cout);
-    coordinates.WriteToHDF5(Config().caseName, 0);
+    
+    //back to cartesian before write
+    ops_par_loop(KerSph2Cart, "KerSph2Cart", block.Get(), 
+                 Config().spaceDim, iterRng.data(),
+                 ops_arg_dat(CoordinateXYZ[block.ID()], Config().spaceDim, LOCALSTENCIL,
+                             "double", OPS_RW));
+                             
+    CoordinateXYZ.WriteToHDF5(Config().caseName, 0);
     E.WriteToHDF5(Config().caseName, 0);
     H.WriteToHDF5(Config().caseName, 0);
+
     ops_exit();
     delete bessels;
 }
