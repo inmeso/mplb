@@ -3,7 +3,7 @@
   "spaceDim": 3,
   "blockSize": [21, 21, 21],
   "blockExtent": [1.0E-4, 1.0E-4, 1.0E-4],
-  "partRadius": 1.0E-5,
+  "partRadius": 2.5E-6,
   "partPermeability": 1.0,
   "envPermeability": 1.0,
   "partRefractiveIndex":{

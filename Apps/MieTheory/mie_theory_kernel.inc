@@ -48,7 +48,7 @@ void KerGridGen(ACC<double>& coordinates,
     const int j{idx[1]};
     const int k{idx[2]};
 
-    // calculate the coorindate based on index i, j,k (avoid )
+    // calculate the coorindate based on index i, j, k
     coordinates(0, 0, 0, 0) = (i - std::floor(blkNx[0]/2.0))*(blkLx[0]/double(blkNx[0]-blkNx[0]%2));
     coordinates(1, 0, 0, 0) = (j - std::floor(blkNx[1]/2.0))*(blkLx[1]/double(blkNx[1]-blkNx[1]%2));
     coordinates(2, 0, 0, 0) = (k - std::floor(blkNx[2]/2.0))*(blkLx[2]/double(blkNx[2]-blkNx[2]%2));
@@ -63,14 +63,16 @@ void KerCart2Sph(ACC<double>& coordinates,
     
     double x = coordinates(0, 0, 0, 0);
     double y = coordinates(1, 0, 0, 0);
+    //Move y to minDbl to avoid numerical issues!
+    if( abs(x) < minDbl[0] && abs(y) < minDbl[0] ) y = minDbl[0];
     double denom = sqrt(x*x + y*y);
-
+    
     coordinates(0, 0, 0, 0) = sqrt(x*x + y*y + coordinates(2, 0, 0, 0) * 
                                                 coordinates(2, 0, 0, 0));
-    denom < minDbl[0] ? coordinates(1, 0, 0, 0) = 0.0 : 
-                        coordinates(1, 0, 0, 0) = pi<double>()/2.0 - 
+    coordinates(1, 0, 0, 0) = pi<double>()/2.0 - 
                         atan(coordinates(2, 0, 0, 0) / denom);
     coordinates(2, 0, 0, 0) = atan2(y,x);
+
     
 }
 

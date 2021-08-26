@@ -51,7 +51,6 @@
 
 int main(int argc, const char** argv) {
     // OPS initialisation
-
     int blkNx[3];
     double blkLx[3];
     double minReal = std::numeric_limits<double>::min();
@@ -68,7 +67,7 @@ int main(int argc, const char** argv) {
     ReadConfiguration(configFileName);
      
     // Bessel Function Container
-    int maxOrder = 5;
+    int maxOrder = 28;
     complexd besselArgz = complexd(1.0, 0.5);
 
     bessels = new besselFunctions(maxOrder,besselArgz);
@@ -78,7 +77,18 @@ int main(int argc, const char** argv) {
                 Config().partPermeability, Config().envPermeability,
                 Config().envRefractiveIndex,
                 Config().partRefractiveIndex);
-                
+    
+    /*partScatt->printAlphaRicBessel();
+    std::cout << std::endl << std::endl;
+    partScatt->printBetaRicBessel();
+    std::cout << std::endl << std::endl;*/
+
+    partScatt->computeAn();
+    std::cout << partScatt->getAn() << std::endl;
+
+    partScatt->computeBn();
+    std::cout << partScatt->getBn() << std::endl;
+
     // Also define the variable in the GPU memory space.
     ops_decl_const("spaceDim", 1, "int", &(Config().spaceDim));
 
@@ -131,7 +141,7 @@ int main(int argc, const char** argv) {
                  ops_arg_dat(CoordinateXYZ[block.ID()], Config().spaceDim, LOCALSTENCIL,
                              "double", OPS_RW),
                  ops_arg_gbl(&minReal, 1, "double", OPS_READ));
-
+    
     // calculate the Mie solution
     ops_par_loop(
         KerCalculateMieSolution, "KerCalculateMieSolution", block.Get(),
@@ -151,11 +161,12 @@ int main(int argc, const char** argv) {
                  Config().spaceDim, iterRng.data(),
                  ops_arg_dat(CoordinateXYZ[block.ID()], Config().spaceDim, LOCALSTENCIL,
                              "double", OPS_RW));
-                             
+                            
     CoordinateXYZ.WriteToHDF5(Config().caseName, 0);
     E.WriteToHDF5(Config().caseName, 0);
     H.WriteToHDF5(Config().caseName, 0);
 
     ops_exit();
     delete bessels;
+    delete partScatt;
 }

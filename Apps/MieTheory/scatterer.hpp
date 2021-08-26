@@ -78,72 +78,20 @@ private:
     besselFunctions *_besselObjBeta = NULL;
     array1DComplexType _linArray;
 
-    array1DComplexType _anDirect()
-    {
-        array1DComplexType dPsiBeta = _particlePermeability *
-                                      _besselObjBeta->computeDRiccatiBesselPsi();
-        complexd tmpComp = _envPermeability * _relRefractiveIndex;
-        array1DComplexType psiBeta = tmpComp *
-                                     _besselObjBeta->computeRiccatiBesselPsi(1);
+    array1DComplexType _An, _Bn, _Cn, _Dn;
 
-        return ( dPsiBeta * _besselObjAlpha->computeRiccatiBesselPsi(1) -
-                 psiBeta * _besselObjAlpha->computeDRiccatiBesselPsi()
-               ) /
-               (
-                 dPsiBeta * _besselObjAlpha->computeRiccatiBesselXi(1) -
-                 psiBeta * _besselObjAlpha->computeDRiccatiBesselXi()
-               );
+    void _computeBesselsAlpha()
+    {
+        _besselObjAlpha->computeDRiccatiBesselPsi();
+        _besselObjAlpha->computeRiccatiBesselPsi(1);
+        _besselObjAlpha->computeDRiccatiBesselXi();
+        _besselObjAlpha->computeRiccatiBesselXi(1);
     }
 
-    array1DComplexType _bnDirect()
+    void _computeBesselsBeta()
     {
-        complexd tmpComp = _envPermeability * _relRefractiveIndex;
-        array1DComplexType dPsiBeta = tmpComp *
-                                      _besselObjBeta->computeDRiccatiBesselPsi();
-        array1DComplexType psiBeta = _particlePermeability *
-                                     _besselObjBeta->computeRiccatiBesselPsi(1);
-
-        return ( dPsiBeta * _besselObjAlpha->computeRiccatiBesselPsi(1) -
-                 psiBeta * _besselObjAlpha->computeDRiccatiBesselPsi()
-               ) /
-               (
-                 dPsiBeta * _besselObjAlpha->computeRiccatiBesselXi(1) -
-                 psiBeta * _besselObjAlpha->computeDRiccatiBesselXi()
-               );
-    }
-
-    array1DComplexType _cnDirect()
-    {
-        array1DComplexType xiAlpha = _besselObjAlpha->computeRiccatiBesselXi(1);
-        array1DComplexType dXiAlpha= _besselObjAlpha->computeDRiccatiBesselXi();
-
-        return ( _particlePermeability * _relRefractiveIndex *
-                 ( xiAlpha * _besselObjAlpha->computeDRiccatiBesselPsi() -
-                   dXiAlpha * _besselObjAlpha->computeRiccatiBesselPsi(1)  )
-               ) /
-               (
-                 _particlePermeability * xiAlpha *
-                 _besselObjBeta->computeDRiccatiBesselPsi() -
-                 (_envPermeability * _relRefractiveIndex) * dXiAlpha *
-                 _besselObjBeta->computeRiccatiBesselPsi(1)
-               );
-    }
-
-    array1DComplexType _dnDirect()
-    {
-        array1DComplexType xiAlpha = _besselObjAlpha->computeRiccatiBesselXi(1);
-        array1DComplexType dXiAlpha= _besselObjAlpha->computeDRiccatiBesselXi();
-
-        return ( _particlePermeability * _relRefractiveIndex * _relRefractiveIndex *
-                 ( xiAlpha * _besselObjAlpha->computeDRiccatiBesselPsi() -
-                   dXiAlpha * _besselObjAlpha->computeRiccatiBesselPsi(1)  )
-               ) /
-               (
-                 ( _envPermeability * _relRefractiveIndex ) * xiAlpha *
-                 _besselObjBeta->computeDRiccatiBesselPsi() -
-                 _particlePermeability * dXiAlpha *
-                 _besselObjBeta->computeRiccatiBesselPsi(1)
-               );
+        _besselObjBeta->computeDRiccatiBesselPsi();
+        _besselObjBeta->computeRiccatiBesselPsi(1);
     }
 
 public:
@@ -159,10 +107,12 @@ public:
 
         _alpha = two * pi<double>() * _radius / _beamWaveLength;
         _besselObjAlpha = new besselFunctions( _maxOrder, _alpha );
+        _computeBesselsAlpha();
 
         _beta = _alpha * _relRefractiveIndex;
         _besselObjBeta = new besselFunctions( _maxOrder, _beta );
-
+        _computeBesselsBeta();
+        
         _linArray = array1DComplexType::LinSpaced( _maxOrder, 1, _maxOrder);
 
     }
@@ -184,9 +134,11 @@ public:
 
         _alpha = two * pi<double>() * _radius / _beamWaveLength;
         _besselObjAlpha = new besselFunctions( _maxOrder, _alpha );
+        _computeBesselsAlpha();
 
         _beta = _alpha * _relRefractiveIndex;
         _besselObjBeta = new besselFunctions( _maxOrder, _beta );
+        _computeBesselsBeta();
 
         _linArray = array1DComplexType::LinSpaced( _maxOrder, 1, _maxOrder);
 
@@ -204,7 +156,10 @@ public:
     _linArray(other._linArray)
     {
         _besselObjAlpha = new besselFunctions(*(other._besselObjAlpha));
+        _computeBesselsAlpha();
+
         _besselObjBeta = new besselFunctions(*(other._besselObjBeta));
+        _computeBesselsBeta();     
     }
 
     scatterer& operator=(const scatterer& other)
@@ -233,7 +188,11 @@ public:
             }
 
             _besselObjAlpha = new besselFunctions(*(other._besselObjAlpha));
+            _computeBesselsAlpha();
+
             _besselObjBeta = new besselFunctions(*(other._besselObjBeta));
+            _computeBesselsBeta();
+
         }
 
         return *this;
@@ -252,17 +211,22 @@ public:
 
         _alpha = two * pi<double>() * _radius / _beamWaveLength;
         _besselObjAlpha->setArgument(_alpha);
-
+        _computeBesselsAlpha();
+        
         _beta = _alpha * _relRefractiveIndex;
         _besselObjBeta->setArgument(_beta);
-
+        _computeBesselsBeta(); 
     }
 
     void setMaxOrder(int order)
     {
         _maxOrder = order;
         _besselObjAlpha->setMaxOrder(_maxOrder);
+        _computeBesselsAlpha();
+
         _besselObjBeta->setMaxOrder(_maxOrder);
+        _computeBesselsBeta(); 
+
         _linArray = array1DComplexType::LinSpaced( _maxOrder, 1, _maxOrder);
     }
 
@@ -276,9 +240,11 @@ public:
 
         _alpha = two * pi<double>() * _radius / _beamWaveLength;
         _besselObjAlpha->setArgument(_alpha);
+        _computeBesselsAlpha();
 
         _beta = _alpha * _relRefractiveIndex;
         _besselObjBeta->setArgument(_beta);
+        _computeBesselsBeta();
 
     }
 
@@ -289,27 +255,144 @@ public:
 
         _beta = _alpha * _relRefractiveIndex;
         _besselObjBeta->setArgument(_beta);
+        _computeBesselsBeta();
     }
 
-    array1DComplexType computeAn()
+    complexd getRelRefInd() { return _relRefractiveIndex;}
+    complexd getSizeParam() {return _alpha;}
+    complexd getBeta() {return _beta;}
+
+    void computeAn()
     {
-        return _anDirect();
+        array1DComplexType dPsiBeta = _particlePermeability *
+                                      _besselObjBeta->getDRiccatiBesselPsi();
+        complexd tmpComp = _envPermeability * _relRefractiveIndex;
+        array1DComplexType psiBeta = tmpComp *
+                                     _besselObjBeta->getRiccatiBesselPsi();
+
+        //std::cout << "_alpha: " << _alpha << std::endl; 
+        _An =  ( dPsiBeta * _besselObjAlpha->getRiccatiBesselPsi() -
+                 psiBeta * _besselObjAlpha->getDRiccatiBesselPsi()
+               ) /
+               (
+                 dPsiBeta * _besselObjAlpha->getRiccatiBesselXi() -
+                 psiBeta * _besselObjAlpha->getDRiccatiBesselXi()
+               );
+        /*std::cout << "DRiccatiBesselPsi(beta)" << std::endl;
+        std::cout << _besselObjBeta->getDRiccatiBesselPsi() << std::endl << std::endl;
+
+        std::cout << std::endl;
+        std::cout << "_particlePermeability" << _particlePermeability << std::endl;
+
+        std::cout << std::endl;
+        std::cout << "_particlePermeability * _besselObjBeta->getDRiccatiBesselPsi(): " << 
+        dPsiBeta.size() << ";  " << dPsiBeta << std::endl;
+
+        std::cout << std::endl;
+        std::cout << "RiccatiBesselPsi(beta)" << std::endl;
+        std::cout << _besselObjBeta->getRiccatiBesselPsi() << std::endl << std::endl;
+        
+        std::cout << std::endl;    
+        std::cout << "_envPermeability * _relRefractiveIndex" << tmpComp << std::endl;
+
+        std::cout << std::endl;
+        std::cout << "getRiccatiBesselPsi(alpha)" << std::endl;
+        std::cout << _besselObjAlpha->getRiccatiBesselPsi() << std::endl << std::endl;
+
+        std::cout << std::endl;
+        std::cout << "getDRiccatiBesselPsi(alpha)" << std::endl;
+        std::cout << _besselObjAlpha->getDRiccatiBesselPsi() << std::endl << std::endl;
+
+        std::cout << std::endl;
+        std::cout << "getRiccatiBesselXi(alpha)" << std::endl;
+        std::cout << _besselObjAlpha->getRiccatiBesselXi() << std::endl << std::endl;
+
+        std::cout << std::endl;
+        std::cout << "getDRiccatiBesselPsi(alpha)" << std::endl;
+        std::cout << _besselObjAlpha->getDRiccatiBesselXi() << std::endl << std::endl;
+
+        std::cout << "An from within the class:" << std::endl;
+        std::cout << _An << std::endl << std::endl;*/
     }
 
-    array1DComplexType computeBn()
+    void computeBn()
     {
-        return _bnDirect();
+        complexd tmpComp = _envPermeability * _relRefractiveIndex;
+        array1DComplexType dPsiBeta = tmpComp *
+                                      _besselObjBeta->getDRiccatiBesselPsi();
+        array1DComplexType psiBeta = _particlePermeability *
+                                     _besselObjBeta->getRiccatiBesselPsi();
+
+        _Bn =  ( dPsiBeta * _besselObjAlpha->getRiccatiBesselPsi() -
+                 psiBeta * _besselObjAlpha->getDRiccatiBesselPsi()
+               ) /
+               (
+                 dPsiBeta * _besselObjAlpha->getRiccatiBesselXi() -
+                 psiBeta * _besselObjAlpha->getDRiccatiBesselXi()
+               );
     }
 
-    array1DComplexType computeCn()
+    void computeCn()
     {
-        return _cnDirect();
+        array1DComplexType xiAlpha = _besselObjAlpha->getRiccatiBesselXi();
+        array1DComplexType dXiAlpha= _besselObjAlpha->getDRiccatiBesselXi();
+
+        _Cn = ( _particlePermeability * _relRefractiveIndex *
+                 ( xiAlpha * _besselObjAlpha->getDRiccatiBesselPsi() -
+                   dXiAlpha * _besselObjAlpha->getRiccatiBesselPsi()  )
+               ) /
+               (
+                 _particlePermeability * xiAlpha *
+                 _besselObjBeta->getDRiccatiBesselPsi() -
+                 (_envPermeability * _relRefractiveIndex) * dXiAlpha *
+                 _besselObjBeta->getRiccatiBesselPsi()
+               );
     }
 
-    array1DComplexType computeDn()
+    void computeDn()
     {
+        array1DComplexType xiAlpha = _besselObjAlpha->getRiccatiBesselXi();
+        array1DComplexType dXiAlpha= _besselObjAlpha->getDRiccatiBesselXi();
 
-        return _dnDirect();
+        _Dn = ( _particlePermeability * _relRefractiveIndex * _relRefractiveIndex *
+                 ( xiAlpha * _besselObjAlpha->getDRiccatiBesselPsi() -
+                   dXiAlpha * _besselObjAlpha->getRiccatiBesselPsi()  )
+               ) /
+               (
+                 ( _envPermeability * _relRefractiveIndex ) * xiAlpha *
+                 _besselObjBeta->getDRiccatiBesselPsi() -
+                 _particlePermeability * dXiAlpha *
+                 _besselObjBeta->getRiccatiBesselPsi()
+               );
+    }
+
+
+    const array1DComplexType& getAn() {return _An;}
+    const array1DComplexType& getBn() {return _Bn;}
+    const array1DComplexType& getCn() {return _Cn;}
+    const array1DComplexType& getDn() {return _Dn;}
+
+    void printBetaRicBessel()
+    {
+        std::cout << "DRiccatiBesselPsi(beta)" << std::endl << std::endl; 
+        std::cout << _besselObjBeta->getDRiccatiBesselPsi() << std::endl;
+
+        std::cout << "RiccatiBesselPsi(beta)" << std::endl << std::endl; 
+        std::cout << _besselObjBeta->getRiccatiBesselPsi() << std::endl;
+
+        std::cout << "RiccatiBesselChi(beta)" << std::endl << std::endl;
+        _besselObjBeta->computeRiccatiBesselChi(); 
+        std::cout << _besselObjBeta->getRiccatiBesselChi() << std::endl;
+
+    }
+
+    void printAlphaRicBessel()
+    {
+        std::cout << "DRiccatiBesselXi(alpha)" << std::endl; 
+        std::cout << _besselObjAlpha->getDRiccatiBesselXi() << std::endl;
+
+        std::cout << "RiccatiBesselXi(alpha)" << std::endl; 
+        std::cout << _besselObjAlpha->getRiccatiBesselXi() << std::endl;
 
     }
 
