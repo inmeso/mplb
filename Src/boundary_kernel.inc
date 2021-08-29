@@ -585,7 +585,7 @@ void KerCutCellEQMDiffuseRefl(ACC<Real> &f, const ACC<int> &nodeType,
         }
     }
     Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
-
+    
 #ifdef CPU
 #if DebugLevel >= 2
     ops_printf("Calculated wall density =  %f\n", rhoWall);
@@ -602,6 +602,238 @@ void KerCutCellEQMDiffuseRefl(ACC<Real> &f, const ACC<int> &nodeType,
         f(xiIdx, 0, 0) = f(OPP[xiIdx], 0, 0) +
                          2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
     }
+    delete[] outgoing;
+    delete[] incoming;
+    delete[] parallel;
+
+#endif  // OPS_2D
+}
+
+void KerCutCellEQMDiffuseReflADF(ACC<Real> &f, const ACC<int> &nodeType,
+                                const ACC<int> &geometryProperty,
+                                const Real *givenMacroVars, const ACC<Real> &acceleration,const Real *dt,
+                                const int *lattIdx) {
+#ifdef OPS_2D
+    // This kernel is suitable for a single-speed lattice
+    // but only for the second-order expansion at this moment
+    // Therefore, the equilibrium function order is fixed at 2
+    const int equilibriumOrder{2};
+    VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0);
+    Real u = givenMacroVars[0];
+    Real v = givenMacroVars[1];
+    Real g[]{acceleration(0, 0, 0), acceleration(1, 0, 0)};
+    Real CS=1/sqrt(3);
+#ifdef CPU
+#if DebugLevel >= 2
+    ops_printf(
+        "KerCutCellEQMDiffuseRefl: We received the following "
+        "conditions for the surface %i:\n",
+        geometryProperty(0, 0));
+    ops_printf("U=%f, V=%f\n", u, v);
+#endif
+#endif
+    int numOutgoing{0};
+    int numIncoming{0};
+    int numParallel{0};
+    int lattStart{lattIdx[0]};
+    int lattEnd{lattIdx[1]};
+    int *outgoing = new int[lattEnd - lattStart + 1];
+    int *incoming = new int[lattEnd - lattStart + 1];
+    int *parallel = new int[lattEnd - lattStart + 1];
+    Real rhoIncoming{0};
+    Real rhoParallel{0};
+    Real deltaRho{0};
+    for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+        Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+        Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+        BndryDvType bdt = FindBdyDvType(vg, &XI[xiIdx * LATTDIM]);
+        switch (bdt) {
+            case BndryDv_Incoming: {
+                incoming[numIncoming] = xiIdx;
+                rhoIncoming += f(xiIdx, 0, 0);
+                numIncoming++;
+            } break;
+            case BndryDv_Outgoing: {
+                outgoing[numOutgoing] = xiIdx;
+                deltaRho += (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v);
+                numOutgoing++;
+            } break;
+            case BndryDv_Parallel: {
+                parallel[numParallel] = xiIdx;
+                rhoParallel += CalcBGKFeqAD(xiIdx, 1, u, v, g, dt, 1, equilibriumOrder);
+                numParallel++;
+            } break;
+            default:
+                break;
+        }
+    }
+    Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
+
+#ifdef CPU
+#if DebugLevel >= 2
+    ops_printf("Calculated wall density =  %f\n", rhoWall);
+#endif
+#endif
+    for (int idx = 0; idx < numParallel; idx++) {
+        f(parallel[idx], 0, 0) =
+            CalcBGKFeqAD(parallel[idx], rhoWall, u, v, g, dt, 1, equilibriumOrder);
+    }
+    for (int idx = 0; idx < numOutgoing; idx++) {
+        int xiIdx = outgoing[idx];
+        Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+        Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+        f(xiIdx, 0, 0) = f(OPP[xiIdx], 0, 0) +
+                         2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+    }
+    delete[] outgoing;
+    delete[] incoming;
+    delete[] parallel;
+
+#endif  // OPS_2D
+}
+
+void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
+                                const ACC<int> &geometryProperty,
+                                const Real *givenMacroVars, const ACC<Real> &Mu,
+                                const Real *dt, const int *lattIdx) {
+#ifdef OPS_2D
+    // This kernel is suitable for a single-speed lattice
+    // but only for the second-order expansion at this moment
+    // Therefore, the equilibrium function order is fixed at 2
+    const int equilibriumOrder{2};
+    VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0);
+    Real mu{Mu(0,0)};
+    Real u = givenMacroVars[0];
+    Real v = givenMacroVars[1];
+    Real CS=1/sqrt(3);
+#ifdef CPU
+#if DebugLevel >= 2
+    ops_printf(
+        "KerCutCellEQMDiffuseRefl: We received the following "
+        "conditions for the surface %i:\n",
+        geometryProperty(0, 0));
+    ops_printf("U=%f, V=%f\n", u, v);
+#endif
+#endif
+    int numOutgoing{0};
+    int numIncoming{0};
+    int numParallel{0};
+    int lattStart{lattIdx[0]};
+    int lattEnd{lattIdx[1]};
+    int *outgoing = new int[lattEnd - lattStart + 1];
+    int *incoming = new int[lattEnd - lattStart + 1];
+    int *parallel = new int[lattEnd - lattStart + 1];
+    Real rhoIncoming{0};
+    Real rhoParallel{0};
+    Real deltaRho{0};
+    for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+        Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+        Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+        BndryDvType bdt = FindBdyDvType(vg, &XI[xiIdx * LATTDIM]);
+        switch (bdt) {
+            case BndryDv_Incoming: {
+                incoming[numIncoming] = xiIdx;
+                rhoIncoming += f(xiIdx, 0, 0);
+                numIncoming++;
+            } break;
+            case BndryDv_Outgoing: {
+                outgoing[numOutgoing] = xiIdx;
+                deltaRho += (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v);
+                numOutgoing++;
+            } break;
+            case BndryDv_Parallel: {
+                parallel[numParallel] = xiIdx;
+                //rhoParallel += CalcBGKGeqAD(xiIdx, 1, u, v, mu, dt, equilibriumOrder);
+                rhoParallel += f(xiIdx, 0, 0);
+                numParallel++;
+            } break;
+            default:
+                break;
+        }
+    }
+    Real rhoWall = 2 * rhoIncoming / (1 - rhoParallel - deltaRho);
+    //std::cout<<rhoWall<<"  ";
+    //std::cout<<rhoWall<<" "<<rhoIncoming<<" "<<deltaRho<<" "<<rhoParallel<<"   ";
+#ifdef CPU
+#if DebugLevel >= 2
+    ops_printf("Calculated wall density =  %f\n", rhoWall);
+#endif
+#endif
+    //for (int idx = 0; idx < numParallel; idx++) {
+        //std::cout<<parallel[idx]<<"  ";
+            //f(parallel[idx], 0, 0) =
+            //    CalcBGKGeqAD(parallel[idx], rhoWall, u, v, mu, dt, equilibriumOrder);
+    //}
+    for (int idx = 0; idx < numOutgoing; idx++) {
+                int xiIdx = outgoing[idx];
+                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+                Real opps={9+OPP[xiIdx]};
+                //std::cout<<opps<<" ";
+                f(xiIdx, 0, 0) = f(opps, 0, 0)+
+                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+    }
+    /*switch (vg) {
+            case VG_IP: {
+                for (int idx = 0; idx < numOutgoing; idx++) {
+                int xiIdx = outgoing[idx];
+                //std::cout<<OPP[xiIdx]<<" ";
+                Real opps={8+OPP[xiIdx]};
+                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+                if (cx>0) {
+                    f(xiIdx, 0, 0) = f(opps, 0, 0)+
+                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+                    }
+                    //std::cout<<rhoWall<<"  ";
+                    //f(xiIdx, 0, 0) +=
+                    //                 2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+                }
+            } break;
+            case VG_IM: {
+                for (int idx = 0; idx < numOutgoing; idx++) {
+                int xiIdx = outgoing[idx];
+                Real opps={8+OPP[xiIdx]};
+                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+                if (cx<0) {
+                    f(xiIdx, 0, 0) = f(opps, 0, 0)+
+                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+                    }
+                    //f(xiIdx, 0, 0) +=
+                    //                 2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+                }
+            } break;
+            case VG_JP: {
+                for (int idx = 0; idx < numOutgoing; idx++) {
+                int xiIdx = outgoing[idx];
+                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+                if (cy<0) {
+                    f(xiIdx, 0, 0) = f(OPP[xiIdx], 0, 0)+
+                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+                    }
+                    //std::cout<<rhoWall<<"  ";
+                    //f(xiIdx, 0, 0) +=
+                    //                 2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+                }
+            } break;
+            case VG_JM: {
+                for (int idx = 0; idx < numOutgoing; idx++) {
+                int xiIdx = outgoing[idx];
+                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+                if (cy>0) {
+                    f(xiIdx, 0, 0) = f(OPP[xiIdx], 0, 0)+
+                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+                    }
+                    //f(xiIdx, 0, 0) +=
+                    //                 2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+                }
+            } break;
+        }*/
+            
+    
     delete[] outgoing;
     delete[] incoming;
     delete[] parallel;
@@ -1257,15 +1489,283 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
             2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
 #ifdef CPU
         const Real res{f(xiIdx, 0, 0, 0)};
-        if (isnan(res) || res <= 0 || isinf(res)) {
+        if (isnan(res) || res <= -2 || isinf(res)) {
             ops_printf(
                 "Error! Distribution function %f becomes invalid  at the "
                 "lattice %i\n",
                 res, xiIdx);
-            assert(!(isnan(res) || res <= 0 || isinf(res)));
+            assert(!(isnan(res) || res <= -2 || isinf(res)));
         }
 #endif
     }
+    delete[] outgoing;
+    delete[] incoming;
+    delete[] parallel;
+#endif //OPS_3D
+}
+
+void KerCutCellEQMDiffuseReflADF3D(ACC<Real> &f, const ACC<int> &nodeType,
+                                const ACC<int> &geometryProperty,
+                                const Real *givenMacroVars,const ACC<Real> &acceleration,const Real *dt,
+                                const int *lattIdx) {
+#ifdef OPS_3D
+    // This kernel is suitable for any single-speed lattice
+    // but only for the second-order expansion at this moment
+    // Therefore, the equilibrium function order is fixed at 2
+    const int equilibriumOrder{2};
+    const VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0, 0);
+    Real u = givenMacroVars[0];
+    Real v = givenMacroVars[1];
+    Real w = givenMacroVars[2];
+    Real g[]{acceleration(0, 0, 0), acceleration(1, 0, 0), acceleration(2,0,0)};
+    Real CS=1/sqrt(3);
+#ifdef CPU
+#if DebugLevel >= 2
+    ops_printf(
+        "KerCutCellEQMDiffuseRefl3D: We received the following "
+        "conditions for the surface %i:\n",
+        geometryProperty(0, 0, 0));
+    ops_printf("U=%f, V=%f, W=%f\n", u, v, w);
+#endif
+#endif
+    int numOutgoing{0};
+    int numIncoming{0};
+    int numParallel{0};
+    int lattStart{lattIdx[0]};
+    int lattEnd{lattIdx[1]};
+    int *outgoing = new int[lattEnd - lattStart + 1];
+    int *incoming = new int[lattEnd - lattStart + 1];
+    int *parallel = new int[lattEnd - lattStart + 1];
+    Real rhoIncoming{0};
+    Real rhoParallel{0};
+    Real deltaRho{0};
+    for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+        Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+        Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+        Real cz{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
+        BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+        switch (bdt) {
+            case BndryDv_Incoming: {
+                incoming[numIncoming] = xiIdx;
+                rhoIncoming += f(xiIdx, 0, 0, 0);
+                numIncoming++;
+            } break;
+            case BndryDv_Outgoing: {
+                outgoing[numOutgoing] = xiIdx;
+                deltaRho += (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v + cz * w);
+                numOutgoing++;
+            } break;
+            case BndryDv_Parallel: {
+                parallel[numParallel] = xiIdx;
+                rhoParallel +=
+                    CalcBGKFeqAD3D(xiIdx, 1, u, v, w, g, dt, 1, equilibriumOrder);
+                numParallel++;
+            } break;
+            default:
+                break;
+        }
+    }
+    Real rhoWall = 2 * rhoIncoming / (1 - deltaRho - rhoParallel);
+#ifdef CPU
+#if DebugLevel >= 2
+    ops_printf("Calculated wall density =  %f\n", rhoWall);
+#endif
+#endif
+    for (int idx = 0; idx < numParallel; idx++) {
+        f(parallel[idx], 0, 0, 0) =
+            CalcBGKFeqAD3D(parallel[idx], rhoWall, u, v, w, g, dt, 1, equilibriumOrder);
+    }
+    for (int idx = 0; idx < numOutgoing; idx++) {
+        int xiIdx = outgoing[idx];
+        Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+        Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+        Real cz{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
+        f(xiIdx, 0, 0, 0) =
+            f(OPP[xiIdx], 0, 0, 0) +
+            2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+#ifdef CPU
+        const Real res{f(xiIdx, 0, 0, 0)};
+        if (isnan(res) || res <= -2 || isinf(res)) {
+            ops_printf(
+                "Error! Distribution function %f becomes invalid  at the "
+                "lattice %i\n",
+                res, xiIdx);
+            assert(!(isnan(res) || res <= -2 || isinf(res)));
+        }
+#endif
+    }
+    delete[] outgoing;
+    delete[] incoming;
+    delete[] parallel;
+#endif //OPS_3D
+}
+
+void KerCutCellEQMDiffuseReflADG3D(ACC<Real> &f, const ACC<int> &nodeType,
+                                const ACC<int> &geometryProperty,
+                                const Real *givenMacroVars,
+                                const int *lattIdx) {
+#ifdef OPS_3D
+    // This kernel is suitable for any single-speed lattice
+    // but only for the second-order expansion at this moment
+    // Therefore, the equilibrium function order is fixed at 2
+    const int equilibriumOrder{2};
+    const VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0, 0);
+    Real u = givenMacroVars[0];
+    Real v = givenMacroVars[1];
+    Real w = givenMacroVars[2];
+    Real CS=1/sqrt(3);
+#ifdef CPU
+#if DebugLevel >= 2
+    ops_printf(
+        "KerCutCellEQMDiffuseRefl3D: We received the following "
+        "conditions for the surface %i:\n",
+        geometryProperty(0, 0, 0));
+    ops_printf("U=%f, V=%f, W=%f\n", u, v, w);
+#endif
+#endif
+    int numOutgoing{0};
+    int numIncoming{0};
+    int numParallel{0};
+    int lattStart{lattIdx[0]};
+    int lattEnd{lattIdx[1]};
+    int *outgoing = new int[lattEnd - lattStart + 1];
+    int *incoming = new int[lattEnd - lattStart + 1];
+    int *parallel = new int[lattEnd - lattStart + 1];
+    Real rhoIncoming{0};
+    Real rhoParallel{0};
+    Real deltaRho{0};
+    for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+        Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+        Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+        Real cz{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
+        BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+        switch (bdt) {
+            case BndryDv_Incoming: {
+                incoming[numIncoming] = xiIdx;
+                rhoIncoming += f(xiIdx, 0, 0, 0);
+                numIncoming++;
+            } break;
+            case BndryDv_Outgoing: {
+                outgoing[numOutgoing] = xiIdx;
+                deltaRho += (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v + cz * w);
+                numOutgoing++;
+            } break;
+            case BndryDv_Parallel: {
+                //parallel[numParallel] = xiIdx;
+                //rhoParallel +=
+                //    CalcBGKGeqAD3D(xiIdx, 1, u, v, w, 1, equilibriumOrder);
+                //numParallel++;
+            } break;
+            default:
+                break;
+        }
+    }
+    Real rhoWall = 2 * rhoIncoming / (1 - deltaRho);
+#ifdef CPU
+#if DebugLevel >= 2
+    ops_printf("Calculated wall density =  %f\n", rhoWall);
+#endif
+#endif
+    //for (int idx = 0; idx < numParallel; idx++) {
+    //    f(parallel[idx], 0, 0, 0) =
+    //        CalcBGKFeq(parallel[idx], rhoWall, u, v, w, 1, equilibriumOrder);
+    //}
+    /*
+    for (int idx = 0; idx < numOutgoing; idx++) {
+        int xiIdx = outgoing[idx];
+        Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+        Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+        Real cz{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
+        f(xiIdx, 0, 0, 0) =
+            f(OPP[xiIdx], 0, 0, 0) +
+            2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+#ifdef CPU
+        const Real res{f(xiIdx, 0, 0, 0)};
+        if (isnan(res) || res <= -10 || isinf(res)) {
+            ops_printf(
+                "Error! Distribution function %f becomes invalid  at the "
+                "lattice %i\n",
+                res, xiIdx);
+            assert(!(isnan(res) || res <= -10 || isinf(res)));
+        }
+#endif
+    }
+    */
+    switch (vg) {
+            case VG_IP: {
+                for (int idx = 0; idx < numOutgoing; idx++) {
+                int xiIdx = outgoing[idx];
+                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
+                if (cx<0) {
+                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
+                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+                    }
+                }
+            } break;
+            case VG_IM: {
+                for (int idx = 0; idx < numOutgoing; idx++) {
+                int xiIdx = outgoing[idx];
+                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
+                if (cx>0) {
+                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
+                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+                    }
+                }
+            } break;
+            case VG_JP: {
+                for (int idx = 0; idx < numOutgoing; idx++) {
+                int xiIdx = outgoing[idx];
+                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
+                if (cx<0) {
+                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
+                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+                    }
+                }
+            } break;
+            case VG_JM: {
+                for (int idx = 0; idx < numOutgoing; idx++) {
+                int xiIdx = outgoing[idx];
+                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
+                if (cx>0) {
+                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
+                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+                    }
+                }
+            } break;
+            case VG_KP: {
+                for (int idx = 0; idx < numOutgoing; idx++) {
+                int xiIdx = outgoing[idx];
+                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
+                if (cx<0) {
+                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
+                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+                    }
+                }
+            } break;
+            case VG_KM: {
+                for (int idx = 0; idx < numOutgoing; idx++) {
+                int xiIdx = outgoing[idx];
+                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
+                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
+                if (cx>0) {
+                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
+                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+                    }
+                }
+            } break;
+    }
+    
     delete[] outgoing;
     delete[] incoming;
     delete[] parallel;

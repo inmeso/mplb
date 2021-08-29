@@ -58,8 +58,7 @@
 const BlockGroup& g_Block();
 RealField& g_f();
 RealField& g_fStage();
-RealField& g_g();
-RealField& g_gStage();
+RealField& g_gHalos();
 RealFieldGroup& g_MacroVars();
 RealFieldGroup& g_MacroVarsCopy();
 
@@ -67,6 +66,9 @@ RealField& g_Concentration();
 Real* g_Time();
 void UpdateTime(Real time);
 RealFieldGroup& g_MacroBodyforce();
+RealField& g_phiGrad();
+RealField& g_muGrad();
+RealField& g_mu();
 
 RealField& g_CoordinateXYZ();
 IntFieldGroup& g_NodeType();
@@ -127,7 +129,24 @@ void AssignCoordinates(const Block& block,
                        const std::vector<std::vector<Real>>& blockCoordinates);
 void UpdateMacroscopicBodyForce(const Real time);
 void UpdateConcentration();
+void CalcphiGradients();
+void Calcphi2Gradients();
+void CalcMu();
+void CalcmuGradients();
+void PrintPhi();
 void SetInitialMacrosVars();
+
+void UpdateMacroscopicBodyForce3D(const Real time);
+void UpdateConcentration3D();
+void CalcphiGradients3D();
+void Calcphi2Gradients3D();
+void CalcMu3D();
+void CalcmuGradients3D();
+void CalcPhiWetting();
+void CalcPhiWetting3D();
+void PrintPhi3D();
+void SetInitialMacrosVars3D();
+
 void DefineBlockConnection(const std::vector<int>& fromBlock,
                            const std::vector<BoundarySurface>& fromSurface,
                            const std::vector<int>& toBlock,

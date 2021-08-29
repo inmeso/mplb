@@ -79,6 +79,8 @@ enum class BoundaryScheme {
     ZouHeVelocity = 22,
     EQNNoSlip = 23,
     EQMDiffuseRefl = 24,
+    EQMDiffuseReflF = 25,
+    EQMDiffuseReflG = 26,
     None = -1
 };
 

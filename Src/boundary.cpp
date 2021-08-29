@@ -97,6 +97,7 @@ void DefineBlockBoundary(int blockIndex, int componentID,
     }
 
     if ((boundaryScheme == BoundaryScheme::EQMDiffuseRefl ||
+         boundaryScheme == BoundaryScheme::EQMDiffuseReflG ||
          boundaryScheme == BoundaryScheme::EQNNoSlip ||
          boundaryScheme == BoundaryScheme::KineticDiffuseWall ||
          boundaryScheme == BoundaryScheme::BounceBack) &&

@@ -42,6 +42,11 @@
 #include "AdDiff_kernel.inc"
 //Provide macroscopic initial conditions
 
+//////////////////////////////////////////////////////////////////////
+////////////////                  2D                  ////////////////
+//////////////////////////////////////////////////////////////////////
+
+#ifdef OPS_2D
 void UpdateConcentration() {
     for (const auto& idBlock : g_Block()) {
         const Block& block{idBlock.second};
@@ -50,27 +55,140 @@ void UpdateConcentration() {
         const int blockIndex{block.ID()};
         const Real* pdt{pTimeStep()};
         const Real* ttt{g_Time()};
-        for (const auto& idCompo : g_Components()) {
-            const Component& compo{idCompo.second};
+
+            //const Component& compo{idCompo.second};
+            auto it = g_Components().begin();
+            const auto& Iter1{*it};
+            const Component& compoVel{Iter1.second};
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            const Component& compoRho{Iter2.second};
+            const int compoRhoId{compoRho.id};
+            std::cout << compoRhoId << "\n";
+            //g_MacroVars().at(compoRho.macroVars.at(Variable_Rho).id).CreateHalos();
             ops_par_loop(
                 KerCalcConcentration, "KerCalcConcentration", block.Get(),
                 SpaceDim(), iterRng.data(),
                 ops_arg_dat(g_MacroVars()
-                                    .at(compo.macroVars.at(Variable_C).id)
+                                    .at(compoRho.macroVars.at(Variable_Rho).id)
                                     .at(blockIndex), 1,
                                      LOCALSTENCIL, "Real", OPS_RW),
                 ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
                                      LOCALSTENCIL, "Real", OPS_READ),
                 ops_arg_gbl(ttt, 1, "Real", OPS_READ),
-                ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
+                ops_arg_dat(g_MacroVars().at(compoVel.uId).at(blockIndex),
                                      1, LOCALSTENCIL, "Real", OPS_READ),
-                ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
+                ops_arg_dat(g_MacroVars().at(compoVel.vId).at(blockIndex),
                                      1, LOCALSTENCIL, "Real", OPS_READ),
                 ops_arg_gbl(pdt, 1, "double", OPS_READ));
-            break;
-        }
+            //break;
+        
+        
     }
 }
+
+
+
+void Calcphi2Gradients() {
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        const int order{2};
+            auto it = g_Components().begin();
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            const Component& compoRho{Iter2.second};
+            const int compoRhoId{compoRho.id};
+            ops_par_loop(
+                KerCalcGradients, "KerCalcGradients", block.Get(), SpaceDim(),
+                iterRng.data(),
+                ops_arg_dat(g_phiGrad()[blockIndex], SpaceDim(), LOCALSTENCIL, "double",
+                            OPS_RW),
+                ops_arg_dat(g_MacroVars()
+                                    .at(compoRho.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex), 1,
+                                     ONEPTREGULARSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_NodeType().at(Iter2.first).at(blockIndex), 1,
+                            LOCALSTENCIL, "int", OPS_READ),
+                ops_arg_dat(g_GeometryProperty()[blockIndex], 1,
+                            LOCALSTENCIL, "int", OPS_READ),
+                ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_gbl(Iter2.second.index, 2, "int", OPS_READ),
+                ops_arg_gbl(&order, 1, "int", OPS_READ),
+                ops_arg_idx());
+        
+    }
+}
+
+
+void CalcmuGradients() {
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        const int order{1};
+            auto it = g_Components().begin();
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            ops_par_loop(
+                KerCalcGradients, "KerCalcGradients", block.Get(), SpaceDim(),
+                iterRng.data(),
+                ops_arg_dat(g_muGrad()[blockIndex], SpaceDim(), LOCALSTENCIL, "double",
+                            OPS_RW),
+                ops_arg_dat(g_mu()[blockIndex], 1, ONEPTREGULARSTENCIL, "double",
+                            OPS_READ),
+                ops_arg_dat(g_NodeType().at(Iter2.first).at(blockIndex), 1,
+                            LOCALSTENCIL, "int", OPS_READ),
+                ops_arg_dat(g_GeometryProperty()[blockIndex], 1,
+                            LOCALSTENCIL, "int", OPS_READ),
+                ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_gbl(Iter2.second.index, 2, "int", OPS_READ),
+                ops_arg_gbl(&order, 1, "int", OPS_READ),
+                ops_arg_idx());
+
+        
+    }
+} 
+
+void CalcMu() {
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+            auto it = g_Components().begin();
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            const Component& compoRho{Iter2.second};
+            const int compoRhoId{compoRho.id};
+            ops_par_loop(
+                KerCalcMu, "KerCalcMu", block.Get(), SpaceDim(),
+                iterRng.data(),
+                ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
+                            OPS_RW),
+                ops_arg_dat(g_MacroVars()
+                                    .at(compoRho.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex), 1,
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_phiGrad()[blockIndex], SpaceDim(),
+                            LOCALSTENCIL, "double", OPS_READ),
+                ops_arg_dat(g_NodeType().at(compoRho.id).at(blockIndex), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ));
+            
+
+        
+    }
+} 
+
 
 void SetInitialMacrosVars() {
     for (auto idBlock : g_Block()) {
@@ -78,27 +196,354 @@ void SetInitialMacrosVars() {
         std::vector<int> iterRng;
         iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
         const int blockIdx{block.ID()};
-        for (auto& idCompo : g_Components()) {
-            const Component& compo{idCompo.second};
-            const int rhoId{compo.macroVars.at(Variable_Rho).id};
+        auto it = g_Components().begin();
+        const auto& Iter{*it};
+            //const Component& compo{idCompo.second};
+            //const int rhoId{compo.macroVars.at(Variable_Rho).id};
             ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
                          block.Get(), SpaceDim(), iterRng.data(),
-                         ops_arg_dat(g_MacroVars().at(rhoId).at(blockIdx), 1,
+                         ops_arg_dat(g_MacroVars().at(Iter.second.macroVars.at(Variable_Rho).id).at(blockIdx), 1,
                                      LOCALSTENCIL, "Real", OPS_RW),
-                         ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIdx),
+                         ops_arg_dat(g_MacroVars().at(Iter.second.uId).at(blockIdx),
                                      1, LOCALSTENCIL, "Real", OPS_RW),
-                         ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIdx),
+                         ops_arg_dat(g_MacroVars().at(Iter.second.vId).at(blockIdx),
                                      1, LOCALSTENCIL, "Real", OPS_RW),
                          ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
                                      LOCALSTENCIL, "Real", OPS_READ),
                          ops_arg_idx());
-        }
+        
+    }
+}
+
+void CalcPhiWetting() {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        auto compo = g_Components().at(1);
+            //const Component& compo{idCompo.second};
+            //const int rhoId{compo.macroVars.at(Variable_Rho).id};
+            ops_par_loop(KerUpdateRhoWetting, "KerUpdateRhoWetting",
+                         block.Get(), SpaceDim(), iterRng.data(),
+                         ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_Rho).id).at(blockIndex), 1,
+                                     ONEPTREGULARSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                         ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                         ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ));
+        
+    }
+}
+
+void PrintPhi() {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+            auto it = g_Components().begin();
+            const auto& Iter1{*it};
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            const Component& compoRho{Iter1.second};
+            const int compoRhoId{compoRho.id};
+            std::cout << compoRhoId << "\n";
+
+            ops_par_loop(KerPrintPhi, "KerPrintPhi",
+                         block.Get(), SpaceDim(), iterRng.data(),
+                         ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL,
+                                        "double", OPS_READ));
     }
 }
 
 //Provide macroscopic body-force term
-void UpdateMacroscopicBodyForce(const Real time) {}
+void UpdateMacroscopicBodyForce(const Real time) {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIdx{block.ID()};
+            auto it = g_Components().begin();
+            const auto& Iter1{*it};
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            const Component& compoRho{Iter2.second};
 
+            ops_par_loop(KerUpdateMacroBodyForce, "KerUpdateMacroBodyForce",
+                         block.Get(), SpaceDim(), iterRng.data(),
+                         ops_arg_dat(g_MacroBodyforce().at(Iter1.second.id).at(blockIdx), SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_MacroVars()
+                                    .at(compoRho.macroVars.at(Variable_Rho).id)
+                                    .at(blockIdx), 1,
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                         ops_arg_dat(g_muGrad()[blockIdx], SpaceDim(),
+                            LOCALSTENCIL, "double", OPS_READ),
+                         ops_arg_dat(g_GeometryProperty().at(blockIdx), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                         ops_arg_dat(g_NodeType().at(compoRho.id).at(blockIdx), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                         ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                         ops_arg_idx());
+
+        
+    }
+}
+#endif
+//////////////////////////////////////////////////////////////////////
+////////////////                  3D                  ////////////////
+//////////////////////////////////////////////////////////////////////
+#ifdef OPS_3D
+void UpdateConcentration3D() {
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        const Real* pdt{pTimeStep()};
+        const Real* ttt{g_Time()};
+
+            //const Component& compo{idCompo.second};
+            auto it = g_Components().begin();
+            const auto& Iter1{*it};
+            const Component& compoVel{Iter1.second};
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            const Component& compoRho{Iter2.second};
+            const int compoRhoId{compoRho.id};
+            std::cout << compoRhoId << "\n";
+            //g_MacroVars().at(compoRho.macroVars.at(Variable_Rho).id).CreateHalos();
+            ops_par_loop(
+                KerCalcConcentration3D, "KerCalcConcentration", block.Get(),
+                SpaceDim(), iterRng.data(),
+                ops_arg_dat(g_MacroVars()
+                                    .at(compoRho.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex), 1,
+                                     LOCALSTENCIL, "Real", OPS_RW),
+                ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_gbl(ttt, 1, "Real", OPS_READ),
+                ops_arg_dat(g_MacroVars().at(compoVel.uId).at(blockIndex),
+                                     1, LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_MacroVars().at(compoVel.vId).at(blockIndex),
+                                     1, LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_gbl(pdt, 1, "double", OPS_READ));
+            //break;
+        
+        
+    }
+}
+
+void Calcphi2Gradients3D() {
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        const int order{2};
+            auto it = g_Components().begin();
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            const Component& compoRho{Iter2.second};
+            const int compoRhoId{compoRho.id};
+            ops_par_loop(
+                KerCalcGradients3D, "KerCalcGradients", block.Get(), SpaceDim(),
+                iterRng.data(),
+                ops_arg_dat(g_phiGrad()[blockIndex], SpaceDim(), LOCALSTENCIL, "double",
+                            OPS_RW),
+                ops_arg_dat(g_MacroVars()
+                                    .at(compoRho.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex), 1,
+                                     ONEPTREGULARSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_NodeType().at(Iter2.first).at(blockIndex), 1,
+                            LOCALSTENCIL, "int", OPS_READ),
+                ops_arg_dat(g_GeometryProperty()[blockIndex], 1,
+                            LOCALSTENCIL, "int", OPS_READ),
+                ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_gbl(Iter2.second.index, 2, "int", OPS_READ),
+                ops_arg_gbl(&order, 1, "int", OPS_READ),
+                ops_arg_idx());
+        
+    }
+}
+
+void CalcmuGradients3D() {
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        const int order{1};
+            auto it = g_Components().begin();
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            ops_par_loop(
+                KerCalcGradients3D, "KerCalcGradients", block.Get(), SpaceDim(),
+                iterRng.data(),
+                ops_arg_dat(g_muGrad()[blockIndex], SpaceDim(), LOCALSTENCIL, "double",
+                            OPS_RW),
+                ops_arg_dat(g_mu()[blockIndex], 1, ONEPTREGULARSTENCIL, "double",
+                            OPS_READ),
+                ops_arg_dat(g_NodeType().at(Iter2.first).at(blockIndex), 1,
+                            LOCALSTENCIL, "int", OPS_READ),
+                ops_arg_dat(g_GeometryProperty()[blockIndex], 1,
+                            LOCALSTENCIL, "int", OPS_READ),
+                ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_gbl(Iter2.second.index, 2, "int", OPS_READ),
+                ops_arg_gbl(&order, 1, "int", OPS_READ),
+                ops_arg_idx());
+
+        
+    }
+} 
+
+void CalcMu3D() {
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+            auto it = g_Components().begin();
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            const Component& compoRho{Iter2.second};
+            const int compoRhoId{compoRho.id};
+            ops_par_loop(
+                KerCalcMu3D, "KerCalcMu", block.Get(), SpaceDim(),
+                iterRng.data(),
+                ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
+                            OPS_RW),
+                ops_arg_dat(g_MacroVars()
+                                    .at(compoRho.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex), 1,
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_phiGrad()[blockIndex], SpaceDim(),
+                            LOCALSTENCIL, "double", OPS_READ));
+            
+
+        
+    }
+} 
+
+
+void SetInitialMacrosVars3D() {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIdx{block.ID()};
+        auto it = g_Components().begin();
+        const auto& Iter{*it};
+            //const Component& compo{idCompo.second};
+            //const int rhoId{compo.macroVars.at(Variable_Rho).id};
+            ops_par_loop(KerSetInitialMacroVars3D, "KerSetInitialMacroVars",
+                         block.Get(), SpaceDim(), iterRng.data(),
+                         ops_arg_dat(g_MacroVars().at(Iter.second.macroVars.at(Variable_Rho).id).at(blockIdx), 1,
+                                     LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_MacroVars().at(Iter.second.uId).at(blockIdx),
+                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_MacroVars().at(Iter.second.vId).at(blockIdx),
+                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_MacroVars().at(Iter.second.wId).at(blockIdx),
+                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                         ops_arg_idx());
+        
+    }
+}
+
+void CalcPhiWetting3D() {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        auto compo = g_Components().at(1);
+            //const Component& compo{idCompo.second};
+            //const int rhoId{compo.macroVars.at(Variable_Rho).id};
+            ops_par_loop(KerUpdateRhoWetting3D, "KerUpdateRhoWetting3D",
+                         block.Get(), SpaceDim(), iterRng.data(),
+                         ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_Rho).id).at(blockIndex), 1,
+                                     ONEPTREGULARSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                         ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                         ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ));
+        
+    }
+}
+
+
+void PrintPhi3D() {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+            auto it = g_Components().begin();
+            const auto& Iter1{*it};
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            const Component& compoRho{Iter1.second};
+            const int compoRhoId{compoRho.id};
+            std::cout << compoRhoId << "\n";
+
+            ops_par_loop(KerPrintPhi3D, "KerPrintPhi",
+                         block.Get(), SpaceDim(), iterRng.data(),
+                         ops_arg_dat(g_f()[blockIndex], 1,
+                                     LOCALSTENCIL, "Real", OPS_READ));
+    }
+}
+
+//Provide macroscopic body-force term
+void UpdateMacroscopicBodyForce3D(const Real time) {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIdx{block.ID()};
+            auto it = g_Components().begin();
+            const auto& Iter1{*it};
+            std::advance(it, 1);
+            const auto& Iter2{*it};
+            const Component& compoRho{Iter2.second};
+
+            ops_par_loop(KerUpdateMacroBodyForce3D, "KerUpdateMacroBodyForce",
+                         block.Get(), SpaceDim(), iterRng.data(),
+                         ops_arg_dat(g_MacroBodyforce().at(Iter1.second.id).at(blockIdx), SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_RW),
+                         ops_arg_dat(g_MacroVars()
+                                    .at(compoRho.macroVars.at(Variable_Rho).id)
+                                    .at(blockIdx), 1,
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                         ops_arg_dat(g_muGrad()[blockIdx], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                         ops_arg_dat(g_GeometryProperty().at(blockIdx), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                         ops_arg_dat(g_NodeType().at(compoRho.id).at(blockIdx), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                         ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
+                                     LOCALSTENCIL, "Real", OPS_READ),
+                         ops_arg_idx());
+
+        
+    }
+}
+
+#endif
+//////////////////////////////////////////////////////////////////////
+////////////////               Simulate               ////////////////
+//////////////////////////////////////////////////////////////////////
+#ifdef OPS_2D
 void simulate() {
 
     std::string caseName{"Advection_Diffusion"};
@@ -106,9 +551,139 @@ void simulate() {
     DefineCase(caseName, spaceDim);
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{200, 200};
+    std::vector<int> blockSize{120, 120};
     Real meshSize{1.};
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0}}};
+    DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
+
+    std::vector<int> fromBlockIds{0, 0};
+    std::vector<int> toBlockIds{0, 0};
+
+    std::vector<BoundarySurface> fromBoundarySurface{BoundarySurface::Top,
+        BoundarySurface::Bottom};
+    std::vector<BoundarySurface> toBoundarySurface{BoundarySurface::Bottom,
+        BoundarySurface::Top};
+    std::vector<VertexType> blockConnectionType{VertexType::MDPeriodic,
+        VertexType::MDPeriodic};
+
+    DefineBlockConnection(fromBlockIds, fromBoundarySurface, toBlockIds,
+                          toBoundarySurface, blockConnectionType);
+
+
+    std::vector<std::string> compoNames{"Fluid","Diffusion"};
+    std::vector<int> compoid{0,1};
+    std::vector<std::string> lattNames{"d2q9_diffusive","d2q9_diffusive"};
+    std::vector<Real> tauRef{1,1};
+    DefineComponents(compoNames, compoid, lattNames, tauRef);
+
+    std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U_Force,
+                                             Variable_V_Force, Variable_Rho};
+    std::vector<std::string> macroVarNames{"rho", "u", "v", "C"};
+    std::vector<int> macroVarId{0, 1, 2, 3};
+    std::vector<int> macroCompoId{0, 0, 0, 1};
+    DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
+
+    std::vector<CollisionType> collisionTypes{Collision_BGKADF,Collision_BGKADG};
+    std::vector<int> collisionCompoId{0,1};
+    DefineCollision(collisionTypes, collisionCompoId);
+
+    std::vector<BodyForceType> bodyForceTypes{GuoForce,BodyForce_None};
+    std::vector<SizeType> bodyForceCompoId{0,1};
+    DefineBodyForce(bodyForceTypes, bodyForceCompoId);
+
+    SchemeType scheme{Scheme_StreamCollision};
+    DefineScheme(scheme);
+
+    // Setting boundary conditions
+    SizeType componentId{0};
+    std::vector<VariableTypes> macroVarTypesatBoundary{
+        Variable_U_Force, Variable_V_Force};
+    std::vector<Real> noSlipStationaryWall{0, 0};
+
+    // Periodic Boundary Conditions
+    DefineBlockBoundary(0, componentId, BoundarySurface::Top,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Bottom,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    //DefineBlockBoundary(0, componentId, BoundarySurface::Left,
+    //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+    //                    noSlipStationaryWall, VertexType::MDPeriodic);
+    //DefineBlockBoundary(0, componentId, BoundarySurface::Right,
+    //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+    //                    noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Left,
+                        BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Right,
+                        BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+
+    DefineBlockBoundary(0, 1, BoundarySurface::Top,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Bottom,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Left,
+                        BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    DefineBlockBoundary(0, 1, BoundarySurface::Right,
+                        BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    //DefineBlockBoundary(0, 1, BoundarySurface::Left,
+    //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+    //                    noSlipStationaryWall, VertexType::MDPeriodic);
+    //DefineBlockBoundary(0, 1, BoundarySurface::Right,
+    //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+    //                    noSlipStationaryWall, VertexType::MDPeriodic);
+
+
+    std::vector<InitialType> initType{Initial_BGKFeq2ndAD,Initial_BGKGeq2ndAD};
+    std::vector<SizeType> initalCompoId{0,1};
+    g_mu().CreateHalos();
+    const auto& compoC = g_Components().at(1);
+    g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).CreateHalos();
+    DefineInitialCondition(initType, initalCompoId);
+    Partition();
+    ops_diagnostic_output();
+    SetInitialMacrosVars();
+    std::cout << "test\n";
+    UpdateConcentration();
+    CalcPhiWetting();
+    std::cout << "test1\n";
+    //PreDefinedInitialCondition();
+    
+    //PreDefinedInitialConditionADF();
+    //PrintPhi();
+    PreDefinedInitialConditionAD();
+    UpdateMacroVars();
+    
+    //PrintPhi();
+    std::cout<<"test2\n";
+    SetTimeStep(1);
+
+    const Real convergenceCriteria{-1E-7};
+    const SizeType checkPeriod{5000};
+    Real iter{0};
+    WriteFlowfieldToHdf5(iter);
+    WriteDistributionsToHdf5(iter);
+    WriteNodePropertyToHdf5(iter);
+    Iterate(StreamCollision,convergenceCriteria, checkPeriod);
+}
+#endif
+#ifdef OPS_3D
+void simulate() {
+
+    std::string caseName{"Advection_Diffusion"};
+    SizeType spaceDim{3};
+    DefineCase(caseName, spaceDim);
+    std::vector<int> blockIds{0};
+    std::vector<std::string> blockNames{"Cavity"};
+    std::vector<int> blockSize{40, 40, 40};
+    Real meshSize{1.};
+    std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
     std::vector<int> fromBlockIds{0, 0, 0, 0};
@@ -130,27 +705,23 @@ void simulate() {
 
     std::vector<std::string> compoNames{"Fluid","Diffusion"};
     std::vector<int> compoid{0,1};
-    std::vector<std::string> lattNames{"d2q9_diffusive","d2q9_diffusive"};
+    std::vector<std::string> lattNames{"d3q19_diffusive","d3q19_diffusive"};
     std::vector<Real> tauRef{1,1};
     DefineComponents(compoNames, compoid, lattNames, tauRef);
 
-    std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
-                                             Variable_V, Variable_Rho};
-    std::vector<std::string> macroVarNames{"rho", "u", "v", "C"};
-    std::vector<int> macroVarId{0, 1, 2, 3};
-    std::vector<int> macroCompoId{0, 0, 0, 1};
+    std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U_Force,
+                                             Variable_V_Force, Variable_W_Force, Variable_Rho};
+    std::vector<std::string> macroVarNames{"rho", "u", "v", "w", "C"};
+    std::vector<int> macroVarId{0, 1, 2, 3, 4};
+    std::vector<int> macroCompoId{0, 0, 0, 0, 1};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
-    std::vector<CollisionType> collisionTypes{Collision_BGKIsothermal};
-    std::vector<int> collisionCompoId{0};
+    std::vector<CollisionType> collisionTypes{Collision_BGKADF,Collision_BGKADG};
+    std::vector<int> collisionCompoId{0,1};
     DefineCollision(collisionTypes, collisionCompoId);
 
-    std::vector<CollisionType> collisionTypes{Collision_BGKAD};
-    std::vector<int> collisionCompoId{1};
-    DefineCollision(collisionTypes, collisionCompoId);
-
-    std::vector<BodyForceType> bodyForceTypes{BodyForce_None};
-    std::vector<SizeType> bodyForceCompoId{0};
+    std::vector<BodyForceType> bodyForceTypes{GuoForce,BodyForce_None};
+    std::vector<SizeType> bodyForceCompoId{0,1};
     DefineBodyForce(bodyForceTypes, bodyForceCompoId);
 
     SchemeType scheme{Scheme_StreamCollision};
@@ -159,8 +730,8 @@ void simulate() {
     // Setting boundary conditions
     SizeType componentId{0};
     std::vector<VariableTypes> macroVarTypesatBoundary{
-        Variable_U, Variable_V};
-    std::vector<Real> noSlipStationaryWall{0, 0};
+        Variable_U_Force, Variable_V_Force, Variable_W_Force};
+    std::vector<Real> noSlipStationaryWall{0, 0, 0};
 
     // Periodic Boundary Conditions
     DefineBlockBoundary(0, componentId, BoundarySurface::Top,
@@ -175,25 +746,62 @@ void simulate() {
     DefineBlockBoundary(0, componentId, BoundarySurface::Right,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Front,
+                        BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Back,
+                        BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+
+    DefineBlockBoundary(0, 1, BoundarySurface::Top,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Bottom,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Left,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Right,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Front,
+                        BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    DefineBlockBoundary(0, 1, BoundarySurface::Back,
+                        BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
 
 
-    std::vector<InitialType> initType{Initial_BGKFeq2ndAD};
-    std::vector<SizeType> initalCompoId{0};
+    std::vector<InitialType> initType{Initial_BGKFeq2ndAD,Initial_BGKGeq2ndAD};
+    std::vector<SizeType> initalCompoId{0,1};
+    g_mu().CreateHalos();
+    const auto& compoC = g_Components().at(1);
+    g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).CreateHalos();
     DefineInitialCondition(initType,initalCompoId);
     Partition();
     ops_diagnostic_output();
-    SetInitialMacrosVars();
+    SetInitialMacrosVars3D();
+    
     std::cout << "test\n";
-    UpdateConcentration();
+    UpdateConcentration3D();
+    CalcPhiWetting3D();
     std::cout << "test1\n";
-    //PreDefinedInitialCondition();
-    PreDefinedInitialConditionAD();
+    PreDefinedInitialConditionAD3D();
+    UpdateMacroVars3D();
+    
+    std::cout<<"test2\n";
     SetTimeStep(1);
 
-    const Real convergenceCriteria{1E-7};
-    const SizeType checkPeriod{5};
+    const Real convergenceCriteria{-1E-7};
+    const SizeType checkPeriod{250};
+    Real iter{0};
+    WriteFlowfieldToHdf5(iter);
+    WriteDistributionsToHdf5(iter);
+    WriteNodePropertyToHdf5(iter);
     Iterate(StreamCollision,convergenceCriteria, checkPeriod);
 }
+#endif
 
 void simulate(const Configuration & config, const SizeType timeStep=0) {
     // DefineCase(config.caseName, config.spaceDim);

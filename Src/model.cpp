@@ -66,13 +66,15 @@ struct lattice {
 // Giving the parameters of commonly used lattices.
 lattice d2q9_diffusive{2, 9, 1};
 lattice d2q9{2, 9, sqrt(3)};
+lattice d3q19_diffusive{3, 19, 1};
 lattice d3q19{3, 19, sqrt(3)};
 lattice d3q15{3, 15, sqrt(3)};
 lattice d2q16{2, 16, 1};
 lattice d2q36{2, 36, 1};
 
 std::map<std::string, lattice> latticeSet{{"d2q9_diffusive", d2q9_diffusive},
-    {"d2q9", d2q9}, {"d3q19", d3q19}, {"d3q15", d3q15}, {"d2q36", d2q36}};
+    {"d2q9", d2q9}, {"d3q19_diffusive", d3q19_diffusive}, {"d3q19", d3q19}, 
+    {"d3q15", d3q15}, {"d2q36", d2q36}};
 
 // Find particles with opposite directions, for bounce-back type boundary
 // Brute-force method, could be slow for large lattice
@@ -290,6 +292,9 @@ void DefineComponents(const std::vector<std::string>& compoNames,
             if ("d2q9_diffusive" == lattNames[idx]) {
                 SetupD2Q9_diffusiveLatt(startPos);
             }
+            if ("d3q19_diffusive" == lattNames[idx]) {
+                SetupD3Q19Latt(startPos);
+            }
             startPos += latticeSet[lattNames[idx]].length;
             ops_printf("The %s lattice is employed for Component %i.\n",
                        lattNames[idx].c_str(), idx);
@@ -319,30 +324,28 @@ void DefineComponents(const std::vector<std::string>& compoNames,
         for (auto& pair : g_NodeType()) {
             pair.second.CreateFieldFromScratch(g_Block());
         }
+    
     } else {
         g_f().CreateFieldFromFile(CaseName(), g_Block(), timeStep);
         for (auto& pair : g_NodeType()) {
             pair.second.CreateFieldFromFile(CaseName(), g_Block(), timeStep);
         }
     }
-    g_g().SetDataDim(NUMXI);
-    if (timeStep == 0) {
-        g_g().CreateFieldFromScratch(g_Block());
-        for (auto& pair : g_NodeType()) {
-            pair.second.CreateFieldFromScratch(g_Block());
-        }
-    } else {
-        g_g().CreateFieldFromFile(CaseName(), g_Block(), timeStep);
-        for (auto& pair : g_NodeType()) {
-            pair.second.CreateFieldFromFile(CaseName(), g_Block(), timeStep);
-        }
-    }
     g_fStage().SetDataDim(NUMXI);
     g_fStage().CreateFieldFromScratch(g_Block());
+    g_gHalos().SetDataDim(NUMXI);
+    g_gHalos().CreateFieldFromScratch(g_Block());
     g_fStage().CreateHalos();
-    g_gStage().SetDataDim(NUMXI);
-    g_gStage().CreateFieldFromScratch(g_Block());
-    g_gStage().CreateHalos();
+
+    g_phiGrad().SetDataDim(LATTDIM);
+    g_phiGrad().CreateFieldFromScratch(g_Block());
+    g_muGrad().SetDataDim(LATTDIM);
+    g_muGrad().CreateFieldFromScratch(g_Block());
+    g_mu().SetDataDim(1);
+    g_mu().CreateFieldFromScratch(g_Block());
+    
+    
+    
 }
 
 void DefineMacroVars(std::vector<VariableTypes> types,

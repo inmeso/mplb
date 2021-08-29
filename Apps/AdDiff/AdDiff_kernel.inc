@@ -32,34 +32,313 @@
 
 #ifndef CAVITY2D_KERNEL_INC
 #define CAVITY2D_KERNEL_INC
+#ifdef OPS_2D
 
 void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
                             const ACC<Real>& coordinates, const int* idx) {
     rho(0, 0) = 1;
-    u(0, 0) = 0.1;
-    v(0, 0) = 0.1;
+    u(0, 0) = 0;
+    v(0, 0) = 0;
 }
 
 //ADCase
 
+//void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex, const Real* TIME, const ACC<Real>& U, const ACC<Real>& V, const Real* Dt) {
+//    Real Sig02{16};
+//    Real DiffCFact{1.5};
+//    Real dt = {*Dt};
+//    Real time = {*TIME};
+//    Real DiffC{DiffCFact/dt};
+//    Real x0[2] = {8.0,8.0};
+//    Real Vel[2] = {U(0,0),V(0,0)};
+//    Real Pref{Sig02/(Sig02)};
+//    Real xiIndexVar1 = {xiIndex(0,0,0)};
+//    Real xiIndexVar2 = {xiIndex(1,0,0)};
+//    Real numeru{(xiIndexVar1-x0[0])};
+//    Real numerv{(xiIndexVar2-x0[1])};
+//    Real numer2{numeru*numeru+numerv*numerv};
+//    Real Gauss{exp(-numer2/(2*(Sig02)))};
+//
+//    concentration(0,0) = Pref * Gauss;
+//    //std::cout << concentration(0,0) << " " << xiIndex(0,0,0) << " " << U(0,0) << " " << V(0,0) << " " << numer2 << "\n";
+//}
+
 void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex, const Real* TIME, const ACC<Real>& U, const ACC<Real>& V, const Real* Dt) {
-    Real Sig02{400};
-    Real DiffCFact{1.5};
-    Real dt = {*Dt};
-    Real time = {*TIME};
-    Real DiffC{DiffCFact/dt};
-    Real x0[2] = {80.0,80.0};
-    Real Vel[2] = {U(0,0),V(0,0)};
-    Real SigD2{2*DiffC*time*0};
-    Real Pref{Sig02/(Sig02+SigD2)};
+    Real x0[2] = {0.0,60.0};
     Real xiIndexVar1 = {xiIndex(0,0,0)};
     Real xiIndexVar2 = {xiIndex(1,0,0)};
-    Real numeru{(199.0*xiIndexVar1-x0[0]-Vel[0]*time*0)};
-    Real numerv{(199.0*xiIndexVar2-x0[1]-Vel[1]*time*0)};
-    Real numer2{numeru*numeru+numerv*numerv};
-    Real Gauss{exp(-numer2/(2*(Sig02+SigD2)))};
-
-    concentration(0,0) = Pref * Gauss;
+    Real x=(xiIndexVar1-x0[0]);
+    Real y=(xiIndexVar2-x0[1]);
+    Real R=sqrt(x*x+y*y);
+    Real r=30.0;
+    if (R<=r){
+        concentration(0,0) = 1;
+    }
+    else{
+        concentration(0,0) = -1;
+    }
 }
 
+void KerCalcGradients(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType, const ACC<int>&geometry, const ACC<Real>& coordinates, const int *lattIdx, const int *Order, const int *idx){
+    VertexType vt = (VertexType)nodeType(0, 0);
+    int order={*Order};
+        
+        if (order == 1){
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
+                vt == VertexType::VirtualBoundary || vt == VertexType::Wall) {
+                grad(0,0,0) = 0.5*(f(1, 0)-f(-1, 0));
+                grad(1,0,0) = 0.5*(f(0, 1)-f(0, -1));
+            }    
+        }  
+        else if (order == 2){     
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
+                vt == VertexType::VirtualBoundary || vt == VertexType::Wall) {
+                grad(0,0,0) = f(-1, 0)-2*f(0, 0)+f(1, 0);
+                grad(1,0,0) = f(0, -1)-2*f(0, 0)+f(0, 1);
+            }
+        }
+        else{
+            std::cout << order << "\n";
+        }
+    
+}
+
+void KerUpdateRhoWetting(ACC<Real>& rho,const ACC<int>& geometry, const ACC<int>&nodeType,const ACC<Real>& coordinates) {
+    const Real teta={M_PI/4};
+    const Real alpha={acos(sin(teta)*sin(teta))};
+    const Real Omga={2*((teta <= M_PI/2) - (M_PI/2 < teta))*sqrt(cos(alpha/3)*(1-cos(alpha/3)))};
+    const Real K={0.01};
+    const Real A=0.01;
+    const Real h={Omga*sqrt(K*A/2)};
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
+    if (vt == VertexType::Wall) {
+        
+        switch (vg) {
+            case VG_IP: {
+                rho(-1,0)=rho(1,0)+2*h/K;
+            } break;
+            case VG_IM: {
+                rho(1,0)=rho(-1,0)+2*h/K;
+            } break;
+            case VG_JP: {
+                rho(0,-1)=rho(0,1)+2*h/K;
+            } break;
+            case VG_JM: {
+                rho(0,1)=rho(0,-1)+2*h/K;
+            } break;
+        }
+    }
+}
+
+void KerCalcMu(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi, const ACC<int>& geometry, const ACC<int>&nodeType,const ACC<Real>& coordinates){
+    Real phi{Phi(0,0)};
+    Real phi3 = {phi*phi*phi};
+    Real d2phix = {d2phi(0,0,0)};
+    Real d2phiy = {d2phi(1,0,0)};
+    Real A=0.01;
+    Real kappa=0.01;
+
+    mu(0,0)=-A*phi+A*phi3-kappa*(d2phix+d2phiy);
+}
+
+void KerPrintPhi(const ACC<Real>& Phi){
+    std::cout << Phi(0,0) << " ";
+}
+
+void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& Phi, const ACC<Real>& dmu, const ACC<int>& geometry, const ACC<int>&nodeType, const ACC<Real>& coordinates,
+                            const int* idx) {
+    Real phi = {Phi(0,0)};
+    Real dmux = {dmu(0,0,0)};
+    Real dmuy = {dmu(1,0,0)};
+    VertexType vt = (VertexType)nodeType(0, 0);
+    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0);
+    if (vt == VertexType::Wall) {
+        
+        switch (vg) {
+            case VG_IP: {
+                dmux=0;
+            } break;
+            case VG_IM: {
+                dmux=0;
+            } break;
+            case VG_JP: {
+                dmuy=0;
+            } break;
+            case VG_JM: {
+                dmuy=0;
+            } break;
+        }
+    }
+    force(0,0,0) = -phi*dmux;
+    force(1,0,0) = -phi*dmuy;
+}
+#endif
+#endif // CAVITY2D_KERNEL_INC
+
+#ifndef CAVITY3D_KERNEL_INC
+#define CAVITY3D_KERNEL_INC
+#ifdef OPS_3D
+void KerSetInitialMacroVars3D(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v, ACC<Real>& w,
+                            const ACC<Real>& coordinates, const int* idx) {
+    rho(0, 0, 0) = 1;
+    u(0, 0, 0) = 0;
+    v(0, 0, 0) = 0;
+    w(0, 0, 0) = 0;
+}
+
+//ADCase
+
+//void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex, const Real* TIME, const ACC<Real>& U, const ACC<Real>& V, const Real* Dt) {
+//    Real Sig02{16};
+//    Real DiffCFact{1.5};
+//    Real dt = {*Dt};
+//    Real time = {*TIME};
+//    Real DiffC{DiffCFact/dt};
+//    Real x0[2] = {8.0,8.0};
+//    Real Vel[2] = {U(0,0),V(0,0)};
+//    Real Pref{Sig02/(Sig02)};
+//    Real xiIndexVar1 = {xiIndex(0,0,0)};
+//    Real xiIndexVar2 = {xiIndex(1,0,0)};
+//    Real numeru{(xiIndexVar1-x0[0])};
+//    Real numerv{(xiIndexVar2-x0[1])};
+//    Real numer2{numeru*numeru+numerv*numerv};
+//    Real Gauss{exp(-numer2/(2*(Sig02)))};
+//
+//    concentration(0,0) = Pref * Gauss;
+//    //std::cout << concentration(0,0) << " " << xiIndex(0,0,0) << " " << U(0,0) << " " << V(0,0) << " " << numer2 << "\n";
+//}
+
+void KerCalcConcentration3D(ACC<Real>& concentration, const ACC<Real>& xiIndex, const Real* TIME, const ACC<Real>& U, const ACC<Real>& V, const Real* Dt) {
+    Real x0[3] = {20.0,20.0,0.0};
+    Real xiIndexVar1 = {xiIndex(0,0,0,0)};
+    Real xiIndexVar2 = {xiIndex(1,0,0,0)};
+    Real xiIndexVar3 = {xiIndex(2,0,0,0)};
+    Real x=(xiIndexVar1-x0[0]);
+    Real y=(xiIndexVar2-x0[1]);
+    Real z=(xiIndexVar3-x0[2]);
+    Real R=sqrt(x*x+y*y+z*z);
+    Real r=15.0;
+    if (R<=r){
+        concentration(0,0,0) = 1;
+    }
+    else{
+        concentration(0,0,0) = -1;
+    }
+    //std::cout << concentration(0,0) << "\n";
+    
+    //std::cout << concentration(0,0) << " " << xiIndex(0,0,0) << " " << U(0,0) << " " << V(0,0) << " " << numer2 << "\n";
+}
+
+void KerCalcGradients3D(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType, const ACC<int>&geometry, const ACC<Real>& coordinates, const int *lattIdx, const int *Order, const int *idx){
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    int order={*Order};
+        
+        if (order == 1){
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
+                vt == VertexType::VirtualBoundary || vt==VertexType::Wall) {
+                grad(0,0,0,0) = 0.5*(f(1, 0, 0)-f(-1, 0, 0));
+                grad(1,0,0,0) = 0.5*(f(0, 1, 0)-f(0, -1, 0));
+                grad(2,0,0,0) = 0.5*(f(0, 0, 1)-f(0, 0, -1));
+            }    
+        }  
+        else if (order == 2){     
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
+                vt == VertexType::VirtualBoundary || vt==VertexType::Wall) {
+                grad(0,0,0,0) = f(-1, 0, 0)-2*f(0, 0, 0)+f(1, 0, 0);
+                grad(1,0,0,0) = f(0, -1, 0)-2*f(0, 0, 0)+f(0, 1, 0);
+                grad(2,0,0,0) = f(0, 0, -1)-2*f(0, 0, 0)+f(0, 0, 1);
+            }
+        }
+        else{
+            std::cout << order << "\n";
+        }
+    
+}
+
+void KerUpdateRhoWetting3D(ACC<Real>& rho,const ACC<int>& geometry, const ACC<int>&nodeType, const ACC<Real>& coordinates) {
+    const Real teta={M_PI/4};
+    const Real alpha={acos(sin(teta)*sin(teta))};
+    const Real Omga={2*((teta <= M_PI/2) - (M_PI/2 < teta))*sqrt(cos(alpha/3)*(1-cos(alpha/3)))};
+    const Real K={0.01};
+    const Real A=0.01;
+    const Real h={Omga*sqrt(K*A/2)};
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
+    if (vt == VertexType::Wall) {
+
+        switch (vg) {
+            case VG_IP: {
+                rho(-1,0,0)=rho(1,0,0)+2*h/K;
+            } break;
+            case VG_IM: {
+                rho(1,0,0)=rho(-1,0,0)+2*h/K;
+            } break;
+            case VG_JP: {
+                rho(0,-1,0)=rho(0,1,0)+2*h/K;
+            } break;
+            case VG_JM: {
+                rho(0,1,0)=rho(0,-1,0)+2*h/K;
+            } break;
+            case VG_KP: {
+                rho(0,0,-1)=rho(0,0,1)+2*h/K;
+            } break;
+            case VG_KM: {
+                rho(0,0,1)=rho(0,0,-1)+2*h/K;
+            } break;
+        }
+    }
+}
+
+void KerCalcMu3D(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi){
+    Real phi{Phi(0,0,0)};
+    Real phi3 = {phi*phi*phi};
+    Real A=0.01;
+    Real kappa=0.01;
+    mu(0,0,0)=-A*phi+A*phi3-kappa*(d2phi(0,0,0,0)+d2phi(1,0,0,0)+d2phi(2,0,0,0));
+}
+
+void KerPrintPhi3D(const ACC<Real>& Phi){
+    std::cout << Phi(0,0,0) << " ";
+}
+
+void KerUpdateMacroBodyForce3D(ACC<Real>& force, const ACC<Real>& Phi, const ACC<Real>& dmu, const ACC<int>& geometry, const ACC<int>&nodeType, const ACC<Real>& coordinates,
+                            const int* idx) {
+    Real phi = {Phi(0,0,0)};
+    Real dmux = {dmu(0,0,0,0)};
+    Real dmuy = {dmu(1,0,0,0)};
+    Real dmuz = {dmu(2,0,0,0)};
+    //std::cout << "Stuff: " << dphix << " " << dphiy << " " << dmux << " " << dmuy << " " << phi << " " << coordinates(0,0,0) << " " << coordinates(1,0,0) << "\n";
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
+    if (vt == VertexType::Wall) {
+        
+        switch (vg) {
+            case VG_IP: {
+                dmux=0;
+            } break;
+            case VG_IM: {
+                dmux=0;
+            } break;
+            case VG_JP: {
+                dmuy=0;
+            } break;
+            case VG_JM: {
+                dmuy=0;
+            } break;
+            case VG_KP: {
+                dmuz=0;
+            } break;
+            case VG_KM: {
+                dmuz=0;
+            } break;
+        }
+    }
+    
+    force(0,0,0,0) = -phi*dmux;
+    force(1,0,0,0) = -phi*dmuy;
+    force(2,0,0,0) = -phi*dmuz;
+    //std::cout<<"Force: "<<force(0,0,0)<<" "<<force(1,0,0)<<"\n";
+}
+#endif
 #endif // CAVITY2D_KERNEL_INC

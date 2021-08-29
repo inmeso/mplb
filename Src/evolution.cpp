@@ -62,11 +62,10 @@
 //             OPS_READ), ops_arg_dat(g_GeometryProperty[blockIdx], 1,
 //             LOCALSTENCIL, "int",
 //                         OPS_READ),
-//             ops_arg_dat(g_f()[blockIdx], NUMXI, LOCALSTENCIL, "double",
+//             ops_arg_dat(g_f().at(compo.id).at(blockIdx), NUMXI, LOCALSTENCIL, "double",
 //             OPS_RW));
 //     }
 // }
-
 
 void Iterate(const SizeType steps, const SizeType checkPointPeriod,
              const SizeType start) {
@@ -110,6 +109,7 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
             do {
                 const Real time{iter * TimeStep()};
                 StreamCollision(time);
+
                 iter = iter + 1;
                 if ((iter % checkPointPeriod) == 0) {
 #ifdef OPS_3D
@@ -124,8 +124,12 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
                     WriteFlowfieldToHdf5(iter);
                     WriteDistributionsToHdf5(iter);
                     WriteNodePropertyToHdf5(iter);
+                    
                 }
             } while (residualError >= convergenceCriteria);
+
+            
+            
         } break;
         default:
             break;
@@ -136,37 +140,52 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
 
 void StreamCollision(const Real time) {
 #if DebugLevel >= 1
-    ops_printf("Calculating the macroscopic variables...\n");
+    ops_printf("CSalculating the macroscopic variables...\n");
 #endif
 #ifdef OPS_3D
     UpdateMacroVars3D();
+
 #endif
 #ifdef OPS_2D
-    UpdateMacroVars();
+    UpdateMacroVars();  
 #endif
     CopyBlockEnvelopDistribution(g_fStage(), g_f());
-    CopyBlockEnvelopDistribution(g_gStage(), g_g());
 #if DebugLevel >= 1
     ops_printf("Calculating the mesoscopic body force term...\n");
 #endif
-    UpdateMacroscopicBodyForce(time);
 #ifdef OPS_3D
+    CalcPhiWetting3D();
+    Calcphi2Gradients3D();
+    CalcMu3D();
+    g_mu().TransferHalos();
+    const auto& compoC = g_Components().at(1);
+    g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).TransferHalos();
+    CalcmuGradients3D();
+
+    UpdateMacroscopicBodyForce3D(time);
     PreDefinedBodyForce3D();
 #endif
 #ifdef OPS_2D
+    CalcPhiWetting();
+    Calcphi2Gradients();
+    CalcMu();
+    g_mu().TransferHalos();
+    const auto& compoC = g_Components().at(1);
+    g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).TransferHalos();
+    CalcmuGradients();
+
+    UpdateMacroscopicBodyForce(time);
     PreDefinedBodyForce();
 #endif
 #if DebugLevel >= 1
     ops_printf("Calculating the collision term...\n");
 #endif
 #ifdef OPS_3D
-    PreDefinedCollision3D();
+    PreDefinedCollisionAD3D();
 #endif
 #ifdef OPS_2D
-    //UpdateTime(time);
-    //UpdateConcentration();
     PreDefinedCollisionAD();
-    //PreDefinedCollision();
+    
 #endif
 
 #if DebugLevel >= 1
@@ -182,7 +201,6 @@ void StreamCollision(const Real time) {
 #endif
 #ifdef OPS_2D
     Stream();
-    StreamAD();
 #endif
 
 #if DebugLevel >= 1

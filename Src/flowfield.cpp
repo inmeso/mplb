@@ -61,8 +61,7 @@ int SPACEDIM{2};
 BlockGroup BLOCKS;
 RealField f{"f"};
 RealField fStage{"fStage"};
-RealField g{"g"};
-RealField gStage{"gStage"};
+RealField gHalos{"gGalos"};
 RealFieldGroup MacroVars;
 RealFieldGroup MacroVarsCopy;
 std::map<int,Real> ResidualError;
@@ -76,8 +75,7 @@ RealFieldGroup MacroBodyforce;
 const BlockGroup& g_Block() { return BLOCKS; };
 RealField& g_f() { return f; };
 RealField& g_fStage() { return fStage; };
-RealField& g_g() { return g; };
-RealField& g_gStage() { return gStage; };
+RealField& g_gHalos() { return gHalos; };
 RealFieldGroup& g_MacroVars() { return MacroVars; };
 RealFieldGroup& g_MacroVarsCopy() { return MacroVarsCopy; };
 
@@ -86,6 +84,14 @@ RealField& g_Concentration() { return Concentration; };
 Real Time{0.0};
 Real* g_Time() { return &Time; };
 void UpdateTime(Real time) { Time = time; };
+
+RealField phiGrad{"phiGradients"};
+RealField& g_phiGrad() {return phiGrad; };
+RealField muGrad{"muGradients"};
+RealField& g_muGrad() {return muGrad; };
+RealField mu{"ChemPot"};
+RealField& g_mu() {return mu; };
+
 
 RealFieldGroup& g_MacroBodyforce() { return MacroBodyforce; };
 /**
@@ -167,8 +173,7 @@ Real GetMaximumResidual(const SizeType checkPeriod) {
 }
 
 void TransferHalos() {
-    fStage.TransferHalos();
-    gStage.TransferHalos();
+    fStage.TransferHalos();   
 }
 
 void DefineBlocks(const std::vector<int>& blockIds,

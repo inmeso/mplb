@@ -259,6 +259,7 @@ void PreDefinedBodyForce3D() {
         for (const auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
             const BodyForceType forceType{compo.bodyForceType};
+            const Real* pdt{pTimeStep()};
             switch (forceType) {
                 case BodyForce_1st:
                     ops_par_loop(
@@ -286,6 +287,30 @@ void PreDefinedBodyForce3D() {
                         ops_arg_dat(
                             g_MacroBodyforce().at(compo.id).at(blockIndex),
                             SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    break;
+                case GuoForce:
+                    ops_par_loop(
+                        KerCalcGuoForce3D, "KerCalcGuoForce",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(
+                            g_MacroBodyforce().at(compo.id).at(blockIndex),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                        .at(compo.macroVars.at(Variable_Rho).id)
+                                        .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_RW),
+                        ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_U_Force).id).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_V_Force).id).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_W_Force).id).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
                                     LOCALSTENCIL, "int", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
@@ -342,6 +367,200 @@ void PreDefinedInitialCondition3D() {
     // TODO this may be better arranged.
     if (!IsTransient()) {
         CopyCurrentMacroVar();
+    }
+#endif // OPS_3D
+}
+
+void PreDefinedInitialConditionAD3D() {
+#ifdef OPS_3D
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        for (const auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            const auto& it = g_Components().begin();
+            const auto& Iter{*it};
+            const Component& compoVel{Iter.second};
+            const int compoId{compo.id};
+            const int compoVelId{compoVel.id};
+            const InitialType initialType{compo.initialType};
+            //std::cout<<initialType<<" ";
+            const Real* pdt{pTimeStep()};
+            switch (initialType) {
+                case Initial_BGKFeq2ndAD: {
+                    ops_par_loop(
+                        KerInitialiseBGKADF3D, "KerInitialiseBGKAD3D",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(g_NodeType().at(compoId).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                         ops_arg_dat(g_MacroVars().at(compoVel.wId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(
+                            g_MacroBodyforce().at(compo.id).at(blockIndex),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),    
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                } break;
+                case Initial_BGKGeq2ndAD: {
+                    ops_par_loop(
+                        KerInitialiseBGKADG3D, "KerInitialiseBGKADG3D",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(g_NodeType().at(compoId).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.wId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
+                                    OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                } break;
+                default:
+                    ops_printf(
+                        "The specified initial type is not implemented!\n");
+                    break;
+            }
+            
+        }
+    
+    }
+
+    // TODO this may be better arranged.
+    if (!IsTransient()) {
+        CopyCurrentMacroVar();
+    }
+#endif // OPS_3D
+}
+
+void PreDefinedCollisionAD3D() {
+#ifdef OPS_3D
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        for (const auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            const auto& compoVel = g_Components().at(0);
+            //const auto& Iter{*it};
+            //const Component& compoVel{it.second};
+            const CollisionType collisionType{compo.collisionType};
+            const Real tau{compo.tauRef};
+            const Real* pdt{pTimeStep()};
+            switch (collisionType) {
+                case Collision_BGKIsothermal2nd:
+                    ops_par_loop(
+                        KerCollideBGKADF3D, "KerCollideBGKIsothermal",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_READ),
+                        ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                    LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                        .at(compo.macroVars.at(Variable_Rho).id)
+                                        .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(
+                            g_MacroBodyforce().at(compo.id).at(blockIndex),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    break;
+                case Collision_BGKADF:
+                    ops_par_loop(
+                        KerCollideBGKADF3D, "KerCollideBGKADF",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_RW),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_READ),
+                        ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                    LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.wId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(
+                            g_MacroBodyforce().at(compo.id).at(blockIndex),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    break;
+                case Collision_BGKADG:
+                    ops_par_loop(
+                        KerCollideBGKADG3D, "KerCollideBGKADG",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_RW),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_READ),
+                        ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                    LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.wId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
+                                    OPS_READ),
+                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    break;
+                default:
+                    ops_printf(
+                        "The specified collision type is not implemented!\n");
+                    break;
+            }
+        }
     }
 #endif // OPS_3D
 }
@@ -431,35 +650,16 @@ void PreDefinedCollisionAD() {
         const int blockIndex{block.ID()};
         for (const auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
+            const auto& compoVel = g_Components().at(0);
+            //const auto& Iter{*it};
+            //const Component& compoVel{it.second};
             const CollisionType collisionType{compo.collisionType};
             const Real tau{compo.tauRef};
             const Real* pdt{pTimeStep()};
             switch (collisionType) {
-                case Collision_BGKAD:
+                case Collision_BGKIsothermal2nd:
                     ops_par_loop(
-                        KerCollideBGKAD, "KerCollideBGKAD",
-                        block.Get(), SpaceDim(), iterRng.data(),
-                        ops_arg_dat(g_gStage()[blockIndex], NUMXI, LOCALSTENCIL,
-                                    "double", OPS_WRITE),
-                        ops_arg_dat(g_g()[blockIndex], NUMXI, LOCALSTENCIL,
-                                    "double", OPS_READ),
-                        ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
-                                    LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
-                                    LOCALSTENCIL, "int", OPS_READ),
-                        ops_arg_dat(g_MacroVars()
-                                    .at(compo.macroVars.at(Variable_C).id)
-                                    .at(blockIndex),
-                                    1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
-                                    1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
-                                    1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
-                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
-                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
-                    ops_par_loop(
-                        KerCollideBGKAD, "KerCollideBGKIsothermal",
+                        KerCollideBGKADF, "KerCollideBGKIsothermal",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
@@ -477,6 +677,64 @@ void PreDefinedCollisionAD() {
                                     1, LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
                                     1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(
+                            g_MacroBodyforce().at(compo.id).at(blockIndex),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    break;
+                case Collision_BGKADF:
+                    ops_par_loop(
+                        KerCollideBGKADF, "KerCollideBGKADF",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_RW),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_READ),
+                        ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                    LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(
+                            g_MacroBodyforce().at(compo.id).at(blockIndex),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    break;
+                case Collision_BGKADG:
+                    ops_par_loop(
+                        KerCollideBGKADG, "KerCollideBGKADG",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_RW),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, ONEPTREGULARSTENCIL,
+                                    "double", OPS_READ),
+                        ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                    LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, ONEPTREGULARSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.macroVars.at(Variable_U_Force).id).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.macroVars.at(Variable_V_Force).id).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
+                                    OPS_READ),
                         ops_arg_gbl(&tau, 1, "double", OPS_READ),
                         ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
@@ -605,19 +863,6 @@ void UpdateMacroVars() {
                             ops_arg_gbl(pdt, 1, "double", OPS_READ),
                             ops_arg_gbl(compo.index, 2, "int", OPS_READ));
                         break;
-                    case Variable_C:
-                        ops_par_loop(
-                            KerCalcDensity, "KerCalcDensity", block.Get(),
-                            SpaceDim(), iterRng.data(),
-                            ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_C).id).at(blockIndex),
-                                        1, LOCALSTENCIL, "double", OPS_RW),
-                            ops_arg_dat(g_g()[blockIndex], NUMXI, LOCALSTENCIL,
-                                        "double", OPS_READ),
-                            ops_arg_dat(
-                                g_NodeType().at(compo.id).at(blockIndex), 1,
-                                LOCALSTENCIL, "int", OPS_READ),
-                            ops_arg_gbl(compo.index, 2, "int", OPS_READ));
-                        break;
                     default:
                         break;
                 }
@@ -638,6 +883,7 @@ void PreDefinedBodyForce() {
         for (const auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
             const BodyForceType forceType{compo.bodyForceType};
+            const Real* pdt{pTimeStep()};
             switch (forceType) {
                 case BodyForce_1st:
                     ops_par_loop(
@@ -665,6 +911,28 @@ void PreDefinedBodyForce() {
                         ops_arg_dat(
                             g_MacroBodyforce().at(compo.id).at(blockIndex),
                             SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    break;
+                case GuoForce:
+                    ops_par_loop(
+                        KerCalcGuoForce, "KerCalcGuoForce",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(
+                            g_MacroBodyforce().at(compo.id).at(blockIndex),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                        .at(compo.macroVars.at(Variable_Rho).id)
+                                        .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_RW),
+                        ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_U_Force).id).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_V_Force).id).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
                                     LOCALSTENCIL, "int", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
@@ -734,41 +1002,58 @@ void PreDefinedInitialConditionAD() {
         const int blockIndex{block.ID()};
         for (const auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
+            const auto& it = g_Components().begin();
+            const auto& Iter{*it};
+            const Component& compoVel{Iter.second};
             const int compoId{compo.id};
+            const int compoVelId{compoVel.id};
             const InitialType initialType{compo.initialType};
+            //std::cout<<initialType<<" ";
+            const Real* pdt{pTimeStep()};
             switch (initialType) {
                 case Initial_BGKFeq2ndAD: {
                     ops_par_loop(
-                        KerInitialiseBGKAD, "KerInitialiseBGK2nd",
-                        block.Get(), SpaceDim(), iterRng.data(),
-                        ops_arg_dat(g_g()[blockIndex], NUMXI, LOCALSTENCIL,
-                                    "double", OPS_WRITE),
-                        ops_arg_dat(g_NodeType().at(compoId).at(blockIndex), 1,
-                                    LOCALSTENCIL, "int", OPS_READ),
-                        ops_arg_dat(g_MacroVars()
-                                    .at(compo.macroVars.at(Variable_C).id)
-                                    .at(blockIndex),
-                                    1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
-                                    1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
-                                    1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
-                    ops_par_loop(
-                        KerInitialiseBGK2nd, "KerInitialiseBGK2nd",
+                        KerInitialiseBGKADF, "KerInitialiseBGKAD",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
                         ops_arg_dat(g_NodeType().at(compoId).at(blockIndex), 1,
                                     LOCALSTENCIL, "int", OPS_READ),
                         ops_arg_dat(g_MacroVars()
-                                        .at(compo.macroVars.at(Variable_Rho).id)
-                                        .at(blockIndex),
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
                                     1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
+                        ops_arg_dat(g_MacroVars().at(compoVel.uId).at(blockIndex),
                                     1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
+                        ops_arg_dat(g_MacroVars().at(compoVel.vId).at(blockIndex),
                                     1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(
+                            g_MacroBodyforce().at(compo.id).at(blockIndex),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),    
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                } break;
+                case Initial_BGKGeq2ndAD: {
+                    ops_par_loop(
+                        KerInitialiseBGKADG, "KerInitialiseBGKADG",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(g_NodeType().at(compoId).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
+                                     LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, ONEPTREGULARSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compoVel.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
+                                    OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
                 } break;
                 default:
@@ -776,8 +1061,11 @@ void PreDefinedInitialConditionAD() {
                         "The specified initial type is not implemented!\n");
                     break;
             }
+            
         }
+    
     }
+
     // TODO this may be better arranged.
     if (!IsTransient()) {
         CopyCurrentMacroVar();

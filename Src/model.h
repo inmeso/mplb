@@ -96,12 +96,13 @@ enum CollisionType {
     Collision_BGKIsothermal2nd = 0,
     Collision_BGKThermal4th = 1,
     Collision_BGKSWE4th = 2,
-    Collision_BGKAD = 3,
+    Collision_BGKADF = 3,
+    Collision_BGKADG = 4,
 };
 
-enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };
+enum BodyForceType {GuoForce = 2, BodyForce_1st = 1, BodyForce_None = 0};
 
-enum InitialType {Initial_BGKFeq2nd = 1, Initial_BGKFeq2ndAD = 2};
+enum InitialType {Initial_BGKFeq2nd = 1, Initial_BGKFeq2ndAD = 2, Initial_BGKGeq2ndAD = 3};
 
 struct MacroVariable {
     std::string name;
@@ -170,13 +171,19 @@ void UpdateMacroVars3D();
 void PreDefinedBodyForce3D();
 void PreDefinedInitialCondition3D();
 void PreDefinedCollision3D();
+void PreDefinedInitialConditionAD3D();
+void PreDefinedCollisionAD3D();
 #endif
 #ifdef OPS_2D
 void UpdateMacroVars();
 void PreDefinedBodyForce();
 void PreDefinedInitialCondition();
 void PreDefinedInitialConditionAD();
+void PreDefinedInitialConditionADF();
+void InitialiseGHalos();
+void CalcGHalos();
 void PreDefinedCollision();
 void PreDefinedCollisionAD();
+
 #endif
 #endif

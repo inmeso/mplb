@@ -92,6 +92,7 @@ void Iterate(void (*cycle)(T), const SizeType steps,
             WriteFlowfieldToHdf5((iter + 1));
             WriteDistributionsToHdf5((iter + 1));
             WriteNodePropertyToHdf5((iter + 1));
+            
         }
     }
     ops_printf("Simulation finished! Exiting...\n");
