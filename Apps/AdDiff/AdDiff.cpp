@@ -713,7 +713,7 @@ void simulate() {
     SetTimeStep(1);
 
     const Real convergenceCriteria{-1E-7};
-    const SizeType checkPeriod{5000};
+    const SizeType checkPeriod{1};
     Real iter{0};
     WriteFlowfieldToHdf5(iter);
     WriteDistributionsToHdf5(iter);

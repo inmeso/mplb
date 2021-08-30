@@ -71,12 +71,21 @@ void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex, co
     Real y=(xiIndexVar2-x0[1]);
     Real R=sqrt(x*x+y*y);
     Real r=30.0;
+    
     if (R<=r){
         concentration(0,0) = 1;
     }
     else{
         concentration(0,0) = -1;
     }
+    
+   //if (x>30 && x<90){
+   //    concentration(0,0) = 1;
+   //}
+   //else{
+   //    concentration(0,0) = -1;
+   //}
+
 }
 
 
@@ -108,11 +117,11 @@ void KerCalcGradients(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType
 }
 
 void KerUpdateRhoWetting(ACC<Real>& rho,const ACC<int>& geometry, const ACC<int>&nodeType,const ACC<Real>& coordinates) {
-    const Real teta={M_PI/2.01};
+    const Real teta={M_PI/2};
     const Real alpha={acos(sin(teta)*sin(teta))};
     const Real Omga={2*((teta <= M_PI/2) - (M_PI/2 < teta))*sqrt(cos(alpha/3)*(1-cos(alpha/3)))};
     const Real K={0.02};
-    const Real A=0.005;
+    const Real A=0.02;
     const Real h={Omga*sqrt(K*A/2)};
     VertexType vt = (VertexType)nodeType(0, 0);
     VertexGeometryType vg = (VertexGeometryType)geometry(0, 0);
@@ -139,7 +148,7 @@ void KerCalcMu(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi, const ACC
     Real phi3 = {phi*phi*phi};
     Real d2phix = {d2phi(0,0,0)};
     Real d2phiy = {d2phi(1,0,0)};
-    Real A=0.005;
+    Real A=0.02;
     Real kappa=0.02;
     
     mu(0,0)=-A*phi+A*phi3-kappa*(d2phix+d2phiy);

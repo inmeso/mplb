@@ -773,9 +773,9 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
                 Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
                 Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
                 Real opps={9+OPP[xiIdx]};
-                //std::cout<<opps<<" ";
-                f(xiIdx, 0, 0) = f(opps, 0, 0)+
-                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
+                std::cout<<f(opps,0,0)<<" ";
+                f(xiIdx, 0, 0) = f(opps, 0, 0);
+                //                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
     }
     /*switch (vg) {
             case VG_IP: {
