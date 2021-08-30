@@ -589,9 +589,10 @@ void UpdateMacroscopicBodyForce3D(const Real time) {
 #ifdef OPS_2D
 void simulate() {
 
-    std::string caseName{"Advection_Diffusion"};
+    std::string caseName{"Advection_Diffusion_DS"}; //DS means diffusive scaling
     SizeType spaceDim{2};
     DefineCase(caseName, spaceDim);
+    //Define one block this application
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
     std::vector<int> blockSize{120, 120};
@@ -605,8 +606,6 @@ void simulate() {
     std::vector<BoundarySurface> fromBoundarySurface{BoundarySurface::Top,
         BoundarySurface::Bottom};
     std::vector<BoundarySurface> toBoundarySurface{BoundarySurface::Bottom,
-        BoundarySurface::Top};
-    std::vector<VertexType> blockConnectionType{VertexType::MDPeriodic,
         VertexType::MDPeriodic};
 
     DefineBlockConnection(fromBlockIds, fromBoundarySurface, toBlockIds,
@@ -737,15 +736,7 @@ void simulate() {
     std::vector<int> fromBlockIds{0, 0, 0, 0};
     std::vector<int> toBlockIds{0, 0, 0, 0};
 
-    std::vector<BoundarySurface> fromBoundarySurface{
-        BoundarySurface::Left, BoundarySurface::Right, BoundarySurface::Top,
-        BoundarySurface::Bottom};
-    std::vector<BoundarySurface> toBoundarySurface{
         BoundarySurface::Right, BoundarySurface::Left, BoundarySurface::Bottom,
-        BoundarySurface::Top};
-    std::vector<VertexType> blockConnectionType{
-        VertexType::MDPeriodic, VertexType::MDPeriodic, VertexType::MDPeriodic,
-        VertexType::MDPeriodic};
 
     DefineBlockConnection(fromBlockIds, fromBoundarySurface, toBlockIds,
                           toBoundarySurface, blockConnectionType);
@@ -781,7 +772,7 @@ void simulate() {
         Variable_U_Force, Variable_V_Force, Variable_W_Force};
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
 
-    // Periodic Boundary Conditions
+    // Periodic Boundary Conditions for component Fluid 0
     DefineBlockBoundary(0, componentId, BoundarySurface::Top,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
@@ -820,6 +811,19 @@ void simulate() {
                         BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
+    // Periodic Boundary Conditions for component Fluid 1
+    DefineBlockBoundary(1, componentId, BoundarySurface::Top,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(1, componentId, BoundarySurface::Bottom,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(1, componentId, BoundarySurface::Left,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(1, componentId, BoundarySurface::Right,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
 
     std::vector<InitialType> initType{Initial_BGKFeq2ndAD,Initial_BGKGeq2ndAD};
     std::vector<SizeType> initalCompoId{0,1};
