@@ -203,4 +203,62 @@ void TreatBlockBoundary(const Block& block, const int componentID,
         }
     }
 }
+void TreatBlockBoundaryComplex(const Block& block, const int componentID,
+                          const Real* givenVars,
+                          const BoundaryScheme boundaryScheme) {
+    const int blockIndex{block.ID()};
+    std::vector<int> iterRng;
+    iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+    const Real* pdt{pTimeStep()};
+    for (const auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            switch (boundaryScheme) {
+                case BoundaryScheme::EQMDiffuseReflF: {
+                    ops_par_loop(
+                        KerCutCellEQMDiffuseReflADF, "KerCutCellEQMDiffuseReflADF",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
+                                    OPS_RW),
+                        ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
+                                    "int", OPS_READ),
+                        ops_arg_gbl(givenVars, 2, "double", OPS_READ),
+                        ops_arg_dat(
+                            g_MacroBodyforce().at(compo.id).at(blockIndex),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
+                                    OPS_READ));
+                } break;
+                case BoundaryScheme::EQMDiffuseReflG: {
+                    ops_par_loop(
+                        KerCutCellEQMDiffuseReflADG, "KerCutCellEQMDiffuseReflADG",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
+                                    OPS_RW),
+                        ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
+                                    "int", OPS_READ),
+                        ops_arg_gbl(givenVars, 2, "double", OPS_READ),
+                        ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
+                                    OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
+                                    OPS_READ));
+                } break;
+                default:
+                    break;
+        }
+    }
+}
+
+void ImplementBoundaryComplex() {
+    for (const auto& boundary : BlockBoundaries()) {
+        const Block& block{g_Block().at(boundary.blockIndex)};
+        TreatBlockBoundaryComplex(block, boundary.componentID,
+                             boundary.givenVars.data(), boundary.boundaryScheme);
+    }
+}
 #endif //OPS_2D

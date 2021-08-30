@@ -123,6 +123,10 @@ void TreatBlockBoundary(const Block& block, const int componentID,
                           const Real* givenVars,
                           const BoundaryScheme boundaryScheme,
                           const BoundarySurface boundarySurface);
+void TreatBlockBoundaryComplex(const Block& block, const int componentID,
+                          const Real* givenVars,
+                          const BoundaryScheme boundaryScheme);
 void ImplementBoundary();
+void ImplementBoundaryComplex();
 #endif
 #endif  // BOUNDARY_H

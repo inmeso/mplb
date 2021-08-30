@@ -9,6 +9,7 @@ enum class BoundarySurface {
     Right = 1,
     Top = 2,
     Bottom = 3,
+    None = 10000,
 #ifdef OPS_3D
     Front = 4,
     Back = 5,

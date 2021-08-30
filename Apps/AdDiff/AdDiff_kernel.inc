@@ -79,6 +79,8 @@ void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex, co
     }
 }
 
+
+
 void KerCalcGradients(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType, const ACC<int>&geometry, const ACC<Real>& coordinates, const int *lattIdx, const int *Order, const int *idx){
     VertexType vt = (VertexType)nodeType(0, 0);
     int order={*Order};
@@ -88,6 +90,7 @@ void KerCalcGradients(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType
                 vt == VertexType::VirtualBoundary || vt == VertexType::Wall) {
                 grad(0,0,0) = 0.5*(f(1, 0)-f(-1, 0));
                 grad(1,0,0) = 0.5*(f(0, 1)-f(0, -1));
+                //std::cout<<grad(0,0,0)<<" "<<grad(1,0,0)<<" ";
             }    
         }  
         else if (order == 2){     
@@ -95,6 +98,7 @@ void KerCalcGradients(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType
                 vt == VertexType::VirtualBoundary || vt == VertexType::Wall) {
                 grad(0,0,0) = f(-1, 0)-2*f(0, 0)+f(1, 0);
                 grad(1,0,0) = f(0, -1)-2*f(0, 0)+f(0, 1);
+                
             }
         }
         else{
@@ -104,16 +108,15 @@ void KerCalcGradients(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType
 }
 
 void KerUpdateRhoWetting(ACC<Real>& rho,const ACC<int>& geometry, const ACC<int>&nodeType,const ACC<Real>& coordinates) {
-    const Real teta={M_PI/4};
+    const Real teta={M_PI/2.01};
     const Real alpha={acos(sin(teta)*sin(teta))};
     const Real Omga={2*((teta <= M_PI/2) - (M_PI/2 < teta))*sqrt(cos(alpha/3)*(1-cos(alpha/3)))};
-    const Real K={0.01};
-    const Real A=0.01;
+    const Real K={0.02};
+    const Real A=0.005;
     const Real h={Omga*sqrt(K*A/2)};
-    VertexType vt = (VertexType)nodeType(0, 0, 0);
-    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
+    VertexType vt = (VertexType)nodeType(0, 0);
+    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0);
     if (vt == VertexType::Wall) {
-        
         switch (vg) {
             case VG_IP: {
                 rho(-1,0)=rho(1,0)+2*h/K;
@@ -136,9 +139,9 @@ void KerCalcMu(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi, const ACC
     Real phi3 = {phi*phi*phi};
     Real d2phix = {d2phi(0,0,0)};
     Real d2phiy = {d2phi(1,0,0)};
-    Real A=0.01;
-    Real kappa=0.01;
-
+    Real A=0.005;
+    Real kappa=0.02;
+    
     mu(0,0)=-A*phi+A*phi3-kappa*(d2phix+d2phiy);
 }
 
@@ -172,6 +175,144 @@ void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& Phi, const ACC<R
     }
     force(0,0,0) = -phi*dmux;
     force(1,0,0) = -phi*dmuy;
+}
+
+void KerSetSolid(ACC<int>& nodeType, ACC<int>& geometry, const ACC<Real>& coordinates, const int* xMax, const int* yMax) {
+    const Real X{coordinates(0,0,0)};
+    const Real Y{coordinates(1,0,0)};
+    int XMax{*xMax};
+    int YMax{*yMax};
+    std::cout<<XMax<<" ";
+    if (X>15||X<XMax-15){
+        nodeType(0,0)=(int)VertexType::ImmersedSolid;
+        geometry(0,0)=(int)VG_ImmersedSolid;
+    }
+}
+
+void KerSetEmbeddedBodyGeometry(ACC<int>& geometryProperty,
+                                ACC<int>& nodeType) {
+#ifdef OPS_2D
+    VertexType vt = (VertexType)nodeType(0, 0);
+    if (VertexType::ImmersedSolid == vt) {
+        VertexType neiborVertexType[8];
+        /*
+                        6*****2*****4
+                        *     *     *
+                        *     *     *
+                        1***********0
+                        *     *     *
+                        *     *     *
+                        5*****3*****7
+        */
+        neiborVertexType[0] = (VertexType)nodeType(1, 0);
+        neiborVertexType[1] = (VertexType)nodeType(-1, 0);
+        neiborVertexType[2] = (VertexType)nodeType(0, 1);
+        neiborVertexType[3] = (VertexType)nodeType(0, -1);
+        neiborVertexType[4] = (VertexType)nodeType(1, 1);
+        neiborVertexType[5] = (VertexType)nodeType(-1, -1);
+        neiborVertexType[6] = (VertexType)nodeType(-1, 1);
+        neiborVertexType[7] = (VertexType)nodeType(1, -1);
+        int fluidNeiborNum{0};
+        for (int i = 0; i < 8; i++) {
+            if (VertexType::ImmersedSolid != neiborVertexType[i]) {
+                fluidNeiborNum++;
+            }
+        }
+        int solidNeiborNumatCoord{0};
+        for (int i = 0; i < 4; i++) {
+            if (VertexType::ImmersedSolid == neiborVertexType[i]) {
+                solidNeiborNumatCoord++;
+            }
+        }
+        if (fluidNeiborNum > 0) {
+            nodeType(0,0)=(int)VertexType::Wall;
+            // outer corner
+            if (2 == solidNeiborNumatCoord) {
+                if ((VertexType::ImmersedSolid == neiborVertexType[0] &&
+                     VertexType::ImmersedSolid == neiborVertexType[1]) ||
+                    (VertexType::ImmersedSolid == neiborVertexType[0] &&
+                     VertexType::ImmersedSolid == neiborVertexType[1])) {
+                    ops_printf("%s\n",
+                               "There appears to be hanged solid points,i.e., "
+                               "the solid body may be too thin");
+                }
+                if (VertexType::ImmersedSolid == neiborVertexType[2] &&
+                    VertexType::ImmersedSolid == neiborVertexType[1]) {
+                    if (VertexType::ImmersedSolid == neiborVertexType[6]) {
+                        geometryProperty(0, 0) = (int)VG_IPJM_O;
+                    } else {
+                        ops_printf("%s\n",
+                                   "There appears to be hanged solid points");
+                    }
+                }
+
+                if (VertexType::ImmersedSolid == neiborVertexType[3] &&
+                    VertexType::ImmersedSolid == neiborVertexType[1]) {
+                    if (VertexType::ImmersedSolid == neiborVertexType[5]) {
+                        geometryProperty(0, 0) = (int)VG_IPJP_O;
+                    } else {
+                        ops_printf("%s\n",
+                                   "There appears to be hanged solid points");
+                    }
+                }
+
+                if (VertexType::ImmersedSolid == neiborVertexType[3] &&
+                    VertexType::ImmersedSolid == neiborVertexType[0]) {
+                    if (VertexType::ImmersedSolid == neiborVertexType[7]) {
+                        geometryProperty(0, 0) = (int)VG_IMJP_O;
+                    } else {
+                        ops_printf("%s\n",
+                                   "There appears to be hanged solid points");
+                    }
+                }
+                if (VertexType::ImmersedSolid == neiborVertexType[2] &&
+                    VertexType::ImmersedSolid == neiborVertexType[0]) {
+                    if (VertexType::ImmersedSolid == neiborVertexType[4]) {
+                        geometryProperty(0, 0) = (int)VG_IMJM_O;
+                    } else {
+                        ops_printf("%s\n",
+                                   "There appears to be hanged solid points");
+                    }
+                }
+            }
+            // Planlar corner
+            if (3 == solidNeiborNumatCoord) {
+                if (VertexType::ImmersedSolid != neiborVertexType[0]) {
+                    geometryProperty(0, 0) = (int)VG_IP;
+                }
+                if (VertexType::ImmersedSolid != neiborVertexType[1]) {
+                    geometryProperty(0, 0) = (int)VG_IM;
+                }
+                if (VertexType::ImmersedSolid != neiborVertexType[2]) {
+                    geometryProperty(0, 0) = (int)VG_JP;
+                }
+                if (VertexType::ImmersedSolid != neiborVertexType[3]) {
+                    geometryProperty(0, 0) = (int)VG_JM;
+                }
+            }
+            // Inner corner
+            if (4 == solidNeiborNumatCoord) {
+                if (1 == fluidNeiborNum) {
+                    if (VertexType::ImmersedSolid != neiborVertexType[4]) {
+                        geometryProperty(0, 0) = (int)VG_IPJP_I;
+                    }
+                    if (VertexType::ImmersedSolid != neiborVertexType[5]) {
+                        geometryProperty(0, 0) = (int)VG_IMJM_I;
+                    }
+                    if (VertexType::ImmersedSolid != neiborVertexType[6]) {
+                        geometryProperty(0, 0) = (int)VG_IMJP_I;
+                    }
+                    if (VertexType::ImmersedSolid != neiborVertexType[7]) {
+                        geometryProperty(0, 0) = (int)VG_IPJM_I;
+                    }
+                } else {
+                    ops_printf("%s\n",
+                               "There appears to be hanged solid points");
+                }
+            }
+        }
+    }
+#endif
 }
 #endif
 #endif // CAVITY2D_KERNEL_INC

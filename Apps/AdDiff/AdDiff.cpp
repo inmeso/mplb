@@ -254,7 +254,7 @@ void PrintPhi() {
 
             ops_par_loop(KerPrintPhi, "KerPrintPhi",
                          block.Get(), SpaceDim(), iterRng.data(),
-                         ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL,
+                         ops_arg_dat(g_f()[blockIndex], 1, LOCALSTENCIL,
                                         "double", OPS_READ));
     }
 }
@@ -293,6 +293,49 @@ void UpdateMacroscopicBodyForce(const Real time) {
         
     }
 }
+
+void SetSolid() {
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        const int sizeX{block.Size().at(0)};
+        const int sizeY{block.Size().at(1)};
+        for (const auto& idCompo : g_Components()) {
+        const Component& compo{idCompo.second};
+        ops_par_loop(KerSetSolid, "KerSetSolid",
+                     block.Get(), SpaceDim(), iterRng.data(),
+                     ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                 LOCALSTENCIL, "Real", OPS_READ),
+                     ops_arg_gbl(&sizeX, 1, "double", OPS_READ),
+                     ops_arg_gbl(&sizeY, 1, "double", OPS_READ));
+        }
+    }
+}
+
+void SetEmbeddedBodyGeometry() {
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        for (const auto& idCompo : g_Components()) {
+        const Component& compo{idCompo.second};
+        ops_par_loop(KerSetEmbeddedBodyGeometry, "KerSetEmbeddedBodyGeometry",
+                     block.Get(), SpaceDim(), iterRng.data(),
+                     ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                 ONEPTLATTICESTENCIL, "int", OPS_READ));
+        }
+    }
+}
+
 #endif
 //////////////////////////////////////////////////////////////////////
 ////////////////                  3D                  ////////////////
@@ -613,6 +656,8 @@ void simulate() {
     //DefineBlockBoundary(0, componentId, BoundarySurface::Right,
     //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
     //                    noSlipStationaryWall, VertexType::MDPeriodic);
+    /*DefineBlockBoundary(0, componentId, BoundarySurface::LeftTop, BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
+                        noSlipStationaryWall);*/
     DefineBlockBoundary(0, componentId, BoundarySurface::Left,
                         BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
                         noSlipStationaryWall);
@@ -626,6 +671,8 @@ void simulate() {
     DefineBlockBoundary(0, 1, BoundarySurface::Bottom,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
+    /*DefineBlockBoundary(0, 1, BoundarySurface::LeftTop, BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
+                        noSlipStationaryWall);*/
     DefineBlockBoundary(0, 1, BoundarySurface::Left,
                         BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
                         noSlipStationaryWall);
@@ -639,7 +686,8 @@ void simulate() {
     //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
     //                    noSlipStationaryWall, VertexType::MDPeriodic);
 
-
+    //SetSolid();
+    //SetEmbeddedBodyGeometry();
     std::vector<InitialType> initType{Initial_BGKFeq2ndAD,Initial_BGKGeq2ndAD};
     std::vector<SizeType> initalCompoId{0,1};
     g_mu().CreateHalos();

@@ -76,7 +76,7 @@ void KerCalcDensity(ACC<Real>& Rho, const ACC<Real>& f,
                 "Error! Density %f becomes invalid！Something "
                 "wrong...",
                 rho);
-            assert(!(isnan(rho) || rho <= -1.01 || isinf(rho)));
+            //assert(!(isnan(rho) || rho <= -999 || isinf(rho)));
         }
 #endif
         Rho(0, 0) = rho;
@@ -317,6 +317,7 @@ void KerInitialiseBGKADG(ACC<Real>& g, const ACC<int>& nodeType,const ACC<int>& 
         Real mu{Mu(0,0)};
         const int polyOrder{2};
         Real S{0.0};
+
         //std::cout << C << "\n";
         for (int xiIdx = lattIdx[0]+1; xiIdx <= lattIdx[1]; xiIdx++) {
             g(xiIdx, 0, 0) = CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, polyOrder);

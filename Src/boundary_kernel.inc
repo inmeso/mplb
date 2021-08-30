@@ -643,6 +643,8 @@ void KerCutCellEQMDiffuseReflADF(ACC<Real> &f, const ACC<int> &nodeType,
     Real rhoIncoming{0};
     Real rhoParallel{0};
     Real deltaRho{0};
+    VertexType vt = (VertexType)nodeType(0, 0);
+    if (vt == VertexType::Wall) {
     for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
         Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
         Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
@@ -688,7 +690,7 @@ void KerCutCellEQMDiffuseReflADF(ACC<Real> &f, const ACC<int> &nodeType,
     delete[] outgoing;
     delete[] incoming;
     delete[] parallel;
-
+    }
 #endif  // OPS_2D
 }
 
@@ -726,6 +728,8 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
     Real rhoIncoming{0};
     Real rhoParallel{0};
     Real deltaRho{0};
+    VertexType vt = (VertexType)nodeType(0, 0);
+    if (vt == VertexType::Wall) {
     for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
         Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
         Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
@@ -837,7 +841,7 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
     delete[] outgoing;
     delete[] incoming;
     delete[] parallel;
-
+    }
 #endif  // OPS_2D
 }
 

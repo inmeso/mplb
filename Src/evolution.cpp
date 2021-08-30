@@ -147,7 +147,8 @@ void StreamCollision(const Real time) {
 
 #endif
 #ifdef OPS_2D
-    UpdateMacroVars();  
+    UpdateMacroVars(); 
+    //PrintPhi(); 
 #endif
     CopyBlockEnvelopDistribution(g_fStage(), g_f());
 #if DebugLevel >= 1
@@ -212,6 +213,7 @@ void StreamCollision(const Real time) {
 #endif
 #ifdef OPS_2D
     ImplementBoundary();
+    //ImplementBoundaryComplex();
 #endif
 }
 
