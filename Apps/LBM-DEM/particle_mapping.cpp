@@ -251,6 +251,9 @@ void InitializeMappingLists() {
 				break;
 			case copyData:
 				break;
+			//case multipleSpheres:
+			//	InitializeMultipleSpheresPorousLists(mappingModel.second,
+			//			component);
 			default: { //The default is the porous media type model
 				InitializePorousLists(mappingModel.second, component);
 
@@ -278,14 +281,32 @@ void MappingParticlesToLBMGrid() {
 				ops_printf("ERROR: This model is not imported yet\n");
 				break;
 			case gridSpherical:
+#ifdef OPS_3D
+				ParticleProjectionSphereGrid3D(mappingModel.second, component);
+#endif
+#ifdef OPS_2D
 				ParticleProjectionSphereGrid(mappingModel.second, component);
+#endif
 				break;
+
 			case sphericalMapping:
+#ifdef OPS_3D
+				ParticleProjectionSphere3D(mappingModel.second, component);
+#endif
+#ifdef OPS_2D
 				ParticleProjectionSphere(mappingModel.second, component);
+#endif
+				break;
+//			case multipleSpheres:
+//				ParticleProjectionMultSpheres3D(mappingModel.second, component);
 				break;
 			default:
+#ifdef OPS_3D
+				ParticleProjectionSphere3D(mappingModel.second, component);
+#endif
+#ifdef OPS_2D
 				ParticleProjectionSphere(mappingModel.second, component);
-
+#endif
 		}
 	}
 
@@ -315,13 +336,34 @@ void UpdateParticlesToLBMGrid() {
 				ops_printf("ERROR: This model is not imported yet\n");
 				break;
 			case gridSpherical:
-				UpdateProjectectionSphereGrid(mappingModel.second, component);
+#ifdef OPS_3D
+				UpdateProjectionSphereGrid3D(mappingModel.second, component);
+#endif
+
+#ifdef OPS_2D
+				UpdateProjectionSphereGrid(mappingModel.second, component);
+#endif
 				break;
 			case sphericalMapping:
+#ifdef OPS_3D
+				UpdateProjectionSphere3D(mappingModel.second, component);
+#endif
+
+#ifdef OPS_2D
 				UpdateProjectionSphere(mappingModel.second, component);
+#endif
 				break;
+//			case multipleSpheres:
+//				UpdateProjectionSphere(mappingModel.second, component);
+//				break;
 			default:
+#ifdef OPS_3D
+				UpdateProjectionSphere3D(mappingModel.second, component);
+#endif
+
+#ifdef OPS_2D
 				UpdateProjectionSphere(mappingModel.second, component);
+#endif
 		}
 	}
 

@@ -63,7 +63,13 @@ class MuiInterface {
 
 
 	private:
+#ifdef OPS_3D
 		mui::uniface3d* interface;			//mui object
+#endif
+
+#ifdef OPS_2D
+		mui::uniface2d* interface;			//2D mui object
+#endif
 		SizeType maxStep;					//maximum step that the assinged region is ok
 		Real Rmax;							//maximum particle size for defining region
 		void DefineProcBox(Real* xmin, Real* xmax);

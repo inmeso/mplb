@@ -46,7 +46,14 @@ MuiInterface::MuiInterface( ListBlockParticles* blockParticles,
 		std::vector<std::string> output, Real skin, SizeType timeStep)
 {
 
+#ifdef OPS_3D
 	interface = new mui::uniface3d("mpi://LBM/ifs");
+#endif
+
+#ifdef OPS_2D
+	interface = new mui::uniface2d("mpi://LBM/ifs");
+#endif
+
 	maxStep = 0;
 	Rmax = skin;
 	startStep = timeStep;
@@ -56,6 +63,9 @@ MuiInterface::MuiInterface( ListBlockParticles* blockParticles,
 	spaceDim = 3;
 #endif
 
+#ifdef OPS_2D
+	spaceDim = 2;
+#endif
 	inputData = input;
 	outputData = output;
 	particleShapeData = particleShape;
@@ -79,9 +89,14 @@ void MuiInterface::SetDomains(SizeType maxIteration) {
 	long int lastStep = static_cast<long int>(maxStep);
 
 	DefineProcBox(xmin, xmax);
-
+#ifdef OPS_3D
 	mui::geometry::box3d send_recv_region({xmin[0], xmin[1], xmin[2]},
 			{xmax[0], xmax[1], xmax[2]});
+#endif
+
+#ifdef OPS_2D
+	mui::geometry::box2d send_recv_region({xmin[0], xmin[1]}, {xmax[0], xmax[1]});
+#endif
 
 	interface->announce_send_span(firstStep, lastStep, send_recv_region);
 	interface->announce_recv_span(firstStep, lastStep, send_recv_region);
@@ -94,11 +109,14 @@ void MuiInterface::DefineProcBox(Real* xMin, Real* xMax) {
 
 	xMin[0] = std::numeric_limits<Real>::max();
 	xMin[1] = xMin[0];
-	xMin[2] = xMin[0];
-	xMax[0] = -1.0 * xMin[0];
-	xMax[1] = xMax[0];
-	xMax[2] = xMax[0];
 
+ 	xMax[0] = -1.0 * xMin[0];
+	xMax[1] = xMax[0];
+
+#ifdef OPS_3D
+	xMin[2] = xMin[0];
+	xMax[2] = xMax[0];
+#endif
 
 	for (auto particleBlock  = blockPointer->begin(); particleBlock != blockPointer->end();
 			++particleBlock) {
@@ -114,18 +132,31 @@ void MuiInterface::DefineProcBox(Real* xMin, Real* xMax) {
 
 #ifdef CPU
 #if DebugLevel >= 2
-	printf("Send MUI region of rank %d: [(%e %e %e), (%e %e %e])]\n", ops_get_proc(),
+#ifdef OPS_3D
+	printf("Send MUI region of rank %d: [(%e %e %e), (%e %e %e)]\n", ops_get_proc(),
 			xMin[0], xMin[1], xMin[2], xMax[0], xMax[1], xMax[2]);
+#endif
+#ifdef OPS_2D
+	printf("Send MUI region of rand %d [(%e %e) x (%e %e)\n]\n", ops_get_proc(),
+			xMin[0], xMin[1], xMax[0], xMax[1]);
+#endif
 #endif
 #endif
 }
 
 void MuiInterface::ExtractData(SizeType currentStep, SizeType &firstStep, SizeType& maxIter,
 		Real& alpha, int* flags, ParticleShapeDiscriptor& particleShape) {
-
+#ifdef OPS_3D
 	std::vector<mui::point3d> posMUI;
 	mui::chrono_sampler_exact3d time_sampler;
 	posMUI = interface->fetch_points<double, mui::chrono_sampler_exact3d>("radius", currentStep, time_sampler);
+#endif
+
+#ifdef OPS_2D
+	std::vector<mui::point2d> posMUI;
+	mui::chrono_sampler_exact2d time_sampler;
+	posMUI = interface->fetch_points<double, mui::chrono_sampler_exact2d>("radius", currentStep, time_sampler);
+#endif
 
 	auto maxIter1 = interface->fetch<long int>("Nsteps");
 	auto alpha1 = interface->fetch<Real>("alpha1");
@@ -143,19 +174,29 @@ void MuiInterface::ExtractParticles(SizeType timestep) {
 	Real uTmp[spaceDim], oTmp[spaceDim];
 	Real xTemp[spaceDim], radTmp;
 	Real partTemp;
+	int iDir;
+
 	std::vector<Real> particleShape;
 	particleShape.reserve(inputParticleSize);
 	std::vector<Real> inputVariables;
 	inputVariables.reserve(inputDataSize);
 	long int timeframe = static_cast<long int>(timestep);
-	std::vector<mui::point3d> posMUI;
-	int iDir;
 
+#ifdef OPS_3D
+	std::vector<mui::point3d> posMUI;
 	mui::chrono_sampler_exact3d timeSampler;
 	mui::sampler_exact3d<Real> s1;
-
 	posMUI = interface->fetch_points<Real, mui::chrono_sampler_exact3d>("radius",
 			timeframe, timeSampler);
+#endif
+
+#ifdef OPS_2D
+	std::vector<mui::point2d> posMUI;
+	mui::chrono_sampler_exact2d timeSampler;
+	mui::sampler_exact2d<Real> s1;
+	posMUI = interface->fetch_points<Real, mui::chrono_sampler_exact2d>("radius",
+				timeframe, timeSampler);
+#endif
 
 	for (auto particleBlock  = blockPointer->begin(); particleBlock != blockPointer->end(); ++particleBlock)
 		particleBlock->second.ClearParticles();
@@ -166,8 +207,11 @@ void MuiInterface::ExtractParticles(SizeType timestep) {
 
 		xTemp[0] = pointTmp[0];
 		xTemp[1] = pointTmp[1];
+#ifdef OPS_3D
 		xTemp[2] = pointTmp[2];
+#endif
 
+#ifdef OPS_3D
 		//fetch other parameters
 		radTmp = interface->fetch("radius", {xTemp[0], xTemp[1], xTemp[2]}, timeframe,
 				s1, timeSampler);
@@ -184,6 +228,7 @@ void MuiInterface::ExtractParticles(SizeType timestep) {
 				s1, timeSampler);
 		oTmp[2] = interface->fetch("oz", {xTemp[0], xTemp[1], xTemp[2]}, timeframe,
 				s1, timeSampler);
+
 #ifdef CPU
 #if DebugLevel >= 2
 		printf("Rank %d: [%f %f %f] R= %f u =[%f %f %f] omega=[%f %f %f]\n",
@@ -191,13 +236,40 @@ void MuiInterface::ExtractParticles(SizeType timestep) {
 				uTmp[1], uTmp[2], oTmp[0], oTmp[1], oTmp[2]);
 #endif
 #endif
+
+#endif
+
+#ifdef OPS_2D
+		radTmp = interface->fetch("radius", {xTemp[0], xTemp[1]}, timeframe,
+				s1, timeSampler);
+		uTmp[0] = interface->fetch("u",{xTemp[0], xTemp[1]}, timeframe, s1,
+				timeSampler);
+		uTmp[1] = interface->fetch("v",{xTemp[0], xTemp[1]}, timeframe, s1,
+				timeSampler);
+		oTmp[0] = interface->fetch("oz", {xTemp[0], xTemp[1]}, timeframe,
+				s1, timeSampler);
+
+#ifdef CPU
+#if DebugLevel >= 2
+		printf("Rank %d [%f %f] R = %f u =[%f %f] om = %f\n", ops_get_proc(), xTemp[0],
+				xTemp[1], radTmp, uTmp[0], uTmp[1], oTmp[0];
+#endif
+#endif
+
+#endif
 		if (inputParticleSize > 0) {
 			ops_printf("Additional particle data are passed to MPLB via MUI\n");
 
 			iDir = 0;
 			for (auto& input : particleShapeData) {
 				iDir += 1;
+#ifdef OPS_3D
 				auto dataTmp = interface->fetch(input, {xTemp[0], xTemp[1], xTemp[2]}, timeframe, s1, timeSampler);
+
+#endif
+#ifdef OPS_2D
+				auto dataTmp = interface->fetch(input, {xTemp[0], xTemp[1]}, timeframe, s1, timeSampler);
+#endif
 				particleShape.at(iDir) = dataTmp;
 			}
 		}
@@ -207,8 +279,15 @@ void MuiInterface::ExtractParticles(SizeType timestep) {
 			iDir = 0;
 			for (auto& input: inputData) {
 				iDir += 1;
+#ifdef OPS_3D
 				auto dataTmp = interface->fetch(input, {xTemp[0], xTemp[1], xTemp[2]}, timeframe, s1, timeSampler);
+#endif
+
+#ifdef OPS_2D
+				auto dataTmp = interface->fetch(input, {xTemp[0], xTemp[1]}, timeframe, s1, timeSampler);
+#endif
 				inputVariables.at(iDir) = dataTmp;
+
 			}
 		}
 
@@ -217,6 +296,8 @@ void MuiInterface::ExtractParticles(SizeType timestep) {
 
 			int idParticle = particleBlock->second.InsertParticle(xTemp, radTmp, particleShape,
 					uTmp, oTmp, inputVariables);
+
+
 			//TODO ADD the additional parameters.
 			if (inputParticleSize > 0 && idParticle > -1)
 				particleBlock->second.GetAdditionalInputVariables(inputVariables, idParticle);
@@ -244,19 +325,38 @@ void MuiInterface::SendParticles(SizeType timeStep) {
 			particleBlock->second.ExtractDragForce(Fd, Td, iParticle);
 			particleBlock->second.ExtractPositions(xPos, iParticle);
 
+
+#ifdef OPS_3D
 			printf("Rank %d at timestep %d: Sends for particle [%f %f %f], Fd=[%12.9e %12.9e %12.9e] Td=[%12.9e %12.9e %12.9e\n",
 					ops_get_proc(), timeStep, xPos[0], xPos[1], xPos[2], Fd[0], Fd[1], Fd[2], Td[0], Td[1], Td[2]);
+
 			interface->push("Fdx", {xPos[0], xPos[1], xPos[2]}, Fd[0]);
 			interface->push("Fdy", {xPos[0], xPos[1], xPos[2]}, Fd[1]);
 			interface->push("Fdz", {xPos[0], xPos[1], xPos[2]}, Fd[2]);
 			interface->push("Mdx", {xPos[0], xPos[1], xPos[2]}, Td[0]);
 			interface->push("Mdy", {xPos[0], xPos[1], xPos[2]}, Td[1]);
 			interface->push("Mdz", {xPos[0], xPos[1], xPos[2]}, Td[2]);
+#endif
 
+#ifdef	OPS_2D
+			printf("Rank %d at timestep %d: Sends for particle [%f %f] Fd=[%12.9e %12.9e] Td=%12.9e\n", ops_get_proc(),
+					timeStep, xPos[0], xPos[1], Fd[0], Fd[1], Td[0] );
+
+			interface->push("Fdx", {xPos[0], xPos[1]}, Fd[0]);
+			interface->push("Fdy", {xPos[0], xPos[1]}, Fd[1]);
+			interface->push("Mdz", {xPos[0], xPos[1]}, Td[0]);
+#endif
 			if (outputDataSize > 0) {
 				particleBlock->second.GetAdditionalOutputVariables(output, iParticle);
-				for (int iDir = 0; iDir < outputDataSize; iDir++)
+
+				for (int iDir = 0; iDir < outputDataSize; iDir++) {
+#ifdef OPS_3D
 					interface->push(outputData[iDir], {xPos[0], xPos[1], xPos[2]}, output[iDir]);
+#endif
+#ifdef OPS_2D
+					interface->push(outputData[iDir], {xPos[0], xPos[1]}, output[iDir]);
+#endif
+				}
 			}
 		}
 

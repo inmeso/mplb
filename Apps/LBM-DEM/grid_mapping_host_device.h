@@ -55,4 +55,45 @@ static inline OPS_FUN_PREFIX Real ComputeCircularSolidFractionGrid(const Real* x
 
 }
 
+static inline OPS_FUN_PREFIX Real ComputeCircularSolidFractionGrid2D(const Real* xfl,
+		const Real* xPart,const Real Rp, Real* xavg, const Real dx, const int noGrid) {
+
+	int Nx = noGrid + 2;
+	int Ny = noGrid + 2;
+
+	int inter = 0;
+
+	Real dxp, dyp, dd;
+	Real xmin, ymin;
+	Real xtrial, ytrial;
+	Real dxc = dx/static_cast<Real>(Nx-1);
+
+	xmin = xfl[0] - 0.5 * dx;
+	ymin = xfl[1] - 0.5 * dx;
+
+	for (int iDir = 0; iDir  < 2; iDir++)
+		xavg[iDir] = 0.0;
+
+	for (int ip = 0; ip < Nx; ip++) {
+		xtrial = xmin + static_cast<Real>(ip) * dxc;
+		dxp = (xtrial - xPart[0]) * (xtrial - xPart[0]);
+		for (int jp = 0; jp < Ny; jp++) {
+			ytrial = ymin + static_cast<Real>(jp) * dxc;
+			dyp = (ytrial - xPart[1]) * (ytrial - xPart[1]);
+			dd = dxp + dyp;
+			if (dd < Rp * Rp) {
+				inter += 1;
+				xavg[0] += xtrial;
+				xavg[1] += ytrial;
+			}
+		}
+	}
+
+	for (int iDir = 0; iDir < 2; iDir++)
+		xavg[iDir] /= static_cast<Real>(inter);
+
+	return static_cast<Real>(inter) / static_cast<Real>(Nx * Ny);
+
+}
+
 #endif

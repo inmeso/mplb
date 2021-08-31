@@ -150,9 +150,16 @@ void Particle::EvaluateDrag(Real dt) {
 		TDrag[iDim] /= dt;
 	}
 
+#ifdef OPS_3D
 	printf("Rank: %d [%f %f %f] Fd=[%12.9e %12.9e %12.9e] Td=[%12.9e %12.9e %12.9e]\n",
 			ops_get_proc(), xParticle[0], xParticle[1], xParticle[2],
 			FDrag[0], FDrag[1], FDrag[2], TDrag[0], TDrag[1], TDrag[2]);
+#endif
+
+#ifdef OPS_2D
+	printf("Rank %d [%f %f] Fd=[%12.9e %12.9e] Td=%12.9e\n", ops_get_proc(),
+			xParticle[0], xParticle[1], FDrag[0], FDrag[1], TDrag[0]);
+#endif
 }
 
 void Particle::PushDrag(Real* Fd, Real* Td) {
@@ -171,11 +178,17 @@ void Particle::UpdateOldParticlePositions() {
 
 void Particle::UpdateParticleVelocities(Real* uP, Real* omP) {
 
+
 	for (int iDim = 0; iDim < spaceDim; iDim++) {
 		uParticle[iDim] = uP[iDim];
+#ifdef OPS_3D
 		omegaParticle[iDim] = omP[iDim];
+#endif
 	}
 
+#ifdef OPS_2D
+	omegaParticle[2] = omP[0];
+#endif
 }
 
 void Particle::UpdateStencil(Real* xBounds, int *Nf, Real dx) {

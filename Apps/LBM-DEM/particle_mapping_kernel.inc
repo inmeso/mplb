@@ -54,6 +54,9 @@ void KerInitializePorousGrid(ACC<Real>& sf, ACC<Real>& vP, ACC<Real>& xAvg, ACC<
 
 	int sizeI = (*sizeInt);
 
+#ifdef OPS_3D
+
+
 	for (int iDir = 0 ; iDir < sizeReal[0]; iDir++)
 		sf(iDir, 0, 0, 0) = 0.0;
 
@@ -65,7 +68,21 @@ void KerInitializePorousGrid(ACC<Real>& sf, ACC<Real>& vP, ACC<Real>& xAvg, ACC<
 
 	for (int iDir = 0; iDir < sizeI; iDir++)
 		idp(iDir, 0, 0, 0) = -1;
-}
+#endif
 
+#ifdef OPS_2D
+	for (int iDir = 0 ; iDir < sizeReal[0]; iDir++)
+		sf(iDir, 0, 0) = 0.0;
+
+	for (int iDir = 0; iDir < sizeReal[1]; iDir++)
+		vP(iDir, 0, 0) = 0.0;
+
+	for (int iDir = 0; iDir < sizeReal[2]; iDir++)
+		xAvg(iDir, 0, 0) = -100.0;
+
+	for (int iDir = 0; iDir < sizeI; iDir++)
+		idp(iDir, 0, 0) = -1;
+#endif
+}
 
 #endif

@@ -45,9 +45,17 @@
 #include <vector>
 #include <memory>
 
+#ifdef OPS_3D
+void ParticleProjectionSphereGrid3D(std::shared_ptr<MappingParticles>& mappingPtr,
+								  int component);
+void UpdateProjectionSphereGrid3D(std::shared_ptr<MappingParticles>& mappingPtr,
+								   int component);
+#endif
+
+#ifdef OPS_2D
 void ParticleProjectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
 								  int component);
-void UpdateProjectectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
-								   int component);
-
+void UpdateProjectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
+		   	   	   	   	   	   int component);
+#endif
 #endif /* APPS_LBM_DEM_NOP_SPHERICAL_MAPPING_H_ */

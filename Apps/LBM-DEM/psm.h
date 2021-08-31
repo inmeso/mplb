@@ -53,9 +53,16 @@
 
 void FsiInitializePSM(std::shared_ptr<FpiData>& fpiPtr);
 void FsiForcePSM(std::shared_ptr<FpiData>& fpiPtr);
+
+#ifdef OPS_3D
+void FsiCollisionsPSM3D(std::shared_ptr<FpiData>& fpiPtr);
+void CalculateDragPSM3D(std::shared_ptr<FpiData>& fpiPtr);
+#endif
+
+//2D Functions
+#ifdef OPS_2D
 void FsiCollisionsPSM(std::shared_ptr<FpiData>& fpiPtr);
 void CalculateDragPSM(std::shared_ptr<FpiData>& fpiPtr);
-
-
+#endif
 
 #endif /* APPS_LBM_DEM_NOP_PSM_H_ */

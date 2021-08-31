@@ -77,7 +77,7 @@ void DefinePsm(int iComponent, int spaceDim, FluidParticleModel modelU,
 	int nElem= particleMappingModels.at(iComponent)->NumberOfElements();
 
 	std::string name{"Fd"};
-	name += std::to_string(iComponent);
+	particleMappingModels.at(iComponent)->NumberOfElements();
 
 	std::vector<std::string> nameOfRealVars{name};//TODO append the component
 	std::vector<int> sizeRealVars{spaceDim * nElem};
@@ -91,18 +91,6 @@ void DefinePsm(int iComponent, int spaceDim, FluidParticleModel modelU,
 
 	fpiModels.insert(std::make_pair(iComponent, model));
 }
-/***************************************************************************
- * Define flags fpr PSM
- * 	 ownedPostVelocity: True
- *    ownedForceModel: True
- *	 ownedPreCollision: False
- *	 ownedCollisionModel: True
- *	 ownedPostStreaming: false
- *	 ownedDragForce : True
- *	 ownedInitialize: true
- * 	 thermalFlag: false
- */
-
 
 void DefineInteractionModels(std::vector<FluidParticleModel> particleModels,
 						     std::vector<int> compoId, std::vector<Real> variables,
@@ -131,7 +119,9 @@ void DefineInteractionModels(std::vector<FluidParticleModel> particleModels,
 
 void FSIVelocityFunctions(std::shared_ptr<FpiData>& fpiPtr) {
 
+	switch (fpiPtr->GetModel()) {
 
+	}
 }
 
 void FsiForceFunction(std::shared_ptr<FpiData>& fpiPtr) {
@@ -154,7 +144,12 @@ void FsiCollisionFunction(std::shared_ptr<FpiData>& fpiPtr) {
 
 	switch (fpiPtr->GetModel()) {
 		case PSM:
+#ifdef OPS_3D
+			FsiCollisionsPSM3D(fpiPtr);
+#endif
+#ifdef OPS_2D
 			FsiCollisionsPSM(fpiPtr);
+#endif
 			break;
 		default:
 			ops_printf("Fsi collision function must not enter here\n");
@@ -170,7 +165,13 @@ void FsiCalculateDragForce(std::shared_ptr<FpiData>& fpiPtr) {
 
 	switch (fpiPtr->GetModel()) {
 		case PSM:
+#ifdef OPS_3D
+			CalculateDragPSM3D(fpiPtr);
+#endif
+
+#ifdef OPS_2D
 			CalculateDragPSM(fpiPtr);
+#endif
 			break;
 		default:
 			ops_printf("Drag calculation function must not enter here\n");

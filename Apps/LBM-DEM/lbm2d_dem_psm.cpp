@@ -30,9 +30,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
 */
 
-/** @brief An example main source code for coupling the DEM with the LBM with the PRATI scheme
+/** @brief An example main source code for 2D coupling the DEM with the LBM with the PRATI scheme
  *  @author Chrysovalantis Tsigginos
  **/
+
 #include <cmath>
 #include <iostream>
 #include <ostream>
@@ -44,6 +45,7 @@
 
 #include "dem_data.h"
 #include "LBM_DEM.h"
+
 void SetInitialMacrosVars() {
     for (auto idBlock : g_Block()) {
         Block& block{idBlock.second};
@@ -53,15 +55,13 @@ void SetInitialMacrosVars() {
         for (auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
             const int rhoId{compo.macroVars.at(Variable_Rho).id};
-            ops_par_loop(KerSetInitialMacroVars3D, "KerSetInitialMacroVars",
+            ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
                          block.Get(), SpaceDim(), iterRng.data(),
                          ops_arg_dat(g_MacroVars().at(rhoId).at(blockIdx), 1,
                                      LOCALSTENCIL, "Real", OPS_RW),
                          ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIdx),
                                      1, LOCALSTENCIL, "Real", OPS_RW),
                          ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIdx),
-                                     1, LOCALSTENCIL, "Real", OPS_RW),
-                         ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIdx),
                                      1, LOCALSTENCIL, "Real", OPS_RW),
                          ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
                                      LOCALSTENCIL, "Real", OPS_READ),
@@ -70,40 +70,39 @@ void SetInitialMacrosVars() {
     }
 }
 
-
 void UpdateMacroscopicBodyForce(const Real time) {}
-
 
 void simulate() {
 
 
 	//Define simulations and blocks
 	ops_printf("Define simulation and blocks\n");
-	std::string caseName{"LBM-DEM3D\n"};
-	SizeType spaceDim{3};
+	std::string caseName{"LBM-DEM2D\n"};
+	SizeType spaceDim{2};
 	std::vector<int> blockIds{0};
 	std::vector<std::string> blockNames{"Cavity"};
-	std::vector<int> blockSize{81, 81, 81};
+	std::vector<int> blockSize{81, 81};
 	int Nx=blockSize.at(0) - 1;
 	Real meshSize(1./Nx);
-	std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
+	std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0}}};
 	DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
-
 
 	//Define fluid components
 	std::vector<std::string> componentNames{"Fluid"};
 	std::vector<int> compoId{0};
-	std::vector<std::string> lattNames {"d3q19"};
-	std::vector<Real> tauRef{0.01};
+	std::vector<std::string> lattNames {"d2q9"};
+	std::vector<Real> tauRef{0.001};
 	DefineComponents(componentNames, compoId, lattNames, tauRef);
+
 
 	//Define macro-variables
     std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
-                                             Variable_V, Variable_W};
-    std::vector<std::string> macroVarNames{"rho", "u", "v", "w"};
-    std::vector<int> macroVarId{0, 1, 2, 3};
-    std::vector<int> macroCompoId{0, 0, 0, 0};
+                                             Variable_V};
+    std::vector<std::string> macroVarNames{"rho", "u", "v"};
+    std::vector<int> macroVarId{0, 1, 2};
+    std::vector<int> macroCompoId{0, 0, 0};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
+
 
     std::vector<CollisionType> collisionTypes{Collision_BGKIsothermal2nd};
     std::vector<int> collisionCompoId{0};
@@ -119,6 +118,7 @@ void simulate() {
     ops_printf("Defining fluid-particle interaction\n");
     Real cutoff = 0.01 * meshSize;
     std::string particleType{"spherical"};
+
     DefineBlockParticles(spaceDim, cutoff,  meshSize, particleType);
 
 
@@ -134,7 +134,6 @@ void simulate() {
 	std::vector<Real> variables{0.5};
 	DefineFsiModel(componentModel, componentFSI, variables);
 
-
     std::vector<Real> forceParams{0.0, 0.0, 0.0};
     ForceType forceScheme{noForce};
     DefineForceModel(forceParams, forceScheme);
@@ -142,16 +141,17 @@ void simulate() {
     // Setting boundary conditions
     SizeType blockIndex{0};
     SizeType componentId{0};
-    std::vector<VariableTypes> macroVarTypesatBoundary{Variable_U, Variable_V,
-                                                       Variable_W};
-    std::vector<Real> noSlipStationaryWall{0, 0, 0};
-    std::vector<Real> noSlipMovingWall{0.01, 0.00, 0.0};
+    std::vector<VariableTypes> macroVarTypesatBoundary{Variable_U, Variable_V};
+    std::vector<Real> noSlipStationaryWall{0, 0};
+    std::vector<Real> noSlipMovingWall{0.01, 0.0};
+    std::vector<Real> noSlipMovingWall2{-0.01, 0.0};
+
 
 
     // Left noSlipStationaryWall
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Left,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-						noSlipMovingWall);
+						noSlipStationaryWall);
     // Right noSlipStationaryWall
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Right,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
@@ -160,39 +160,35 @@ void simulate() {
 
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Top,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-						noSlipStationaryWall);
+						noSlipMovingWall);
     // bottom noSlipStationaryWall
     DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Bottom,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    // front noSlipStationaryWall
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Front,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    // back noSlipStationaryWall
-    DefineBlockBoundary(blockIndex, componentId, BoundarySurface::Back,
-                        BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
+						noSlipMovingWall2);
 
     std::vector<InitialType> initType{Initial_BGKFeq2nd};
     std::vector<int> initalCompoId{0};
     DefineInitialCondition(initType,initalCompoId);
 
-
     Partition();
+
+
 
 
     SetInitialMacrosVars();
     SetTimeStep(meshSize / SoundSpeed());
     SetGridSize(meshSize);
-    PreDefinedInitialCondition3D();
 
-    //Initialize Particle Information
+    PreDefinedInitialCondition();
+
+
+
     InteractionData lbmDemData;
-    bool muiflag = false;
-    SizeType maximumIterations{400};
-    SetDemLbMParams(&lbmDemData, false, muiflag, 1e-7, 500, 0,
+    bool muiflag = true;
+    SizeType maximumIterations{14};
+    SetDemLbMParams(&lbmDemData, false, muiflag, 1e-17, 500, 0,
     		10, maximumIterations, particleType);
+
 
 
 #ifdef CPU
@@ -228,14 +224,12 @@ void simulate() {
     	CreateMuiInterface(lbmDemData, componentModel, cutoff);
     }
 
+    SetupParticleBoxes(lbmDemData);
 
-   SetupParticleBoxes(lbmDemData);
+    //Setting up DEM-LBM
+    SetupDEMLBM(lbmDemData);
 
-   //Setting up DEM-LBM
-   SetupDEMLBM(lbmDemData);
-
-
-   IterateFSI(lbmDemData, 1);
+	IterateFSI(lbmDemData, 1);
 
 }
 
@@ -300,11 +294,3 @@ int main(int argc, const char** argv) {
     ops_exit();
 
 }
-
-
-
-
-
-
-
-

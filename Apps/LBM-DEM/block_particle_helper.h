@@ -59,6 +59,20 @@ void UpdateOldParticleLocation();
 void ParticleEnvelopes();
 
 
+//3D wrapper functions
+#ifdef OPS_3D
+void UpdateFPIVelocities3D();
+void AssignParticlesToBlocksSpheres(int Nparticles,Real* xTmp, Real* yTmp,Real* zTmp,
+		Real* radTmp, Real*  uTmp,Real* vTmp, Real* wTmp, Real* oxTmp,
+		Real* oyTmp, Real* ozTmp);
+#endif
+
+#ifdef OPS_2D
+void UpdateFPIVelocities();
+void AssignParticleToBlocksSpheres2D(int Nparticles,Real* xTmp, Real* yTmp,
+		Real* radTmp, Real* uTmp, Real* vTmp, Real* ozTmp);
+#endif
+
 
 //Wrapper for FSI object functions
 void PostVelocityFSIFunctions();
@@ -72,7 +86,9 @@ void PreDefineCollision3DFSI(int* velID, int* loop, Real tauRef, CollisionType c
 void CalculateDragForce(Real dt, SizeType currentStep);
 void InitializeDragForce();
 void InitializeFSILists();
-void UpdateFPIVelocities3D();
+
+
+
 void WriteFPIDataToHdf5(SizeType currentStep);
 
 void UpdateParticleMappingDragForceRestart(SizeType currentStep);
@@ -89,9 +105,8 @@ void  DefineFsiModel(std::vector<FluidParticleModel> fsiModel, std::vector<int> 
 
 
 //PArticle assigning wrappers
-void AssignParticlesToBlocksSpheres(int Nparticles,Real* xTmp, Real* yTmp,Real* zTmp,
-		Real* radTmp, Real*  uTmp,Real* vTmp, Real* wTmp, Real* oxTmp,
-		Real* oyTmp, Real* ozTmp);
+
+
 
 void DefineBlockOwnership();
 void DefineLocalBoxBound();

@@ -41,7 +41,9 @@
 
 
 enum ParticleShapeDiscriptor{spherical=0, quadratic=1, mesh=2};
-enum ParticleMappingModel{noMapping=0, sphericalMapping=1, gridSpherical=2, gridQuadratic=3, gridMesh=4, copyData=5};
+enum ParticleMappingModel{noMapping=0, sphericalMapping=1, gridSpherical=2,
+						  gridQuadratic=3, gridMesh=4, multipleSpheres=6,
+						  copyData=7};
 enum FluidParticleModel{noModel=0, PSM=1};
 
 struct InteractionData {
