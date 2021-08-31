@@ -58,8 +58,6 @@ void DefineInteractionModels(std::vector<FluidParticleModel> particleModels,
 void DefineNone(int iComponent, int spaceDim, FluidParticleModel model);
 void DefinePsm(int iComponent, int spaceDim, FluidParticleModel model,
 				std::vector<Real> variables, SizeType timeStep = 0);
-void DefinePrati(int iComponent, int spaceDim, FluidParticleModel model,
-				std::vector<Real> variables, SizeType timeStep = 0);
 
 void FSIVelocityFunctions(std::shared_ptr<FpiData>& fpiPtr);
 void FsiForceFunction(std::shared_ptr<FpiData>& fpiPtr);
