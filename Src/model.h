@@ -171,5 +171,7 @@ void UpdateMacroVars();
 void PreDefinedBodyForce();
 void PreDefinedInitialCondition();
 void PreDefinedCollision();
+void PreDefinedCollision(int* velID, int* loop, Real tauRef,
+		CollisionType collisionType,int componentId, int rhoId, int Tid);
 #endif
 #endif

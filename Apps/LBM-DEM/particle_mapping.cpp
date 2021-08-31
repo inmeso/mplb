@@ -211,6 +211,33 @@ void DefineParticleMappingModels(std::vector<ParticleMappingModel> mappingModels
 
 				particleMappingModels.insert(std::make_pair(iComponent, model));
 			} break;
+			case multipleSpheres: {
+				int noElem = 2;
+				std::string real1{"sfP"};
+				std::string real2{"vP"};
+				std::string real3{"xAvg"};
+				std::string intS{"intP"};
+				std::string real4{"xParticles"};
+
+				real1 += std::to_string(iComponent);
+				real2 += std::to_string(iComponent);
+				real3 += std::to_string(iComponent);
+				real4 += std::to_string(iComponent);
+				intS += std::to_string(iComponent);
+
+				std::vector<std::string> nameOfRealVars{real1, real2, real3, real4};
+				std::vector<std::string> nameOfIntVars{intS};
+				std::vector<int> sizeReals{noElem, noElem * spaceDim, noElem * spaceDim, (spaceDim + 1) * noElem};
+				std::vector<int> sizeInt{noElem};
+
+				std::shared_ptr<MappingParticles> model(new MappingParticles(spaceDim, noElem, particleShape,
+								tmpModel,  nameOfRealVars, sizeReals,
+											nameOfIntVars,  sizeInt));
+
+
+				particleMappingModels.insert(std::make_pair(iComponent, model));
+
+			} break;
 			case copyData: {
 				particleMappingModels.insert(std::make_pair(iComponent, particleMappingModels.at(copyFrom.at(elem))));
 			} break;
@@ -251,6 +278,9 @@ void InitializeMappingLists() {
 				break;
 			case copyData:
 				break;
+			//case multipleSpheres:
+			//	InitializeMultipleSpheresPorousLists(mappingModel.second,
+			//			component);
 			default: { //The default is the porous media type model
 				InitializePorousLists(mappingModel.second, component);
 
@@ -278,13 +308,22 @@ void MappingParticlesToLBMGrid() {
 				ops_printf("ERROR: This model is not imported yet\n");
 				break;
 			case gridSpherical:
+#ifdef OPS_3D
+				ParticleProjectionSphereGrid3D(mappingModel.second, component);
+#endif
+#ifdef OPS_2D
 				ParticleProjectionSphereGrid(mappingModel.second, component);
+#endif
 				break;
+
 			case sphericalMapping:
-				ParticleProjectionSphere(mappingModel.second, component);
+				ParticleProjectionSphere3D(mappingModel.second, component);
+				break;
+//			case multipleSpheres:
+//				ParticleProjectionMultSpheres3D(mappingModel.second, component);
 				break;
 			default:
-				ParticleProjectionSphere(mappingModel.second, component);
+				ParticleProjectionSphere3D(mappingModel.second, component);
 
 		}
 	}
@@ -315,13 +354,34 @@ void UpdateParticlesToLBMGrid() {
 				ops_printf("ERROR: This model is not imported yet\n");
 				break;
 			case gridSpherical:
+#ifdef OPS_3D
+				UpdateProjectectionSphereGrid3D(mappingModel.second, component);
+#endif
+
+#ifdef OPS_2D
 				UpdateProjectectionSphereGrid(mappingModel.second, component);
+#endif
 				break;
 			case sphericalMapping:
+#ifdef OPS_3D
+				UpdateProjectionSphere3D(mappingModel.second, component);
+#endif
+
+#ifdef OPS_2D
 				UpdateProjectionSphere(mappingModel.second, component);
+#endif
 				break;
+//			case multipleSpheres:
+//				UpdateProjectionSphere(mappingModel.second, component);
+//				break;
 			default:
+#ifdef OPS_3D
+				UpdateProjectionSphere3D(mappingModel.second, component);
+#endif
+
+#ifdef OPS_2D
 				UpdateProjectionSphere(mappingModel.second, component);
+#endif
 		}
 	}
 

@@ -44,7 +44,8 @@
 #include "ops_seq_v2.h"
 #include "grid_mapping_kernel.inc"
 
-void ParticleProjectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
+#ifdef OPS_3D
+void ParticleProjectionSphereGrid3D(std::shared_ptr<MappingParticles>& mappingPtr,
 		int component) {
 
 	int sizeReal[3], sizeInt, idParticle, blockIndex, nPoints, nelem;
@@ -75,8 +76,8 @@ void ParticleProjectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
 			idParticle = iPart;
 			for (int iDir = 0; iDir < 2 * spaceDim; iDir++)
 				stenList[iDir] = particleCurrentBlock.particleList.at(iPart).stenList[iDir];
-
-			ops_par_loop(KerMappingSphericalGrid,"KerMappingSphericalGrid",
+			Radius = particleCurrentBlock.particleList.at(iPart).particleShape->Rparticle;
+			ops_par_loop(KerMappingSphericalGrid3D,"KerMappingSphericalGrid3D",
 					     particleCurrentBlock.GetBlock().Get(), spaceDim,  stenList,
 						 ops_arg_dat(mappingPtr->GetIntField(0, blockIndex), sizeInt,
 								 	 LOCALSTENCIL,"int", OPS_RW),
@@ -103,7 +104,7 @@ void ParticleProjectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
 
 }
 
-void UpdateProjectectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
+void UpdateProjectectionSphereGrid3D(std::shared_ptr<MappingParticles>& mappingPtr,
 		   int component) {
 
 	int sizeReal[3], sizeInt, idParticle, blockIndex, nPoints, nelem;
@@ -135,7 +136,7 @@ void UpdateProjectectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr
 			for (int iDir = 0; iDir < 2 * spaceDim; iDir++)
 				stenList[iDir] = particleCurrentBlock.particleList.at(iPart).stenList[iDir];
 
-			ops_par_loop(KerSolidVelocityUpdateGridSphere, "KerSolidVelocityUpdateGridSphere",
+			ops_par_loop(KerSolidVelocityUpdateGridSphere3D, "KerSolidVelocityUpdateGridSphere3D",
 						 particleCurrentBlock.GetBlock().Get(), spaceDim, stenList,
 						 ops_arg_dat(mappingPtr->GetRealField(1, blockIndex), sizeReal[1],
 									 LOCALSTENCIL, "double", OPS_RW),
@@ -156,3 +157,123 @@ void UpdateProjectectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr
 	}
 
 }
+#endif
+
+#ifdef OPS_2D
+void ParticleProjectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
+		int component) {
+
+	int sizeReal[3], sizeInt, idParticle, blockIndex, nPoints, nelem;
+	int spaceDim = mappingPtr->GetSpaceDim();
+	int stenList[2 * spaceDim];
+	Real Dx, xPos[spaceDim], Radius, uPart[spaceDim], omPart;
+	for (int iDim = 0; iDim < 3; iDim++)
+		sizeReal[iDim] = mappingPtr->SizeAtRealType(iDim);
+	Dx = GetDx();
+	nPoints = 9;
+	sizeInt = mappingPtr->SizeAtIntType(0);
+	nelem = mappingPtr->NumberOfElements();
+
+	for (const auto& idBlock : BlockParticleList) {
+		BlockParticles particleCurrentBlock = idBlock.second;
+		if (!particleCurrentBlock.owned) continue;
+		blockIndex = particleCurrentBlock.GetBlock().ID();
+		int nlocal =  particleCurrentBlock.NParticles +
+					  particleCurrentBlock.NPeriodic;
+
+		for (int iPart = 0; iPart < nlocal; iPart++) {
+
+			for (int iDim = 0; iDim < spaceDim; iDim++) {
+				xPos[iDim] = particleCurrentBlock.particleList.at(iPart).xParticle[iDim];
+				uPart[iDim] = particleCurrentBlock.particleList.at(iPart).uParticle[iDim];
+
+			}
+			idParticle = iPart;
+			omPart[iDim] = particleCurrentBlock.particleList.at(iPart).omegaParticle[2];
+			for (int iDir = 0; iDir < 2 * spaceDim; iDir++)
+				stenList[iDir] = particleCurrentBlock.particleList.at(iPart).stenList[iDir];
+
+			Radius = particleCurrentBlock.particleList.at(iPart).particleShape->Rparticle;
+			ops_par_loop(KerMappingSphericalGrid,"KerMappingSphericalGrid3D",
+					     particleCurrentBlock.GetBlock().Get(), spaceDim,  stenList,
+						 ops_arg_dat(mappingPtr->GetIntField(0, blockIndex), sizeInt,
+								 	 LOCALSTENCIL,"int", OPS_RW),
+						 ops_arg_dat(mappingPtr->GetRealField(0, blockIndex), sizeReal[0],
+									 LOCALSTENCIL, "double", OPS_RW),
+						 ops_arg_dat(mappingPtr->GetRealField(1, blockIndex), sizeReal[1],
+									 LOCALSTENCIL, "double", OPS_RW),
+						 ops_arg_dat(mappingPtr->GetRealField(2, blockIndex), sizeReal[2],
+								     LOCALSTENCIL, "double", OPS_RW),
+						 ops_arg_dat(g_CoordinateXYZ()[blockIndex], spaceDim,
+								 	 LOCALSTENCIL, "double", OPS_READ),
+						 ops_arg_gbl(xPos, spaceDim, "double", OPS_READ),
+						 ops_arg_gbl(&Radius, 1, "double", OPS_READ),
+						 ops_arg_gbl(&idParticle, 1, "int", OPS_READ),
+						 ops_arg_gbl(uPart, spaceDim , "double", OPS_READ),
+						 ops_arg_gbl(&omPart, 1, "double", OPS_READ),
+					     ops_arg_gbl(&Dx, 1, "double", OPS_READ),
+					     ops_arg_gbl(&nPoints, 1, "double", OPS_READ),
+						 ops_arg_gbl(&nelem, 1, "double", OPS_READ),
+					     ops_arg_gbl(&spaceDim, 1, "double", OPS_READ));
+
+		}
+	}
+
+}
+
+
+void UpdateProjectectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
+		   int component) {
+
+	int sizeReal[3], sizeInt, idParticle, blockIndex, nPoints, nelem;
+	int spaceDim = mappingPtr->GetSpaceDim();
+	int stenList[2 * spaceDim];
+	Real dx, xPar[spaceDim], radius, velP[spaceDim], omP;
+	dx = GetDx();
+
+	for (int iDim = 0; iDim < 3; iDim++)
+		sizeReal[iDim] = mappingPtr->SizeAtRealType(iDim);
+	sizeInt = mappingPtr->SizeAtIntType(0);
+	nelem = mappingPtr->NumberOfElements();
+
+	for (auto& idBlock : BlockParticleList) {
+		BlockParticles particleCurrentBlock = idBlock.second;
+		if ( !particleCurrentBlock.owned ) continue;
+		int blockIndex = particleCurrentBlock.GetBlock().ID();
+		int nlocal =  particleCurrentBlock.NParticles +
+				particleCurrentBlock.NPeriodic;
+
+		for (int iPart = 0; iPart < nlocal; iPart++) {
+			for (int iDim = 0; iDim < spaceDim; iDim++) {
+				xPar[iDim] = particleCurrentBlock.particleList.at(iPart).xParticle[iDim];
+				velP[iDim] = particleCurrentBlock.particleList.at(iPart).uParticle[iDim];
+
+			}
+			omP[iDim] = particleCurrentBlock.particleList.at(iPart).omegaParticle[2];
+			radius = particleCurrentBlock.particleList.at(iPart).particleShape->Rparticle;
+			idParticle = iPart;
+			for (int iDir = 0; iDir < 2 * spaceDim; iDir++)
+				stenList[iDir] = particleCurrentBlock.particleList.at(iPart).stenList[iDir];
+
+			ops_par_loop(KerSolidVelocityUpdateGridSphere, "KerSolidVelocityUpdateGridSphere3D",
+						 particleCurrentBlock.GetBlock().Get(), spaceDim, stenList,
+						 ops_arg_dat(mappingPtr->GetRealField(1, blockIndex), sizeReal[1],
+									 LOCALSTENCIL, "double", OPS_RW),
+						 ops_arg_dat(mappingPtr->GetIntField(0, blockIndex), sizeInt,
+								 	 LOCALSTENCIL, "int", OPS_READ),
+						 ops_arg_dat(mappingPtr->GetRealField(2, blockIndex), sizeReal[2],
+								 	 LOCALSTENCIL, "double", OPS_READ),
+						 ops_arg_gbl(&idParticle, 1, "int", OPS_READ),
+						 ops_arg_gbl(xPar, spaceDim, "double", OPS_READ),
+					     ops_arg_gbl(&radius, 1, "double", OPS_READ),
+						 ops_arg_gbl(velP, spaceDim, "double", OPS_READ),
+					     ops_arg_gbl(&omP, 1, "double", OPS_READ),
+						 ops_arg_gbl(&dx, 1, "double", OPS_READ),
+						 ops_arg_gbl(&spaceDim, 1, "int", OPS_READ),
+						 ops_arg_gbl(&nelem, 1, "int", OPS_READ));
+
+		}
+	}
+
+}
+#endif

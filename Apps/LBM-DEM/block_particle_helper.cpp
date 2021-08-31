@@ -272,8 +272,13 @@ void FluidParticleCollisions() {
 			//TODO need to obtain the id of the
 			ObtainData(fsi.second, velId,loop, tauRef, collisionModel, componentId, rhoId,
 					Tid);
-
+#ifdef OPS_3D
 			PreDefinedCollision3D(velId, loop, tauRef, collisionModel, componentId, rhoId, Tid);
+#endif
+
+#ifdef OPS_2D
+			PreDefinedCollision(velId, loop, tauRef, collisionModel, componentId, rhoId, Tid);
+#endif
 		}
 
 	}
@@ -296,7 +301,7 @@ void InitializeDragForce() {
 
 
 }
-
+#ifdef OPS_3D
 void UpdateFPIVelocities3D() {
 
 	UpdateMacroVars3D();
@@ -304,7 +309,15 @@ void UpdateFPIVelocities3D() {
 
 
 }
+#endif
 
+#ifdef OPS_2D
+void UpdateFPIVelocities() {
+
+	UpdateMacroVars();
+	PostVelocityFSIFunctions();
+}
+#endif
 
 void WriteFPIDataToHdf5(SizeType currentStep) {
 
@@ -316,18 +329,49 @@ void WriteFPIDataToHdf5(SizeType currentStep) {
 
 }
 
+
+#ifdef OPS_2D
+void AssignParticleToBlocksSpheres2D(int Nparticles,Real* xTmp, Real* yTmp,
+		Real* radTmp, Real* uTmp, Real* vTmp, Real* ozTmp) {
+
+	 int idx;
+	 std::vector<Real> shape(1.0);
+	 std::vector<Real> extra;
+	 shape.reserve(1);
+	 int ipx = 0;
+	 Real xParticle[spaceDim], uParticle[spaceDim], omParticle[spaceDim];
+	 for (int iPar = 0; iPar < Nparticles; iPar++) {
+			 ipx += 1;
+		 	 xParticle[0] = xTmp[iPar];
+			 xParticle[1] = yTmp[iPar];
+
+			 uParticle[0] = uTmp[iPar];
+			 uParticle[1] = vTmp[iPar];
+
+
+
+			 omParticle[0] = ozTmp[iPar];
+			 shape.at(0) = radTmp[iPar];
+			 int ix = 0;
+			 for (auto &blockParticle : BlockParticleList) {
+				 ix = ix + 1;
+				 idx = blockParticle.second.InsertParticle(xParticle, radTmp[iPar], shape,
+							uParticle, omParticle, extra);
+				 printf("Rank %d: Idx = %d for particle %d\n", ops_get_proc(), idx, iPar );
+			 }
+	 }
+
+
+}
+#endif
+
+#ifdef OPS_3D
 void AssignParticlesToBlocksSpheres(int Nparticles,Real* xTmp, Real* yTmp,Real* zTmp,
 		Real* radTmp, Real*  uTmp,Real* vTmp, Real* wTmp, Real* oxTmp,
 		Real* oyTmp, Real* ozTmp) {
 
-	int spaceDim;
-#ifdef OPS_3D
-	 spaceDim = 3;
-#endif
+	int spaceDim{3};
 
-#ifdef OPS_2D
-	 spaceDim = 2;
-#endif
 	 int idx;
 	 std::vector<Real> shape(1.0);
 	 std::vector<Real> extra;
@@ -357,6 +401,7 @@ void AssignParticlesToBlocksSpheres(int Nparticles,Real* xTmp, Real* yTmp,Real* 
 
 
 }
+#endif
 
 void DefineBlockOwnership() {
 

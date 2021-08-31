@@ -171,11 +171,17 @@ void Particle::UpdateOldParticlePositions() {
 
 void Particle::UpdateParticleVelocities(Real* uP, Real* omP) {
 
+
 	for (int iDim = 0; iDim < spaceDim; iDim++) {
 		uParticle[iDim] = uP[iDim];
+#ifdef OPS_3D
 		omegaParticle[iDim] = omP[iDim];
+#endif
 	}
 
+#ifdef OPS_2D
+	omegaParticle[2] = omP[0];
+#endif
 }
 
 void Particle::UpdateStencil(Real* xBounds, int *Nf, Real dx) {

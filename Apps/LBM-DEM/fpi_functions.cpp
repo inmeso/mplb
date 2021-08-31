@@ -154,7 +154,12 @@ void FsiCollisionFunction(std::shared_ptr<FpiData>& fpiPtr) {
 
 	switch (fpiPtr->GetModel()) {
 		case PSM:
+#ifdef OPS_3D
+			FsiCollisionsPSM3D(fpiPtr);
+#endif
+#ifdef OPS_2D
 			FsiCollisionsPSM(fpiPtr);
+#endif
 			break;
 		default:
 			ops_printf("Fsi collision function must not enter here\n");
@@ -170,7 +175,13 @@ void FsiCalculateDragForce(std::shared_ptr<FpiData>& fpiPtr) {
 
 	switch (fpiPtr->GetModel()) {
 		case PSM:
+#ifdef OPS_3D
+			CalculateDragPSM3D(fpiPtr);
+#endif
+
+#ifdef OPS_2D
 			CalculateDragPSM(fpiPtr);
+#endif
 			break;
 		default:
 			ops_printf("Drag calculation function must not enter here\n");

@@ -54,6 +54,9 @@ void KerInitializePorousGrid(ACC<Real>& sf, ACC<Real>& vP, ACC<Real>& xAvg, ACC<
 
 	int sizeI = (*sizeInt);
 
+#ifdef OPS_3D
+
+
 	for (int iDir = 0 ; iDir < sizeReal[0]; iDir++)
 		sf(iDir, 0, 0, 0) = 0.0;
 
@@ -65,7 +68,101 @@ void KerInitializePorousGrid(ACC<Real>& sf, ACC<Real>& vP, ACC<Real>& xAvg, ACC<
 
 	for (int iDir = 0; iDir < sizeI; iDir++)
 		idp(iDir, 0, 0, 0) = -1;
+#endif
+
+#ifdef OPS_2D
+	for (int iDir = 0 ; iDir < sizeReal[0]; iDir++)
+		sf(iDir, 0, 0) = 0.0;
+
+	for (int iDir = 0; iDir < sizeReal[1]; iDir++)
+		vP(iDir, 0, 0) = 0.0;
+
+	for (int iDir = 0; iDir < sizeReal[2]; iDir++)
+		xAvg(iDir, 0, 0) = -100.0;
+
+	for (int iDir = 0; iDir < sizeI; iDir++)
+		idp(iDir, 0, 0) = -1;
+#endif
 }
 
+void KerSolidFracPrelData(ACC<int>& id, ACC<Real>& xParts, ACC<Real>& xf,
+						  const Real* xpos,const Real* Rp, const int* idP,
+						  const Real* dx, const int* nelem,const int* spacedim) {
+
+	int SPACEDIM, NELEM, size;
+	SPACEDIM = (*spacedim);
+	NELEM = (*nelem);
+	Real Ravg, dist;
+	int noTot = 0;
+	size = SPACEDIM + 1;
+	Ravg  = (*dx) * sqrt(1.0/PI);
+
+	for (int iTot = 0; iTot < NELEM; iTot++)
+		noTot += (id(iTot, 0, 0, 0)>-1);
+	dist  = 0.0;
+
+	for (int iDir = 0; iDir < SPACEDIM; iDir++)
+		dist += (xpos[iDir] - xf(iDir, 0, 0, 0)) * (xpos[iDir] - xf(iDir, 0, 0, 0));
+
+	if (dist < (Ravg + (*Rp)) * (Ravg + (*Rp))) {
+		noTot+= 1;
+		id(noTot-1, 0, 0, 0) = (*idp);
+		xParts(size * (noTot - 1), 0, 0, 0) = xpos[0];
+		xParts(size * (noTot - 1) + 1, 0, 0, 0) = xpos[1];
+		xParts(size * (noTot - 1) + 2, 0, 0, 0) = xpos[2];
+		xParts(size * (noTot - 1) + 3, 0, 0, 0) = (*Rp);
+	}
+
+
+}
+
+void KerSolidFracMultPhII(ACC<Real>& sf, ACC<Real>& xAvg, const ACC<int>& id,
+						  const ACC<Real>& xParts, const ACC<Real>& xfl,
+						  const Real* dx, const int* nelem, const int* spacedim) {
+
+	int SPACEDIM, NELEM;
+	Real xf[SPACEDIM], xPosI[SPACEDIM], xPosII[SPACEDIM], RpI, RpII, Ravg;
+	Real sf1, xA1[SPACEDIM], sf2, xA2[SPACEDIM];
+	int noTot;
+	SPACEDIM = (*spacedim);
+	NELEM = (*nelem);
+	noTot = 0;
+
+	for (int iTot = 0; iTot < NELEM; iTot++)
+		noTot += (id(iTot, 0, 0, 0)>-1);
+
+	Ravg  = (*dx) * sqrt(1.0/PI);
+	switch (noTot) {
+		case 1:
+			//Functions
+			for (int iDir = 0; iDir < SPACEDIM; iDir++) {
+				xf[iDir] = xfl(iDir, 0, 0, 0);
+				xPosI[iDir] = xParts(iDir, 0, 0, 0);
+			}
+			RpI = xParts(SPACEDIM, 0, 0, 0);
+			EvaluateSolidFractionXavgS1(sf1, xA1, xPosI, RpI, xf, Ravg);
+			sf(0, 0, 0, 0) = sf1;
+			for (int iDir = 0; iDir < SPACEDIM; iDir++)
+				xAvg(iDir, 0, 0, 0) = xA1[iDir];
+			break;
+		case 2:
+			for (int iDir = 0; iDir < SPACEDIM; iDir++) {
+				xf[iDir] = xfl(iDir, 0, 0, 0);
+				xPosI[iDir] = xParts(iDir, 0, 0, 0);
+				xPosII = xParts((SPACEDIM + 1) + iDir, 0, 0, 0);
+			}
+			RpI = xParts(SPACEDIM, 0, 0, 0);
+			RpII = xParts(2 * SPACEDIM + 1, 0, 0, 0);
+			EvaluateSolidFractionXavgS2(sf1, xA1, sf2, xA2, xPosI, RpI,
+									    xPosII, RpII, xf, Ravg);
+
+			sf(0, 0, 0, 0) = sf1;
+			sf(1, 0, 0, 0) = sf2;
+			for (int  iDir = 0; iDir < SPACEDIM; iDir++)
+				xAvg(iDir, 0, 0, 0) = xA1[iDir];
+				xAvg(SPACEDIM + iDir, 0, 0, 0) = xA2[iDir];
+	}
+
+}
 
 #endif

@@ -258,7 +258,7 @@ void DefineGlobalBlockBox() {
 }
 
 
-void StreamCollisionFSI3D(int flag) {
+void StreamCollisionFSI(int flag) {
 
 #if DebugLevel>1
 	ops_printf("Particle mapping\n");
@@ -270,8 +270,13 @@ void StreamCollisionFSI3D(int flag) {
 	ops_printf("Calculating the macroscopic variables...\n");
 #endif
 
+#ifdef OPS_3D
 	UpdateMacroVars3D();
+#endif
 
+#ifdef OPS_2D
+	UpdateMacroVars();
+#endif
 
 	CopyBlockEnvelopDistribution(g_fStage(), g_f());
 
@@ -314,7 +319,14 @@ void StreamCollisionFSI3D(int flag) {
 	 ops_printf("Streaming...\n");
 #endif
 
+#ifdef OPS_3D
 	 Stream3D();
+#endif
+
+
+#ifdef OPS_2D
+	 Stream();
+#endif
 
 #if DebugLevel >=  1
 	ops_printf("PostStreaming FSI functions\n");
@@ -327,7 +339,14 @@ void StreamCollisionFSI3D(int flag) {
 #endif
 	    // TODO This function shall be inside evolution3D.cpp
 	    // TODO The data structure for BCs shall be inside boundary module
+#ifdef OPS_3D
 	 ImplementBoundary3D();
+#endif
+
+#ifdef OPS_2D
+	 ImplementBoundary();
+#endif
+
 
 #if DebugLevel >=1
 	 ops_printf("Calculate Drag Force\n");
@@ -363,7 +382,7 @@ void IterateFSI(InteractionData data, int savingFlag) {
 			InitializeDragForce();
 
 			for (SizeType jfl = 0; jfl < data.Nf; jfl++) {
-				StreamCollisionFSI3D(flag);
+				StreamCollisionFSI(flag);
 			}
 		}
 		flag = 0;
@@ -375,9 +394,13 @@ void IterateFSI(InteractionData data, int savingFlag) {
 
 		if (savingFlag==1) {
 			if ((currentStep % data.checkPeriod) == 0) {
-
+#ifdef OPS_3D
 				UpdateFPIVelocities3D();
+#endif
 
+#ifdef OPS_2D
+				UpdateFPIVelocities();
+#endif
                 CalcResidualError();
                 DispResidualError(currentStep, data.checkPeriod);
 
@@ -392,7 +415,13 @@ void IterateFSI(InteractionData data, int savingFlag) {
 	}
 
 	if (savingFlag == 1) {
+#ifdef OPS_3D
 		UpdateFPIVelocities3D();
+#endif
+
+#ifdef OPS_2D
+		UpdateFPIVelocities();
+#endif
 		WriteFlowfieldToHdf5(currentStep);
 		WriteDistributionsToHdf5(currentStep);
 		WriteNodePropertyToHdf5(currentStep);
@@ -419,10 +448,16 @@ void IterateFSI(Real convergenceRate,const SizeType checkPointPeriod,const SizeT
 	do {
 		InitializeDragForce();
 
-		StreamCollisionFSI3D(0);
+		StreamCollisionFSI(0);
 		iter +=1;
         if ((iter % checkPointPeriod) == 0) {
+#ifdef OPS_3D
         	 UpdateFPIVelocities3D();
+#endif
+
+#ifdef OPS_2D
+        	 UpdateFPIVelocities();
+#endif
              CalcResidualError();
              residualError = GetMaximumResidual(checkPointPeriod);
              DispResidualError(iter, checkPointPeriod);
@@ -436,8 +471,14 @@ void IterateFSI(Real convergenceRate,const SizeType checkPointPeriod,const SizeT
 
 
 	} while (residualError >= convergenceRate);
-
+#ifdef OPS_3D
 	UpdateFPIVelocities3D();
+#endif
+
+#ifdef OPS_2D
+	UpdateFPIVelocities();
+#endif
+
 	WriteFlowfieldToHdf5(0);
 	WriteDistributionsToHdf5(0);
 	WriteNodePropertyToHdf5(0);
@@ -554,42 +595,72 @@ void ReadParticleDataSpherical() {
 	else
 		Nsize = Nparticles;
 
-	Real xTmp[Nsize], yTmp[Nsize], zTmp[Nsize], radTmp[Nsize];
-	Real uTmp[Nsize], vTmp[Nsize], wTmp[Nsize];
-	Real oxTmp[Nsize], oyTmp[Nsize], ozTmp[Nsize];
+	Real xTmp[Nsize], yTmp[Nsize], radTmp[Nsize];
+	Real uTmp[Nsize], vTmp[Nsize];
+	Real ozTmp[Nsize];
+
+#ifdef OPS_3D
+	Real zTmp[Nsize],  oxTmp[Nsize], oyTmp[Nsize], wTmp[Nsize];
+#endif
 
 	if (Nparticles > 0) {
 
 		if (myRank == 0)
 			for (int iPar = 0; iPar < Nparticles; iPar++) {
+#ifdef OPS_3D
 				fscanf(cfilex,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
 						&xTmp[iPar], &yTmp[iPar], &zTmp[iPar], &uTmp[iPar],
 						&vTmp[iPar], &wTmp[iPar], &oxTmp[iPar], &oyTmp[iPar],
 						&ozTmp[iPar], &radTmp[iPar]);
-
+#endif
+#ifdef OPS_2D
+				fscanf(cfilex, "%lf %lf %lf %lf %lf %lf\n",
+					   &xTmp[iPar], &yTmp[iPar], &uTmp, &vTmp, &ozTmp[iPar],
+					   &radTmp[iPar]);
+#endif
 		}
 
 #ifdef OPS_MPI
 		MPI_Bcast(xTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
 		MPI_Bcast(yTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
-		MPI_Bcast(zTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+
 		MPI_Bcast(uTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
 		MPI_Bcast(vTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+
+
+		MPI_Bcast(ozTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+		MPI_Bcast(radTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+
+#ifdef OPS_3D
+		MPI_Bcast(zTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
 		MPI_Bcast(wTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
 		MPI_Bcast(oxTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
 		MPI_Bcast(oyTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
-		MPI_Bcast(ozTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
-		MPI_Bcast(radTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+#endif
+
 #endif
 
 	}
 
-	for (int iDir = 0; iDir < Nparticles; iDir++)
+	for (int iDir = 0; iDir < Nparticles; iDir++) {
+#ifdef OPS_3D
 		printf("Rank %d: Particle %d of %d: [%f %f %f] Radius = %f\n", ops_get_proc(), iDir, Nparticles,
-				xTmp[iDir], xTmp[iDir], zTmp[iDir], radTmp[iDir]);
-
+				xTmp[iDir], yTmp[iDir], zTmp[iDir], radTmp[iDir]);
+#endif
+#ifdef OPS_2D
+		printf("Rank %d: Particle %d of %d: [%f %f] Radius = %f\n", ops_get_proc(), iDir, Nparticles,
+				xTmp[iDir], yTmp[iDir], radTmp[iDir]);
+#endif
+	}
 	//Assign particles to blocks
+#ifdef OPS_3D
 	AssignParticlesToBlocksSpheres(Nparticles, xTmp, yTmp,
 			zTmp, radTmp, uTmp,vTmp,  wTmp,  oxTmp,oyTmp, ozTmp);
+#endif
+
+#ifdef OPS_2D
+	AssignParticleToBlocksSpheres2D(Nparticles, xTmp, yTmp, radTmp,
+									uTmp, vTmp, ozTmp);
+#endif
 	fclose(cfilex);
 }

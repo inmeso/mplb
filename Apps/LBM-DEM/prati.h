@@ -31,35 +31,41 @@
  */
 
 /*!
- * @brief   Types used for DEM-LBM simulations
+ * @brief   Functions for the implementation of PRATI scheme
  * @author  C. Tsigginos
  */
-#ifndef DEM_DATA_H
-#define DEM_DATA_H
 
+
+#ifndef PRATI_H_
+#define PRATI_H_
+
+#include "block_particles.h"
+#include "fpi_data.h"
+#include "mapping_particles.h"
+#include "particle_mapping.h"
+#include <memory>
+#include <vector>
+#include "dem_data.h"
+#include "block.h"
+#include "flowfield.h"
+#include "scheme.h"
 #include "type.h"
 
+void FsiInitializePrati(std::shared_ptr<FpiData>& fpiPtr);
+void FsiForcePrati(std::shared_ptr<FpiData>& fpiPtr);
 
-enum ParticleShapeDiscriptor{spherical=0, quadratic=1, mesh=2};
-enum ParticleMappingModel{noMapping=0, sphericalMapping=1, gridSpherical=2,
-						  gridQuadratic=3, gridMesh=4, multipleSpheres=6,
-						  copyData=7};
-enum FluidParticleModel{noModel=0, PSM=1};
+//3D models
+#ifdef OPS_3D
+void FsiPostVelocitiesPrati3D(std::shared_ptr<FpiData>& fpiPtr);
+void FsiCollisionsPrati3D(std::shared_ptr<FpiData>& fpiPtr);
+void CalculateDragPrati3D(std::shared_ptr<FpiData>& fpiPtr);
+#endif
 
-struct InteractionData {
-	SizeType nSteps;
-	SizeType nStart;
-	bool restartFlag;
-	bool muiFlag;
-	Real dtDEM;
-	Real convergenceRate;
-	SizeType Nf; //number of DEM iterations
-	SizeType Npl; //Need to give definition
-	SizeType checkPeriod;
-	SizeType maxIters; //maximum steps for Steady state simulations
-	SizeType checkPeriodStS;
-	ParticleShapeDiscriptor particleShape;
 
-};
-
-#endif /* APPS_LBM_DEM_INTERACTION_DATA_H_ */
+//2D models
+#ifdef OPS_2D
+void FsiPostVelocitiesPrati(std::shared_ptr<FpiData>& fpiPtr);
+void FsiCollisionsPrati(std::shared_ptr<FpiData>& fpiPtr);
+void CalculateDragPrati(std::shared_ptr<FpiData>& fpiPtr);
+#endif
+#endif /* APPS_LBM_DEM_NOP_PRATI_H_ */

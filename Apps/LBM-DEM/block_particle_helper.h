@@ -59,6 +59,15 @@ void UpdateOldParticleLocation();
 void ParticleEnvelopes();
 
 
+//3D wrapper functions
+#ifdef OPS_3D
+void UpdateFPIVelocities3D();
+#endif
+
+#ifdef OPS_2D
+void UpdateFPIVelocities2D();
+#endif
+
 
 //Wrapper for FSI object functions
 void PostVelocityFSIFunctions();
@@ -72,7 +81,9 @@ void PreDefineCollision3DFSI(int* velID, int* loop, Real tauRef, CollisionType c
 void CalculateDragForce(Real dt, SizeType currentStep);
 void InitializeDragForce();
 void InitializeFSILists();
-void UpdateFPIVelocities3D();
+
+
+
 void WriteFPIDataToHdf5(SizeType currentStep);
 
 void UpdateParticleMappingDragForceRestart(SizeType currentStep);

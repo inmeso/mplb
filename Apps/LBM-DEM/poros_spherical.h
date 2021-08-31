@@ -47,12 +47,22 @@
 #include <vector>
 #include <memory>
 
+//3D Functions
+#ifdef OPS_3D
+void ParticleProjectionSphere3D(std::shared_ptr<MappingParticles>& mappingPtr,
+		  int component);
+void UpdateProjectionSphere3D(std::shared_ptr<MappingParticles>& mappingPtr,
+		   int component);
+#endif
+
+//2D Functions
+#ifdef OPS_2D
 void ParticleProjectionSphere(std::shared_ptr<MappingParticles>& mappingPtr,
 		  int component);
-void UpdateProjectionSphere(std::shared_ptr<MappingParticles>& mappingPtr,
+void UpdateProjectionSphere
+(std::shared_ptr<MappingParticles>& mappingPtr,
 		   int component);
-
-
+#endif
 
 
 

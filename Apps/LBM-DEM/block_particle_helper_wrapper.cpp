@@ -128,10 +128,18 @@ void DefineLocalBoxBound() {
 	Real xBound[6];
 	for (auto& particleBlock : BlockParticleList) {
 		particleBlock.second.GetLocalBound(xBound);
+#ifdef OPS_3D
 		printf("Rank %d, Block %d xLocal =[%f %f] x[ %f %f] x [%f %f]\n",
 					ops_get_proc(), particleBlock.second.GetBlock().ID(),
 					xBound[0], xBound[1], xBound[2], xBound[3],
 					xBound[4], xBound[5]);
+#endif
+
+#ifdef OPS_2D
+		printf("Rank %d, Block %d xLocal = [%f %f] x [%f %f]\n",
+				ops_get_proc(), particleBlock.second.GetBlock().ID(),
+					xBound[0], xBound[1], xBound[2], xBound[3]);
+#endif
 	}
 #endif
 #endif

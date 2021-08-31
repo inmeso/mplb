@@ -54,7 +54,7 @@
 void SetupBlockParticles(InteractionData data, SizeType maxStep);
 void DefineGlobalBlockBox();
 void CreateMuiInterface(InteractionData data, std::vector<FluidParticleModel> models, Real skin);
-void StreamCollisionFSI3D(int flag);
+void StreamCollisionFSI(int flag);
 void IterateFSI(InteractionData data, int savingFlag);
 void IterateFSI(Real convergenceRate,const SizeType checkPointPeriod,const SizeType maxIters);
 
