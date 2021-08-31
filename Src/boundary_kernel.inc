@@ -705,12 +705,12 @@ void KerCutCellPeriodic(ACC<Real> &f, const ACC<int> &nodeType,
 #ifdef CPU
     for (int xiIndex = xiStartPos; xiIndex <= xiEndPos; xiIndex++) {
         const Real res{f(xiIndex, 0, 0)};
-        if (isnan(res) || res <= 0 || isinf(res)) {
+        if (std::isnan(res) || res <= 0 || std::isinf(res)) {
             ops_printf(
                 "Error! Distribution function %f becomes invalid  at the "
                 "lattice %i\n at the surface %i\n",
                 res, xiIndex, geometryProperty(0, 0));
-            assert(!(isnan(res) || res <= 0 || isinf(res)));
+            assert(!(std::isnan(res) || res <= 0 || std::isinf(res)));
         }
     }
 #endif

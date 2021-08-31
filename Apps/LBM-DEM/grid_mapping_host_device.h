@@ -93,7 +93,7 @@ static inline OPS_FUN_PREFIX Real ComputeCircularSolidFractionGrid2D(const Real*
 		xavg[iDir] /= static_cast<Real>(inter);
 
 	return static_cast<Real>(inter) / static_cast<Real>(Nx * Ny);
-			}
+
 }
 
 #endif

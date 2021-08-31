@@ -220,14 +220,14 @@ void KerMappingSphericalGrid(ACC<int>& idp, ACC<Real>& sfp, ACC<Real>& uPar,
 
 	no  = 0;
 	for (int iPar = 0; iPar < NOELEM; iPar++)
-		no += (idp(iPar, 0, 0, 0)>-1);
+		no += (idp(iPar, 0, 0)>-1);
 
 
 	for (int edgeIndex = 0; edgeIndex < nEdges; edgeIndex++) {
 		xe = xfl[0] + 0.5 * (dx1) * static_cast<Real>(sx[edgeIndex]);
 		ye = xfl[1] + 0.5 * (dx1) * static_cast<Real>(sy[edgeIndex]);
 
-		dd = (xe - xPart[0]) * (xe - xPart[0]) + (ye - xPart[1]) * (ye - xPart[1]));
+		dd = (xe - xPart[0]) * (xe - xPart[0]) + (ye - xPart[1]) * (ye - xPart[1]);
 
 		if (dd <= (*Radius) * (*Radius))
 			itot += 1;
@@ -267,7 +267,7 @@ void KerMappingSphericalGrid(ACC<int>& idp, ACC<Real>& sfp, ACC<Real>& uPar,
 		dy1 = xavg[1] - xPart[1];
 
 
-		uPar(SPACEDIM * noIndex, 0, 0, 0) = vParticle[0] - omParticle[2] * dy1;
+		uPar(SPACEDIM * noIndex, 0, 0) = vParticle[0] - omParticle[2] * dy1;
 		uPar(SPACEDIM * noIndex +1, 0, 0) = vParticle[1] + omParticle[2] * dx1;
 
 
@@ -296,8 +296,8 @@ void KerSolidVelocityUpdateGridSphere(ACC<Real>& vP, const ACC<int>& id,
 			dx1 = xf[0] - xPos[0];
 			dy1 = xf[1] - xPos[1];
 
-			vP(SPACEDIM * iPart, 0, 0, 0) = velP[0] - (*omP) * dy1;
-			vP(SPACEDIM * iPart + 1, 0, 0, 0) =  velP[1] + (*omP) * dx1;
+			vP(SPACEDIM * iPart, 0, 0) = velP[0] - (*omP) * dy1;
+			vP(SPACEDIM * iPart + 1, 0, 0) =  velP[1] + (*omP) * dx1;
 
 
 

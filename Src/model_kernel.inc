@@ -88,12 +88,12 @@ void KerCalcU(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
         }
         u /= Rho(0, 0);
 #ifdef CPU
-        if (isnan(u) || isinf(u)) {
+        if (std::isnan(u) || std::isinf(u)) {
             printf(
                 "Error! Velocity U=%f becomes invalid! "
                 "Maybe something wrong...\n",
                 u);
-            assert(!(isnan(u) || isinf(u)));
+            assert(!(std::isnan(u) || std::isinf(u)));
         }
 #endif
         U(0, 0) = u;
@@ -112,12 +112,12 @@ void KerCalcV(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
         }
         v /= Rho(0, 0);
 #ifdef CPU
-        if (isnan(v) || isinf(v)) {
+        if (std::isnan(v) || std::isinf(v)) {
             printf(
                 "Error! Velocity V=%f becomes invalid! "
                 "Maybe something wrong...\n",
                 v);
-            assert(!(isnan(v) || isinf(v)));
+            assert(!(std::isnan(v) || std::isinf(v)));
         }
 #endif
         V(0, 0) = v;
@@ -142,12 +142,12 @@ void KerCalcUForce(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
             u += ((*dt) * acceleration(0, 0, 0) / 2);
         }
 #ifdef CPU
-        if (isnan(u) || isinf(u)) {
+        if (std::isnan(u) || std::isinf(u)) {
             printf(
                 "Error! Velocity U=%f becomes invalid! Maybe something wrong "
                 "at x=%f y=%f\n",
                 u, x, y);
-            assert(!(isnan(u) || isinf(u)));
+            assert(!(std::isnan(u) || std::isinf(u)));
         }
 #endif
         U(0, 0) = u;
@@ -172,12 +172,12 @@ void KerCalcVForce(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
             v += ((*dt) * acceleration(1, 0, 0) / 2);
         }
 #ifdef CPU
-        if (isnan(v) || isinf(v)) {
+        if (std::isnan(v) || std::isinf(v)) {
             printf(
                 "Error! Velocity V=%f becomes invalid! Maybe something wrong "
                 "at x=%f y=%f\n",
                 v, x, y);
-            assert(!(isnan(v) || isinf(v)));
+            assert(!(std::isnan(v) || std::isinf(v)));
         }
 #endif
         V(0, 0) = v;
@@ -205,12 +205,12 @@ void KerInitialiseBGK2nd(ACC<Real>& f, const ACC<int>& nodeType,
             f(xiIdx, 0, 0) = CalcBGKFeq(xiIdx, rho, u, v, T, polyOrder);
 #ifdef CPU
             const Real res{f(xiIdx, 0, 0)};
-            if (isnan(res) || res <= 0 || isinf(res)) {
+            if (std::isnan(res) || res <= 0 || std::isinf(res)) {
                 printf(
                     "Error! Distribution function %f becomes invalid at the "
                     "lattice %i\n",
                     res, xiIdx);
-                assert(!(isnan(res) || res <= 0 || isinf(res)));
+                assert(!(std::isnan(res) || res <= 0 || std::isinf(res)));
             }
 #endif  // CPU
         }
@@ -249,14 +249,14 @@ void KerCollideBGKIsothermal(ACC<Real>& fStage, const ACC<Real>& f,
             }
 #ifdef CPU
             const Real res{fStage(xiIndex, 0, 0)};
-            if (isnan(res) || res <= 0 || isinf(res)) {
+            if (std::isnan(res) || res <= 0 || std::isinf(res)) {
                 printf(
                     "Error! Distribution function = %e becomes invalid at  "
                     "the lattice %i where feq=%e and rho=%e u=%e v=%e at "
                     "x=%e y=%e\n",
                     res, xiIndex, feq, rho, u, v, coordinates(0, 0, 0),
                     coordinates(1, 0, 0));
-                assert(!(isnan(res) || res <= 0 || isinf(res)));
+                assert(!(std::isnan(res) || res <= 0 || std::isinf(res)));
             }
 #endif  // CPU
         }
@@ -296,12 +296,12 @@ void KerCollideBGKThermal(ACC<Real>& fStage, const ACC<Real>& f,
             }
 #ifdef CPU
             const Real res{fStage(xiIndex, 0, 0)};
-            if (isnan(res) || res <= 0 || isinf(res)) {
+            if (std::isnan(res) || res <= 0 || std::isinf(res)) {
                 printf(
                     "Error! Distribution function %f becomes invalid at the "
                     "lattice %i\n",
                     res, xiIndex);
-                assert(!(isnan(res) || res <= 0 || isinf(res)));
+                assert(!(std::isnan(res) || res <= 0 || std::isinf(res)));
             }
 #endif  // CPU
         }
@@ -321,12 +321,12 @@ void KerCalcBodyForce1ST(ACC<Real>& fStage, const ACC<Real>& acceration,
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real bodyForce{CalcBodyForce(xiIndex, rho, g)};
 #ifdef CPU
-            if (isnan(bodyForce) || isinf(bodyForce)) {
+            if (std::isnan(bodyForce) ||std::isinf(bodyForce)) {
                printf(
                     "Error! Body force  %f becomes invalid  at  the lattice "
                     "%i\n",
                     bodyForce, xiIndex);
-                assert(!(isnan(bodyForce) || isinf(bodyForce)));
+                assert(!(std::isnan(bodyForce) || std::isinf(bodyForce)));
             }
 #endif
             fStage(xiIndex, 0, 0) = bodyForce;

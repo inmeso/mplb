@@ -111,7 +111,7 @@ void KerCollisionPSM3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>& f,
 
 
 		for (int pIndex = 0; pIndex < noTot; pIndex++)
-			porosEff -= sfp(pIndex, 0, 0, 0) * tau / (tau - (1.0 - sfp(pIndex, 0, 0, 0)) * (*dt));
+			porosEff -= sfp(pIndex, 0, 0, 0) * tau / (tau + (1.0 - sfp(pIndex, 0, 0, 0)) * (*dt));
 
 		noTot1 = noTot;
 		if (noTot == 0)
@@ -159,6 +159,7 @@ void KerCollisionPSM3D(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>& f,
 		}
 
 		for (int xiIndex1 = lattIdx[0]; xiIndex1 <= lattIdx[1]; xiIndex1++) {
+
 			OmegaS = 0.0;
 			int xiIndex = xiIndex1 - lattIdx[0];
 			if (noTot > 0) {
@@ -306,9 +307,9 @@ void KerCollisionPSM(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>& f,
 		}
 
 
-		for (int pIndex = 0; pIndex < noTot; pIndex++)
-			porosEff -= sfp(pIndex, 0, 0) * tau / (tau - (1.0 - sfp(pIndex, 0, 0)) * (*dt));
-
+		for (int pIndex = 0; pIndex < noTot; pIndex++) {
+			porosEff -= sfp(pIndex, 0, 0) * tau / (tau + (1.0 - sfp(pIndex, 0, 0)) * (*dt));
+		}
 		noTot1 = noTot;
 		if (noTot == 0)
 			noTot1 = 1;
@@ -325,7 +326,6 @@ void KerCollisionPSM(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>& f,
 		for (int pIndex  = 0; pIndex < noTot; pIndex++) {
 			up[spaceDim * pIndex] =  vp(pIndex * spaceDim, 0, 0);
 			up[spaceDim * pIndex + 1] = vp(pIndex * spaceDim + 1, 0, 0);
-			up[spaceDim * pIndex + 2] = vp(pIndex * spaceDim + 2, 0, 0);
 		}
 
 		if (forceFlag != noForce) {
@@ -335,6 +335,12 @@ void KerCollisionPSM(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>& f,
 			calculateForce(force, forceVariables, xfl, forceFlag, forceSize, spaceDim); //TODO Verify
 
 		}
+
+
+
+
+
+
 
 
 		//Calculate BodyForce and equilibrium functions
@@ -379,11 +385,14 @@ void KerCollisionPSM(ACC<Real>& fcopy, ACC<Real>& Fd, const ACC<Real>& f,
 #ifdef CPU
 			const Real res{fcopy(xiIndex, 0, 0)};
 			if (std::isnan(res) || res < 0 || std::isinf(res)) {
-				ops_printf("Error-PRATI: Distribution function %f becomes "
+				printf("Error-PSM: Distribution function %f becomes "
 						"invalid for the component %i at  the lattice "
 						"%i\n",
 						res, 0, xiIndex);
+				printf("Node [%f %f] u=[%f %f] sf=%f\n", coordinates(0, 0, 0),
+						coordinates(1, 0, 0), u[0], u[1], sfp(0, 0, 0));
 					assert(!(std::isnan(res) || res < 0 || std::isinf(res)));
+
 			}
 #endif  // CPU
 

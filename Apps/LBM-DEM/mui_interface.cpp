@@ -325,9 +325,11 @@ void MuiInterface::SendParticles(SizeType timeStep) {
 			particleBlock->second.ExtractDragForce(Fd, Td, iParticle);
 			particleBlock->second.ExtractPositions(xPos, iParticle);
 
+
+#ifdef OPS_3D
 			printf("Rank %d at timestep %d: Sends for particle [%f %f %f], Fd=[%12.9e %12.9e %12.9e] Td=[%12.9e %12.9e %12.9e\n",
 					ops_get_proc(), timeStep, xPos[0], xPos[1], xPos[2], Fd[0], Fd[1], Fd[2], Td[0], Td[1], Td[2]);
-#ifdef OPS_3D
+
 			interface->push("Fdx", {xPos[0], xPos[1], xPos[2]}, Fd[0]);
 			interface->push("Fdy", {xPos[0], xPos[1], xPos[2]}, Fd[1]);
 			interface->push("Fdz", {xPos[0], xPos[1], xPos[2]}, Fd[2]);
@@ -337,6 +339,9 @@ void MuiInterface::SendParticles(SizeType timeStep) {
 #endif
 
 #ifdef	OPS_2D
+			printf("Rank %d at timestep %d: Sends for particle [%f %f] Fd=[%12.9e %12.9e] Td=%12.9e\n", ops_get_proc(),
+					timeStep, xPos[0], xPos[1], Fd[0], Fd[1], Td[0] );
+
 			interface->push("Fdx", {xPos[0], xPos[1]}, Fd[0]);
 			interface->push("Fdy", {xPos[0], xPos[1]}, Fd[1]);
 			interface->push("Mdz", {xPos[0], xPos[1]}, Td[0]);

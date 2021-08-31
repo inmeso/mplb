@@ -63,6 +63,6 @@ void CalculateDragPSM3D(std::shared_ptr<FpiData>& fpiPtr);
 #ifdef OPS_2D
 void FsiCollisionsPSM(std::shared_ptr<FpiData>& fpiPtr);
 void CalculateDragPSM(std::shared_ptr<FpiData>& fpiPtr);
-#endif  OPS_2D
+#endif
 
 #endif /* APPS_LBM_DEM_NOP_PSM_H_ */

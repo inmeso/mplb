@@ -104,7 +104,7 @@ void ParticleProjectionSphereGrid3D(std::shared_ptr<MappingParticles>& mappingPt
 
 }
 
-void UpdateProjectectionSphereGrid3D(std::shared_ptr<MappingParticles>& mappingPtr,
+void UpdateProjectionSphereGrid3D(std::shared_ptr<MappingParticles>& mappingPtr,
 		   int component) {
 
 	int sizeReal[3], sizeInt, idParticle, blockIndex, nPoints, nelem;
@@ -189,7 +189,7 @@ void ParticleProjectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
 
 			}
 			idParticle = iPart;
-			omPart[iDim] = particleCurrentBlock.particleList.at(iPart).omegaParticle[2];
+			omPart = particleCurrentBlock.particleList.at(iPart).omegaParticle[2];
 			for (int iDir = 0; iDir < 2 * spaceDim; iDir++)
 				stenList[iDir] = particleCurrentBlock.particleList.at(iPart).stenList[iDir];
 
@@ -222,7 +222,7 @@ void ParticleProjectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
 }
 
 
-void UpdateProjectectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
+void UpdateProjectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr,
 		   int component) {
 
 	int sizeReal[3], sizeInt, idParticle, blockIndex, nPoints, nelem;
@@ -249,7 +249,7 @@ void UpdateProjectectionSphereGrid(std::shared_ptr<MappingParticles>& mappingPtr
 				velP[iDim] = particleCurrentBlock.particleList.at(iPart).uParticle[iDim];
 
 			}
-			omP[iDim] = particleCurrentBlock.particleList.at(iPart).omegaParticle[2];
+			omP = particleCurrentBlock.particleList.at(iPart).omegaParticle[2];
 			radius = particleCurrentBlock.particleList.at(iPart).particleShape->Rparticle;
 			idParticle = iPart;
 			for (int iDir = 0; iDir < 2 * spaceDim; iDir++)

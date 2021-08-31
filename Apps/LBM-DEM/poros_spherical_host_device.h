@@ -78,11 +78,18 @@ inline OPS_FUN_PREFIX Real CalculateSolidFractionCircles(const Real* xfl,
 			return 1.0;
 		}
 
+
 		d1 = (Ravg * Ravg - Rp * Rp + d * d)/(2.0 * d);
 		d2 = (Rp * Rp - Ravg * Ravg + d * d)/(2.0 * d);
 
 		V1 = Ravg * Ravg * acos(d1/Ravg) - d1 * sqrt(Ravg * Ravg - d1 * d1);
-		V2 = Ravg * Ravg * acos(d2/Rp) - d2 * sqrt(Rp * Rp - d2 * d2);
+		V2 = Rp * Rp * acos(d2/Rp) - d2 * sqrt(Rp * Rp - d2 * d2);
+		Vol = PI * Ravg * Ravg;
+
+
+		//vol = Rc * Rc * acos(d1/Rc) - d1 * sqrt(Rc * Rc - d1 * d1) +
+		//		  Rp * Rp * acos(d2/Rp) - d2 * sqrt(Rp * Rp - d2 * d2);
+
 
 		//TODO Express in local coordinate systems
 		theta1= 2.0 * acos(d1 / Ravg);
@@ -102,7 +109,7 @@ inline OPS_FUN_PREFIX Real CalculateSolidFractionCircles(const Real* xfl,
 
 		norm = n[0] * n[0] + n[1] * n[1];
 		norm = sqrt(norm);
-		for (int iDir = 0; iDir < 3; iDir++)
+		for (int iDir = 0; iDir < 2; iDir++)
 			n[iDir] /= norm;
 
 		for (int iDir = 0; iDir < 2; iDir++)

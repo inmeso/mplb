@@ -123,9 +123,11 @@ void DefineLocalBoxBound() {
 
 
 	}
+
+
 #ifdef CPU
 #if DebugLevel >= 2
-	Real xBound[6];
+	Real xBound[2 * spaceDim];
 	for (auto& particleBlock : BlockParticleList) {
 		particleBlock.second.GetLocalBound(xBound);
 #ifdef OPS_3D

@@ -208,6 +208,7 @@ int BlockParticles::InsertParticle(Real* xpos, Real radius, std::vector<Real> sh
 	bool flag = SphereParallepipedIntersection(xpos, radius);
 
 	if (flag) {
+
 #ifdef CPU
 #if DebugLevel >=2
 #ifdef OPS_3D
@@ -216,17 +217,22 @@ int BlockParticles::InsertParticle(Real* xpos, Real radius, std::vector<Real> sh
 #endif
 
 #ifdef OPS_2D
-		printf("Rank %d: Particle [%f %f] is inserted to particleList",
+		printf("Rank %d: Particle [%f %f] is inserted to particleList\n",
 				ops_get_proc(), xpos[0], xpos[1], xpos[2]);
 #endif
 #endif
 #endif
+
 		idParticle = UpdateParticle(xpos, radius, shape);
 		UpdateParticleVelocities(uPart, omegaT);
 		if (hasExtraInputVariables)
 			GetAdditionalInputVariables(inputData, NParticles-1);
+
+
 		return idParticle;
 	}
+
+
 
 
 	return -1;
@@ -299,6 +305,8 @@ void BlockParticles::SetGlobalBound(Real* xBound) {
 		printf("[%f %f] ", xBoundGlobal[2 * iDim], xBoundGlobal[2* iDim + 1]);
 #endif
 #endif
+
+
 }
 
 void BlockParticles::GetOwnership() {

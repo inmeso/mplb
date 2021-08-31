@@ -213,6 +213,8 @@ void CalculateDragPSM3D(std::shared_ptr<FpiData>& fpiPtr) {
 #ifdef OPS_2D
 void FsiCollisionsPSM(std::shared_ptr<FpiData>& fpiPtr) {
 
+	ops_printf("PSM Collissions\n");
+
 	int spaceDim, noElem, componentID,size;
 	int sizeR1, sizeR2, sizeI1;
 	spaceDim = fpiPtr->GetSpaceDim();
@@ -343,10 +345,13 @@ void CalculateDragPSM(std::shared_ptr<FpiData>& fpiPtr) {
 
 
 			for (int iDir = 0; iDir < spaceDim; iDir++) {
-				particlesCurrentBlock.particleList[iPart].FDrag[iDir] += FdLocal[iDir] * dx * dx;
+				particlesCurrentBlock.particleList[iPart].FDrag[iDir] += FdLocal[iDir]
+																	* dx * dx;
 			}
 
 			particlesCurrentBlock.particleList[iPart].TDrag[0] += TdLocal[0] * dx * dx;
+
+
 		}
 	}
 

@@ -211,33 +211,6 @@ void DefineParticleMappingModels(std::vector<ParticleMappingModel> mappingModels
 
 				particleMappingModels.insert(std::make_pair(iComponent, model));
 			} break;
-			case multipleSpheres: {
-				int noElem = 2;
-				std::string real1{"sfP"};
-				std::string real2{"vP"};
-				std::string real3{"xAvg"};
-				std::string intS{"intP"};
-				std::string real4{"xParticles"};
-
-				real1 += std::to_string(iComponent);
-				real2 += std::to_string(iComponent);
-				real3 += std::to_string(iComponent);
-				real4 += std::to_string(iComponent);
-				intS += std::to_string(iComponent);
-
-				std::vector<std::string> nameOfRealVars{real1, real2, real3, real4};
-				std::vector<std::string> nameOfIntVars{intS};
-				std::vector<int> sizeReals{noElem, noElem * spaceDim, noElem * spaceDim, (spaceDim + 1) * noElem};
-				std::vector<int> sizeInt{noElem};
-
-				std::shared_ptr<MappingParticles> model(new MappingParticles(spaceDim, noElem, particleShape,
-								tmpModel,  nameOfRealVars, sizeReals,
-											nameOfIntVars,  sizeInt));
-
-
-				particleMappingModels.insert(std::make_pair(iComponent, model));
-
-			} break;
 			case copyData: {
 				particleMappingModels.insert(std::make_pair(iComponent, particleMappingModels.at(copyFrom.at(elem))));
 			} break;
@@ -317,14 +290,23 @@ void MappingParticlesToLBMGrid() {
 				break;
 
 			case sphericalMapping:
+#ifdef OPS_3D
 				ParticleProjectionSphere3D(mappingModel.second, component);
+#endif
+#ifdef OPS_2D
+				ParticleProjectionSphere(mappingModel.second, component);
+#endif
 				break;
 //			case multipleSpheres:
 //				ParticleProjectionMultSpheres3D(mappingModel.second, component);
 				break;
 			default:
+#ifdef OPS_3D
 				ParticleProjectionSphere3D(mappingModel.second, component);
-
+#endif
+#ifdef OPS_2D
+				ParticleProjectionSphere(mappingModel.second, component);
+#endif
 		}
 	}
 
@@ -355,11 +337,11 @@ void UpdateParticlesToLBMGrid() {
 				break;
 			case gridSpherical:
 #ifdef OPS_3D
-				UpdateProjectectionSphereGrid3D(mappingModel.second, component);
+				UpdateProjectionSphereGrid3D(mappingModel.second, component);
 #endif
 
 #ifdef OPS_2D
-				UpdateProjectectionSphereGrid(mappingModel.second, component);
+				UpdateProjectionSphereGrid(mappingModel.second, component);
 #endif
 				break;
 			case sphericalMapping:

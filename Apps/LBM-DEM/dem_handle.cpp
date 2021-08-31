@@ -278,6 +278,7 @@ void StreamCollisionFSI(int flag) {
 	UpdateMacroVars();
 #endif
 
+
 	CopyBlockEnvelopDistribution(g_fStage(), g_f());
 
 	PostVelocityFSIFunctions();
@@ -509,6 +510,7 @@ void SetupDEMLBM(InteractionData& data) {
 
 	if (data.muiFlag) {
 		//TODO Pass mui data to upgrade data
+		printf("Ready to extract particles from MUI\n");
 		 ExtractParticleData(data.nStart);
 		 ExtractSimulationData(data.nStart, data.nStart, data.nSteps, alpha, flags,
 				 data.particleShape);
@@ -554,8 +556,10 @@ void SetupDEMLBM(InteractionData& data) {
 	else
 		SetupRestartSimulation(data.nStart, data.nSteps + data.nStart);
 
+
 	if (data.muiFlag)
 		SendParticleData(data.nStart);
+
 
 
 
@@ -565,16 +569,24 @@ void SetupDEMLBM(InteractionData& data) {
 //Read particle Data for coupled simulations
 void ReadParticleDataSpherical() {
 
-	int myRank;
+	int myRank, numProcs;
 	int Nparticles, Nsize;
 
 	myRank = 0;
+	numProcs = 1;
 #ifdef OPS_MPI
 	myRank = ops_get_proc();
+	numProcs = ops_num_procs();
 #endif
 
 	FILE *cfilex;
+#ifdef OPS_3D
 	cfilex = fopen("input_particles.txt","r");
+#endif
+
+#ifdef OPS_2D
+	cfilex = fopen("input_particles2D.txt","r");
+#endif
 	if (cfilex == NULL) {
 		ops_printf("ERROR: File cannot be read\n");
 		exit(EXIT_FAILURE);
@@ -587,7 +599,8 @@ void ReadParticleDataSpherical() {
 	}
 
 #ifdef OPS_MPI
-	MPI_Bcast(&Nparticles, 1, MPI_INT, 0, OPS_MPI_GLOBAL);
+	if (numProcs > 1)
+		MPI_Bcast(&Nparticles, 1, MPI_INT, 0, OPS_MPI_GLOBAL);
 #endif
 
 	if (Nparticles < 1)
@@ -621,37 +634,43 @@ void ReadParticleDataSpherical() {
 		}
 
 #ifdef OPS_MPI
-		MPI_Bcast(xTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
-		MPI_Bcast(yTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+		if (numProcs > 1) {
+			MPI_Bcast(xTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+			MPI_Bcast(yTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
 
-		MPI_Bcast(uTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
-		MPI_Bcast(vTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+			MPI_Bcast(uTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+			MPI_Bcast(vTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
 
 
-		MPI_Bcast(ozTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
-		MPI_Bcast(radTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+			MPI_Bcast(ozTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+			MPI_Bcast(radTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
 
 #ifdef OPS_3D
-		MPI_Bcast(zTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
-		MPI_Bcast(wTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
-		MPI_Bcast(oxTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
-		MPI_Bcast(oyTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+			MPI_Bcast(zTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+			MPI_Bcast(wTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+			MPI_Bcast(oxTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
+			MPI_Bcast(oyTmp, Nparticles, MPI_DOUBLE, 0, OPS_MPI_GLOBAL);
 #endif
-
+		}
 #endif
 
 	}
 
 	for (int iDir = 0; iDir < Nparticles; iDir++) {
+#ifdef CPU
+#if DebugLevel >= 2
 #ifdef OPS_3D
-		printf("Rank %d: Particle %d of %d: [%f %f %f] Radius = %f\n", ops_get_proc(), iDir, Nparticles,
+		ops_printf("Rank %d: Particle %d of %d: [%f %f %f] Radius = %f\n", ops_get_proc(), iDir, Nparticles,
 				xTmp[iDir], yTmp[iDir], zTmp[iDir], radTmp[iDir]);
 #endif
 #ifdef OPS_2D
-		printf("Rank %d: Particle %d of %d: [%f %f] Radius = %f\n", ops_get_proc(), iDir, Nparticles,
+		ops_printf("Rank %d: Particle %d of %d: [%f %f] Radius = %f\n", ops_get_proc(), iDir, Nparticles,
 				xTmp[iDir], yTmp[iDir], radTmp[iDir]);
 #endif
+#endif
+#endif
 	}
+
 	//Assign particles to blocks
 #ifdef OPS_3D
 	AssignParticlesToBlocksSpheres(Nparticles, xTmp, yTmp,
@@ -661,6 +680,8 @@ void ReadParticleDataSpherical() {
 #ifdef OPS_2D
 	AssignParticleToBlocksSpheres2D(Nparticles, xTmp, yTmp, radTmp,
 									uTmp, vTmp, ozTmp);
+
 #endif
 	fclose(cfilex);
+
 }

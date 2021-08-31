@@ -48,6 +48,7 @@
 #include "poros_spherical.h"
 #include "poros_spherical_host_device.h"
 
+#ifdef OPS_3D
 void KerSolidFracSphere3D(ACC<int>& id, ACC<Real>& sfp, ACC<Real>& vp,
 		ACC<Real>& xAvg, const ACC<Real>& xf, const Real* xPos, const Real* Radius,
 		const int* idP, const Real* vPart, const Real* omPart, const Real* dx,
@@ -125,7 +126,9 @@ void KerPorousSphericalUpdate3D(ACC<Real>& vP, const ACC<int>& id,
 		}
 	}
 }
+#endif
 
+#ifdef OPS_2D
 void KerSolidFracSphere(ACC<int>& id, ACC<Real>& sfp, ACC<Real>& vp,
 		ACC<Real>& xAvg, const ACC<Real>& xf, const Real* xPos, const Real* Radius,
 		const int* idP, const Real* vPart, const Real* omPart, const Real* dx,
@@ -142,7 +145,6 @@ void KerSolidFracSphere(ACC<int>& id, ACC<Real>& sfp, ACC<Real>& vp,
 	xfl[1] = xf(1, 0, 0);
 
 	Real Ravg = (*dx) * sqrt(1/PI);
-
 	sfEst = CalculateSolidFractionCircles(xfl, Ravg, xPos, (*Radius), xavg); //TODO
 
 	//find noTot;
@@ -167,7 +169,6 @@ void KerSolidFracSphere(ACC<int>& id, ACC<Real>& sfp, ACC<Real>& vp,
 
 	}
 
-
 }
 
 void KerPorousSphericalUpdate(ACC<Real>& vP, const ACC<int>& id,
@@ -181,9 +182,9 @@ void KerPorousSphericalUpdate(ACC<Real>& vP, const ACC<int>& id,
 	Real xf[SPACEDIM], vEst[SPACEDIM];
 	Real dx1, dy1;
 	for (int iPart = 0; iPart < NELEM; iPart++) {
-		if (id(iPart, 0, 0, 0) == (*idParticle)) {
-			xf[0] = xAvg(iPart * SPACEDIM, 0, 0, 0);
-			xf[1] = xAvg(iPart * SPACEDIM + 1, 0, 0, 0);
+		if (id(iPart, 0, 0) == (*idParticle)) {
+			xf[0] = xAvg(iPart * SPACEDIM, 0, 0);
+			xf[1] = xAvg(iPart * SPACEDIM + 1, 0, 0);
 
 
 
@@ -199,7 +200,7 @@ void KerPorousSphericalUpdate(ACC<Real>& vP, const ACC<int>& id,
 		}
 	}
 }
-
+#endif
 
 
 #endif /* APPS_LBM_DEM_NOP_POROS_SPHERICAL_KERNEL_INC_ */

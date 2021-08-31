@@ -247,7 +247,7 @@ void UpdateProjectionSphere(std::shared_ptr<MappingParticles>& mappingPtr,
 				velP[iDim] = particleCurrentBlock.particleList.at(iPart).uParticle[iDim];
 			}
 			radius = particleCurrentBlock.particleList.at(iPart).particleShape->Rparticle;
-			omP = particleCurrentBlock.particleList.at(iPart).omegaParticle[iDim];
+			omP = particleCurrentBlock.particleList.at(iPart).omegaParticle[2];
 			idParticle = iPart;
 			for (int iDir = 0; iDir < 2 * spaceDim; iDir++)
 				stenList[iDir] = particleCurrentBlock.particleList.at(iPart).stenList[iDir];
