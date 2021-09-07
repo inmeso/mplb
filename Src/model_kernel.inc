@@ -309,8 +309,9 @@ void KerInitialiseBGKADG(ACC<Real>& g, const ACC<int>& nodeType,const ACC<int>& 
                          const ACC<Real>& V, const ACC<Real>& Mu, const Real* dt, const int* lattIdx) {
 #ifdef OPS_2D
     VertexType vt = (VertexType)nodeType(0, 0);
-
+    //std::cout<<(int)nodeType(0,0)<<" ";
     if (vt != VertexType::ImmersedSolid) {
+
         Real C{Conc(0,0)};
         Real u{U(0, 0)};
         Real v{V(0, 0)};
@@ -370,6 +371,7 @@ void KerCollideBGKADF(ACC<Real>& gStage, const ACC<Real>& g,
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real geq{CalcBGKFeqAD(xiIndex, C, u, v, ff, dt, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
+
                 gStage(xiIndex, 0, 0) =
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq) +
                     (1-1/(2*tau)) * gStage(xiIndex, 0, 0);
@@ -384,9 +386,9 @@ void KerCollideBGKADF(ACC<Real>& gStage, const ACC<Real>& g,
                 ops_printf(
                     "Error! Distribution function = %e becomes invalid at  "
                     "the lattice %i where feq=%e and rho=%e u=%e v=%e at "
-                    "x=%e y=%e force=%e\n",
+                    "x=%e y=%e force=%e,%e\n",
                     res, xiIndex, geq, C, u, v, coordinates(0, 0, 0),
-                    coordinates(1, 0, 0),ff);
+                    coordinates(1, 0, 0),ff[0],ff[1]);
                 std::cout << C << "Conc\n";
                 assert(!(isnan(res) || res <= -10.01 || isinf(res)));
             }
@@ -808,7 +810,7 @@ void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
             //std::cout<<geq<<" "<<g(xiIndex,0,0)<<" "<<gStage(xiIndex,0,0)<<"   ";
 #ifdef CPU
             const Real res{gStage(xiIndex, 0, 0, 0)};
-            if (isnan(res) || res <= -1.01 || isinf(res)) {
+            if (isnan(res) || res <= -2.01 || isinf(res)) {
                 ops_printf(
                     "Error! Distribution function = %e becomes invalid at  "
                     "the lattice %i where feq=%e and rho=%e u=%e v=%e at "

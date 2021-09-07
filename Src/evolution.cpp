@@ -210,10 +210,11 @@ void StreamCollision(const Real time) {
 
 #ifdef OPS_3D
     ImplementBoundary3D();
+    ImplementBoundaryComplex3D();
 #endif
 #ifdef OPS_2D
     ImplementBoundary();
-    //ImplementBoundaryComplex();
+    ImplementBoundaryComplex();
 #endif
 }
 

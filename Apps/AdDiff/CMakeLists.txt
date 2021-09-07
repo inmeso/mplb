@@ -4,7 +4,7 @@ set(AppName AdDiff)
 set(AppSrc AdDiff.cpp)
 set(LibSrc evolution.cpp scheme.cpp scheme_wrapper.cpp configuration.cpp model.cpp model_wrapper.cpp block.cpp flowfield.cpp flowfield_wrapper.cpp boundary.cpp boundary_wrapper.cpp)
 set(LibHeadList type.h flowfield_host_device.h boundary_host_device.h model_host_device.h)
-set(SpaceDim 2)
+set(SpaceDim 3)
 if (NOT OPTIMISE)
     # Set the path for LibSrc
     set(LibSrcPath "")

@@ -2,7 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "Apps/AdDiff/AdDiffMpiDev"
+			"path" : "Apps/AdDiff/AdDiffSeqDev"
 		}
 	],
 	"backtrace" : 2,
@@ -11,7 +11,7 @@
 		"commands" : 
 		[
 			"add_executable",
-			"MpiDevTarget",
+			"SeqDevTarget",
 			"target_link_libraries",
 			"target_compile_definitions",
 			"target_include_directories"
@@ -29,31 +29,31 @@
 			{
 				"command" : 1,
 				"file" : 1,
-				"line" : 15,
+				"line" : 14,
 				"parent" : 0
 			},
 			{
 				"command" : 0,
 				"file" : 0,
-				"line" : 182,
+				"line" : 174,
 				"parent" : 1
 			},
 			{
 				"command" : 2,
 				"file" : 0,
-				"line" : 184,
+				"line" : 176,
 				"parent" : 1
 			},
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 185,
+				"line" : 177,
 				"parent" : 1
 			},
 			{
 				"command" : 4,
 				"file" : 0,
-				"line" : 183,
+				"line" : 175,
 				"parent" : 1
 			}
 		]
@@ -86,11 +86,7 @@
 				},
 				{
 					"backtrace" : 4,
-					"define" : "OPS_2D"
-				},
-				{
-					"backtrace" : 4,
-					"define" : "OPS_MPI"
+					"define" : "OPS_3D"
 				}
 			],
 			"includes" : 
@@ -150,7 +146,7 @@
 			]
 		}
 	],
-	"id" : "AdDiffMpiDev::@f5146fda917b33dfd049",
+	"id" : "AdDiffSeqDev::@f5146fda917b33dfd049",
 	"link" : 
 	{
 		"commandFragments" : 
@@ -174,12 +170,12 @@
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "/home/chocolateftd/OPS-INSTALL/lib/libops_hdf5_mpi.a",
+				"fragment" : "/home/chocolateftd/OPS-INSTALL/lib/libops_hdf5_seq.a",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 3,
-				"fragment" : "/home/chocolateftd/OPS-INSTALL/lib/libops_mpi.a",
+				"fragment" : "/home/chocolateftd/OPS-INSTALL/lib/libops_seq.a",
 				"role" : "libraries"
 			},
 			{
@@ -203,8 +199,8 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "AdDiffMpiDev",
-	"nameOnDisk" : "AdDiffMpiDev",
+	"name" : "AdDiffSeqDev",
+	"nameOnDisk" : "AdDiffSeqDev",
 	"paths" : 
 	{
 		"build" : "Apps/AdDiff",

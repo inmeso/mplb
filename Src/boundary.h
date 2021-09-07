@@ -48,6 +48,7 @@ const std::vector<BoundarySurface> AllBoundarySurface{BoundarySurface::Left,
                                    BoundarySurface::Right,
                                    BoundarySurface::Top,
                                    BoundarySurface::Bottom,
+                                   BoundarySurface::None,
 #ifdef OPS_3D
                                    BoundarySurface::Front,
                                    BoundarySurface::Back,
@@ -115,7 +116,11 @@ void TreatBlockBoundary3D(const Block& block, const int componentID,
                           const Real* givenVars,
                           const BoundaryScheme boundaryScheme,
                           const BoundarySurface boundarySurface);
+void TreatBlockBoundaryComplex3D(const Block& block, const int componentID,
+                          const Real* givenVars,
+                          const BoundaryScheme boundaryScheme);
 void ImplementBoundary3D();
+void ImplementBoundaryComplex3D();
 #endif
 
 #ifdef OPS_2D

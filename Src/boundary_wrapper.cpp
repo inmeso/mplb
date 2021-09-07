@@ -81,6 +81,13 @@ void TreatBlockBoundary3D(const Block& block, const int componentID,
                         ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
                                     "int", OPS_READ),
                         ops_arg_gbl(givenVars, 3, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
+                                    OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
                                     OPS_READ));
                 } break;
@@ -101,6 +108,68 @@ void TreatBlockBoundary3D(const Block& block, const int componentID,
                 default:
                     break;
                 }
+    }
+}
+void TreatBlockBoundaryComplex3D(const Block& block, const int componentID,
+                          const Real* givenVars,
+                          const BoundaryScheme boundaryScheme) {
+    const int blockIndex{block.ID()};
+    std::vector<int> iterRng;
+    iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+    const Real* pdt{pTimeStep()};
+    for (const auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            switch (boundaryScheme) {
+                case BoundaryScheme::EQMDiffuseReflF: {
+                    ops_par_loop(
+                        KerCutCellEQMDiffuseReflADF3D, "KerCutCellEQMDiffuseReflADF3D",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
+                                    OPS_RW),
+                        ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
+                                    "int", OPS_READ),
+                        ops_arg_gbl(givenVars, SpaceDim(), "double", OPS_READ),
+                        ops_arg_dat(
+                            g_MacroBodyforce().at(compo.id).at(blockIndex),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
+                                    OPS_READ));
+                } break;
+                case BoundaryScheme::EQMDiffuseReflG: {
+                    ops_par_loop(
+                        KerCutCellEQMDiffuseReflADG3D, "KerCutCellEQMDiffuseReflADG3D",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
+                                    OPS_RW),
+                        ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
+                                    "int", OPS_READ),
+                        ops_arg_gbl(givenVars, SpaceDim(), "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
+                                    OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
+                                    OPS_READ));
+                } break;
+                default:
+                    break;
+        }
+    }
+}
+
+void ImplementBoundaryComplex3D() {
+    for (const auto& boundary : BlockBoundaries()) {
+        const Block& block{g_Block().at(boundary.blockIndex)};
+        TreatBlockBoundaryComplex3D(block, boundary.componentID,
+                             boundary.givenVars.data(), boundary.boundaryScheme);
     }
 }
 #endif //OPS_3D
@@ -178,6 +247,10 @@ void TreatBlockBoundary(const Block& block, const int componentID,
                         ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
                                     "int", OPS_READ),
                         ops_arg_gbl(givenVars, 2, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
                                     OPS_READ),
                         ops_arg_gbl(pdt, 1, "double", OPS_READ),
@@ -242,11 +315,31 @@ void TreatBlockBoundaryComplex(const Block& block, const int componentID,
                         ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
                                     "int", OPS_READ),
                         ops_arg_gbl(givenVars, 2, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
                                     OPS_READ),
                         ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
                                     OPS_READ));
+                } break;
+                case BoundaryScheme::ZouHeVelocity: {
+                    ops_par_loop(
+                        KerCutCellZouHeVelocityADG, "KerCutCellZouHeVelocityADG",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_gbl(givenVars, 2, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1, LOCALSTENCIL, "int",
+                                    OPS_READ),
+                        ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
+                                    "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                    .at(compo.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex),
+                                    1, ONEPTLATTICESTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, ONEPTLATTICESTENCIL,
+                                    "double", OPS_RW));
                 } break;
                 default:
                     break;

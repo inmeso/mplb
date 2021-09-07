@@ -64,7 +64,7 @@ void UpdateConcentration() {
             const auto& Iter2{*it};
             const Component& compoRho{Iter2.second};
             const int compoRhoId{compoRho.id};
-            std::cout << compoRhoId << "\n";
+            //std::cout << compoRhoId << "\n";
             //g_MacroVars().at(compoRho.macroVars.at(Variable_Rho).id).CreateHalos();
             ops_par_loop(
                 KerCalcConcentration, "KerCalcConcentration", block.Get(),
@@ -227,9 +227,9 @@ void CalcPhiWetting() {
             ops_par_loop(KerUpdateRhoWetting, "KerUpdateRhoWetting",
                          block.Get(), SpaceDim(), iterRng.data(),
                          ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_Rho).id).at(blockIndex), 1,
-                                     ONEPTREGULARSTENCIL, "Real", OPS_RW),
+                                     ONEPTLATTICESTENCIL, "Real", OPS_RW),
                          ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
-                                     LOCALSTENCIL, "int", OPS_READ),
+                                     ONEPTREGULARSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
                                      LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
@@ -250,7 +250,7 @@ void PrintPhi() {
             const auto& Iter2{*it};
             const Component& compoRho{Iter1.second};
             const int compoRhoId{compoRho.id};
-            std::cout << compoRhoId << "\n";
+            //std::cout << compoRhoId << "\n";
 
             ops_par_loop(KerPrintPhi, "KerPrintPhi",
                          block.Get(), SpaceDim(), iterRng.data(),
@@ -358,7 +358,7 @@ void UpdateConcentration3D() {
             const auto& Iter2{*it};
             const Component& compoRho{Iter2.second};
             const int compoRhoId{compoRho.id};
-            std::cout << compoRhoId << "\n";
+            //std::cout << compoRhoId << "\n";
             //g_MacroVars().at(compoRho.macroVars.at(Variable_Rho).id).CreateHalos();
             ops_par_loop(
                 KerCalcConcentration3D, "KerCalcConcentration", block.Get(),
@@ -514,9 +514,9 @@ void CalcPhiWetting3D() {
             ops_par_loop(KerUpdateRhoWetting3D, "KerUpdateRhoWetting3D",
                          block.Get(), SpaceDim(), iterRng.data(),
                          ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_Rho).id).at(blockIndex), 1,
-                                     ONEPTREGULARSTENCIL, "Real", OPS_RW),
+                                     ONEPTLATTICESTENCIL, "Real", OPS_RW),
                          ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
-                                     LOCALSTENCIL, "int", OPS_READ),
+                                     ONEPTREGULARSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
                                      LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
@@ -536,13 +536,17 @@ void PrintPhi3D() {
             const auto& Iter1{*it};
             std::advance(it, 1);
             const auto& Iter2{*it};
-            const Component& compoRho{Iter1.second};
+            const Component& compoRho{Iter2.second};
             const int compoRhoId{compoRho.id};
-            std::cout << compoRhoId << "\n";
+            //::cout << compoRhoId << "\n";
 
             ops_par_loop(KerPrintPhi3D, "KerPrintPhi",
                          block.Get(), SpaceDim(), iterRng.data(),
-                         ops_arg_dat(g_f()[blockIndex], 1,
+                         ops_arg_dat(g_MacroVars()
+                                    .at(compoRho.macroVars.at(Variable_Rho).id)
+                                    .at(blockIndex), 1,
+                                     ONEPTLATTICESTENCIL, "Real", OPS_READ),
+                         ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
                                      LOCALSTENCIL, "Real", OPS_READ));
     }
 }
@@ -582,6 +586,50 @@ void UpdateMacroscopicBodyForce3D(const Real time) {
     }
 }
 
+void SetSolid3D() {
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        const int sizeX{block.Size().at(0)};
+        const int sizeY{block.Size().at(1)};
+        const int sizeZ{block.Size().at(2)};
+        for (const auto& idCompo : g_Components()) {
+        const Component& compo{idCompo.second};
+        ops_par_loop(KerSetSolid3D, "KerSetSolid",
+                     block.Get(), SpaceDim(), iterRng.data(),
+                     ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                 LOCALSTENCIL, "Real", OPS_READ),
+                     ops_arg_gbl(&sizeX, 1, "double", OPS_READ),
+                     ops_arg_gbl(&sizeY, 1, "double", OPS_READ),
+                     ops_arg_gbl(&sizeZ, 1, "double", OPS_READ));
+        }
+    }
+}
+
+void SetEmbeddedBodyGeometry3D() {
+    for (const auto& idBlock : g_Block()) {
+        const Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIndex{block.ID()};
+        for (const auto& idCompo : g_Components()) {
+        const Component& compo{idCompo.second};
+        ops_par_loop(KerSetEmbeddedBodyGeometry3D, "KerSetEmbeddedBodyGeometry",
+                     block.Get(), SpaceDim(), iterRng.data(),
+                     ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
+                                 LOCALSTENCIL, "int", OPS_WRITE),
+                     ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                 ONEPTLATTICESTENCIL, "int", OPS_READ));
+        }
+    }
+}
+
 #endif
 //////////////////////////////////////////////////////////////////////
 ////////////////               Simulate               ////////////////
@@ -595,7 +643,7 @@ void simulate() {
     //Define one block this application
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{120, 120};
+    std::vector<int> blockSize{100, 100};
     Real meshSize{1.};
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
@@ -606,7 +654,10 @@ void simulate() {
     std::vector<BoundarySurface> fromBoundarySurface{BoundarySurface::Top,
         BoundarySurface::Bottom};
     std::vector<BoundarySurface> toBoundarySurface{BoundarySurface::Bottom,
-        VertexType::MDPeriodic};
+        BoundarySurface::Top};
+
+    std::vector<VertexType> blockConnectionType{
+        VertexType::MDPeriodic, VertexType::MDPeriodic};
 
     DefineBlockConnection(fromBlockIds, fromBoundarySurface, toBlockIds,
                           toBoundarySurface, blockConnectionType);
@@ -643,41 +694,42 @@ void simulate() {
     std::vector<Real> noSlipStationaryWall{0, 0};
 
     // Periodic Boundary Conditions
+    /*
     DefineBlockBoundary(0, componentId, BoundarySurface::Top,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
     DefineBlockBoundary(0, componentId, BoundarySurface::Bottom,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
-                        noSlipStationaryWall, VertexType::MDPeriodic);
+                        noSlipStationaryWall, VertexType::MDPeriodic);*/
     //DefineBlockBoundary(0, componentId, BoundarySurface::Left,
     //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
     //                    noSlipStationaryWall, VertexType::MDPeriodic);
     //DefineBlockBoundary(0, componentId, BoundarySurface::Right,
     //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
     //                    noSlipStationaryWall, VertexType::MDPeriodic);
-    /*DefineBlockBoundary(0, componentId, BoundarySurface::LeftTop, BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
-                        noSlipStationaryWall);*/
-    DefineBlockBoundary(0, componentId, BoundarySurface::Left,
+    DefineBlockBoundary(0, componentId, BoundarySurface::None, BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    /*DefineBlockBoundary(0, componentId, BoundarySurface::Left,
                         BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     DefineBlockBoundary(0, componentId, BoundarySurface::Right,
                         BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
+                        noSlipStationaryWall);*/
 
-    DefineBlockBoundary(0, 1, BoundarySurface::Top,
+    /*DefineBlockBoundary(0, 1, BoundarySurface::Top,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
     DefineBlockBoundary(0, 1, BoundarySurface::Bottom,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
-                        noSlipStationaryWall, VertexType::MDPeriodic);
-    /*DefineBlockBoundary(0, 1, BoundarySurface::LeftTop, BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
-                        noSlipStationaryWall);*/
-    DefineBlockBoundary(0, 1, BoundarySurface::Left,
+                        noSlipStationaryWall, VertexType::MDPeriodic);*/
+    DefineBlockBoundary(0, 1, BoundarySurface::None, BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    /*DefineBlockBoundary(0, 1, BoundarySurface::Left,
                         BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     DefineBlockBoundary(0, 1, BoundarySurface::Right,
                         BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
+                        noSlipStationaryWall);*/
     //DefineBlockBoundary(0, 1, BoundarySurface::Left,
     //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
     //                    noSlipStationaryWall, VertexType::MDPeriodic);
@@ -685,16 +737,20 @@ void simulate() {
     //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
     //                    noSlipStationaryWall, VertexType::MDPeriodic);
 
-    //SetSolid();
-    //SetEmbeddedBodyGeometry();
+
     std::vector<InitialType> initType{Initial_BGKFeq2ndAD,Initial_BGKGeq2ndAD};
     std::vector<SizeType> initalCompoId{0,1};
+
     g_mu().CreateHalos();
     const auto& compoC = g_Components().at(1);
     g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).CreateHalos();
     DefineInitialCondition(initType, initalCompoId);
+
     Partition();
+    SetSolid();
+    SetEmbeddedBodyGeometry();
     ops_diagnostic_output();
+
     SetInitialMacrosVars();
     std::cout << "test\n";
     UpdateConcentration();
@@ -712,7 +768,7 @@ void simulate() {
     SetTimeStep(1);
 
     const Real convergenceCriteria{-1E-7};
-    const SizeType checkPeriod{1};
+    const SizeType checkPeriod{1000};
     Real iter{0};
     WriteFlowfieldToHdf5(iter);
     WriteDistributionsToHdf5(iter);
@@ -728,7 +784,7 @@ void simulate() {
     DefineCase(caseName, spaceDim);
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{40, 40, 40};
+    std::vector<int> blockSize{120, 30, 60};
     Real meshSize{1.};
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
@@ -736,7 +792,15 @@ void simulate() {
     std::vector<int> fromBlockIds{0, 0, 0, 0};
     std::vector<int> toBlockIds{0, 0, 0, 0};
 
-        BoundarySurface::Right, BoundarySurface::Left, BoundarySurface::Bottom,
+    std::vector<BoundarySurface> fromBoundarySurface{BoundarySurface::Front,
+        BoundarySurface::Back,BoundarySurface::Left,
+        BoundarySurface::Right};
+    std::vector<BoundarySurface> toBoundarySurface{BoundarySurface::Back,
+        BoundarySurface::Front,BoundarySurface::Right,
+        BoundarySurface::Left};
+
+    std::vector<VertexType> blockConnectionType{
+        VertexType::MDPeriodic, VertexType::MDPeriodic,VertexType::MDPeriodic, VertexType::MDPeriodic};
 
     DefineBlockConnection(fromBlockIds, fromBoundarySurface, toBlockIds,
                           toBoundarySurface, blockConnectionType);
@@ -773,6 +837,7 @@ void simulate() {
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
 
     // Periodic Boundary Conditions for component Fluid 0
+    /*
     DefineBlockBoundary(0, componentId, BoundarySurface::Top,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
@@ -810,20 +875,37 @@ void simulate() {
     DefineBlockBoundary(0, 1, BoundarySurface::Back,
                         BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
                         noSlipStationaryWall);
-
-    // Periodic Boundary Conditions for component Fluid 1
-    DefineBlockBoundary(1, componentId, BoundarySurface::Top,
+    */
+    DefineBlockBoundary(0, componentId, BoundarySurface::Front,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
-    DefineBlockBoundary(1, componentId, BoundarySurface::Bottom,
+    DefineBlockBoundary(0, componentId, BoundarySurface::Back,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
-    DefineBlockBoundary(1, componentId, BoundarySurface::Left,
+    DefineBlockBoundary(0, 1, BoundarySurface::Front,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
-    DefineBlockBoundary(1, componentId, BoundarySurface::Right,
+    DefineBlockBoundary(0, 1, BoundarySurface::Back,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
+    /*
+    DefineBlockBoundary(0, componentId, BoundarySurface::Left,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Right,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Left,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Right,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    */
+    DefineBlockBoundary(0, componentId, BoundarySurface::None, BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    DefineBlockBoundary(0, 1, BoundarySurface::None, BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
 
     std::vector<InitialType> initType{Initial_BGKFeq2ndAD,Initial_BGKGeq2ndAD};
     std::vector<SizeType> initalCompoId{0,1};
@@ -832,6 +914,8 @@ void simulate() {
     g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).CreateHalos();
     DefineInitialCondition(initType,initalCompoId);
     Partition();
+    SetSolid3D();
+    SetEmbeddedBodyGeometry3D();
     ops_diagnostic_output();
     SetInitialMacrosVars3D();
     
@@ -839,14 +923,15 @@ void simulate() {
     UpdateConcentration3D();
     CalcPhiWetting3D();
     std::cout << "test1\n";
+    PrintPhi3D();
     PreDefinedInitialConditionAD3D();
     UpdateMacroVars3D();
     
     std::cout<<"test2\n";
     SetTimeStep(1);
-
+    PrintPhi3D();
     const Real convergenceCriteria{-1E-7};
-    const SizeType checkPeriod{250};
+    const SizeType checkPeriod{5000};
     Real iter{0};
     WriteFlowfieldToHdf5(iter);
     WriteDistributionsToHdf5(iter);

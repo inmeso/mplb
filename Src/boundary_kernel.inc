@@ -617,6 +617,8 @@ void KerCutCellEQMDiffuseReflADF(ACC<Real> &f, const ACC<int> &nodeType,
     // This kernel is suitable for a single-speed lattice
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
+    VertexType vt = (VertexType)nodeType(0, 0);
+    if (vt == VertexType::Wall) {
     const int equilibriumOrder{2};
     VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0);
     Real u = givenMacroVars[0];
@@ -643,8 +645,8 @@ void KerCutCellEQMDiffuseReflADF(ACC<Real> &f, const ACC<int> &nodeType,
     Real rhoIncoming{0};
     Real rhoParallel{0};
     Real deltaRho{0};
-    VertexType vt = (VertexType)nodeType(0, 0);
-    if (vt == VertexType::Wall) {
+
+
     for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
         Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
         Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
@@ -696,15 +698,18 @@ void KerCutCellEQMDiffuseReflADF(ACC<Real> &f, const ACC<int> &nodeType,
 
 void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
                                 const ACC<int> &geometryProperty,
-                                const Real *givenMacroVars, const ACC<Real> &Mu,
+                                const Real *givenMacroVars, const ACC<Real> &Conc, const ACC<Real> &Mu,
                                 const Real *dt, const int *lattIdx) {
 #ifdef OPS_2D
     // This kernel is suitable for a single-speed lattice
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
+    VertexType vt = (VertexType)nodeType(0, 0);
+    if (vt == VertexType::Wall) {
     const int equilibriumOrder{2};
     VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0);
     Real mu{Mu(0,0)};
+    Real C{Conc(0,0)};
     Real u = givenMacroVars[0];
     Real v = givenMacroVars[1];
     Real CS=1/sqrt(3);
@@ -728,8 +733,7 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
     Real rhoIncoming{0};
     Real rhoParallel{0};
     Real deltaRho{0};
-    VertexType vt = (VertexType)nodeType(0, 0);
-    if (vt == VertexType::Wall) {
+
     for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
         Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
         Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
@@ -737,25 +741,34 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
         switch (bdt) {
             case BndryDv_Incoming: {
                 incoming[numIncoming] = xiIdx;
-                rhoIncoming += f(xiIdx, 0, 0);
+                //rhoIncoming += f(xiIdx, 0, 0);
+                rhoIncoming += CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, equilibriumOrder);
                 numIncoming++;
             } break;
             case BndryDv_Outgoing: {
                 outgoing[numOutgoing] = xiIdx;
-                deltaRho += (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v);
+                //deltaRho += (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v);
+                deltaRho += CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, equilibriumOrder);
+                //std::cout<<CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, equilibriumOrder)<<" ";
                 numOutgoing++;
             } break;
             case BndryDv_Parallel: {
                 parallel[numParallel] = xiIdx;
                 //rhoParallel += CalcBGKGeqAD(xiIdx, 1, u, v, mu, dt, equilibriumOrder);
-                rhoParallel += f(xiIdx, 0, 0);
+                //rhoParallel += f(xiIdx, 0, 0);
+                if (xiIdx>lattIdx[0]){
+                    rhoParallel += CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, equilibriumOrder);
+                    //std::cout<<rhoParallel<<" ";
+                }
                 numParallel++;
             } break;
             default:
                 break;
         }
     }
-    Real rhoWall = 2 * rhoIncoming / (1 - rhoParallel - deltaRho);
+    //Real rhoWall = 2 * rhoIncoming / (1 - rhoParallel - deltaRho);
+    Real rhoWall = rhoIncoming+deltaRho+rhoParallel;
+    //std::cout<<rhoWall<<" ";
     //std::cout<<rhoWall<<"  ";
     //std::cout<<rhoWall<<" "<<rhoIncoming<<" "<<deltaRho<<" "<<rhoParallel<<"   ";
 #ifdef CPU
@@ -763,18 +776,25 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
     ops_printf("Calculated wall density =  %f\n", rhoWall);
 #endif
 #endif
-    //for (int idx = 0; idx < numParallel; idx++) {
+    for (int idx = 0; idx < numParallel; idx++) {
         //std::cout<<parallel[idx]<<"  ";
-            //f(parallel[idx], 0, 0) =
-            //    CalcBGKGeqAD(parallel[idx], rhoWall, u, v, mu, dt, equilibriumOrder);
-    //}
+        if (idx>lattIdx[0]){
+            
+            f(parallel[idx], 0, 0) =
+                CalcBGKGeqAD(parallel[idx], C, u, v, mu, dt, equilibriumOrder);
+        }
+        else if (idx==lattIdx[0]){
+            f(parallel[idx], 0, 0) =C-rhoWall;
+        }
+    }
     for (int idx = 0; idx < numOutgoing; idx++) {
                 int xiIdx = outgoing[idx];
                 Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
                 Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
                 Real opps={9+OPP[xiIdx]};
-                std::cout<<f(opps,0,0)<<" ";
-                f(xiIdx, 0, 0) = f(opps, 0, 0);
+                //std::cout<<f(opps,0,0)<<" ";
+                f(xiIdx, 0, 0)=CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, equilibriumOrder);
+                //f(xiIdx, 0, 0) = f(opps, 0, 0);
                 //                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
     }
     /*switch (vg) {
@@ -842,6 +862,192 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
     delete[] incoming;
     delete[] parallel;
     }
+#endif  // OPS_2D
+}
+
+void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
+                             const ACC<int> &nodeType,
+                             const ACC<int> &geometryProperty,
+                             const ACC<Real> &macroVars, ACC<Real> &f) {
+#ifdef OPS_2D
+    /*!
+    Note: This boundary condition requires both stream and collision happenning
+    at a boundary point.
+    Note: This boundary condition is lattice specific.
+    */
+
+    VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0);
+    Real rho{0};
+    Real u{givenMacroVars[1]};
+    Real v{givenMacroVars[2]};
+    Real css = 1/sqrt(3);
+    Real invcss=1/css;
+    switch (vg) {
+        case VG_IP: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f2 = f(2, 0, 0);
+            Real f3 = f(3, 0, 0);
+            Real f4 = f(4, 0, 0);
+            Real f6 = f(6, 0, 0);
+            Real f7 = f(7, 0, 0);
+            rho =
+                css * (f0 + f2 + 2 * f3 + f4 + 2 * f6 + 2 * f7) / (css - u);
+            f(1, 0, 0) = (6 * invcss * rho * u + 9 * f3) / 9.0;
+            f(5, 0, 0) = (3*invcss * rho * u + 9 * invcss * rho * v - 9 * f2 +
+                          9 * f4 + 18 * f7) /
+                         18.0;
+            f(8, 0, 0) = (3*invcss * rho * u - 9 * invcss * rho * v + 9 * f2 -
+                          9 * f4 + 18 * f6) /
+                         18.0;
+        } break;
+        case VG_IM: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f2 = f(2, 0, 0);
+            Real f4 = f(4, 0, 0);
+            Real f1 = f(1, 0, 0);
+            Real f5 = f(5, 0, 0);
+            Real f8 = f(8, 0, 0);
+            rho = (css * f0 + 2 * css * f1 + css * f2 + css * f4 +
+                   2 * css * f5 + 2 * css * f8) /
+                  (css + u);
+            f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
+            f(6, 0, 0) = (-3*(invcss * u * rho) + 9 * invcss * v * rho - 9 * f2 +
+                          9 * f4 + 18 * f8) /
+                         18.0;
+            f(7, 0, 0) = (-3*(invcss * u * rho) - 9 * invcss * v * rho + 9 * f2 -
+                          9 * f4 + 18 * f5) /
+                         18.0;
+        } break;
+        case VG_JP: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f1 = f(1, 0, 0);
+            Real f3 = f(3, 0, 0);
+            Real f4 = f(4, 0, 0);
+            Real f7 = f(7, 0, 0);
+            Real f8 = f(8, 0, 0);
+            rho = (css * f0 + css * f1 + css * f3 + 2 * css * f4 +
+                   2 * css * f7 + 2 * css * f8) /
+                  (css - v);
+            f(2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
+            f(5, 0, 0) = (9 * invcss * u * rho + 3*invcss * v * rho - 9 * f1 +
+                          9 * f3 + 18 * f7) /
+                         18.0;
+            f(6, 0, 0) = (-9 * invcss * u * rho + 3*invcss * v * rho + 9 * f1 -
+                          9 * f3 + 18 * f8) /
+                         18.0;
+        } break;
+        case VG_JM: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f1 = f(1, 0, 0);
+            Real f3 = f(3, 0, 0);
+            Real f2 = f(2, 0, 0);
+            Real f5 = f(5, 0, 0);
+            Real f6 = f(6, 0, 0);
+            rho = (css * f0 + css * f1 + 2 * css * f2 + css * f3 +
+                   2 * css * f5 + 2 * css * f6) /
+                  (css + v);
+            f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
+            f(7, 0, 0) = (-9 * invcss * u * rho - 3*invcss * v * rho + 9 * f1 -
+                          9 * f3 + 18 * f5) /
+                         18.0;
+            f(8, 0, 0) = (9 * invcss * u * rho - 3*invcss * v * rho - 9 * f1 +
+                          9 * f3 + 18 * f6) /
+                         18.0;
+        } break;
+        case VG_IPJM_I: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f2 = f(2, 0, 0);
+            Real f6 = f(6, 0, 0);
+            Real f3 = f(3, 0, 0);
+            rho = macroVars(1, -1);
+            f(1, 0, 0) = (6 * invcss * u * rho + 9 * f3) / 9.0;
+            f(5, 0, 0) = (9 * rho - 6 * invcss * u * rho + 9 * invcss * v * rho -
+                          9 * f0 - 18 * f2 - 18 * f3 - 18 * f6) /
+                         18.0;
+            f(7, 0, 0) = (9 * rho - 9 * invcss * u * rho + 6 * invcss * v * rho -
+                          9 * f0 - 18 * f2 - 18 * f3 - 18 * f6) /
+                         18.0;
+            f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
+            f(8, 0, 0) = (3*invcss * u * rho - 3*invcss * v * rho + 18 * f6) / 18.0;
+        } break;
+        case VG_IPJP_I: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f4 = f(4, 0, 0);
+            Real f3 = f(3, 0, 0);
+            Real f7 = f(7, 0, 0);
+            rho = macroVars(1, 1);
+            f(1, 0, 0) = (6 * invcss * u * rho + 9 * f3) / 9.0;
+            f(5, 0, 0) = (3*invcss * u * rho + 3*invcss * v * rho + 18 * f7) / 18.0;
+            f(8, 0, 0) = (9 * rho - 6 * invcss * u * rho - 9 * invcss * v * rho -
+                          9 * f0 - 18 * f3 - 18 * f4 - 18 * f7) /
+                         18.0;
+            f(2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
+            f(6, 0, 0) = (9 * rho - 9 * invcss * u * rho - 6 * invcss * v * rho -
+                          9 * f0 - 18 * f3 - 18 * f4 - 18 * f7) /
+                         18.0;
+        } break;
+        case VG_IMJP_I: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f1 = f(1, 0, 0);
+            Real f8 = f(8, 0, 0);
+            Real f4 = f(4, 0, 0);
+            rho = macroVars(-1, 1);
+            f(5, 0, 0) = (9 * rho + 9 * invcss * u * rho - 6 * invcss * v * rho -
+                          9 * f0 - 18 * f1 - 18 * f4 - 18 * f8) /
+                         18.0;
+            f(2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
+            f(6, 0, 0) =
+                (-3*(invcss * u * rho) + 3*invcss * v * rho + 18 * f8) / 18.0;
+            f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
+            f(7, 0, 0) = (9 * rho + 6 * invcss * u * rho - 9 * invcss * v * rho -
+                          9 * f0 - 18 * f1 - 18 * f4 - 18 * f8) /
+                         18.0;
+        } break;
+        case VG_IMJM_I: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f1 = f(1, 0, 0);
+            Real f2 = f(2, 0, 0);
+            Real f5 = f(5, 0, 0);
+            rho = macroVars(-1, -1);
+            f(6, 0, 0) = (9 * rho + 6 * invcss * u * rho + 9 * invcss * v * rho -
+                          9 * f0 - 18 * f1 - 18 * f2 - 18 * f5) /
+                         18.0;
+            f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
+            f(7, 0, 0) =
+                (-3*(invcss * u * rho) - 3*invcss * v * rho + 18 * f5) / 18.0;
+            f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
+            f(8, 0, 0) = (9 * rho + 9 * invcss * u * rho + 6 * invcss * v * rho -
+                          9 * f0 - 18 * f1 - 18 * f2 - 18 * f5) /
+                         18.0;
+        } break;
+        case VG_IPJP_O: {
+            Real f7 = f(7, 0, 0);
+            f(5, 0, 0)=f7;
+        }
+        case VG_IPJM_O: {
+            Real f8 = f(8, 0, 0);
+            f(6, 0, 0)=f8;
+        }
+        case VG_IMJP_O: {
+            Real f6 = f(6, 0, 0);
+            f(8, 0, 0)=f6;
+        }
+        case VG_IMJM_O: {
+            Real f5 = f(5, 0, 0);
+            f(7, 0, 0)=f5;
+        }
+        default:
+            break;
+    }
+
 #endif  // OPS_2D
 }
 
@@ -1422,6 +1628,7 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
     // This kernel is suitable for any single-speed lattice
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
+
     const int equilibriumOrder{2};
     const VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0, 0);
     Real u = givenMacroVars[0];
@@ -1505,6 +1712,7 @@ void KerCutCellEQMDiffuseRefl3D(ACC<Real> &f, const ACC<int> &nodeType,
     delete[] outgoing;
     delete[] incoming;
     delete[] parallel;
+    
 #endif //OPS_3D
 }
 
@@ -1516,6 +1724,8 @@ void KerCutCellEQMDiffuseReflADF3D(ACC<Real> &f, const ACC<int> &nodeType,
     // This kernel is suitable for any single-speed lattice
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    if (vt == VertexType::Wall) {
     const int equilibriumOrder{2};
     const VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0, 0);
     Real u = givenMacroVars[0];
@@ -1601,19 +1811,26 @@ void KerCutCellEQMDiffuseReflADF3D(ACC<Real> &f, const ACC<int> &nodeType,
     delete[] outgoing;
     delete[] incoming;
     delete[] parallel;
+    }
 #endif //OPS_3D
 }
 
 void KerCutCellEQMDiffuseReflADG3D(ACC<Real> &f, const ACC<int> &nodeType,
                                 const ACC<int> &geometryProperty,
-                                const Real *givenMacroVars,
+                                const Real *givenMacroVars, const ACC<Real> &Conc, const ACC<Real> &Mu,
+                                const Real *dt,
                                 const int *lattIdx) {
 #ifdef OPS_3D
     // This kernel is suitable for any single-speed lattice
     // but only for the second-order expansion at this moment
     // Therefore, the equilibrium function order is fixed at 2
+
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    if (vt == VertexType::Wall) {
     const int equilibriumOrder{2};
     const VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0, 0);
+    Real mu{Mu(0,0,0)};
+    Real C{Conc(0,0,0)};
     Real u = givenMacroVars[0];
     Real v = givenMacroVars[1];
     Real w = givenMacroVars[2];
@@ -1646,43 +1863,51 @@ void KerCutCellEQMDiffuseReflADG3D(ACC<Real> &f, const ACC<int> &nodeType,
         switch (bdt) {
             case BndryDv_Incoming: {
                 incoming[numIncoming] = xiIdx;
-                rhoIncoming += f(xiIdx, 0, 0, 0);
+                rhoIncoming += CalcBGKGeqAD3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
                 numIncoming++;
             } break;
             case BndryDv_Outgoing: {
                 outgoing[numOutgoing] = xiIdx;
-                deltaRho += (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v + cz * w);
+                deltaRho += CalcBGKGeqAD3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
                 numOutgoing++;
             } break;
             case BndryDv_Parallel: {
-                //parallel[numParallel] = xiIdx;
-                //rhoParallel +=
+                parallel[numParallel] = xiIdx;
+                if (xiIdx>lattIdx[0]){
+                    rhoParallel +=CalcBGKGeqAD3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
                 //    CalcBGKGeqAD3D(xiIdx, 1, u, v, w, 1, equilibriumOrder);
-                //numParallel++;
+                }
+                numParallel++;
             } break;
             default:
                 break;
         }
     }
-    Real rhoWall = 2 * rhoIncoming / (1 - deltaRho);
+    Real rhoWall = rhoIncoming+deltaRho+rhoParallel;
 #ifdef CPU
 #if DebugLevel >= 2
     ops_printf("Calculated wall density =  %f\n", rhoWall);
 #endif
 #endif
-    //for (int idx = 0; idx < numParallel; idx++) {
-    //    f(parallel[idx], 0, 0, 0) =
-    //        CalcBGKFeq(parallel[idx], rhoWall, u, v, w, 1, equilibriumOrder);
-    //}
-    /*
+    for (int idx = 0; idx < numParallel; idx++) {
+        if (idx>lattIdx[0]){
+        f(parallel[idx], 0, 0, 0) =CalcBGKGeqAD3D(parallel[idx], C, u, v, w, mu, dt, equilibriumOrder);
+        }
+        else if (idx==lattIdx[0]){
+            f(parallel[idx], 0, 0, 0) =C-rhoWall;
+        }
+    }
+    
     for (int idx = 0; idx < numOutgoing; idx++) {
         int xiIdx = outgoing[idx];
         Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
         Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
         Real cz{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
-        f(xiIdx, 0, 0, 0) =
-            f(OPP[xiIdx], 0, 0, 0) +
-            2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
+        Real opps={9+OPP[xiIdx]};
+                //std::cout<<f(opps,0,0)<<" ";
+                f(xiIdx, 0, 0, 0)=CalcBGKGeqAD3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
+    }
+    /*
 #ifdef CPU
         const Real res{f(xiIdx, 0, 0, 0)};
         if (isnan(res) || res <= -10 || isinf(res)) {
@@ -1693,87 +1918,201 @@ void KerCutCellEQMDiffuseReflADG3D(ACC<Real> &f, const ACC<int> &nodeType,
             assert(!(isnan(res) || res <= -10 || isinf(res)));
         }
 #endif
-    }
     */
-    switch (vg) {
-            case VG_IP: {
-                for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
-                if (cx<0) {
-                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
-                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
-                    }
-                }
-            } break;
-            case VG_IM: {
-                for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
-                if (cx>0) {
-                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
-                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
-                    }
-                }
-            } break;
-            case VG_JP: {
-                for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
-                if (cx<0) {
-                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
-                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
-                    }
-                }
-            } break;
-            case VG_JM: {
-                for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
-                if (cx>0) {
-                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
-                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
-                    }
-                }
-            } break;
-            case VG_KP: {
-                for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
-                if (cx<0) {
-                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
-                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
-                    }
-                }
-            } break;
-            case VG_KM: {
-                for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
-                if (cx>0) {
-                    f(xiIdx, 0, 0, 0) = f(OPP[xiIdx], 0, 0, 0)+
-                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v + cz * w);
-                    }
-                }
-            } break;
-    }
+    
+    
     
     delete[] outgoing;
     delete[] incoming;
     delete[] parallel;
+    }
 #endif //OPS_3D
+}
+
+void KerCutCellZouHeVelocityADG3D(const Real *givenMacroVars,
+                             const ACC<int> &nodeType,
+                             const ACC<int> &geometryProperty,
+                             const ACC<Real> &macroVars, ACC<Real> &f) {
+#ifdef OPS_2D
+    /*!
+    Note: This boundary condition requires both stream and collision happenning
+    at a boundary point.
+    Note: This boundary condition is lattice specific.
+    */
+
+    VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0);
+    Real rho{0};
+    Real u{givenMacroVars[1]};
+    Real v{givenMacroVars[2]};
+    Real css = 1/sqrt(3);
+    Real invcss=1/css;
+    switch (vg) {
+        case VG_IP: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f2 = f(2, 0, 0);
+            Real f3 = f(3, 0, 0);
+            Real f4 = f(4, 0, 0);
+            Real f6 = f(6, 0, 0);
+            Real f7 = f(7, 0, 0);
+            rho =
+                css * (f0 + f2 + 2 * f3 + f4 + 2 * f6 + 2 * f7) / (css - u);
+            f(1, 0, 0) = (6 * invcss * rho * u + 9 * f3) / 9.0;
+            f(5, 0, 0) = (3*invcss * rho * u + 9 * invcss * rho * v - 9 * f2 +
+                          9 * f4 + 18 * f7) /
+                         18.0;
+            f(8, 0, 0) = (3*invcss * rho * u - 9 * invcss * rho * v + 9 * f2 -
+                          9 * f4 + 18 * f6) /
+                         18.0;
+        } break;
+        case VG_IM: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f2 = f(2, 0, 0);
+            Real f4 = f(4, 0, 0);
+            Real f1 = f(1, 0, 0);
+            Real f5 = f(5, 0, 0);
+            Real f8 = f(8, 0, 0);
+            rho = (css * f0 + 2 * css * f1 + css * f2 + css * f4 +
+                   2 * css * f5 + 2 * css * f8) /
+                  (css + u);
+            f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
+            f(6, 0, 0) = (-3*(invcss * u * rho) + 9 * invcss * v * rho - 9 * f2 +
+                          9 * f4 + 18 * f8) /
+                         18.0;
+            f(7, 0, 0) = (-3*(invcss * u * rho) - 9 * invcss * v * rho + 9 * f2 -
+                          9 * f4 + 18 * f5) /
+                         18.0;
+        } break;
+        case VG_JP: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f1 = f(1, 0, 0);
+            Real f3 = f(3, 0, 0);
+            Real f4 = f(4, 0, 0);
+            Real f7 = f(7, 0, 0);
+            Real f8 = f(8, 0, 0);
+            rho = (css * f0 + css * f1 + css * f3 + 2 * css * f4 +
+                   2 * css * f7 + 2 * css * f8) /
+                  (css - v);
+            f(2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
+            f(5, 0, 0) = (9 * invcss * u * rho + 3*invcss * v * rho - 9 * f1 +
+                          9 * f3 + 18 * f7) /
+                         18.0;
+            f(6, 0, 0) = (-9 * invcss * u * rho + 3*invcss * v * rho + 9 * f1 -
+                          9 * f3 + 18 * f8) /
+                         18.0;
+        } break;
+        case VG_JM: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f1 = f(1, 0, 0);
+            Real f3 = f(3, 0, 0);
+            Real f2 = f(2, 0, 0);
+            Real f5 = f(5, 0, 0);
+            Real f6 = f(6, 0, 0);
+            rho = (css * f0 + css * f1 + 2 * css * f2 + css * f3 +
+                   2 * css * f5 + 2 * css * f6) /
+                  (css + v);
+            f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
+            f(7, 0, 0) = (-9 * invcss * u * rho - 3*invcss * v * rho + 9 * f1 -
+                          9 * f3 + 18 * f5) /
+                         18.0;
+            f(8, 0, 0) = (9 * invcss * u * rho - 3*invcss * v * rho - 9 * f1 +
+                          9 * f3 + 18 * f6) /
+                         18.0;
+        } break;
+        case VG_IPJM_I: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f2 = f(2, 0, 0);
+            Real f6 = f(6, 0, 0);
+            Real f3 = f(3, 0, 0);
+            rho = macroVars(1, -1);
+            f(1, 0, 0) = (6 * invcss * u * rho + 9 * f3) / 9.0;
+            f(5, 0, 0) = (9 * rho - 6 * invcss * u * rho + 9 * invcss * v * rho -
+                          9 * f0 - 18 * f2 - 18 * f3 - 18 * f6) /
+                         18.0;
+            f(7, 0, 0) = (9 * rho - 9 * invcss * u * rho + 6 * invcss * v * rho -
+                          9 * f0 - 18 * f2 - 18 * f3 - 18 * f6) /
+                         18.0;
+            f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
+            f(8, 0, 0) = (3*invcss * u * rho - 3*invcss * v * rho + 18 * f6) / 18.0;
+        } break;
+        case VG_IPJP_I: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f4 = f(4, 0, 0);
+            Real f3 = f(3, 0, 0);
+            Real f7 = f(7, 0, 0);
+            rho = macroVars(1, 1);
+            f(1, 0, 0) = (6 * invcss * u * rho + 9 * f3) / 9.0;
+            f(5, 0, 0) = (3*invcss * u * rho + 3*invcss * v * rho + 18 * f7) / 18.0;
+            f(8, 0, 0) = (9 * rho - 6 * invcss * u * rho - 9 * invcss * v * rho -
+                          9 * f0 - 18 * f3 - 18 * f4 - 18 * f7) /
+                         18.0;
+            f(2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
+            f(6, 0, 0) = (9 * rho - 9 * invcss * u * rho - 6 * invcss * v * rho -
+                          9 * f0 - 18 * f3 - 18 * f4 - 18 * f7) /
+                         18.0;
+        } break;
+        case VG_IMJP_I: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f1 = f(1, 0, 0);
+            Real f8 = f(8, 0, 0);
+            Real f4 = f(4, 0, 0);
+            rho = macroVars(-1, 1);
+            f(5, 0, 0) = (9 * rho + 9 * invcss * u * rho - 6 * invcss * v * rho -
+                          9 * f0 - 18 * f1 - 18 * f4 - 18 * f8) /
+                         18.0;
+            f(2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
+            f(6, 0, 0) =
+                (-3*(invcss * u * rho) + 3*invcss * v * rho + 18 * f8) / 18.0;
+            f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
+            f(7, 0, 0) = (9 * rho + 6 * invcss * u * rho - 9 * invcss * v * rho -
+                          9 * f0 - 18 * f1 - 18 * f4 - 18 * f8) /
+                         18.0;
+        } break;
+        case VG_IMJM_I: {
+            // Knows
+            Real f0 = f(0, 0, 0);
+            Real f1 = f(1, 0, 0);
+            Real f2 = f(2, 0, 0);
+            Real f5 = f(5, 0, 0);
+            rho = macroVars(-1, -1);
+            f(6, 0, 0) = (9 * rho + 6 * invcss * u * rho + 9 * invcss * v * rho -
+                          9 * f0 - 18 * f1 - 18 * f2 - 18 * f5) /
+                         18.0;
+            f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
+            f(7, 0, 0) =
+                (-3*(invcss * u * rho) - 3*invcss * v * rho + 18 * f5) / 18.0;
+            f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
+            f(8, 0, 0) = (9 * rho + 9 * invcss * u * rho + 6 * invcss * v * rho -
+                          9 * f0 - 18 * f1 - 18 * f2 - 18 * f5) /
+                         18.0;
+        } break;
+        case VG_IPJP_O: {
+            Real f7 = f(7, 0, 0);
+            f(5, 0, 0)=f7;
+        }
+        case VG_IPJM_O: {
+            Real f8 = f(8, 0, 0);
+            f(6, 0, 0)=f8;
+        }
+        case VG_IMJP_O: {
+            Real f6 = f(6, 0, 0);
+            f(8, 0, 0)=f6;
+        }
+        case VG_IMJM_O: {
+            Real f5 = f(5, 0, 0);
+            f(7, 0, 0)=f5;
+        }
+        default:
+            break;
+    }
+
+#endif  // OPS_2D
 }
 
 void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,

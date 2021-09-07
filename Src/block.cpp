@@ -27,6 +27,9 @@ int Block::RangeStart(const int axis, const BoundarySurface surface) {
         ) {
             start = size.at(axis) - 1;
         }
+        if (surface == BoundarySurface::None) {
+            start = - 1;
+        }
     }
     if (axis == yaxis) {
         if (surface == BoundarySurface::Top ||
@@ -39,6 +42,9 @@ int Block::RangeStart(const int axis, const BoundarySurface surface) {
 
         ) {
             start = size.at(axis) - 1;
+        }
+        if (surface == BoundarySurface::None) {
+            start = - 1;
         }
     }
 #ifdef OPS_3D
@@ -68,6 +74,9 @@ int Block::RangeEnd(const int axis, const BoundarySurface surface) {
         ) {
             end = 1;
         }
+        if (surface == BoundarySurface::None) {
+            end = - 1;
+        }
     }
     if (axis == yaxis) {
         if (surface == BoundarySurface::Bottom ||
@@ -81,7 +90,11 @@ int Block::RangeEnd(const int axis, const BoundarySurface surface) {
         ) {
             end = 1;
         }
+        if (surface == BoundarySurface::None) {
+            end = - 1;
+        }
     }
+
 #ifdef OPS_3D
     if (axis == zaxis) {
         if (surface == BoundarySurface::Back ||

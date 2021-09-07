@@ -135,6 +135,8 @@ void CalcMu();
 void CalcmuGradients();
 void PrintPhi();
 void SetInitialMacrosVars();
+void SetSolid();
+void SetEmbeddedBodyGeometry();
 
 void UpdateMacroscopicBodyForce3D(const Real time);
 void UpdateConcentration3D();
@@ -146,6 +148,8 @@ void CalcPhiWetting();
 void CalcPhiWetting3D();
 void PrintPhi3D();
 void SetInitialMacrosVars3D();
+void SetSolid3D();
+void SetEmbeddedBodyGeometry3D();
 
 void DefineBlockConnection(const std::vector<int>& fromBlock,
                            const std::vector<BoundarySurface>& fromSurface,
