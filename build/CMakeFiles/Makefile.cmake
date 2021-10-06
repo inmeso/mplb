@@ -20,6 +20,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "../Apps/3DCavity/CMakeLists.txt"
   "../Apps/3DLChannel/CMakeLists.txt"
   "../Apps/AdDiff/CMakeLists.txt"
+  "../Apps/AdDiff2/CMakeLists.txt"
   "../Apps/Poiseuille/CMakeLists.txt"
   "../CMakeLists.txt"
   "../Tests/FieldBlock/CMakeLists.txt"
@@ -146,6 +147,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
   "Tests/FieldBlock/CMakeFiles/CMakeDirectoryInformation.cmake"
   "Apps/Poiseuille/CMakeFiles/CMakeDirectoryInformation.cmake"
   "Apps/AdDiff/CMakeFiles/CMakeDirectoryInformation.cmake"
+  "Apps/AdDiff2/CMakeFiles/CMakeDirectoryInformation.cmake"
   )
 
 # Dependency information for all targets:
@@ -162,4 +164,6 @@ set(CMAKE_DEPEND_INFO_FILES
   "Apps/Poiseuille/CMakeFiles/PoiseuilleSeqDev.dir/DependInfo.cmake"
   "Apps/AdDiff/CMakeFiles/AdDiffMpiDev.dir/DependInfo.cmake"
   "Apps/AdDiff/CMakeFiles/AdDiffSeqDev.dir/DependInfo.cmake"
+  "Apps/AdDiff2/CMakeFiles/AdDiff2MpiDev.dir/DependInfo.cmake"
+  "Apps/AdDiff2/CMakeFiles/AdDiff2SeqDev.dir/DependInfo.cmake"
   )

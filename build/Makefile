@@ -288,6 +288,32 @@ AdDiffSeqDev/fast:
 	$(MAKE) $(MAKESILENT) -f Apps/AdDiff/CMakeFiles/AdDiffSeqDev.dir/build.make Apps/AdDiff/CMakeFiles/AdDiffSeqDev.dir/build
 .PHONY : AdDiffSeqDev/fast
 
+#=============================================================================
+# Target rules for targets named AdDiff2MpiDev
+
+# Build rule for target.
+AdDiff2MpiDev: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 AdDiff2MpiDev
+.PHONY : AdDiff2MpiDev
+
+# fast build rule for target.
+AdDiff2MpiDev/fast:
+	$(MAKE) $(MAKESILENT) -f Apps/AdDiff2/CMakeFiles/AdDiff2MpiDev.dir/build.make Apps/AdDiff2/CMakeFiles/AdDiff2MpiDev.dir/build
+.PHONY : AdDiff2MpiDev/fast
+
+#=============================================================================
+# Target rules for targets named AdDiff2SeqDev
+
+# Build rule for target.
+AdDiff2SeqDev: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 AdDiff2SeqDev
+.PHONY : AdDiff2SeqDev
+
+# fast build rule for target.
+AdDiff2SeqDev/fast:
+	$(MAKE) $(MAKESILENT) -f Apps/AdDiff2/CMakeFiles/AdDiff2SeqDev.dir/build.make Apps/AdDiff2/CMakeFiles/AdDiff2SeqDev.dir/build
+.PHONY : AdDiff2SeqDev/fast
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -296,6 +322,8 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... AdDiff2MpiDev"
+	@echo "... AdDiff2SeqDev"
 	@echo "... AdDiffMpiDev"
 	@echo "... AdDiffSeqDev"
 	@echo "... Cavity2DMpiDev"

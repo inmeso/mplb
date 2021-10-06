@@ -19,7 +19,7 @@ parser.add_argument("-p", "--parallel", help="Enable the parallel mode.", defaul
                     action="store_true")
 parser.add_argument("-f", "--fortran", help="Enable the Fortran library.", default=False,
                     action="store_true")
-parser.add_argument("-I", "--InstallDir", type=str, default="/usr/local/",
+parser.add_argument("-I", "--InstallDir", type=str, default="/ddn/data/bzzf67/",
                     help="Set the directory for installation.")
 parser.add_argument("-B", "--BuildDir", type=str, default="BuildHDF5",
                     help="Set the directory for building.")

@@ -155,28 +155,10 @@ void StreamCollision(const Real time) {
     ops_printf("Calculating the mesoscopic body force term...\n");
 #endif
 #ifdef OPS_3D
-    CalcPhiWetting3D();
-    Calcphi2Gradients3D();
-    CalcMu3D();
-    g_mu().TransferHalos();
-    const auto& compoC = g_Components().at(1);
-    g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).TransferHalos();
-    CalcmuGradients3D();
-
-    UpdateMacroscopicBodyForce3D(time);
-    PreDefinedBodyForce3D();
+    FE3D();
 #endif
 #ifdef OPS_2D
-    CalcPhiWetting();
-    Calcphi2Gradients();
-    CalcMu();
-    g_mu().TransferHalos();
-    const auto& compoC = g_Components().at(1);
-    g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).TransferHalos();
-    CalcmuGradients();
-
-    UpdateMacroscopicBodyForce(time);
-    PreDefinedBodyForce();
+    FE2D();
 #endif
 #if DebugLevel >= 1
     ops_printf("Calculating the collision term...\n");
@@ -214,7 +196,7 @@ void StreamCollision(const Real time) {
 #endif
 #ifdef OPS_2D
     ImplementBoundary();
-    ImplementBoundaryComplex();
+    //ImplementBoundaryComplex();
 #endif
 }
 

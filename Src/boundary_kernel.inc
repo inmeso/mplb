@@ -664,7 +664,7 @@ void KerCutCellEQMDiffuseReflADF(ACC<Real> &f, const ACC<int> &nodeType,
             } break;
             case BndryDv_Parallel: {
                 parallel[numParallel] = xiIdx;
-                rhoParallel += CalcBGKFeqAD(xiIdx, 1, u, v, g, dt, 1, equilibriumOrder);
+                rhoParallel += CalcBGKFeqFE(xiIdx, 1, u, v, g, dt, 1, equilibriumOrder);
                 numParallel++;
             } break;
             default:
@@ -680,7 +680,7 @@ void KerCutCellEQMDiffuseReflADF(ACC<Real> &f, const ACC<int> &nodeType,
 #endif
     for (int idx = 0; idx < numParallel; idx++) {
         f(parallel[idx], 0, 0) =
-            CalcBGKFeqAD(parallel[idx], rhoWall, u, v, g, dt, 1, equilibriumOrder);
+            CalcBGKFeqFE(parallel[idx], rhoWall, u, v, g, dt, 1, equilibriumOrder);
     }
     for (int idx = 0; idx < numOutgoing; idx++) {
         int xiIdx = outgoing[idx];
@@ -742,22 +742,22 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
             case BndryDv_Incoming: {
                 incoming[numIncoming] = xiIdx;
                 //rhoIncoming += f(xiIdx, 0, 0);
-                rhoIncoming += CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, equilibriumOrder);
+                rhoIncoming += CalcBGKGeqFE(xiIdx, C, u, v, mu, dt, equilibriumOrder);
                 numIncoming++;
             } break;
             case BndryDv_Outgoing: {
                 outgoing[numOutgoing] = xiIdx;
                 //deltaRho += (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v);
-                deltaRho += CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, equilibriumOrder);
-                //std::cout<<CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, equilibriumOrder)<<" ";
+                deltaRho += CalcBGKGeqFE(xiIdx, C, u, v, mu, dt, equilibriumOrder);
+                //std::cout<<CalcBGKGeqFE(xiIdx, C, u, v, mu, dt, equilibriumOrder)<<" ";
                 numOutgoing++;
             } break;
             case BndryDv_Parallel: {
                 parallel[numParallel] = xiIdx;
-                //rhoParallel += CalcBGKGeqAD(xiIdx, 1, u, v, mu, dt, equilibriumOrder);
+                //rhoParallel += CalcBGKGeqFE(xiIdx, 1, u, v, mu, dt, equilibriumOrder);
                 //rhoParallel += f(xiIdx, 0, 0);
                 if (xiIdx>lattIdx[0]){
-                    rhoParallel += CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, equilibriumOrder);
+                    rhoParallel += CalcBGKGeqFE(xiIdx, C, u, v, mu, dt, equilibriumOrder);
                     //std::cout<<rhoParallel<<" ";
                 }
                 numParallel++;
@@ -781,7 +781,7 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
         if (idx>lattIdx[0]){
             
             f(parallel[idx], 0, 0) =
-                CalcBGKGeqAD(parallel[idx], C, u, v, mu, dt, equilibriumOrder);
+                CalcBGKGeqFE(parallel[idx], C, u, v, mu, dt, equilibriumOrder);
         }
         else if (idx==lattIdx[0]){
             f(parallel[idx], 0, 0) =C-rhoWall;
@@ -791,9 +791,9 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
                 int xiIdx = outgoing[idx];
                 Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
                 Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
-                Real opps={9+OPP[xiIdx]};
+                Real opps={OPP[xiIdx]};
                 //std::cout<<f(opps,0,0)<<" ";
-                f(xiIdx, 0, 0)=CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, equilibriumOrder);
+                f(xiIdx, 0, 0)=CalcBGKGeqFE(xiIdx, C, u, v, mu, dt, equilibriumOrder);
                 //f(xiIdx, 0, 0) = f(opps, 0, 0);
                 //                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
     }
@@ -966,12 +966,10 @@ void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
             Real f3 = f(3, 0, 0);
             rho = macroVars(1, -1);
             f(1, 0, 0) = (6 * invcss * u * rho + 9 * f3) / 9.0;
-            f(5, 0, 0) = (9 * rho - 6 * invcss * u * rho + 9 * invcss * v * rho -
-                          9 * f0 - 18 * f2 - 18 * f3 - 18 * f6) /
-                         18.0;
-            f(7, 0, 0) = (9 * rho - 9 * invcss * u * rho + 6 * invcss * v * rho -
-                          9 * f0 - 18 * f2 - 18 * f3 - 18 * f6) /
-                         18.0;
+            f(5, 0, 0) = (1 * invcss * u * rho + 1 * invcss * v * rho) /
+                         12.0;
+            f(7, 0, 0) = (- 1 * invcss * u * rho - 1 * invcss * v * rho) /
+                         12.0;
             f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
             f(8, 0, 0) = (3*invcss * u * rho - 3*invcss * v * rho + 18 * f6) / 18.0;
         } break;
@@ -984,13 +982,11 @@ void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
             rho = macroVars(1, 1);
             f(1, 0, 0) = (6 * invcss * u * rho + 9 * f3) / 9.0;
             f(5, 0, 0) = (3*invcss * u * rho + 3*invcss * v * rho + 18 * f7) / 18.0;
-            f(8, 0, 0) = (9 * rho - 6 * invcss * u * rho - 9 * invcss * v * rho -
-                          9 * f0 - 18 * f3 - 18 * f4 - 18 * f7) /
-                         18.0;
+            f(8, 0, 0) = (-1 * invcss * u * rho + 1 * invcss * v * rho) /
+                         12.0;
             f(2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
-            f(6, 0, 0) = (9 * rho - 9 * invcss * u * rho - 6 * invcss * v * rho -
-                          9 * f0 - 18 * f3 - 18 * f4 - 18 * f7) /
-                         18.0;
+            f(6, 0, 0) = (1 * invcss * u * rho - 1 * invcss * v * rho) /
+                         12.0;
         } break;
         case VG_IMJP_I: {
             // Knows
@@ -999,16 +995,14 @@ void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
             Real f8 = f(8, 0, 0);
             Real f4 = f(4, 0, 0);
             rho = macroVars(-1, 1);
-            f(5, 0, 0) = (9 * rho + 9 * invcss * u * rho - 6 * invcss * v * rho -
-                          9 * f0 - 18 * f1 - 18 * f4 - 18 * f8) /
-                         18.0;
+            f(5, 0, 0) = (1 * invcss * u * rho + 1 * invcss * v * rho) /
+                         12.0;
             f(2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
             f(6, 0, 0) =
                 (-3*(invcss * u * rho) + 3*invcss * v * rho + 18 * f8) / 18.0;
             f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
-            f(7, 0, 0) = (9 * rho + 6 * invcss * u * rho - 9 * invcss * v * rho -
-                          9 * f0 - 18 * f1 - 18 * f4 - 18 * f8) /
-                         18.0;
+            f(7, 0, 0) = (- 1 * invcss * u * rho - 1 * invcss * v * rho) /
+                         12.0;
         } break;
         case VG_IMJM_I: {
             // Knows
@@ -1017,16 +1011,14 @@ void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
             Real f2 = f(2, 0, 0);
             Real f5 = f(5, 0, 0);
             rho = macroVars(-1, -1);
-            f(6, 0, 0) = (9 * rho + 6 * invcss * u * rho + 9 * invcss * v * rho -
-                          9 * f0 - 18 * f1 - 18 * f2 - 18 * f5) /
-                         18.0;
+            f(6, 0, 0) = (1 * invcss * u * rho - 1 * invcss * v * rho) /
+                         12.0;
             f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
             f(7, 0, 0) =
                 (-3*(invcss * u * rho) - 3*invcss * v * rho + 18 * f5) / 18.0;
             f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
-            f(8, 0, 0) = (9 * rho + 9 * invcss * u * rho + 6 * invcss * v * rho -
-                          9 * f0 - 18 * f1 - 18 * f2 - 18 * f5) /
-                         18.0;
+            f(8, 0, 0) = (- 1 * invcss * u * rho + 1 * invcss * v * rho) /
+                         12.0;
         } break;
         case VG_IPJP_O: {
             Real f7 = f(7, 0, 0);
@@ -1772,7 +1764,7 @@ void KerCutCellEQMDiffuseReflADF3D(ACC<Real> &f, const ACC<int> &nodeType,
             case BndryDv_Parallel: {
                 parallel[numParallel] = xiIdx;
                 rhoParallel +=
-                    CalcBGKFeqAD3D(xiIdx, 1, u, v, w, g, dt, 1, equilibriumOrder);
+                    CalcBGKFeqFE3D(xiIdx, 1, u, v, w, g, dt, 1, equilibriumOrder);
                 numParallel++;
             } break;
             default:
@@ -1787,7 +1779,7 @@ void KerCutCellEQMDiffuseReflADF3D(ACC<Real> &f, const ACC<int> &nodeType,
 #endif
     for (int idx = 0; idx < numParallel; idx++) {
         f(parallel[idx], 0, 0, 0) =
-            CalcBGKFeqAD3D(parallel[idx], rhoWall, u, v, w, g, dt, 1, equilibriumOrder);
+            CalcBGKFeqFE3D(parallel[idx], rhoWall, u, v, w, g, dt, 1, equilibriumOrder);
     }
     for (int idx = 0; idx < numOutgoing; idx++) {
         int xiIdx = outgoing[idx];
@@ -1863,19 +1855,19 @@ void KerCutCellEQMDiffuseReflADG3D(ACC<Real> &f, const ACC<int> &nodeType,
         switch (bdt) {
             case BndryDv_Incoming: {
                 incoming[numIncoming] = xiIdx;
-                rhoIncoming += CalcBGKGeqAD3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
+                rhoIncoming += CalcBGKGeqFE3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
                 numIncoming++;
             } break;
             case BndryDv_Outgoing: {
                 outgoing[numOutgoing] = xiIdx;
-                deltaRho += CalcBGKGeqAD3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
+                deltaRho += CalcBGKGeqFE3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
                 numOutgoing++;
             } break;
             case BndryDv_Parallel: {
                 parallel[numParallel] = xiIdx;
                 if (xiIdx>lattIdx[0]){
-                    rhoParallel +=CalcBGKGeqAD3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
-                //    CalcBGKGeqAD3D(xiIdx, 1, u, v, w, 1, equilibriumOrder);
+                    rhoParallel +=CalcBGKGeqFE3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
+                //    CalcBGKGeqFE3D(xiIdx, 1, u, v, w, 1, equilibriumOrder);
                 }
                 numParallel++;
             } break;
@@ -1891,7 +1883,7 @@ void KerCutCellEQMDiffuseReflADG3D(ACC<Real> &f, const ACC<int> &nodeType,
 #endif
     for (int idx = 0; idx < numParallel; idx++) {
         if (idx>lattIdx[0]){
-        f(parallel[idx], 0, 0, 0) =CalcBGKGeqAD3D(parallel[idx], C, u, v, w, mu, dt, equilibriumOrder);
+        f(parallel[idx], 0, 0, 0) =CalcBGKGeqFE3D(parallel[idx], C, u, v, w, mu, dt, equilibriumOrder);
         }
         else if (idx==lattIdx[0]){
             f(parallel[idx], 0, 0, 0) =C-rhoWall;
@@ -1903,9 +1895,9 @@ void KerCutCellEQMDiffuseReflADG3D(ACC<Real> &f, const ACC<int> &nodeType,
         Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
         Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
         Real cz{XI[xiIdx * LATTDIM + 2]/(CS*CS)};
-        Real opps={9+OPP[xiIdx]};
+        Real opps={OPP[xiIdx]};
                 //std::cout<<f(opps,0,0)<<" ";
-                f(xiIdx, 0, 0, 0)=CalcBGKGeqAD3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
+                f(xiIdx, 0, 0, 0)=CalcBGKGeqFE3D(xiIdx, C, u, v, w, mu, dt, equilibriumOrder);
     }
     /*
 #ifdef CPU
@@ -1932,188 +1924,335 @@ void KerCutCellEQMDiffuseReflADG3D(ACC<Real> &f, const ACC<int> &nodeType,
 void KerCutCellZouHeVelocityADG3D(const Real *givenMacroVars,
                              const ACC<int> &nodeType,
                              const ACC<int> &geometryProperty,
-                             const ACC<Real> &macroVars, ACC<Real> &f) {
-#ifdef OPS_2D
+                             ACC<Real> &f,
+                                const int *lattIdx) {
+#ifdef OPS_3D
     /*!
     Note: This boundary condition requires both stream and collision happenning
     at a boundary point.
     Note: This boundary condition is lattice specific.
     */
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    if (vt == VertexType::Wall) {
+    int numOutgoing{0};
+    int numIncoming{0};
+    int numParallel{0};
+    int lattStart{lattIdx[0]};
+    int lattEnd{lattIdx[1]};
+    Real deltaRho{0};
 
-    VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0);
+    const VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0, 0);
     Real rho{0};
-    Real u{givenMacroVars[1]};
-    Real v{givenMacroVars[2]};
+    Real u{0};
+    Real v{0};
+    Real w{0};
     Real css = 1/sqrt(3);
     Real invcss=1/css;
+    
+    //Real norm[3]={0,0,0};
+    std::array<Real,3> norm = {findBdyNorm3D(vg)};
+    
     switch (vg) {
-        case VG_IP: {
-            // Knows
-            Real f0 = f(0, 0, 0);
-            Real f2 = f(2, 0, 0);
-            Real f3 = f(3, 0, 0);
-            Real f4 = f(4, 0, 0);
-            Real f6 = f(6, 0, 0);
-            Real f7 = f(7, 0, 0);
-            rho =
-                css * (f0 + f2 + 2 * f3 + f4 + 2 * f6 + 2 * f7) / (css - u);
-            f(1, 0, 0) = (6 * invcss * rho * u + 9 * f3) / 9.0;
-            f(5, 0, 0) = (3*invcss * rho * u + 9 * invcss * rho * v - 9 * f2 +
-                          9 * f4 + 18 * f7) /
-                         18.0;
-            f(8, 0, 0) = (3*invcss * rho * u - 9 * invcss * rho * v + 9 * f2 -
-                          9 * f4 + 18 * f6) /
-                         18.0;
-        } break;
-        case VG_IM: {
-            // Knows
-            Real f0 = f(0, 0, 0);
-            Real f2 = f(2, 0, 0);
-            Real f4 = f(4, 0, 0);
-            Real f1 = f(1, 0, 0);
-            Real f5 = f(5, 0, 0);
-            Real f8 = f(8, 0, 0);
-            rho = (css * f0 + 2 * css * f1 + css * f2 + css * f4 +
-                   2 * css * f5 + 2 * css * f8) /
-                  (css + u);
-            f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
-            f(6, 0, 0) = (-3*(invcss * u * rho) + 9 * invcss * v * rho - 9 * f2 +
-                          9 * f4 + 18 * f8) /
-                         18.0;
-            f(7, 0, 0) = (-3*(invcss * u * rho) - 9 * invcss * v * rho + 9 * f2 -
-                          9 * f4 + 18 * f5) /
-                         18.0;
-        } break;
-        case VG_JP: {
-            // Knows
-            Real f0 = f(0, 0, 0);
-            Real f1 = f(1, 0, 0);
-            Real f3 = f(3, 0, 0);
-            Real f4 = f(4, 0, 0);
-            Real f7 = f(7, 0, 0);
-            Real f8 = f(8, 0, 0);
-            rho = (css * f0 + css * f1 + css * f3 + 2 * css * f4 +
-                   2 * css * f7 + 2 * css * f8) /
-                  (css - v);
-            f(2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
-            f(5, 0, 0) = (9 * invcss * u * rho + 3*invcss * v * rho - 9 * f1 +
-                          9 * f3 + 18 * f7) /
-                         18.0;
-            f(6, 0, 0) = (-9 * invcss * u * rho + 3*invcss * v * rho + 9 * f1 -
-                          9 * f3 + 18 * f8) /
-                         18.0;
-        } break;
-        case VG_JM: {
-            // Knows
-            Real f0 = f(0, 0, 0);
-            Real f1 = f(1, 0, 0);
-            Real f3 = f(3, 0, 0);
-            Real f2 = f(2, 0, 0);
-            Real f5 = f(5, 0, 0);
-            Real f6 = f(6, 0, 0);
-            rho = (css * f0 + css * f1 + 2 * css * f2 + css * f3 +
-                   2 * css * f5 + 2 * css * f6) /
-                  (css + v);
-            f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
-            f(7, 0, 0) = (-9 * invcss * u * rho - 3*invcss * v * rho + 9 * f1 -
-                          9 * f3 + 18 * f5) /
-                         18.0;
-            f(8, 0, 0) = (9 * invcss * u * rho - 3*invcss * v * rho - 9 * f1 +
-                          9 * f3 + 18 * f6) /
-                         18.0;
-        } break;
-        case VG_IPJM_I: {
-            // Knows
-            Real f0 = f(0, 0, 0);
-            Real f2 = f(2, 0, 0);
-            Real f6 = f(6, 0, 0);
-            Real f3 = f(3, 0, 0);
-            rho = macroVars(1, -1);
-            f(1, 0, 0) = (6 * invcss * u * rho + 9 * f3) / 9.0;
-            f(5, 0, 0) = (9 * rho - 6 * invcss * u * rho + 9 * invcss * v * rho -
-                          9 * f0 - 18 * f2 - 18 * f3 - 18 * f6) /
-                         18.0;
-            f(7, 0, 0) = (9 * rho - 9 * invcss * u * rho + 6 * invcss * v * rho -
-                          9 * f0 - 18 * f2 - 18 * f3 - 18 * f6) /
-                         18.0;
-            f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
-            f(8, 0, 0) = (3*invcss * u * rho - 3*invcss * v * rho + 18 * f6) / 18.0;
-        } break;
-        case VG_IPJP_I: {
-            // Knows
-            Real f0 = f(0, 0, 0);
-            Real f4 = f(4, 0, 0);
-            Real f3 = f(3, 0, 0);
-            Real f7 = f(7, 0, 0);
-            rho = macroVars(1, 1);
-            f(1, 0, 0) = (6 * invcss * u * rho + 9 * f3) / 9.0;
-            f(5, 0, 0) = (3*invcss * u * rho + 3*invcss * v * rho + 18 * f7) / 18.0;
-            f(8, 0, 0) = (9 * rho - 6 * invcss * u * rho - 9 * invcss * v * rho -
-                          9 * f0 - 18 * f3 - 18 * f4 - 18 * f7) /
-                         18.0;
-            f(2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
-            f(6, 0, 0) = (9 * rho - 9 * invcss * u * rho - 6 * invcss * v * rho -
-                          9 * f0 - 18 * f3 - 18 * f4 - 18 * f7) /
-                         18.0;
-        } break;
-        case VG_IMJP_I: {
-            // Knows
-            Real f0 = f(0, 0, 0);
-            Real f1 = f(1, 0, 0);
-            Real f8 = f(8, 0, 0);
-            Real f4 = f(4, 0, 0);
-            rho = macroVars(-1, 1);
-            f(5, 0, 0) = (9 * rho + 9 * invcss * u * rho - 6 * invcss * v * rho -
-                          9 * f0 - 18 * f1 - 18 * f4 - 18 * f8) /
-                         18.0;
-            f(2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
-            f(6, 0, 0) =
-                (-3*(invcss * u * rho) + 3*invcss * v * rho + 18 * f8) / 18.0;
-            f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
-            f(7, 0, 0) = (9 * rho + 6 * invcss * u * rho - 9 * invcss * v * rho -
-                          9 * f0 - 18 * f1 - 18 * f4 - 18 * f8) /
-                         18.0;
-        } break;
-        case VG_IMJM_I: {
-            // Knows
-            Real f0 = f(0, 0, 0);
-            Real f1 = f(1, 0, 0);
-            Real f2 = f(2, 0, 0);
-            Real f5 = f(5, 0, 0);
-            rho = macroVars(-1, -1);
-            f(6, 0, 0) = (9 * rho + 6 * invcss * u * rho + 9 * invcss * v * rho -
-                          9 * f0 - 18 * f1 - 18 * f2 - 18 * f5) /
-                         18.0;
-            f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
-            f(7, 0, 0) =
-                (-3*(invcss * u * rho) - 3*invcss * v * rho + 18 * f5) / 18.0;
-            f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
-            f(8, 0, 0) = (9 * rho + 9 * invcss * u * rho + 6 * invcss * v * rho -
-                          9 * f0 - 18 * f1 - 18 * f2 - 18 * f5) /
-                         18.0;
-        } break;
-        case VG_IPJP_O: {
-            Real f7 = f(7, 0, 0);
-            f(5, 0, 0)=f7;
+        case VG_IP:
+        case VG_IM:
+        case VG_JP:
+        case VG_JM:
+        case VG_KP:
+        case VG_KM:{
+            Real Npref;
+            for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+            BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+                Real cjx{XI[xiIdx * LATTDIM]/(css*css)};
+                Real cjy{XI[xiIdx * LATTDIM + 1]/(css*css)};
+                Real cjz{XI[xiIdx * LATTDIM + 2]/(css*css)};
+                Npref+=0.5*f(xiIdx,0,0,0)*(1-abs(cjx*norm[0]+cjy*norm[1]+cjz*norm[2]));
+                
+                //switch (bdt) {
+                //case BndryDv_Incoming: {
+                //    
+                //    rho += f(xiIdx, 0, 0, 0);
+                //} break;
+                //case BndryDv_Parallel: {
+                //    
+                //    rho += f(xiIdx, 0, 0, 0);
+                //} break;
+                //deafult:
+                //    break;
+                //}
+                
+            }
+            for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+                BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+                if (bdt==BndryDv_Outgoing) {
+                    Real cx{XI[xiIdx * LATTDIM]/(css*css)};
+                    Real cy{XI[xiIdx * LATTDIM + 1]/(css*css)};
+                    Real cz{XI[xiIdx * LATTDIM + 2]/(css*css)};
+                    Real tangx=cx-(cx*norm[0])*norm[0];
+                    Real tangy=cx-(cx*norm[2])*norm[1];
+                    Real tangz=cx-(cx*norm[2])*norm[2];
+                    
+                    Real opps={OPP[xiIdx]};
+                    Real N;
+                    for (int xjIdx = lattStart; xjIdx <= lattEnd; xjIdx++) {
+                        Real cjx{XI[xjIdx * LATTDIM]/(css*css)};
+                        Real cjy{XI[xjIdx * LATTDIM + 1]/(css*css)};
+                        Real cjz{XI[xjIdx * LATTDIM + 2]/(css*css)};
+                        N+=tangx*cjx+tangy*cjy+tangz*cjz;
+                    }
+                    f(xiIdx,0,0,0)=f(opps,0,0,0)-rho/6*(cx*u+cy*v+cz*w)-rho/3*(tangx*u+tangy*v+tangz*w)+Npref*N;
+                }
+            }
+        }break;
+        
+        case VG_IPJP_I:
+        case VG_IPJM_I:
+        case VG_IMJP_I:
+        case VG_IMJM_I:
+        case VG_IPKP_I:
+        case VG_IPKM_I:
+        case VG_IMKP_I:
+        case VG_IMKM_I:
+        case VG_JPKP_I:
+        case VG_JPKM_I:
+        case VG_JMKP_I:
+        case VG_JMKM_I:{
+            Real fP=0;
+            Real Npref=0;
+            Real norma[3]={0,0,0};
+            Real normb[3]={0,0,0};
+            if (norm[0]==0){
+                norma[1]=sqrt(2)*norm[1];
+                normb[2]=sqrt(2)*norm[2];
+            }
+            if (norm[1]==0){
+                norma[0]=sqrt(2)*norm[0];
+                normb[2]=sqrt(2)*norm[2];
+            }
+            if (norm[2]==0){
+                norma[0]=sqrt(2)*norm[0];
+                normb[0]=sqrt(2)*norm[2];
+            }
+
+            Real normcross[3]={norma[1]*normb[2]-norma[2]*normb[1],norma[2]*normb[0]-norma[0]*normb[2],norma[0]*normb[1]-norma[1]*normb[0]};
+            Real dnorm[3]={(norma[0]-normb[0])/sqrt(2),(norma[1]-normb[1])/sqrt(2),(norma[2]-normb[2])/sqrt(2)};
+            for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+            BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+                Real cjx{XI[xiIdx * LATTDIM]/(css*css)};
+                Real cjy{XI[xiIdx * LATTDIM + 1]/(css*css)};
+                Real cjz{XI[xiIdx * LATTDIM + 2]/(css*css)};
+                Npref+=0.25*f(xiIdx,0,0,0)*(1-abs(cjx*norma[0]+cjy*norma[1]+cjz*norma[2]))*(1-abs(cjx*normb[0]+cjy*normb[1]+cjz*normb[2]));
+                
+                if (xiIdx!=lattStart){
+                    fP+=1/22*f(xiIdx,0,0,0)*(1-abs(cjx*normcross[0]+cjy*normcross[1]+cjz*normcross[2]))*(1-abs(cjx*dnorm[0]+cjy*dnorm[1]+cjz*dnorm[2]));
+                    //std::cout<<f(xiIdx,0,0,0)<<" "<<abs(cjx*normcross[0]+cjy*normcross[1]+cjz*normcross[2])<<" "<<abs(cjx*dnorm[0]+cjy*dnorm[1]+cjz*dnorm[2])<<" ";
+                }
+                
+                
+                //switch (bdt) {
+                //case BndryDv_Incoming: {
+                //    
+                //    rho += f(xiIdx, 0, 0, 0);
+                //} break;
+                //case BndryDv_Parallel: {
+                //    
+                //    rho += f(xiIdx, 0, 0, 0);
+                //} break;
+                //deafult:
+                //    break;
+                //}
+                
+            
+            }
+            for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+                BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+                
+                if (bdt==BndryDv_Outgoing) {
+                    Real cx{XI[xiIdx * LATTDIM]/(css*css)};
+                    Real cy{XI[xiIdx * LATTDIM + 1]/(css*css)};
+                    Real cz{XI[xiIdx * LATTDIM + 2]/(css*css)};
+                    Real tangx=cx-(cx*norm[0])*norm[0];
+                    Real tangy=cx-(cx*norm[2])*norm[1];
+                    Real tangz=cx-(cx*norm[2])*norm[2];
+                    
+                    Real opps={OPP[xiIdx]};
+                    Real N;
+                    for (int xjIdx = lattStart; xjIdx <= lattEnd; xjIdx++) {
+                        Real cjx{XI[xjIdx * LATTDIM]/(css*css)};
+                        Real cjy{XI[xjIdx * LATTDIM + 1]/(css*css)};
+                        Real cjz{XI[xjIdx * LATTDIM + 2]/(css*css)};
+                        N+=tangx*cjx+tangy*cjy+tangz*cjz;
+                    }
+                    f(xiIdx,0,0,0)=f(opps,0,0,0)-rho/6*(cx*u+cy*v+cz*w)-rho/3*(tangx*u+tangy*v+tangz*w)+Npref*N;
+                }
+                else if (bdt==BndryDv_Parallel) {
+                    
+                    if (xiIdx==lattStart) {
+                        //f(xiIdx,0,0,0)=12*fP;
+                    }
+                    else {
+                        f(xiIdx,0,0,0)=fP;
+                    }
+                }
+            }
+                
+        }break;
+        
+        case VG_IPJP_O:
+        case VG_IPJM_O:
+        case VG_IMJP_O:
+        case VG_IMJM_O:
+        case VG_IPKP_O:
+        case VG_IPKM_O:
+        case VG_IMKP_O:
+        case VG_IMKM_O:
+        case VG_JPKP_O:
+        case VG_JPKM_O:
+        case VG_JMKP_O:
+        case VG_JMKM_O:{
+            Real Npref;
+            Real norma[3]={0,0,0};
+            Real normb[3]={0,0,0};
+            if (norm[0]==0){
+                norma[1]=sqrt(2)*norm[1];
+                normb[2]=sqrt(2)*norm[2];
+            }
+            if (norm[1]==0){
+                norma[0]=sqrt(2)*norm[0];
+                normb[2]=sqrt(2)*norm[2];
+            }
+            if (norm[2]==0){
+                norma[0]=sqrt(2)*norm[0];
+                normb[0]=sqrt(2)*norm[2];
+            }
+
+            Real normcross[3]={norma[1]*normb[2]-norma[2]*normb[1],norma[2]*normb[0]-norma[0]*normb[2],norma[0]*normb[1]-norma[1]*normb[0]};
+	    
+            for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+            BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+                Real cjx{XI[xiIdx * LATTDIM]/(css*css)};
+                Real cjy{XI[xiIdx * LATTDIM + 1]/(css*css)};
+                Real cjz{XI[xiIdx * LATTDIM + 2]/(css*css)};
+                Npref+=0.25*f(xiIdx,0,0,0)*(cjx*normcross[0]+cjy*normcross[1]+cjz*normcross[2]);
+                
+                
+                //switch (bdt) {
+                //case BndryDv_Incoming: {
+                //    
+                //    rho += f(xiIdx, 0, 0, 0);
+                //} break;
+                //case BndryDv_Parallel: {
+                //    
+                //    rho += f(xiIdx, 0, 0, 0);
+                //} break;
+                //deafult:
+                //    break;
+                //}
+                
+            
+            }
+            for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+                BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+                
+                if (bdt==BndryDv_Outgoing) {
+		    //std::cout<<xiIdx<<" ";
+                    Real cx{XI[xiIdx * LATTDIM]/(css*css)};
+                    Real cy{XI[xiIdx * LATTDIM + 1]/(css*css)};
+                    Real cz{XI[xiIdx * LATTDIM + 2]/(css*css)};
+                    Real pref=(cx*normcross[0]+cy*normcross[1]+cz*normcross[2]);
+                    Real tangx=cx-(cx*norm[0])*norm[0];
+                    Real tangy=cx-(cx*norm[2])*norm[1];
+                    Real tangz=cx-(cx*norm[2])*norm[2];
+                    
+                    Real opps={OPP[xiIdx]};
+                    f(xiIdx,0,0,0)=f(opps,0,0,0)-rho/6*(cx*u+cy*v+cz*w)-rho/3*(tangx*u+tangy*v+tangz*w)+pref*Npref;
+		    //std::cout<<f(xiIdx,0,0,0)<<" ";
+                }
+            }
+        }break;
+        
+        case VG_IPJPKP_I:
+        case VG_IPJMKP_I:
+        case VG_IMJPKP_I:
+        case VG_IMJMKP_I:
+        case VG_IPJPKM_I:
+        case VG_IPJMKM_I:
+        case VG_IMJPKM_I:
+        case VG_IMJMKM_I:{
+            Real fP=0;
+
+            Real normTot[3]={norm[0],norm[1],norm[2]};
+            for (int xiIdx = lattStart+1; xiIdx <= lattEnd; xiIdx++) {
+            BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+                Real cjx{XI[xiIdx * LATTDIM]/(css*css)};
+                Real cjy{XI[xiIdx * LATTDIM + 1]/(css*css)};
+                Real cjz{XI[xiIdx * LATTDIM + 2]/(css*css)};
+                fP+=1/18*f(xiIdx,0,0,0)*(1-abs(cjx*normTot[0]+cjy*normTot[1]+cjz*normTot[2]));
+                //std::cout<<fP<<" ";
+                
+                //switch (bdt) {
+                //case BndryDv_Incoming: {
+                //    
+                //    rho += f(xiIdx, 0, 0, 0);
+                //} break;
+                //case BndryDv_Parallel: {
+                //    
+                //    rho += f(xiIdx, 0, 0, 0);
+                //} break;
+                //deafult:
+                //    break;
+                //}
+                
+            
+            }
+            for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+                BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+                if (bdt==BndryDv_Parallel) {
+                    if (xiIdx!=lattStart) {
+                        //f(xiIdx,0,0,0)=12*fP;
+			f(xiIdx,0,0,0)=fP;
+                    }
+                }
+            }
+	    //std::cout<<" ";
         }
-        case VG_IPJM_O: {
-            Real f8 = f(8, 0, 0);
-            f(6, 0, 0)=f8;
+
+        case VG_IPJPKP_O:
+        case VG_IPJMKP_O:
+        case VG_IMJPKP_O:
+        case VG_IMJMKP_O:
+        case VG_IPJPKM_O:
+        case VG_IPJMKM_O:
+        case VG_IMJPKM_O:
+        case VG_IMJMKM_O:{                
+            
+            for (int xiIdx = lattStart; xiIdx <= lattEnd; xiIdx++) {
+                BndryDvType bdt = FindBdyDvType3D(vg, &XI[xiIdx * LATTDIM]);
+                if (bdt==BndryDv_Outgoing) {
+		    //std::cout<<xiIdx<<" ";
+                    Real cx{XI[xiIdx * LATTDIM]/(css*css)};
+                    Real cy{XI[xiIdx * LATTDIM + 1]/(css*css)};
+                    Real cz{XI[xiIdx * LATTDIM + 2]/(css*css)};                    
+                    Real opps={OPP[xiIdx]};
+                    Real tangx=cx-(cx*norm[0])*norm[0];
+                    Real tangy=cx-(cx*norm[2])*norm[1];
+                    Real tangz=cx-(cx*norm[2])*norm[2];
+
+                    f(xiIdx,0,0,0)=f(opps,0,0,0)-rho/6*(cx*u+cy*v+cz*w)-rho/3*(tangx*u+tangy*v+tangz*w);
+		    //std::cout<<f(xiIdx,0,0,0)<<" ";
+                }
+            }
+	    //std::cout<<" ";
         }
-        case VG_IMJP_O: {
-            Real f6 = f(6, 0, 0);
-            f(8, 0, 0)=f6;
-        }
-        case VG_IMJM_O: {
-            Real f5 = f(5, 0, 0);
-            f(7, 0, 0)=f5;
-        }
+
+        
         default:
             break;
     }
 
-#endif  // OPS_2D
+    }
+#endif  // OPS_3D
 }
+
 
 void KerCutCellPeriodic3D(ACC<Real> &f, const ACC<int> &nodeType,
                           const ACC<int> &geometryProperty,

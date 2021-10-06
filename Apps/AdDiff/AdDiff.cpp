@@ -335,7 +335,18 @@ void SetEmbeddedBodyGeometry() {
         }
     }
 }
+void FE2D(){
+    CalcPhiWetting();
+    Calcphi2Gradients();
+    CalcMu();
+    g_mu().TransferHalos();
+    const auto& compoC = g_Components().at(1);
+    g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).TransferHalos();
+    CalcmuGradients();
 
+    UpdateMacroscopicBodyForce(1);
+    PreDefinedBodyForce();
+}
 #endif
 //////////////////////////////////////////////////////////////////////
 ////////////////                  3D                  ////////////////
@@ -467,7 +478,9 @@ void CalcMu3D() {
                                     .at(blockIndex), 1,
                                      LOCALSTENCIL, "Real", OPS_READ),
                 ops_arg_dat(g_phiGrad()[blockIndex], SpaceDim(),
-                            LOCALSTENCIL, "double", OPS_READ));
+                            LOCALSTENCIL, "double", OPS_READ),
+                         ops_arg_dat(g_NodeType().at(compoRho.id).at(blockIndex), 1,
+                                     LOCALSTENCIL, "int", OPS_READ));
             
 
         
@@ -629,7 +642,18 @@ void SetEmbeddedBodyGeometry3D() {
         }
     }
 }
+void FE3D(){
+    CalcPhiWetting3D();
+    Calcphi2Gradients3D();
+    CalcMu3D();
+    g_mu().TransferHalos();
+    const auto& compoC = g_Components().at(1);
+    g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).TransferHalos();
+    CalcmuGradients3D();
 
+    UpdateMacroscopicBodyForce3D(1);
+    PreDefinedBodyForce3D();
+}
 #endif
 //////////////////////////////////////////////////////////////////////
 ////////////////               Simulate               ////////////////
@@ -643,7 +667,7 @@ void simulate() {
     //Define one block this application
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{100, 100};
+    std::vector<int> blockSize{200, 200};
     Real meshSize{1.};
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
@@ -707,35 +731,48 @@ void simulate() {
     //DefineBlockBoundary(0, componentId, BoundarySurface::Right,
     //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
     //                    noSlipStationaryWall, VertexType::MDPeriodic);
-    DefineBlockBoundary(0, componentId, BoundarySurface::None, BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
-    /*DefineBlockBoundary(0, componentId, BoundarySurface::Left,
+    //DefineBlockBoundary(0, componentId, BoundarySurface::None, BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
+    //                    noSlipStationaryWall);
+    /*
+    DefineBlockBoundary(0, , BoundarySurface::Left,
                         BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     DefineBlockBoundary(0, componentId, BoundarySurface::Right,
                         BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
                         noSlipStationaryWall);*/
 
-    /*DefineBlockBoundary(0, 1, BoundarySurface::Top,
+    DefineBlockBoundary(0,componentId , BoundarySurface::Top,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
-    DefineBlockBoundary(0, 1, BoundarySurface::Bottom,
+    DefineBlockBoundary(0, componentId, BoundarySurface::Bottom,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
-                        noSlipStationaryWall, VertexType::MDPeriodic);*/
-    DefineBlockBoundary(0, 1, BoundarySurface::None, BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
-                        noSlipStationaryWall);
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Left,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::Right,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    //DefineBlockBoundary(0, 1, BoundarySurface::None, BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
+    //                    noSlipStationaryWall);
     /*DefineBlockBoundary(0, 1, BoundarySurface::Left,
                         BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
                         noSlipStationaryWall);
     DefineBlockBoundary(0, 1, BoundarySurface::Right,
                         BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
                         noSlipStationaryWall);*/
-    //DefineBlockBoundary(0, 1, BoundarySurface::Left,
-    //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
-    //                    noSlipStationaryWall, VertexType::MDPeriodic);
-    //DefineBlockBoundary(0, 1, BoundarySurface::Right,
-    //                    BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
-    //                    noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Left,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Right,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Top,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::Bottom,
+                        BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::MDPeriodic);
 
 
     std::vector<InitialType> initType{Initial_BGKFeq2ndAD,Initial_BGKGeq2ndAD};
@@ -756,10 +793,7 @@ void simulate() {
     UpdateConcentration();
     CalcPhiWetting();
     std::cout << "test1\n";
-    //PreDefinedInitialCondition();
-    
-    //PreDefinedInitialConditionADF();
-    //PrintPhi();
+
     PreDefinedInitialConditionAD();
     UpdateMacroVars();
     
@@ -784,7 +818,7 @@ void simulate() {
     DefineCase(caseName, spaceDim);
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{120, 30, 60};
+    std::vector<int> blockSize{40, 40, 40};
     Real meshSize{1.};
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
@@ -931,7 +965,7 @@ void simulate() {
     SetTimeStep(1);
     PrintPhi3D();
     const Real convergenceCriteria{-1E-7};
-    const SizeType checkPeriod{5000};
+    const SizeType checkPeriod{1};
     Real iter{0};
     WriteFlowfieldToHdf5(iter);
     WriteDistributionsToHdf5(iter);

@@ -68,6 +68,12 @@
  * Overall wrap for stream-collision scheme
  */
 void StreamCollision(const Real time);
+#ifdef OPS_3D
+void FE3D();
+#endif
+#ifdef OPS_2D
+void FE2D();
+#endif
 
 void Iterate(const SizeType steps, const SizeType checkPointPeriod,
              const SizeType start = 0);

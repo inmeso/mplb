@@ -287,7 +287,7 @@ void KerInitialiseBGKADF(ACC<Real>& g, const ACC<int>& nodeType,
         const Real T{1};
         const int polyOrder{2};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            g(xiIdx, 0, 0) = CalcBGKFeqAD(xiIdx, C, u, v, ff, dt, T, polyOrder);
+            g(xiIdx, 0, 0) = CalcBGKFeqFE(xiIdx, C, u, v, ff, dt, T, polyOrder);
 
 #ifdef CPU
             const Real res{g(xiIdx, 0, 0)};
@@ -321,7 +321,7 @@ void KerInitialiseBGKADG(ACC<Real>& g, const ACC<int>& nodeType,const ACC<int>& 
 
         //std::cout << C << "\n";
         for (int xiIdx = lattIdx[0]+1; xiIdx <= lattIdx[1]; xiIdx++) {
-            g(xiIdx, 0, 0) = CalcBGKGeqAD(xiIdx, C, u, v, mu, dt, polyOrder);
+            g(xiIdx, 0, 0) = CalcBGKGeqFE(xiIdx, C, u, v, mu, dt, polyOrder);
             S+=g(xiIdx,0,0);
             //std::cout<<g(0,0,0)<<"   ";
         g(lattIdx[0],0,0)=C-S;
@@ -369,7 +369,7 @@ void KerCollideBGKADF(ACC<Real>& gStage, const ACC<Real>& g,
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
         //std::cout<<C<<"\n";
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-            const Real geq{CalcBGKFeqAD(xiIndex, C, u, v, ff, dt, T, polyOrder)};
+            const Real geq{CalcBGKFeqFE(xiIndex, C, u, v, ff, dt, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
 
                 gStage(xiIndex, 0, 0) =
@@ -424,7 +424,7 @@ void KerCollideBGKADG(ACC<Real>& gStage, const ACC<Real>& g,
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
         Real S{0.0};
         for (int xiIndex = lattIdx[0]+1; xiIndex <= lattIdx[1]; xiIndex++) {
-            const Real geq{CalcBGKGeqAD(xiIndex, C, u, v, mu, dt, polyOrder)};
+            const Real geq{CalcBGKGeqFE(xiIndex, C, u, v, mu, dt, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
                 gStage(xiIndex, 0, 0) =
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq);
@@ -717,7 +717,7 @@ void KerInitialiseBGKADF3D(ACC<Real>& g, const ACC<int>& nodeType,
         const Real T{1};
         const int polyOrder{2};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            g(xiIdx, 0, 0, 0) = CalcBGKFeqAD3D(xiIdx, C, u, v, w, ff, dt, T, polyOrder);
+            g(xiIdx, 0, 0, 0) = CalcBGKFeqFE3D(xiIdx, C, u, v, w, ff, dt, T, polyOrder);
 
 #ifdef CPU
             const Real res{g(xiIdx, 0, 0, 0)};
@@ -749,7 +749,7 @@ void KerInitialiseBGKADG3D(ACC<Real>& g, const ACC<int>& nodeType,
         Real S{0.0};
         //std::cout << C << "\n";
         for (int xiIdx = lattIdx[0]+1; xiIdx <= lattIdx[1]; xiIdx++) {
-            g(xiIdx, 0, 0, 0) = CalcBGKGeqAD3D(xiIdx, C, u, v, w, mu, dt, polyOrder);
+            g(xiIdx, 0, 0, 0) = CalcBGKGeqFE3D(xiIdx, C, u, v, w, mu, dt, polyOrder);
             S+=g(xiIdx,0,0,0);
             //std::cout<<g(0,0,0)<<"   ";
         g(lattIdx[0],0,0,0)=C-S;
@@ -797,7 +797,7 @@ void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
         //std::cout<<C<<"\n";
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
-            const Real geq{CalcBGKFeqAD3D(xiIndex, C, u, v, w, ff, dt, T, polyOrder)};
+            const Real geq{CalcBGKFeqFE3D(xiIndex, C, u, v, w, ff, dt, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
                 
                 gStage(xiIndex, 0, 0, 0) =
@@ -851,7 +851,7 @@ void KerCollideBGKADG3D(ACC<Real>& gStage, const ACC<Real>& g,
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
         Real S{0.0};
         for (int xiIndex = lattIdx[0]+1; xiIndex <= lattIdx[1]; xiIndex++) {
-            const Real geq{CalcBGKGeqAD3D(xiIndex, C, u, v, w, mu, dt, polyOrder)};
+            const Real geq{CalcBGKGeqFE3D(xiIndex, C, u, v, w, mu, dt, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
                 gStage(xiIndex, 0, 0, 0) =
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0, 0) - geq);

@@ -159,6 +159,20 @@ void TreatBlockBoundaryComplex3D(const Block& block, const int componentID,
                         ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
                                     OPS_READ));
                 } break;
+                case BoundaryScheme::ZouHeVelocity: {
+                    ops_par_loop(
+                        KerCutCellZouHeVelocityADG3D, "KerCutCellZouHeVelocityADG3D",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_gbl(givenVars, 2, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(componentID).at(blockIndex), 1, LOCALSTENCIL, "int",
+                                    OPS_READ),
+                        ops_arg_dat(g_GeometryProperty()[blockIndex], 1, LOCALSTENCIL,
+                                    "int", OPS_READ),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, ONEPTLATTICESTENCIL,
+                                    "double", OPS_RW),
+                        ops_arg_gbl(g_Components().at(componentID).index, 2, "int",
+                                    OPS_READ));
+                } break;
                 default:
                     break;
         }

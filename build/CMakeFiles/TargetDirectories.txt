@@ -24,3 +24,7 @@
 /home/chocolateftd/mplb/build/Apps/AdDiff/CMakeFiles/rebuild_cache.dir
 /home/chocolateftd/mplb/build/Apps/AdDiff/CMakeFiles/AdDiffMpiDev.dir
 /home/chocolateftd/mplb/build/Apps/AdDiff/CMakeFiles/AdDiffSeqDev.dir
+/home/chocolateftd/mplb/build/Apps/AdDiff2/CMakeFiles/edit_cache.dir
+/home/chocolateftd/mplb/build/Apps/AdDiff2/CMakeFiles/AdDiff2MpiDev.dir
+/home/chocolateftd/mplb/build/Apps/AdDiff2/CMakeFiles/rebuild_cache.dir
+/home/chocolateftd/mplb/build/Apps/AdDiff2/CMakeFiles/AdDiff2SeqDev.dir

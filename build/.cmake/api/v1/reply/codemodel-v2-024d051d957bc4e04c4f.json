@@ -1,0 +1,281 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					],
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.18"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "Apps/3DCavity",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.18"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "Apps/3DCavity",
+					"targetIndexes" : 
+					[
+						6,
+						7
+					]
+				},
+				{
+					"build" : "Apps/2DCavity",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.18"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "Apps/2DCavity",
+					"targetIndexes" : 
+					[
+						4,
+						5
+					]
+				},
+				{
+					"build" : "Apps/3DLChannel",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.18"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "Apps/3DLChannel",
+					"targetIndexes" : 
+					[
+						10,
+						11
+					]
+				},
+				{
+					"build" : "Tests/FieldBlock",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.18"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "Tests/FieldBlock",
+					"targetIndexes" : 
+					[
+						8,
+						9
+					]
+				},
+				{
+					"build" : "Apps/Poiseuille",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.18"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "Apps/Poiseuille",
+					"targetIndexes" : 
+					[
+						12,
+						13
+					]
+				},
+				{
+					"build" : "Apps/AdDiff",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.18"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "Apps/AdDiff",
+					"targetIndexes" : 
+					[
+						2,
+						3
+					]
+				},
+				{
+					"build" : "Apps/AdDiff2",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.18"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "Apps/AdDiff2",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7
+					],
+					"name" : "MPLB",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12,
+						13
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 7,
+					"id" : "AdDiff2MpiDev::@32af613e9f8b914c849b",
+					"jsonFile" : "target-AdDiff2MpiDev-Debug-8bb7b3cc6fd826db7815.json",
+					"name" : "AdDiff2MpiDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 7,
+					"id" : "AdDiff2SeqDev::@32af613e9f8b914c849b",
+					"jsonFile" : "target-AdDiff2SeqDev-Debug-8dc131ee777b3fdc5cdc.json",
+					"name" : "AdDiff2SeqDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "AdDiffMpiDev::@f5146fda917b33dfd049",
+					"jsonFile" : "target-AdDiffMpiDev-Debug-97f28c37663d5d435459.json",
+					"name" : "AdDiffMpiDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 6,
+					"id" : "AdDiffSeqDev::@f5146fda917b33dfd049",
+					"jsonFile" : "target-AdDiffSeqDev-Debug-53274fe2df2170f7428c.json",
+					"name" : "AdDiffSeqDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "Cavity2DMpiDev::@1b38425b4c2a95114ca8",
+					"jsonFile" : "target-Cavity2DMpiDev-Debug-995ec842a1d1e9d64516.json",
+					"name" : "Cavity2DMpiDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "Cavity2DSeqDev::@1b38425b4c2a95114ca8",
+					"jsonFile" : "target-Cavity2DSeqDev-Debug-8e52364d02a13b2acbca.json",
+					"name" : "Cavity2DSeqDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "Cavity3DMpiDev::@b58b159cb3c0d72295c1",
+					"jsonFile" : "target-Cavity3DMpiDev-Debug-054a1e3b5a21515ecc03.json",
+					"name" : "Cavity3DMpiDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "Cavity3DSeqDev::@b58b159cb3c0d72295c1",
+					"jsonFile" : "target-Cavity3DSeqDev-Debug-f6db1e1a965197edc135.json",
+					"name" : "Cavity3DSeqDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "FieldBlockMpiDev::@e7ec5cdaceaffb6d1a7a",
+					"jsonFile" : "target-FieldBlockMpiDev-Debug-ff35b31cb7ab662a85f7.json",
+					"name" : "FieldBlockMpiDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 4,
+					"id" : "FieldBlockSeqDev::@e7ec5cdaceaffb6d1a7a",
+					"jsonFile" : "target-FieldBlockSeqDev-Debug-13858f7e19d15aa4274a.json",
+					"name" : "FieldBlockSeqDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "LChannel3DMpiDev::@2c2ffb1707a1df7f6548",
+					"jsonFile" : "target-LChannel3DMpiDev-Debug-58d29c3d9871eebee30c.json",
+					"name" : "LChannel3DMpiDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "LChannel3DSeqDev::@2c2ffb1707a1df7f6548",
+					"jsonFile" : "target-LChannel3DSeqDev-Debug-731582183c6293e373b2.json",
+					"name" : "LChannel3DSeqDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "PoiseuilleMpiDev::@89d5e1d1fbf36e959459",
+					"jsonFile" : "target-PoiseuilleMpiDev-Debug-b0ab1e004af05778d9cc.json",
+					"name" : "PoiseuilleMpiDev",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 5,
+					"id" : "PoiseuilleSeqDev::@89d5e1d1fbf36e959459",
+					"jsonFile" : "target-PoiseuilleSeqDev-Debug-3a8e22853ac0a0223f37.json",
+					"name" : "PoiseuilleSeqDev",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/chocolateftd/mplb/build",
+		"source" : "/home/chocolateftd/mplb"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 2
+	}
+}

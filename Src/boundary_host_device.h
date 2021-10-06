@@ -182,6 +182,247 @@ static inline OPS_FUN_PREFIX  BndryDvType FindBdyDvType(const VertexGeometryType
 #endif
     return res;
 }
+static inline OPS_FUN_PREFIX std::array<Real, 3> findBdyNorm3D(const VertexGeometryType vg) {
+    std::array<Real, 3> unitNormal = {0, 0, 0};
+        switch (vg) {
+            case VG_IP: {
+                unitNormal[0] = 1;
+                unitNormal[1] = 0;
+                unitNormal[2] = 0;
+            } break;
+            case VG_IM: {
+                unitNormal[0] = -1;
+                unitNormal[1] = 0;
+                unitNormal[2] = 0;
+            } break;
+            case VG_JP: {
+                unitNormal[0] = 0;
+                unitNormal[1] = 1;
+                unitNormal[2] = 0;
+            } break;
+            case VG_JM: {
+                unitNormal[0] = 0;
+                unitNormal[1] = -1;
+                unitNormal[2] = 0;
+            } break;
+            case VG_KP: {
+                unitNormal[0] = 0;
+                unitNormal[1] = 0;
+                unitNormal[2] = 1;
+            } break;
+            case VG_KM: {
+                unitNormal[0] = 0;
+                unitNormal[1] = 0;
+                unitNormal[2] = -1;
+            } break;
+            case VG_IPJP_I: {
+                unitNormal[0] = 1 / sqrt(2);
+                unitNormal[1] = 1 / sqrt(2);
+                unitNormal[2] = 0;
+            } break;
+            case VG_IPJM_I: {
+                unitNormal[0] = 1 / sqrt(2);
+                unitNormal[1] = -1 / sqrt(2);
+                unitNormal[2] = 0;
+            } break;
+            case VG_IMJP_I: {
+                unitNormal[0] = -1 / sqrt(2);
+                unitNormal[1] = 1 / sqrt(2);
+                unitNormal[2] = 0;
+            } break;
+            case VG_IMJM_I: {
+                unitNormal[0] = -1 / sqrt(2);
+                unitNormal[1] = -1 / sqrt(2);
+                unitNormal[2] = 0;
+            } break;
+            case VG_IPKP_I: {
+                unitNormal[0] = 1 / sqrt(2);
+                unitNormal[1] = 0;
+                unitNormal[2] = 1 / sqrt(2);
+            } break;
+            case VG_IPKM_I: {
+                unitNormal[0] = 1 / sqrt(2);
+                unitNormal[1] = 0;
+                unitNormal[2] = -1 / sqrt(2);
+            } break;
+            case VG_IMKP_I: {
+                unitNormal[0] = -1 / sqrt(2);
+                unitNormal[1] = 0;
+                unitNormal[2] = 1 / sqrt(2);
+            } break;
+            case VG_IMKM_I: {
+                unitNormal[0] = -1 / sqrt(2);
+                unitNormal[1] = 0;
+                unitNormal[2] = -1 / sqrt(2);
+            } break;
+            case VG_JPKP_I: {
+                unitNormal[0] = 0;
+                unitNormal[1] = 1 / sqrt(2);
+                unitNormal[2] = 1 / sqrt(2);
+            } break;
+            case VG_JPKM_I: {
+                unitNormal[0] = 0;
+                unitNormal[1] = 1 / sqrt(2);
+                unitNormal[2] = -1 / sqrt(2);
+            } break;
+            case VG_JMKP_I: {
+                unitNormal[0] = 0;
+                unitNormal[1] = -1 / sqrt(2);
+                unitNormal[2] = 1 / sqrt(2);
+            } break;
+            case VG_JMKM_I: {
+                unitNormal[0] = 0;
+                unitNormal[1] = -1 / sqrt(2);
+                unitNormal[2] = -1 / sqrt(2);
+            } break;
+
+            case VG_IPJP_O: {
+                unitNormal[0] = 1 / sqrt(2);
+                unitNormal[1] = 1 / sqrt(2);
+                unitNormal[2] = 0;
+            } break;
+            case VG_IPJM_O: {
+                unitNormal[0] = 1 / sqrt(2);
+                unitNormal[1] = -1 / sqrt(2);
+                unitNormal[2] = 0;
+            } break;
+            case VG_IMJP_O: {
+                unitNormal[0] = -1 / sqrt(2);
+                unitNormal[1] = 1 / sqrt(2);
+                unitNormal[2] = 0;
+            } break;
+            case VG_IMJM_O: {
+                unitNormal[0] = -1 / sqrt(2);
+                unitNormal[1] = -1 / sqrt(2);
+                unitNormal[2] = 0;
+            } break;
+            case VG_IPKP_O: {
+                unitNormal[0] = 1 / sqrt(2);
+                unitNormal[1] = 0;
+                unitNormal[2] = 1 / sqrt(2);
+            } break;
+            case VG_IPKM_O: {
+                unitNormal[0] = 1 / sqrt(2);
+                unitNormal[1] = 0;
+                unitNormal[2] = -1 / sqrt(2);
+            } break;
+            case VG_IMKP_O: {
+                unitNormal[0] = -1 / sqrt(2);
+                unitNormal[1] = 0;
+                unitNormal[2] = 1 / sqrt(2);
+            } break;
+            case VG_IMKM_O: {
+                unitNormal[0] = -1 / sqrt(2);
+                unitNormal[1] = 0;
+                unitNormal[2] = -1 / sqrt(2);
+            } break;
+            case VG_JPKP_O: {
+                unitNormal[0] = 0;
+                unitNormal[1] = 1 / sqrt(2);
+                unitNormal[2] = 1 / sqrt(2);
+            } break;
+            case VG_JPKM_O: {
+                unitNormal[0] = 0;
+                unitNormal[1] = 1 / sqrt(2);
+                unitNormal[2] = -1 / sqrt(2);
+            } break;
+            case VG_JMKP_O: {
+                unitNormal[0] = 0;
+                unitNormal[1] = -1 / sqrt(2);
+                unitNormal[2] = 1 / sqrt(2);
+            } break;
+            case VG_JMKM_O: {
+                unitNormal[0] = 0;
+                unitNormal[1] = -1 / sqrt(2);
+                unitNormal[2] = -1 / sqrt(2);
+            } break;
+
+            case VG_IPJPKP_I: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPJPKM_I: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IPJMKP_I: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPJMKM_I: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMJPKP_I: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMJPKM_I: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMJMKP_I: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMJMKM_I: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IPJPKP_O: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPJPKM_O: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IPJMKP_O: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPJMKM_O: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMJPKP_O: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMJPKM_O: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMJMKP_O: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMJMKM_O: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            default:
+                break;
+        }
+    
+    return unitNormal;
+}
 
 /*!
  * @brief Determining discrete velocity type a solid wall boundary: 3D

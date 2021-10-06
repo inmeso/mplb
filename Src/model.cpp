@@ -121,7 +121,7 @@ void SetupD2Q9_diffusiveLatt(const int startPos) {
         XI[(startPos + l) * LATTDIM] = cxi[l];
         XI[(startPos + l) * LATTDIM + 1] = cyi[l];
         WEIGHTS[startPos + l] = t[l];
-        OPP[startPos + l] = op9[l];
+        OPP[startPos + l] = startPos+op9[l];
     }
 }
 
@@ -138,11 +138,14 @@ void SetupD3Q19Latt(const int startPos) {
                      0, 1, -1, -1, 1,  0, 0, 1, -1};
     int czi[nc19] = {0,  0, 0,  0, 0, 1,  -1, 0,  0, 1,
                      -1, 1, -1, 0, 0, -1, 1,  -1, 1};
+    int op19[nc19] = {0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15, 18, 17};
     for (int l = 0; l < nc19; l++) {
         XI[(startPos + l) * LATTDIM] = cxi[l];
         XI[(startPos + l) * LATTDIM + 1] = cyi[l];
         XI[(startPos + l) * LATTDIM + 2] = czi[l];
         WEIGHTS[startPos + l] = t[l];
+        OPP[startPos + l] = startPos+op19[l];
+
     }
     FindReverseXi(startPos, nc19);
 }

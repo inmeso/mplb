@@ -302,6 +302,7 @@ add_subdirectory(Apps/3DLChannel)
 add_subdirectory(Tests/FieldBlock)
 add_subdirectory(Apps/Poiseuille)
 add_subdirectory(Apps/AdDiff)
+add_subdirectory(Apps/AdDiff2)
 
 
 
