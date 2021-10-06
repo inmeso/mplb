@@ -572,3 +572,8 @@ void DestroyModel() {
     FreeArrayMemory(OPP);
 }
 
+ModelType ModelTypes{None};
+const ModelType ModelT() { return ModelTypes; }
+void DefineModelType(const ModelType model) {
+    ModelTypes = model;
+}

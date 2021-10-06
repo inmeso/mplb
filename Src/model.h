@@ -101,7 +101,7 @@ enum CollisionType {
 };
 
 enum BodyForceType {GuoForce = 2, BodyForce_1st = 1, BodyForce_None = 0};
-
+enum ModelType {None = 0, Ad_Diff = 1, Free_Energy = 2};
 enum InitialType {Initial_BGKFeq2nd = 1, Initial_BGKFeq2ndAD = 2, Initial_BGKGeq2ndAD = 3};
 
 struct MacroVariable {
@@ -123,10 +123,12 @@ struct Component {
     int wId;
 #endif
     Real tauRef;
+
+
 };
 
 const std::map<int, Component>& g_Components();
-
+const ModelType ModelT();
 inline const int ComponentNum() { return NUMCOMPONENTS; }
 inline const int SizeF() { return NUMXI; }
 inline const Real SoundSpeed() { return CS; }
@@ -166,6 +168,7 @@ void DefineBodyForce(std::vector<BodyForceType> types,
 
 void DefineInitialCondition(std::vector<InitialType> types,
                             std::vector<SizeType> compoId);
+void DefineModelType(const ModelType model);
 #ifdef OPS_3D
 void UpdateMacroVars3D();
 void PreDefinedBodyForce3D();

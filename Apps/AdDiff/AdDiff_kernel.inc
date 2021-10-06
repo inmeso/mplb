@@ -30,6 +30,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
 */
 
+/**
+ * The Following contains kernel functions for the Free Energy model for
+ * multiphase/multicomponent flow in 2D and 3D.
+*/
+
 #ifndef CAVITY2D_KERNEL_INC
 #define CAVITY2D_KERNEL_INC
 #ifdef OPS_2D
@@ -41,28 +46,7 @@ void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
     v(0, 0) = 0;
 }
 
-//ADCase
-
-//void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex, const Real* TIME, const ACC<Real>& U, const ACC<Real>& V, const Real* Dt) {
-//    Real Sig02{16};
-//    Real DiffCFact{1.5};
-//    Real dt = {*Dt};
-//    Real time = {*TIME};
-//    Real DiffC{DiffCFact/dt};
-//    Real x0[2] = {8.0,8.0};
-//    Real Vel[2] = {U(0,0),V(0,0)};
-//    Real Pref{Sig02/(Sig02)};
-//    Real xiIndexVar1 = {xiIndex(0,0,0)};
-//    Real xiIndexVar2 = {xiIndex(1,0,0)};
-//    Real numeru{(xiIndexVar1-x0[0])};
-//    Real numerv{(xiIndexVar2-x0[1])};
-//    Real numer2{numeru*numeru+numerv*numerv};
-//    Real Gauss{exp(-numer2/(2*(Sig02)))};
-//
-//    concentration(0,0) = Pref * Gauss;
-//    //std::cout << concentration(0,0) << " " << xiIndex(0,0,0) << " " << U(0,0) << " " << V(0,0) << " " << numer2 << "\n";
-//}
-
+//Update order parameter (or concentration in advection/diffusion implementation)
 void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex, const Real* TIME, const ACC<Real>& U, const ACC<Real>& V, const Real* Dt) {
     Real x0[2] = {100.0,100.0};
     Real xiIndexVar1 = {xiIndex(0,0,0)};
@@ -78,13 +62,6 @@ void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex, co
     else{
         concentration(0,0) = -1;
     }
-    
-    //if (x>30 && x<90){
-    //    concentration(0,0) = -1;
-    //}
-    //else{
-    //    concentration(0,0) = -1;
-    //}
 
 }
 
@@ -439,8 +416,6 @@ void KerSetInitialMacroVars3D(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v, ACC<Re
     v(0, 0, 0) = 0;
     w(0, 0, 0) = 0;
 }
-
-//ADCase
 
 void KerCalcConcentration3D(ACC<Real>& concentration, const ACC<Real>& xiIndex, const Real* TIME, const ACC<Real>& U, const ACC<Real>& V, const Real* Dt) {
     Real x0[3] = {0.0,20.0,20.0};
@@ -1042,6 +1017,7 @@ void KerUpdateRhoWetting3D(ACC<Real>& rho,const ACC<int>& geometry, const ACC<in
     }
 }
 
+//Calculate chemical potential within Free Energy Model
 void KerCalcMu3D(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi, const ACC<int>&nodeType){
     Real phi{Phi(0,0,0)};
     Real phi3 = {phi*phi*phi};
@@ -1053,22 +1029,24 @@ void KerCalcMu3D(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi, const A
     }
 }
 
+//Function to print a 1D macroscopic variable for debugging purposes
 void KerPrintPhi3D(const ACC<Real>& Phi, const ACC<Real>& coordinates){
-    //std::cout << Phi(0,0,0) << " ";
     if ((coordinates(0,0,0)==60&&coordinates(1,0,0)==10&&coordinates(2,0,0)==16)){
         std::cout<<Phi(-1,0,-1)<<" ";
     }
 }
 
+//Update surface tension force between fluid components
 void KerUpdateMacroBodyForce3D(ACC<Real>& force, const ACC<Real>& Phi, const ACC<Real>& dmu, const ACC<int>& geometry, const ACC<int>&nodeType, const ACC<Real>& coordinates,
                             const int* idx) {
     Real phi = {Phi(0,0,0)};
     Real dmux = {dmu(0,0,0,0)};
     Real dmuy = {dmu(1,0,0,0)};
     Real dmuz = {dmu(2,0,0,0)};
-    //std::cout << "Stuff: " << dphix << " " << dphiy << " " << dmux << " " << dmuy << " " << phi << " " << coordinates(0,0,0) << " " << coordinates(1,0,0) << "\n";
+
     VertexType vt = (VertexType)nodeType(0, 0, 0);
     VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
+    //Set gradient of chemical potential perpendicular to wall = 0
     if (vt == VertexType::Wall) {
         
         switch (vg) {

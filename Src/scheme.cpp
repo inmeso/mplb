@@ -109,3 +109,4 @@ void DefineScheme(const SchemeType scheme) {
 const int SchemeHaloNum() { return schemeHaloPt; }
 void SetSchemeHaloNum(const int schemeHaloNum) { schemeHaloPt = schemeHaloNum; }
 
+

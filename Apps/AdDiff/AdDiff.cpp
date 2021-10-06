@@ -335,7 +335,7 @@ void SetEmbeddedBodyGeometry() {
         }
     }
 }
-void FE2D(){
+void FreeEnergy2D(){
     CalcPhiWetting();
     Calcphi2Gradients();
     CalcMu();
@@ -642,7 +642,7 @@ void SetEmbeddedBodyGeometry3D() {
         }
     }
 }
-void FE3D(){
+void FreeEnergy3D(){
     CalcPhiWetting3D();
     Calcphi2Gradients3D();
     CalcMu3D();
@@ -956,14 +956,13 @@ void simulate() {
     std::cout << "test\n";
     UpdateConcentration3D();
     CalcPhiWetting3D();
-    std::cout << "test1\n";
-    PrintPhi3D();
+
     PreDefinedInitialConditionAD3D();
     UpdateMacroVars3D();
     
-    std::cout<<"test2\n";
+
     SetTimeStep(1);
-    PrintPhi3D();
+
     const Real convergenceCriteria{-1E-7};
     const SizeType checkPeriod{1};
     Real iter{0};

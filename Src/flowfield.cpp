@@ -98,6 +98,9 @@ RealFieldGroup& g_MacroBodyforce() { return MacroBodyforce; };
  * DT: time step
  */
 Real DT{1};
+Real theta_FE=M_PI/2;
+Real A_FE=0.02;
+Real kappa_FE=0.02;
 
 RealField CoordinateXYZ{"CoordinateXYZ"};
 RealField& g_CoordinateXYZ() { return CoordinateXYZ; };
@@ -158,7 +161,15 @@ Real TotalMeshSize() { return 0; }
 
 Real TimeStep() { return DT; }
 const Real* pTimeStep() { return &DT; }
+Real Theta() { return theta_FE; }
+Real AFE() { return A_FE; }
+Real KappaFE() { return kappa_FE; }
 void SetTimeStep(Real dt) { DT = dt; }
+void SetFEParams(Real teta,Real A,Real k){
+    theta_FE=teta;
+    A_FE=A;
+    kappa_FE=k;
+}
 
 Real GetMaximumResidual(const SizeType checkPeriod) {
     Real maxResError{0};

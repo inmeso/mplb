@@ -314,6 +314,32 @@ AdDiff2SeqDev/fast:
 	$(MAKE) $(MAKESILENT) -f Apps/AdDiff2/CMakeFiles/AdDiff2SeqDev.dir/build.make Apps/AdDiff2/CMakeFiles/AdDiff2SeqDev.dir/build
 .PHONY : AdDiff2SeqDev/fast
 
+#=============================================================================
+# Target rules for targets named FreeEnergyMpiDev
+
+# Build rule for target.
+FreeEnergyMpiDev: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 FreeEnergyMpiDev
+.PHONY : FreeEnergyMpiDev
+
+# fast build rule for target.
+FreeEnergyMpiDev/fast:
+	$(MAKE) $(MAKESILENT) -f Apps/FreeEnergy/CMakeFiles/FreeEnergyMpiDev.dir/build.make Apps/FreeEnergy/CMakeFiles/FreeEnergyMpiDev.dir/build
+.PHONY : FreeEnergyMpiDev/fast
+
+#=============================================================================
+# Target rules for targets named FreeEnergySeqDev
+
+# Build rule for target.
+FreeEnergySeqDev: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 FreeEnergySeqDev
+.PHONY : FreeEnergySeqDev
+
+# fast build rule for target.
+FreeEnergySeqDev/fast:
+	$(MAKE) $(MAKESILENT) -f Apps/FreeEnergy/CMakeFiles/FreeEnergySeqDev.dir/build.make Apps/FreeEnergy/CMakeFiles/FreeEnergySeqDev.dir/build
+.PHONY : FreeEnergySeqDev/fast
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -332,6 +358,8 @@ help:
 	@echo "... Cavity3DSeqDev"
 	@echo "... FieldBlockMpiDev"
 	@echo "... FieldBlockSeqDev"
+	@echo "... FreeEnergyMpiDev"
+	@echo "... FreeEnergySeqDev"
 	@echo "... LChannel3DMpiDev"
 	@echo "... LChannel3DSeqDev"
 	@echo "... PoiseuilleMpiDev"

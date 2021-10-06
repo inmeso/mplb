@@ -21,6 +21,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "../Apps/3DLChannel/CMakeLists.txt"
   "../Apps/AdDiff/CMakeLists.txt"
   "../Apps/AdDiff2/CMakeLists.txt"
+  "../Apps/FreeEnergy/CMakeLists.txt"
   "../Apps/Poiseuille/CMakeLists.txt"
   "../CMakeLists.txt"
   "../Tests/FieldBlock/CMakeLists.txt"
@@ -148,6 +149,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
   "Apps/Poiseuille/CMakeFiles/CMakeDirectoryInformation.cmake"
   "Apps/AdDiff/CMakeFiles/CMakeDirectoryInformation.cmake"
   "Apps/AdDiff2/CMakeFiles/CMakeDirectoryInformation.cmake"
+  "Apps/FreeEnergy/CMakeFiles/CMakeDirectoryInformation.cmake"
   )
 
 # Dependency information for all targets:
@@ -166,4 +168,6 @@ set(CMAKE_DEPEND_INFO_FILES
   "Apps/AdDiff/CMakeFiles/AdDiffSeqDev.dir/DependInfo.cmake"
   "Apps/AdDiff2/CMakeFiles/AdDiff2MpiDev.dir/DependInfo.cmake"
   "Apps/AdDiff2/CMakeFiles/AdDiff2SeqDev.dir/DependInfo.cmake"
+  "Apps/FreeEnergy/CMakeFiles/FreeEnergyMpiDev.dir/DependInfo.cmake"
+  "Apps/FreeEnergy/CMakeFiles/FreeEnergySeqDev.dir/DependInfo.cmake"
   )

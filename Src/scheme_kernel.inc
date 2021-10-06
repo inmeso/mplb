@@ -62,7 +62,7 @@ void KerStream(ACC<Real>&f, const ACC<Real>&fStage, const ACC<int>&nodeType,
 
         if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
             vt == VertexType::VirtualBoundary) {
-            //std::cout<<f(xiIndex,0,0)<<" "<<fStage(xiIndex,-cx,-cy)<<" ";
+
             f(xiIndex, 0, 0) = fStage(xiIndex, -cx, -cy);
             
             continue;
@@ -83,7 +83,6 @@ void KerStream(ACC<Real>&f, const ACC<Real>&fStage, const ACC<int>&nodeType,
             
             switch (vg) {
                 case VG_IP:
-                    //std::cout<<cx<<" "<<fStage(xiIndex,-1,0)<<" ";
                     // (cx=0 means stream is implemented at i=0,so here we
                     //  disable the step at boundary)
                     if (streamRequired) {

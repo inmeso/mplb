@@ -75,10 +75,14 @@ IntFieldGroup& g_NodeType();
 IntField& g_GeometryProperty();
 Real TimeStep();
 const Real* pTimeStep();
+Real Theta();
+Real AFE();
+Real KappaFE();
 const std::string& CaseName();
 Real TotalMeshSize();
 const std::map<std::string,ops_halo_group>& HaloGroups();
 void SetTimeStep(Real dt);
+void SetFEParams(Real teta, Real A,Real k);
 
 /*!
  * the residual error for steady flows

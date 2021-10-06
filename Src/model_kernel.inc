@@ -54,6 +54,227 @@
  * @todo how to deal with overflow in a kernel function? in particular, GPU
  */
 #ifdef OPS_2D
+
+
+//Calculates first-order or second-order finite difference gradients
+void KerCalcGradients(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType,
+                      const ACC<int>&geometry, const ACC<Real>& coordinates,
+                      const int *lattIdx, const int *Order, const int *idx){
+    VertexType vt = (VertexType)nodeType(0, 0);
+    int order={*Order};
+        //First order
+        if (order == 1){
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
+                vt == VertexType::VirtualBoundary || vt == VertexType::Wall) {
+                grad(0,0,0) = 0.5*(f(1, 0)-f(-1, 0));
+                grad(1,0,0) = 0.5*(f(0, 1)-f(0, -1));
+            }    
+        }  
+        //Second order
+        else if (order == 2){     
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
+                vt == VertexType::VirtualBoundary || vt == VertexType::Wall) {
+                grad(0,0,0) = f(-1, 0)-2*f(0, 0)+f(1, 0);
+                grad(1,0,0) = f(0, -1)-2*f(0, 0)+f(0, 1);
+                
+            }
+        }
+        else{
+            std::cout << "Only First and Second order finite difference gradients" 
+                      << " are supported\n";
+        }
+    
+}
+
+//Wetting boundary implementation
+void KerUpdateRhoWetting(ACC<Real>& rho,const ACC<int>& geometry,
+                         const ACC<int>&nodeType,const ACC<Real>& coordinates,
+                         const int *theta, const int *Aconst, const int *Kappa) {
+    const Real teta={*theta};
+    const Real alpha={acos(sin(teta)*sin(teta))};
+    const Real Omga={2*((teta <= M_PI/2) - (M_PI/2 < teta))*sqrt(cos(alpha/3)*
+                     (1-cos(alpha/3)))};
+    const Real K={*Kappa};
+    const Real A={*Aconst};
+    const Real h={Omga*sqrt(K*A/2)};
+    VertexType vt = (VertexType)nodeType(0, 0);
+    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0);
+    VertexGeometryType vg1 = (VertexGeometryType)geometry(1, 0);
+    VertexGeometryType vg2 = (VertexGeometryType)geometry(-1, 0);
+    VertexGeometryType vg3 = (VertexGeometryType)geometry(0, 1);
+    VertexGeometryType vg4 = (VertexGeometryType)geometry(0, -1);
+    if (vt == VertexType::Wall) {
+        switch (vg) {
+            //Planar walls
+            //+ve X normal
+            case VG_IP: {
+                if(vg3!=VG_IPJP_O&&vg4!=VG_IPJM_O){
+                    rho(-1,0)=rho(1,0)+2*h/K;
+                }
+            } break;
+            //-ve X normal
+            case VG_IM: {
+                if(vg3!=VG_IMJP_O&&vg4!=VG_IMJM_O){
+                    rho(1,0)=rho(-1,0)+2*h/K;
+                }
+            } break;
+            //+ve Y normal
+            case VG_JP: {
+                if(vg1!=VG_IPJP_O&&vg2!=VG_IMJP_O){
+                    rho(0,-1)=rho(0,1)+2*h/K;
+                }
+            } break;
+            //-ve Y normal
+            case VG_JM: {
+                if(vg1!=VG_IPJM_O&&vg2!=VG_IMJM_O){
+                    rho(0,1)=rho(0,-1)+2*h/K;
+                }
+            } break;
+
+            //Outer corners
+            //+ve X, +ve Y normal
+            case VG_IPJP_O: {
+                rho(-1,-1)=(rho(1,0)+rho(0,1)+rho(1,-1)+rho(-1,1))/4+2*h/K;
+
+            } break;
+            //+ve X, -ve Y normal
+            case VG_IPJM_O: {
+                rho(-1,1)=(rho(1,0)+rho(0,-1)+rho(1,1)+rho(-1,-1))/4+2*h/K;
+
+            } break;
+            //-ve X, +ve Y normal
+            case VG_IMJP_O: {
+                rho(1,-1)=(rho(-1,0)+rho(0,1)+rho(1,1)+rho(-1,-1))/4+2*h/K;
+
+            } break;
+            //-ve X, -ve Y normal
+            case VG_IMJM_O: {
+                rho(1,1)=(rho(-1,0)+rho(0,-1)+rho(1,-1)+rho(-1,1))/4+2*h/K;
+            } break;
+
+            //Inner corners
+            //+ve X, +ve Y normal
+            case VG_IPJP_I: {
+                if(vg3!=VG_IPJP_O){
+                    rho(-1,0)=rho(1,0)+2*h/K;
+                }
+                if(vg1!=VG_IPJP_O){
+                    rho(0,-1)=rho(0,1)+2*h/K;
+                }
+            } break;
+            //+ve X, -ve Y normal
+            case VG_IPJM_I: {
+                if(vg4!=VG_IPJM_O){
+                    rho(-1,0)=rho(1,0)+2*h/K;
+                }
+                if(vg1!=VG_IPJM_O){
+                    rho(0,1)=rho(0,-1)+2*h/K;
+                }
+            } break;
+            //-ve X, +ve Y normal
+            case VG_IMJP_I: {
+                if(vg3!=VG_IMJP_O){
+                    rho(1,0)=rho(-1,0)+2*h/K;
+                }
+                if(vg2!=VG_IMJP_O){
+                    rho(0,-1)=rho(0,1)+2*h/K;
+                }
+            } break;
+            //-ve X, -ve Y normal
+            case VG_IMJM_I: {
+                if(vg4!=VG_IMJM_O){
+                    rho(1,0)=rho(-1,0)+2*h/K;
+                }
+                if(vg2!=VG_IMJM_O){
+                    rho(0,1)=rho(0,-1)+2*h/K;
+                }
+            } break;
+        }
+    }
+}
+
+//Calculates chemical potential in the Free Energy model
+void KerCalcMu(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi,
+               const ACC<int>& geometry, const ACC<int>&nodeType,
+               const ACC<Real>& coordinates, const int *Aconst, const int *Kappa){
+    Real phi{Phi(0,0)};
+    Real phi3 = {phi*phi*phi};
+    Real d2phix = {d2phi(0,0,0)};
+    Real d2phiy = {d2phi(1,0,0)};
+    const Real K={*Kappa};
+    const Real A={*Aconst};
+
+    mu(0,0)=-A*phi+A*phi3-K*(d2phix+d2phiy);
+}
+
+
+
+//Update surface tension force between fluid components
+void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& Phi,
+                             const ACC<Real>& dmu, const ACC<int>& geometry,
+                             const ACC<int>&nodeType,
+                             const ACC<Real>& coordinates, const int* idx) {
+    Real phi = {Phi(0,0)};
+    Real dmux = {dmu(0,0,0)};
+    Real dmuy = {dmu(1,0,0)};
+    VertexType vt = (VertexType)nodeType(0, 0);
+    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0);
+    //Set gradient of chemical potential perpendicular to wall = 0
+    if (vt == VertexType::Wall) {
+        
+        switch (vg) {
+            case VG_IP: {
+                dmux=0;
+            } break;
+            case VG_IM: {
+                dmux=0;
+            } break;
+            case VG_JP: {
+                dmuy=0;
+            } break;
+            case VG_JM: {
+                dmuy=0;
+            } break;
+            case VG_IPJP_O: {
+                dmux=0;
+                dmuy=0;
+            } break;
+            case VG_IPJM_O: {
+                dmux=0;
+                dmuy=0;
+            } break;
+            case VG_IMJP_O: {
+                dmux=0;
+                dmuy=0;
+            } break;
+            case VG_IMJM_O: {
+                dmux=0;
+                dmuy=0;
+            } break;
+            case VG_IPJP_I: {
+                dmux=0;
+                dmuy=0;
+            } break;
+            case VG_IPJM_I: {
+                dmux=0;
+                dmuy=0;
+            } break;
+            case VG_IMJP_I: {
+                dmux=0;
+                dmuy=0;
+            } break;
+            case VG_IMJM_I: {
+                dmux=0;
+                dmuy=0;
+            } break;
+        }
+    }
+    
+    force(0,0,0) = -phi*dmux;
+    force(1,0,0) = -phi*dmuy;
+}
+
+
 void KerCalcDensity(ACC<Real>& Rho, const ACC<Real>& f,
                     const ACC<int>& nodeType, const int* lattIdx) {
 #ifdef OPS_2D
@@ -63,20 +284,15 @@ void KerCalcDensity(ACC<Real>& Rho, const ACC<Real>& f,
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
             
             rho += f(xiIdx, 0, 0);
-            //if (f(xiIdx,0,0) != 0){
-            //    std::cout<<f(xiIdx,0,0)<<rho<<"\n";
-            //}
         }
-        //std::cout<<rho<<" ";
-        //std::cout<<lattIdx[0]<<"\n";
         
 #ifdef CPU
-        if (isnan(rho) || rho <= -999 || isinf(rho)) {
+        if (isnan(rho) || rho <= -3 || isinf(rho)) {
             ops_printf(
                 "Error! Density %f becomes invalid！Something "
                 "wrong...",
                 rho);
-            //assert(!(isnan(rho) || rho <= -999 || isinf(rho)));
+            assert(!(isnan(rho) || rho <= -3 || isinf(rho)));
         }
 #endif
         Rho(0, 0) = rho;
@@ -309,7 +525,6 @@ void KerInitialiseBGKADG(ACC<Real>& g, const ACC<int>& nodeType,const ACC<int>& 
                          const ACC<Real>& V, const ACC<Real>& Mu, const Real* dt, const int* lattIdx) {
 #ifdef OPS_2D
     VertexType vt = (VertexType)nodeType(0, 0);
-    //std::cout<<(int)nodeType(0,0)<<" ";
     if (vt != VertexType::ImmersedSolid) {
 
         Real C{Conc(0,0)};
@@ -319,15 +534,11 @@ void KerInitialiseBGKADG(ACC<Real>& g, const ACC<int>& nodeType,const ACC<int>& 
         const int polyOrder{2};
         Real S{0.0};
 
-        //std::cout << C << "\n";
         for (int xiIdx = lattIdx[0]+1; xiIdx <= lattIdx[1]; xiIdx++) {
             g(xiIdx, 0, 0) = CalcBGKGeqFE(xiIdx, C, u, v, mu, dt, polyOrder);
             S+=g(xiIdx,0,0);
-            //std::cout<<g(0,0,0)<<"   ";
         g(lattIdx[0],0,0)=C-S;
 
-        //std::cout<<g(0,0,0)<<"\n";
-        //std::cout<<g(lattIdx[0],0,0)<<C<<S<<"\n";
 
 
 #ifdef CPU
@@ -365,9 +576,7 @@ void KerCollideBGKADF(ACC<Real>& gStage, const ACC<Real>& g,
         const Real T{1};
         const int polyOrder{2};
         Real tau = (*tauRef);
-        //std::cout<<lattIdx[0]<<" "<<lattIdx[1]<<" ";
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
-        //std::cout<<C<<"\n";
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real geq{CalcBGKFeqFE(xiIndex, C, u, v, ff, dt, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
@@ -379,7 +588,6 @@ void KerCollideBGKADF(ACC<Real>& gStage, const ACC<Real>& g,
                 gStage(xiIndex, 0, 0) =
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq);
             }
-            //std::cout<<geq<<" "<<g(xiIndex,0,0)<<" "<<gStage(xiIndex,0,0)<<"   ";
 #ifdef CPU
             const Real res{gStage(xiIndex, 0, 0)};
             if (isnan(res) || res <= -100.01 || isinf(res)) {
@@ -395,7 +603,6 @@ void KerCollideBGKADF(ACC<Real>& gStage, const ACC<Real>& g,
 #endif  // CPU
         }
         
-    //std::cout << g(0,0,0) << "\n";
     }
 #endif  // OPS_2D
 }
@@ -420,7 +627,6 @@ void KerCollideBGKADG(ACC<Real>& gStage, const ACC<Real>& g,
         Real mu{Mu(0,0)};
         const int polyOrder{2};
         Real tau = (*tauRef);
-        //std::cout<<lattIdx[0]<<" "<<lattIdx[1]<<" ";
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
         Real S{0.0};
         for (int xiIndex = lattIdx[0]+1; xiIndex <= lattIdx[1]; xiIndex++) {
@@ -433,7 +639,6 @@ void KerCollideBGKADG(ACC<Real>& gStage, const ACC<Real>& g,
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq);
             }
             S+=gStage(xiIndex,0,0);
-            //std::cout<<S<<" ";
         
 #ifdef CPU
             const Real res{gStage(xiIndex, 0, 0)};
@@ -449,12 +654,8 @@ void KerCollideBGKADG(ACC<Real>& gStage, const ACC<Real>& g,
             }
 #endif  // CPU
         }
-        //std::cout<<C<<" "<<S<<"   ";
+
         gStage(lattIdx[0],0,0)=C-S;
-        //if (vt==VertexType::Wall){
-        //    std::cout<<g(lattIdx[0],0,0)<<"  ";
-        //}
-    //std::cout << gStage(0,0,0) << "\n";
     }
 #endif  // OPS_2D
 }
@@ -747,15 +948,11 @@ void KerInitialiseBGKADG3D(ACC<Real>& g, const ACC<int>& nodeType,
         Real mu{Mu(0,0,0)};
         const int polyOrder{2};
         Real S{0.0};
-        //std::cout << C << "\n";
+
         for (int xiIdx = lattIdx[0]+1; xiIdx <= lattIdx[1]; xiIdx++) {
             g(xiIdx, 0, 0, 0) = CalcBGKGeqFE3D(xiIdx, C, u, v, w, mu, dt, polyOrder);
             S+=g(xiIdx,0,0,0);
-            //std::cout<<g(0,0,0)<<"   ";
         g(lattIdx[0],0,0,0)=C-S;
-        
-        //std::cout<<g(0,0,0)<<"\n";
-        //std::cout<<g(lattIdx[0],0,0)<<C<<S<<"\n";
 
 #ifdef CPU
             const Real res{g(xiIdx, 0, 0, 0)};
@@ -793,9 +990,7 @@ void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
         const Real T{1};
         const int polyOrder{2};
         Real tau = (*tauRef);
-        //std::cout<<lattIdx[0]<<" "<<lattIdx[1]<<" ";
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
-        //std::cout<<C<<"\n";
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real geq{CalcBGKFeqFE3D(xiIndex, C, u, v, w, ff, dt, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
@@ -807,7 +1002,6 @@ void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
                 gStage(xiIndex, 0, 0, 0) =
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0, 0) - geq);
             }
-            //std::cout<<geq<<" "<<g(xiIndex,0,0)<<" "<<gStage(xiIndex,0,0)<<"   ";
 #ifdef CPU
             const Real res{gStage(xiIndex, 0, 0, 0)};
             if (isnan(res) || res <= -2.01 || isinf(res)) {
@@ -823,7 +1017,6 @@ void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
 #endif  // CPU
         }
         
-    //std::cout << g(0,0,0) << "\n";
     }
 #endif  // OPS_3D
 }
@@ -847,7 +1040,6 @@ void KerCollideBGKADG3D(ACC<Real>& gStage, const ACC<Real>& g,
         Real mu{Mu(0,0,0)};
         const int polyOrder{2};
         Real tau = (*tauRef);
-        //std::cout<<lattIdx[0]<<" "<<lattIdx[1]<<" ";
         Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
         Real S{0.0};
         for (int xiIndex = lattIdx[0]+1; xiIndex <= lattIdx[1]; xiIndex++) {
@@ -860,7 +1052,6 @@ void KerCollideBGKADG3D(ACC<Real>& gStage, const ACC<Real>& g,
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0, 0) - geq);
             }
             S+=gStage(xiIndex,0,0,0);
-            //std::cout<<S<<" ";
         
 #ifdef CPU
             const Real res{gStage(xiIndex, 0, 0,0)};
@@ -876,9 +1067,7 @@ void KerCollideBGKADG3D(ACC<Real>& gStage, const ACC<Real>& g,
             }
 #endif  // CPU
         }
-        //std::cout<<C<<" "<<S<<"   ";
         gStage(lattIdx[0],0,0,0)=C-S;
-    //std::cout << gStage(0,0,0) << "\n";
     }
 #endif  // OPS_3D
 }
@@ -1148,6 +1337,1161 @@ void KerCalcWForce3D(ACC<Real>& W, const ACC<Real>& f, const ACC<int>& nodeType,
     }
 #endif //OPS_3D
 }
+
+
+//Calculates first-order or second-order finite difference gradients
+void KerCalcGradients3D(ACC<Real>&grad, const ACC<Real>&f,
+                        const ACC<int>&nodeType, const ACC<int>&geometry,
+                        const ACC<Real>& coordinates, const int *lattIdx,
+                        const int *Order, const int *idx){
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    int order={*Order};
+        //First order
+        if (order == 1){
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
+                vt == VertexType::VirtualBoundary || vt==VertexType::Wall) {
+                grad(0,0,0,0) = 0.5*(f(1, 0, 0)-f(-1, 0, 0));
+                grad(1,0,0,0) = 0.5*(f(0, 1, 0)-f(0, -1, 0));
+                grad(2,0,0,0) = 0.5*(f(0, 0, 1)-f(0, 0, -1));
+            }    
+        }
+        //Second order
+        else if (order == 2){     
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
+                vt == VertexType::VirtualBoundary || vt==VertexType::Wall) {
+                grad(0,0,0,0) = f(-1, 0, 0)-2*f(0, 0, 0)+f(1, 0, 0);
+                grad(1,0,0,0) = f(0, -1, 0)-2*f(0, 0, 0)+f(0, 1, 0);
+                grad(2,0,0,0) = f(0, 0, -1)-2*f(0, 0, 0)+f(0, 0, 1);
+            }
+        }
+        else{
+            std::cout << "Only First and Second order finite difference gradients" 
+                      << " are supported\n";
+        }
+    
+}
+
+//Wetting boundary implementation
+void KerUpdateRhoWetting3D(ACC<Real>& rho,const ACC<int>& geometry,
+                           const ACC<int>&nodeType,
+                           const ACC<Real>& coordinates,
+                           const int *theta, const int *Aconst, const int *Kappa) {
+    const Real teta={*theta};
+    const Real alpha={acos(sin(teta)*sin(teta))};
+    const Real Omga={2*((teta <= M_PI/2) - (M_PI/2 < teta))*sqrt(cos(alpha/3)
+                     *(1-cos(alpha/3)))};
+    const Real K={*Kappa};
+    const Real A={*Aconst};
+    const Real h={Omga*sqrt(K*A/2)};
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
+    VertexGeometryType vg0 = (VertexGeometryType)geometry(1, 0, 0);
+    VertexGeometryType vg1 = (VertexGeometryType)geometry(-1, 0, 0);
+    VertexGeometryType vg2 = (VertexGeometryType)geometry(0, 1, 0);
+    VertexGeometryType vg3 = (VertexGeometryType)geometry(0, -1, 0);
+    VertexGeometryType vg4 = (VertexGeometryType)geometry(0, 0, 1);
+    VertexGeometryType vg5 = (VertexGeometryType)geometry(0, 0, -1);
+    if (vt == VertexType::Wall) {
+
+        switch (vg) {
+            case VG_IP: {
+                if(vg2!=VG_IPJP_O&&vg3!=VG_IPJM_O
+                   &&vg4!=VG_IPKP_O&&vg5!=VG_IPKM_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+            } break;
+            case VG_IM: {
+                if(vg2!=VG_IMJP_O&&vg3!=VG_IMJM_O
+                   &&vg4!=VG_IMKP_O&&vg5!=VG_IMKM_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+            } break;
+            case VG_JP: {
+                if(vg0!=VG_IPJP_O&&vg1!=VG_IMJP_O
+                   &&vg4!=VG_JPKP_O&&vg5!=VG_JPKM_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+                }
+            } break;
+            case VG_JM: {
+                if(vg0!=VG_IPJM_O&&vg1!=VG_IMJM_O
+                   &&vg4!=VG_JMKP_O&&vg5!=VG_JMKM_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+                }
+            } break;
+            case VG_KP: {
+                if(vg0!=VG_IPKP_O&&vg1!=VG_IMKP_O
+                   &&vg2!=VG_JPKP_O&&vg3!=VG_JMKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+                }
+            } break;
+            case VG_KM: {
+                if(vg0!=VG_IPKM_O&&vg1!=VG_IMKM_O
+                   &&vg2!=VG_JPKM_O&&vg3!=VG_JMKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+                }
+            } break;
+            case VG_IPJP_O: {
+                if(vg4!=VG_IPJPKP_O&&vg5!=VG_IPJPKM_O){
+                    rho(-1,-1,0)=(rho(1,0,0)+rho(0,1,0)+rho(1,-1,0)
+                    +rho(-1,1,0))/4+2*h/K;
+                }
+            } break;
+            case VG_IPJM_O: {
+                if(vg4!=VG_IPJMKP_O&&vg5!=VG_IPJMKM_O){
+                    rho(-1,1,0)=(rho(1,0,0)+rho(0,-1,0)+rho(-1,-1,0)
+                    +rho(1,1,0))/4+2*h/K;
+                }
+            } break;
+            case VG_IMJP_O: {
+                if(vg4!=VG_IMJPKP_O&&vg5!=VG_IMJPKM_O){
+                    rho(1,-1,0)=(rho(-1,0,0)+rho(0,1,0)+rho(-1,-1,0)
+                    +rho(1,1,0))/4+2*h/K;
+                }
+            } break;
+            case VG_IMJM_O: {
+                if(vg4!=VG_IMJMKP_O&&vg5!=VG_IMJMKM_O){
+                    rho(1,1,0)=(rho(-1,0,0)+rho(0,-1,0)+rho(1,-1,0)
+                    +rho(-1,1,0))/4+2*h/K;
+                }
+            } break;
+            case VG_IPKP_O: {
+                if(vg2!=VG_IPJPKP_O&&vg3!=VG_IPJMKP_O){
+                    rho(-1,0,-1)=(rho(1,0,0)+rho(0,0,1)+rho(1,0,-1)
+                    +rho(1,0,-1))/4+2*h/K;
+                }
+            } break;
+            case VG_IPKM_O: {
+                if(vg2!=VG_IPJPKM_O&&vg3!=VG_IPJMKM_O){
+                    rho(-1,0,1)=(rho(1,0,0)+rho(0,0,-1)+rho(-1,0,-1)
+                    +rho(1,0,1))/4+2*h/K;
+                }
+            } break;
+            case VG_IMKP_O: {
+                if(vg2!=VG_IMJPKP_O&&vg3!=VG_IMJMKP_O){
+                    rho(1,0,-1)=(rho(-1,0,0)+rho(0,0,1)+rho(-1,0,-1)
+                    +rho(1,0,1))/4+2*h/K;
+                }
+            } break;
+            case VG_IMKM_O: {
+                if(vg2!=VG_IMJPKM_O&&vg3!=VG_IMJMKM_O){
+                    rho(1,0,1)=(rho(-1,0,0)+rho(0,0,-1)+rho(1,0,-1)
+                    +rho(1,0,-1))/4+2*h/K;
+                }
+            } break;
+            case VG_JMKP_O: {
+                if(vg0!=VG_IPJMKP_O&&vg1!=VG_IMJMKP_O){
+                    rho(0,1,-1)=(rho(0,-1,0)+rho(0,0,1)+rho(0,-1,-1)
+                    +rho(0,1,1))/4+2*h/K;
+                }
+            } break;
+            case VG_JMKM_O: {
+                if(vg0!=VG_IPJMKM_O&&vg1!=VG_IMJMKM_O){
+                    rho(0,1,1)=(rho(0,-1,0)+rho(0,0,-1)+rho(0,-1,1)
+                    +rho(0,1,-1))/4+2*h/K;
+                }
+            } break;
+            case VG_JPKP_O: {
+                if(vg0!=VG_IPJPKP_O&&vg1!=VG_IMJPKP_O){
+                    rho(0,-1,-1)=(rho(0,1,0)+rho(0,0,1)+rho(0,-1,1)
+                    +rho(0,1,-1))/4+2*h/K;
+                }
+            } break;
+            case VG_JPKM_O: {
+                if(vg0!=VG_IPJPKM_O&&vg1!=VG_IMJPKM_O){
+                    rho(0,-1,1)=(rho(0,1,0)+rho(0,0,-1)+rho(0,-1,1)
+                    +rho(0,1,-1))/4+2*h/K;
+                }
+            } break;
+            case VG_IPJPKP_O: {
+                rho(-1,-1,-1)=(rho(1,0,0)+rho(0,1,0)+rho(0,0,1)+rho(1,-1,-1)
+                +rho(-1,1,-1)+rho(-1,-1,1)+rho(1,0,-1)+rho(0,1,-1)+rho(0,-1,1)
+                +rho(1,-1,0)+rho(-1,1,0)+rho(-1,0,1))/12+2*h/K;
+
+
+            } break;
+            case VG_IPJMKP_O: {
+                rho(-1,1,-1)=(rho(1,0,0)+rho(0,-1,0)+rho(0,0,1)+rho(1,1,-1)
+                +rho(-1,-1,-1)+rho(-1,1,1)+rho(1,0,-1)+rho(0,-1,-1)+rho(0,1,1)
+                +rho(1,1,0)+rho(-1,-1,0)+rho(-1,0,1))/12+2*h/K;
+
+
+            } break;
+            case VG_IMJPKP_O: {
+                rho(1,-1,-1)=(rho(-1,0,0)+rho(0,1,0)+rho(0,0,1)+rho(-1,-1,-1)
+                +rho(1,1,-1)+rho(1,-1,1)+rho(-1,0,-1)+rho(0,1,-1)+rho(0,-1,1)
+                +rho(-1,-1,0)+rho(1,1,0)+rho(1,0,1))/12+2*h/K;
+
+
+            } break;
+            case VG_IMJMKP_O: {
+                rho(1,1,-1)=(rho(-1,0,0)+rho(0,-1,0)+rho(0,0,1)+rho(-1,1,-1)
+                +rho(1,-1,-1)+rho(1,1,1)+rho(-1,0,-1)+rho(0,-1,-1)+rho(0,1,1)
+                +rho(-1,1,0)+rho(1,-1,0)+rho(1,0,1))/12+2*h/K;
+
+            } break;
+            case VG_IPJPKM_O: {
+                rho(-1,-1,1)=(rho(1,0,0)+rho(0,1,0)+rho(0,0,-1)+rho(1,-1,1)
+                +rho(-1,1,1)+rho(-1,-1,-1)+rho(1,0,1)+rho(0,1,1)+rho(0,-1,-1)
+                +rho(1,-1,0)+rho(-1,1,0)+rho(-1,0,-1))/12+2*h/K;
+
+
+            } break;
+            case VG_IPJMKM_O: {
+                rho(-1,1,1)=(rho(1,0,0)+rho(0,-1,0)+rho(0,0,-1)+rho(1,1,1)
+                +rho(-1,-1,1)+rho(-1,1,-1)+rho(1,0,1)+rho(0,-1,1)+rho(0,1,-1)
+                +rho(1,1,0)+rho(-1,-1,0)+rho(-1,0,-1))/12+2*h/K;
+
+
+            } break;
+            case VG_IMJPKM_O: {
+                rho(1,-1,1)=(rho(-1,0,0)+rho(0,1,0)+rho(0,0,-1))+rho(-1,-1,1)
+                +rho(1,1,1)+rho(1,-1,-1)+rho(-1,0,1)+rho(0,1,1)+rho(0,-1,-1)
+                +rho(-1,-1,0)+rho(1,1,0)+rho(1,0,-1)/12+2*h/K;
+
+
+            } break;
+            case VG_IMJMKM_O: {
+                rho(1,1,1)=(rho(-1,0,0)+rho(0,-1,0)+rho(0,0,-1)+rho(-1,1,1)
+                +rho(1,-1,1)+rho(1,1,-1)+rho(-1,0,1)+rho(0,-1,1)+rho(0,1,-1)
+                +rho(-1,1,0)+rho(1,-1,0)+rho(1,0,-1))/12+2*h/K;
+
+            } break;
+            case VG_IPJP_I: {
+                if(vg2!=VG_IPJP_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+                if(vg0!=VG_IPJP_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+                }
+            } break;
+            case VG_IPJM_I: {
+                if(vg3!=VG_IPJM_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+                if(vg0!=VG_IPJM_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+                }
+            } break;
+            case VG_IMJP_I: {
+                if(vg2!=VG_IMJP_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+                if(vg1!=VG_IMJP_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+                }
+            } break;
+            case VG_IMJM_I: {
+                if(vg3!=VG_IMJM_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+                if(vg1!=VG_IMJM_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+                }
+            } break;
+            case VG_IPKP_I: {
+                if(vg4!=VG_IPKP_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+                if(vg0!=VG_IPKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+                }
+            } break;
+            case VG_IPKM_I: {
+                if(vg5!=VG_IPKM_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+                if(vg0!=VG_IPKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+                }
+            } break;
+            case VG_IMKP_I: {
+                if(vg4!=VG_IMKP_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+                if(vg1!=VG_IMKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+                }
+            } break;
+            case VG_IMKM_I: {
+                if(vg5!=VG_IMKM_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+                if(vg1!=VG_IMKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+                }
+            } break;
+            case VG_JPKP_I: {
+                if(vg4!=VG_JPKP_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+                }
+                if(vg2!=VG_JPKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+                }
+            } break;
+            case VG_JPKM_I: {
+                if(vg5!=VG_JPKM_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+                }
+                if(vg2!=VG_JPKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+                }
+            } break;
+            case VG_JMKP_I: {
+                if(vg4!=VG_JMKP_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+                }
+                if(vg3!=VG_JMKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+                }
+            } break;
+            case VG_JMKM_I: {
+                if(vg5!=VG_JMKM_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+                }
+                if(vg3!=VG_JMKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+                }
+            } break;
+            case VG_IPJPKP_I: {
+                if(vg4!=VG_IPJPKP_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+                }
+                if(vg2!=VG_IPJPKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+                }
+                if(vg0!=VG_IPJPKP_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+            } break;
+            case VG_IPJPKM_I: {
+                if(vg5!=VG_IPJPKM_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+                }
+                if(vg2!=VG_IPJPKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+                }
+                if(vg0!=VG_IPJPKM_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+            } break;
+            case VG_IPJMKP_I: {
+                if(vg4!=VG_IPJMKP_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+                }
+                if(vg3!=VG_IPJMKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+                }
+                if(vg0!=VG_IPJMKP_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+            } break;
+            case VG_IPJMKM_I: {
+                if(vg5!=VG_IPJMKM_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+                }
+                if(vg3!=VG_IPJMKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+                }
+                if(vg0!=VG_IPJMKM_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+            } break;
+            case VG_IMJPKP_I: {
+                if(vg4!=VG_IMJPKP_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+                }
+                if(vg2!=VG_IMJPKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+                }
+                if(vg1!=VG_IMJPKP_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+            } break;
+            case VG_IMJPKM_I: {
+                if(vg5!=VG_IMJPKM_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+                }
+                if(vg2!=VG_IMJPKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+                }
+                if(vg1!=VG_IMJPKM_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+            } break;
+            case VG_IMJMKP_I: {
+                if(vg4!=VG_IMJMKP_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+                }
+                if(vg3!=VG_IMJMKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+                }
+                if(vg1!=VG_IMJMKP_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+            } break;
+            case VG_IMJMKM_I: {
+                if(vg5!=VG_IMJMKM_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+                }
+                if(vg3!=VG_IMJMKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+                }
+                if(vg1!=VG_IMJMKM_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+            } break;
+            case VG_IPJP_O_KP: {
+                if(vg0!=VG_IPKP_O&&vg2!=VG_JPKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+
+                }
+                if(vg4!=VG_IPJPKP_O){
+                    rho(-1,-1,0)=(rho(1,0,0)+rho(0,1,0)+rho(1,-1,0)+rho(-1,1,0))/4
+                    +2*h/K;
+
+                }
+            } break;
+            case VG_IPJM_O_KP: {
+                if(vg0!=VG_IPKP_O&&vg3!=VG_JMKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+
+                }
+                if(vg4!=VG_IPJMKP_O){
+                    rho(-1,1,0)=(rho(1,0,0)+rho(0,-1,0)+rho(-1,-1,0)+rho(1,1,0))/4
+                    +2*h/K;
+
+                }
+            } break;
+            case VG_IMJP_O_KP: {
+                if(vg1!=VG_IMKP_O&&vg2!=VG_JPKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+
+                }
+                if(vg4!=VG_IMJPKP_O){
+                    rho(1,-1,0)=(rho(-1,0,0)+rho(0,1,0)+rho(-1,-1,0)+rho(1,1,0))/4
+                    +2*h/K;
+
+                }
+            } break;
+            case VG_IMJM_O_KP: {
+                if(vg1!=VG_IMKP_O&&vg3!=VG_JMKP_O){
+                    rho(0,0,-1)=rho(0,0,1)+2*h/K;
+
+                }
+                if(vg4!=VG_IMJMKP_O){
+                    rho(1,1,0)=(rho(-1,0,0)+rho(0,-1,0)+rho(1,-1,0)+rho(-1,1,0))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_IPJP_O_KM: {
+                if(vg0!=VG_IPKM_O&&vg2!=VG_JPKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+
+                }
+                if(vg5!=VG_IPJPKM_O){
+                    rho(-1,-1,0)=(rho(1,0,0)+rho(0,1,0)+rho(1,-1,0)+rho(-1,1,0))/4
+                    +2*h/K;
+
+                }
+            } break;
+            case VG_IPJM_O_KM: {
+                if(vg0!=VG_IPKM_O&&vg3!=VG_JMKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+
+                }
+                if(vg5!=VG_IPJMKM_O){
+                    rho(-1,1,0)=(rho(1,0,0)+rho(0,-1,0)+rho(-1,-1,0)+rho(1,1,0))/4
+                    +2*h/K;
+
+                }
+            } break;
+            case VG_IMJP_O_KM: {
+                if(vg1!=VG_IMKP_O&&vg2!=VG_JPKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+
+                }
+                if(vg5!=VG_IMJPKM_O){
+                    rho(1,-1,0)=(rho(-1,0,0)+rho(0,1,0)+rho(-1,-1,0)+rho(1,1,0))/4
+                    +2*h/K;
+
+                }
+            } break;
+            case VG_IMJM_O_KM: {
+                if(vg1!=VG_IMKM_O&&vg3!=VG_JMKM_O){
+                    rho(0,0,1)=rho(0,0,-1)+2*h/K;
+
+                }
+                if(vg5!=VG_IMJMKM_O){
+                    rho(1,1,0)=(rho(-1,0,0)+rho(0,-1,0)+rho(1,-1,0)+rho(-1,1,0))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_IPKP_O_JP: {
+                if(vg0!=VG_IPJP_O&&vg4!=VG_JPKP_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+
+                }
+                if(vg2!=VG_IPJPKP_O){
+                    rho(-1,0,-1)=(rho(1,0,0)+rho(0,0,1)+rho(1,0,-1)+rho(1,0,-1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_IPKM_O_JP: {
+                if(vg0!=VG_IPJP_O&&vg5!=VG_JPKM_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+
+                }
+                if(vg2!=VG_IPJPKM_O){
+                    rho(-1,0,1)=(rho(1,0,0)+rho(0,0,-1)+rho(-1,0,-1)+rho(1,0,1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_IMKP_O_JP: {
+                if(vg1!=VG_IMJP_O&&vg4!=VG_JPKP_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+
+                }
+                if(vg2!=VG_IMJPKM_O){
+                    rho(1,0,-1)=(rho(-1,0,0)+rho(0,0,1)+rho(-1,0,-1)+rho(1,0,1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_IMKM_O_JP: {
+                if(vg1!=VG_IMJP_O&&vg5!=VG_JPKM_O){
+                    rho(0,-1,0)=rho(0,1,0)+2*h/K;
+
+                }
+                if(vg2!=VG_IMJPKM_O){
+                    rho(1,0,1)=(rho(-1,0,0)+rho(0,0,-1)+rho(1,0,-1)+rho(1,0,-1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_IPKP_O_JM: {
+                if(vg0!=VG_IPJM_O&&vg4!=VG_JMKP_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+
+                }
+                if(vg3!=VG_IPJMKP_O){
+                    rho(-1,0,-1)=(rho(1,0,0)+rho(0,0,1)+rho(1,0,-1)+rho(1,0,-1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_IPKM_O_JM: {
+                if(vg0!=VG_IPJM_O&&vg5!=VG_JMKM_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+
+                }
+                if(vg3!=VG_IPJMKM_O){
+                    rho(-1,0,1)=(rho(1,0,0)+rho(0,0,-1)+rho(-1,0,-1)+rho(1,0,1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_IMKP_O_JM: {
+                if(vg1!=VG_IMJM_O&&vg4!=VG_JMKP_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+
+                }
+                if(vg3!=VG_IMJMKP_O){
+                    rho(1,0,-1)=(rho(-1,0,0)+rho(0,0,1)+rho(-1,0,-1)+rho(1,0,1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_IMKM_O_JM: {
+                if(vg1!=VG_IMJM_O&&vg5!=VG_JMKM_O){
+                    rho(0,1,0)=rho(0,-1,0)+2*h/K;
+
+                }
+                if(vg3!=VG_IMJMKM_O){
+                    rho(1,0,1)=(rho(-1,0,0)+rho(0,0,-1)+rho(1,0,-1)+rho(1,0,-1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_JPKP_O_IP: {
+                if(vg2!=VG_IPJP_O&&vg4!=VG_IPKP_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+                if(vg0!=VG_IPJPKP_O){
+                    rho(0,-1,-1)=(rho(0,1,0)+rho(0,0,1)+rho(0,-1,1)+rho(0,1,-1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_JPKM_O_IP: {
+                if(vg2!=VG_IPJP_O&&vg5!=VG_IPKM_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+                if(vg0!=VG_IPJPKM_O){
+                    rho(0,-1,1)=(rho(0,1,0)+rho(0,0,-1)+rho(0,-1,1)+rho(0,1,-1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_JMKP_O_IP: {
+                if(vg3!=VG_IPJM_O&&vg4!=VG_IPKP_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+                if(vg0!=VG_IPJMKP_O){
+                    rho(0,1,-1)=(rho(0,-1,0)+rho(0,0,1)+rho(0,-1,-1)+rho(0,1,1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_JMKM_O_IP: {
+                if(vg3!=VG_IPJM_O&&vg5!=VG_IPKM_O){
+                    rho(-1,0,0)=rho(1,0,0)+2*h/K;
+                }
+                if(vg0!=VG_IPJMKM_O){
+                    rho(0,1,1)=(rho(0,-1,0)+rho(0,0,-1)+rho(0,-1,1)+rho(0,1,-1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_JPKP_O_IM: {
+                if(vg2!=VG_IMJP_O&&vg4!=VG_IMKP_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+                if(vg1!=VG_IMJPKP_O){
+                    rho(0,-1,-1)=(rho(0,1,0)+rho(0,0,1)+rho(0,-1,1)+rho(0,1,-1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_JPKM_O_IM: {
+                if(vg2!=VG_IMJP_O&&vg5!=VG_IMKM_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+                if(vg1!=VG_IMJPKM_O){
+                    rho(0,-1,1)=(rho(0,1,0)+rho(0,0,-1)+rho(0,-1,1)+rho(0,1,-1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_JMKP_O_IM: {
+                if(vg3!=VG_IMJM_O&&vg4!=VG_IMKP_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+                if(vg1!=VG_IMJMKP_O){
+                    rho(0,1,-1)=(rho(0,-1,0)+rho(0,0,1)+rho(0,-1,-1)+rho(0,1,1))/4
+                    +2*h/K;
+                }
+            } break;
+            case VG_JMKM_O_IM: {
+                if(vg3!=VG_IMJM_O&&vg5!=VG_IMKM_O){
+                    rho(1,0,0)=rho(-1,0,0)+2*h/K;
+                }
+                if(vg1!=VG_IMJMKM_O){
+                    rho(0,1,1)=(rho(0,-1,0)+rho(0,0,-1)+rho(0,-1,1)+rho(0,1,-1))/4
+                    +2*h/K;
+                }
+            } break;
+        }
+    }
+}
+
+//Calculate chemical potential within Free Energy Model
+void KerCalcMu3D(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi,
+                 const ACC<int>&nodeType, const int *Aconst, const int *Kappa){
+    Real phi{Phi(0,0,0)};
+    Real phi3 = {phi*phi*phi};
+    const Real A={*Aconst};
+    const Real kappa={*Kappa};
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    if (vt != VertexType::ImmersedSolid){
+    mu(0,0,0)=-A*phi+A*phi3-kappa*(d2phi(0,0,0,0)+d2phi(1,0,0,0)+d2phi(2,0,0,0));
+    }
+}
+
+
+
+//Update surface tension force between fluid components
+void KerUpdateMacroBodyForce3D(ACC<Real>& force, const ACC<Real>& Phi,
+                               const ACC<Real>& dmu, const ACC<int>& geometry,
+                               const ACC<int>&nodeType,
+                               const ACC<Real>& coordinates, const int* idx) {
+    Real phi = {Phi(0,0,0)};
+    Real dmux = {dmu(0,0,0,0)};
+    Real dmuy = {dmu(1,0,0,0)};
+    Real dmuz = {dmu(2,0,0,0)};
+
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
+    //Set gradient of chemical potential perpendicular to wall = 0
+    if (vt == VertexType::Wall) {
+        
+        switch (vg) {
+            case VG_IP: {
+                dmux=0;
+            } break;
+            case VG_IM: {
+                dmux=0;
+            } break;
+            case VG_JP: {
+                dmuy=0;
+            } break;
+            case VG_JM: {
+                dmuy=0;
+            } break;
+            case VG_KP: {
+                dmuz=0;
+            } break;
+            case VG_KM: {
+                dmuz=0;
+            } break;
+            case VG_IPJP_O: {
+                dmux=0;
+                dmuy=0;
+
+            } break;
+            case VG_IPJM_O: {
+                dmux=0;
+                dmuy=0;
+
+            } break;
+            case VG_IMJP_O: {
+                dmux=0;
+                dmuy=0;
+
+            } break;
+            case VG_IMJM_O: {
+                dmux=0;
+                dmuy=0;
+            } break;
+            case VG_IPKP_O: {
+                dmux=0;
+                dmuz=0;
+
+            } break;
+            case VG_IPKM_O: {
+                dmux=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMKP_O: {
+                dmux=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMKM_O: {
+                dmux=0;
+                dmuz=0;
+
+            } break;
+            case VG_JMKP_O: {
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_JMKM_O: {
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JPKP_O: {
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_JPKM_O: {
+                dmuy=0;
+                dmuz=0;
+            } break;
+
+
+            case VG_IPJP_I: {
+                dmux=0;
+                dmuy=0;
+
+            } break;
+            case VG_IPJM_I: {
+                dmux=0;
+                dmuy=0;
+
+            } break;
+            case VG_IMJP_I: {
+                dmux=0;
+                dmuy=0;
+
+            } break;
+            case VG_IMJM_I: {
+                dmux=0;
+                dmuy=0;
+            } break;
+            case VG_IPKP_I: {
+                dmux=0;
+                dmuz=0;
+
+            } break;
+            case VG_IPKM_I: {
+                dmux=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMKP_I: {
+                dmux=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMKM_I: {
+                dmux=0;
+                dmuz=0;
+
+            } break;
+            case VG_JMKP_I: {
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_JMKM_I: {
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JPKP_I: {
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_JPKM_I: {
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPJPKP_O: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IPJMKP_O: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMJPKP_O: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMJMKP_O: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPJPKM_O: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IPJMKM_O: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMJPKM_O: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMJMKM_O: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+
+            case VG_IPJPKP_I: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IPJMKP_I: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMJPKP_I: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMJMKP_I: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPJPKM_I: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IPJMKM_I: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMJPKM_I: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+
+            } break;
+            case VG_IMJMKM_I: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPJP_I_KP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPJM_I_KP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMJP_I_KP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMJM_I_KP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPJP_I_KM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPJM_I_KM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMJP_I_KM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMJM_I_KM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPKP_I_JP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPKM_I_JP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMKP_I_JP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMKM_I_JP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPKP_I_JM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPKM_I_JM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMKP_I_JM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMKM_I_JM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JPKP_I_IP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JPKM_I_IP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JMKP_I_IP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JMKM_I_IP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JPKP_I_IM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JPKM_I_IM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JMKP_I_IM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JMKM_I_IM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPJP_O_KP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPJM_O_KP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMJP_O_KP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMJM_O_KP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPJP_O_KM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPJM_O_KM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMJP_O_KM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMJM_O_KM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPKP_O_JP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPKM_O_JP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMKP_O_JP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMKM_O_JP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPKP_O_JM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IPKM_O_JM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMKP_O_JM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_IMKM_O_JM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JPKP_O_IP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JPKM_O_IP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JMKP_O_IP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JMKM_O_IP: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JPKP_O_IM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JPKM_O_IM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JMKP_O_IM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+            case VG_JMKM_O_IM: {
+                dmux=0;
+                dmuy=0;
+                dmuz=0;
+            } break;
+
+        }
+    }
+    if (vt != VertexType::ImmersedSolid){
+        force(0,0,0,0) = -phi*dmux;
+        force(1,0,0,0) = -phi*dmuy;
+        force(2,0,0,0) = -phi*dmuz;
+    }
+
+}
+
+
 #endif //OPS_3D outter
 
 #endif //MODEL_KERNEL_INC

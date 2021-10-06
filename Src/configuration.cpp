@@ -100,6 +100,11 @@ NLOHMANN_JSON_SERIALIZE_ENUM(BodyForceType,
                               {BodyForce_1st, "BodyForce_1st"},
                               {BodyForce_None, "BodyForce_None"}});
 
+NLOHMANN_JSON_SERIALIZE_ENUM(ModelType,
+                             {{None, "None"},
+                              {Ad_Diff, "Ad_Diff"},
+                              {Free_Energy, "Free_Energy"}});
+
 NLOHMANN_JSON_SERIALIZE_ENUM(BoundarySurface,
                              {{BoundarySurface::Left, "Left"},
                               {BoundarySurface::Right, "Right"},

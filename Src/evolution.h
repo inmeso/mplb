@@ -69,10 +69,10 @@
  */
 void StreamCollision(const Real time);
 #ifdef OPS_3D
-void FE3D();
+void FreeEnergy3D();
 #endif
 #ifdef OPS_2D
-void FE2D();
+void FreeEnergy2D();
 #endif
 
 void Iterate(const SizeType steps, const SizeType checkPointPeriod,

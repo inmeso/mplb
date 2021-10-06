@@ -84,6 +84,7 @@ struct Configuration {
     std::vector<Real> startPos;
     Real meshSize;
     std::vector<Real> tauRef;
+
     bool transient{true};
     Real convergenceCriteria{-1};
     SizeType timeSteps{0};

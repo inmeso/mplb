@@ -738,5 +738,125 @@
   "directory": "/home/chocolateftd/mplb/build/Apps/AdDiff2",
   "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_2D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/AdDiff2 -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/AdDiff2SeqDev.dir/AdDiff.cpp.o -c /home/chocolateftd/mplb/Apps/AdDiff2/AdDiff.cpp",
   "file": "/home/chocolateftd/mplb/Apps/AdDiff2/AdDiff.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/__/__/Src/evolution.cpp.o -c /home/chocolateftd/mplb/Src/evolution.cpp",
+  "file": "/home/chocolateftd/mplb/Src/evolution.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/__/__/Src/scheme.cpp.o -c /home/chocolateftd/mplb/Src/scheme.cpp",
+  "file": "/home/chocolateftd/mplb/Src/scheme.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/__/__/Src/scheme_wrapper.cpp.o -c /home/chocolateftd/mplb/Src/scheme_wrapper.cpp",
+  "file": "/home/chocolateftd/mplb/Src/scheme_wrapper.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/__/__/Src/configuration.cpp.o -c /home/chocolateftd/mplb/Src/configuration.cpp",
+  "file": "/home/chocolateftd/mplb/Src/configuration.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/__/__/Src/model.cpp.o -c /home/chocolateftd/mplb/Src/model.cpp",
+  "file": "/home/chocolateftd/mplb/Src/model.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/__/__/Src/model_wrapper.cpp.o -c /home/chocolateftd/mplb/Src/model_wrapper.cpp",
+  "file": "/home/chocolateftd/mplb/Src/model_wrapper.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/__/__/Src/block.cpp.o -c /home/chocolateftd/mplb/Src/block.cpp",
+  "file": "/home/chocolateftd/mplb/Src/block.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/__/__/Src/flowfield.cpp.o -c /home/chocolateftd/mplb/Src/flowfield.cpp",
+  "file": "/home/chocolateftd/mplb/Src/flowfield.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/__/__/Src/flowfield_wrapper.cpp.o -c /home/chocolateftd/mplb/Src/flowfield_wrapper.cpp",
+  "file": "/home/chocolateftd/mplb/Src/flowfield_wrapper.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/__/__/Src/boundary.cpp.o -c /home/chocolateftd/mplb/Src/boundary.cpp",
+  "file": "/home/chocolateftd/mplb/Src/boundary.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/__/__/Src/boundary_wrapper.cpp.o -c /home/chocolateftd/mplb/Src/boundary_wrapper.cpp",
+  "file": "/home/chocolateftd/mplb/Src/boundary_wrapper.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -DOPS_MPI -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergyMpiDev.dir/FreeEnergy.cpp.o -c /home/chocolateftd/mplb/Apps/FreeEnergy/FreeEnergy.cpp",
+  "file": "/home/chocolateftd/mplb/Apps/FreeEnergy/FreeEnergy.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/__/__/Src/evolution.cpp.o -c /home/chocolateftd/mplb/Src/evolution.cpp",
+  "file": "/home/chocolateftd/mplb/Src/evolution.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/__/__/Src/scheme.cpp.o -c /home/chocolateftd/mplb/Src/scheme.cpp",
+  "file": "/home/chocolateftd/mplb/Src/scheme.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/__/__/Src/scheme_wrapper.cpp.o -c /home/chocolateftd/mplb/Src/scheme_wrapper.cpp",
+  "file": "/home/chocolateftd/mplb/Src/scheme_wrapper.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/__/__/Src/configuration.cpp.o -c /home/chocolateftd/mplb/Src/configuration.cpp",
+  "file": "/home/chocolateftd/mplb/Src/configuration.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/__/__/Src/model.cpp.o -c /home/chocolateftd/mplb/Src/model.cpp",
+  "file": "/home/chocolateftd/mplb/Src/model.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/__/__/Src/model_wrapper.cpp.o -c /home/chocolateftd/mplb/Src/model_wrapper.cpp",
+  "file": "/home/chocolateftd/mplb/Src/model_wrapper.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/__/__/Src/block.cpp.o -c /home/chocolateftd/mplb/Src/block.cpp",
+  "file": "/home/chocolateftd/mplb/Src/block.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/__/__/Src/flowfield.cpp.o -c /home/chocolateftd/mplb/Src/flowfield.cpp",
+  "file": "/home/chocolateftd/mplb/Src/flowfield.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/__/__/Src/flowfield_wrapper.cpp.o -c /home/chocolateftd/mplb/Src/flowfield_wrapper.cpp",
+  "file": "/home/chocolateftd/mplb/Src/flowfield_wrapper.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/__/__/Src/boundary.cpp.o -c /home/chocolateftd/mplb/Src/boundary.cpp",
+  "file": "/home/chocolateftd/mplb/Src/boundary.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/__/__/Src/boundary_wrapper.cpp.o -c /home/chocolateftd/mplb/Src/boundary_wrapper.cpp",
+  "file": "/home/chocolateftd/mplb/Src/boundary_wrapper.cpp"
+},
+{
+  "directory": "/home/chocolateftd/mplb/build/Apps/FreeEnergy",
+  "command": "/bin/x86_64-linux-gnu-g++-9 -DCPU -DLEVEL=DebugLevel=0 -DOPS_3D -I/home/chocolateftd/mplb/Src -I/home/chocolateftd/mplb/Apps/FreeEnergy -isystem /home/chocolateftd/OPS-INSTALL/include -isystem /usr/include/hdf5/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -fPIC -Wall -g -O0 -pthread -std=gnu++11 -o CMakeFiles/FreeEnergySeqDev.dir/FreeEnergy.cpp.o -c /home/chocolateftd/mplb/Apps/FreeEnergy/FreeEnergy.cpp",
+  "file": "/home/chocolateftd/mplb/Apps/FreeEnergy/FreeEnergy.cpp"
 }
 ]

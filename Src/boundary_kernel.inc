@@ -749,7 +749,6 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
                 outgoing[numOutgoing] = xiIdx;
                 //deltaRho += (2 * WEIGHTS[xiIdx]) * (cx * u + cy * v);
                 deltaRho += CalcBGKGeqFE(xiIdx, C, u, v, mu, dt, equilibriumOrder);
-                //std::cout<<CalcBGKGeqFE(xiIdx, C, u, v, mu, dt, equilibriumOrder)<<" ";
                 numOutgoing++;
             } break;
             case BndryDv_Parallel: {
@@ -768,9 +767,6 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
     }
     //Real rhoWall = 2 * rhoIncoming / (1 - rhoParallel - deltaRho);
     Real rhoWall = rhoIncoming+deltaRho+rhoParallel;
-    //std::cout<<rhoWall<<" ";
-    //std::cout<<rhoWall<<"  ";
-    //std::cout<<rhoWall<<" "<<rhoIncoming<<" "<<deltaRho<<" "<<rhoParallel<<"   ";
 #ifdef CPU
 #if DebugLevel >= 2
     ops_printf("Calculated wall density =  %f\n", rhoWall);
@@ -797,65 +793,6 @@ void KerCutCellEQMDiffuseReflADG(ACC<Real> &f, const ACC<int> &nodeType,
                 //f(xiIdx, 0, 0) = f(opps, 0, 0);
                 //                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
     }
-    /*switch (vg) {
-            case VG_IP: {
-                for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                //std::cout<<OPP[xiIdx]<<" ";
-                Real opps={8+OPP[xiIdx]};
-                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
-                if (cx>0) {
-                    f(xiIdx, 0, 0) = f(opps, 0, 0)+
-                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
-                    }
-                    //std::cout<<rhoWall<<"  ";
-                    //f(xiIdx, 0, 0) +=
-                    //                 2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
-                }
-            } break;
-            case VG_IM: {
-                for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                Real opps={8+OPP[xiIdx]};
-                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
-                if (cx<0) {
-                    f(xiIdx, 0, 0) = f(opps, 0, 0)+
-                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
-                    }
-                    //f(xiIdx, 0, 0) +=
-                    //                 2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
-                }
-            } break;
-            case VG_JP: {
-                for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
-                if (cy<0) {
-                    f(xiIdx, 0, 0) = f(OPP[xiIdx], 0, 0)+
-                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
-                    }
-                    //std::cout<<rhoWall<<"  ";
-                    //f(xiIdx, 0, 0) +=
-                    //                 2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
-                }
-            } break;
-            case VG_JM: {
-                for (int idx = 0; idx < numOutgoing; idx++) {
-                int xiIdx = outgoing[idx];
-                Real cx{XI[xiIdx * LATTDIM]/(CS*CS)};
-                Real cy{XI[xiIdx * LATTDIM + 1]/(CS*CS)};
-                if (cy>0) {
-                    f(xiIdx, 0, 0) = f(OPP[xiIdx], 0, 0)+
-                                    2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
-                    }
-                    //f(xiIdx, 0, 0) +=
-                    //                 2 * rhoWall * WEIGHTS[xiIdx] * (cx * u + cy * v);
-                }
-            } break;
-        }*/
             
     
     delete[] outgoing;

@@ -181,9 +181,11 @@ void TreatBlockBoundaryComplex3D(const Block& block, const int componentID,
 
 void ImplementBoundaryComplex3D() {
     for (const auto& boundary : BlockBoundaries()) {
+        if (boundary.boundarySurface == BoundarySurface::None) {
         const Block& block{g_Block().at(boundary.blockIndex)};
         TreatBlockBoundaryComplex3D(block, boundary.componentID,
                              boundary.givenVars.data(), boundary.boundaryScheme);
+        }
     }
 }
 #endif //OPS_3D
@@ -363,9 +365,12 @@ void TreatBlockBoundaryComplex(const Block& block, const int componentID,
 
 void ImplementBoundaryComplex() {
     for (const auto& boundary : BlockBoundaries()) {
+        
+        if (boundary.boundarySurface == BoundarySurface::None) {
         const Block& block{g_Block().at(boundary.blockIndex)};
         TreatBlockBoundaryComplex(block, boundary.componentID,
                              boundary.givenVars.data(), boundary.boundaryScheme);
+        }
     }
 }
 #endif //OPS_2D
