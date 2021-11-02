@@ -56,16 +56,38 @@ void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
 }
 
 //Set initial values of the order parameter
+
 void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex,
                           const Real* TIME, const ACC<Real>& U,
                           const ACC<Real>& V, const Real* Dt) {
     Real x0[2] = {100.0,100.0};
     Real xiIndexVar1 = {xiIndex(0,0,0)};
     Real xiIndexVar2 = {xiIndex(1,0,0)};
+    Real x=(xiIndexVar1);
+    Real y=(xiIndexVar2);
+    Real R=sqrt(x*x+y*y);
+    Real r=70.0;
+    
+    if (x<=95&&x>=10){
+        concentration(0,0) = 1;
+    }
+    else{
+        concentration(0,0) = -1;
+    }
+
+}
+
+/*
+void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex,
+                          const Real* TIME, const ACC<Real>& U,
+                          const ACC<Real>& V, const Real* Dt) {
+    Real x0[2] = {25.0,25.0};
+    Real xiIndexVar1 = {xiIndex(0,0,0)};
+    Real xiIndexVar2 = {xiIndex(1,0,0)};
     Real x=(xiIndexVar1-x0[0]);
     Real y=(xiIndexVar2-x0[1]);
     Real R=sqrt(x*x+y*y);
-    Real r=70.0;
+    Real r=20.0;
     
     if (R<=r){
         concentration(0,0) = 1;
@@ -75,8 +97,9 @@ void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex,
     }
 
 }
-
+*/
 //Set the solid boundaries in the simulation
+
 void KerSetSolid(ACC<int>& nodeType, ACC<int>& geometry,
                  const ACC<Real>& coordinates, const int* xMax,
                  const int* yMax) {
@@ -84,14 +107,39 @@ void KerSetSolid(ACC<int>& nodeType, ACC<int>& geometry,
     const Real Y{coordinates(1,0,0)};
     int XMax{*xMax};
     int YMax{*yMax};
+    Real x0[2] = {100.0,100.0};
+    const Real Xc{X-x0[0]};
+    const Real Yc{Y-x0[1]};
 
-    if (X==XMax-1||X==0||Y==YMax-1||Y==0){
+    Real R=sqrt(Xc*Xc+Yc*Yc);
+    Real r=35.0;
+    
+    //if (R<=r){
+    //    nodeType(0,0)=(int)VertexType::ImmersedSolid;
+    //    geometry(0,0)=(int)VG_ImmersedSolid;
+    //}
+    
+    if ((X>=90&&X<230)&&(Y>=YMax-20||Y<=20)){
         nodeType(0,0)=(int)VertexType::ImmersedSolid;
         geometry(0,0)=(int)VG_ImmersedSolid;
     }
 }
+/*
+void KerSetSolid(ACC<int>& nodeType, ACC<int>& geometry,
+                 const ACC<Real>& coordinates, const int* xMax,
+                 const int* yMax) {
+    const Real X{coordinates(0,0,0)};
+    const Real Y{coordinates(1,0,0)};
+    int XMax{*xMax};
+    int YMax{*yMax};
+    Real x0[2] = {100.0,100.0};
+    const Real Xc{X-x0[0]};
+    const Real Yc{Y-x0[1]};
 
-
+    Real R=sqrt(Xc*Xc+Yc*Yc);
+    Real r=35.0;
+}
+*/
 
 //////////////////////////////////////////////////////////////////////////////////
 
@@ -296,7 +344,7 @@ void KerSetInitialMacroVars3D(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
 void KerCalcConcentration3D(ACC<Real>& concentration, const ACC<Real>& xiIndex,
                             const Real* TIME, const ACC<Real>& U,
                             const ACC<Real>& V, const Real* Dt) {
-    Real x0[3] = {0.0,20.0,20.0};
+    Real x0[3] = {40.0,40.0,40.0};
     Real xiIndexVar1 = {xiIndex(0,0,0,0)};
     Real xiIndexVar2 = {xiIndex(1,0,0,0)};
     Real xiIndexVar3 = {xiIndex(2,0,0,0)};
@@ -304,7 +352,7 @@ void KerCalcConcentration3D(ACC<Real>& concentration, const ACC<Real>& xiIndex,
     Real y=(xiIndexVar2-x0[1]);
     Real z=(xiIndexVar3-x0[2]);
     Real R=sqrt(x*x+y*y+z*z);
-    Real r=15.0;
+    Real r=25.0;
     if (R<=r){
         concentration(0,0,0) = 1;
     }
@@ -320,14 +368,23 @@ void KerSetSolid3D(ACC<int>& nodeType, ACC<int>& geometry,
     const Real X{coordinates(0,0,0,0)};
     const Real Y{coordinates(1,0,0,0)};
     const Real Z{coordinates(2,0,0,0)};
+    Real x0[3] = {40.0,40.0,40.0};
+    const Real Xc{X-x0[0]};
+    const Real Yc{Y-x0[1]};
+    const Real Zc{Z-x0[2]};
     int XMax{*xMax};
     int YMax{*yMax};
     int ZMax{*zMax};
-
-    if (X<0.5*Y||X==XMax-1||X==0||Y==YMax-1||Y==0||Z==ZMax-1||Z==0){
+    Real R=sqrt(Xc*Xc+Yc*Yc+Zc*Zc);
+    Real r=15.0;
+    if (R<=r){
         nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
         geometry(0,0,0)=(int)VG_ImmersedSolid;
     }
+    //if (X==0||X==XMax-1||X==0||Y==YMax-1||Y==0||Z==ZMax-1||Z==0){
+    //    nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
+    //    geometry(0,0,0)=(int)VG_ImmersedSolid;
+    //}
 }
 
 //////////////////////////////////////////////////////////////////////////////////

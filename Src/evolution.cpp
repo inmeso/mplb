@@ -159,6 +159,7 @@ void StreamCollision(const Real time) {
             FreeEnergy3D();
     }
     UpdateMacroscopicBodyForce(1);
+    PreDefinedBodyForce3D();
 #endif
 #ifdef OPS_2D
     ModelType mtypes=(ModelType)ModelT();
@@ -166,6 +167,7 @@ void StreamCollision(const Real time) {
             FreeEnergy2D();
     }
     UpdateMacroscopicBodyForce(1);
+    PreDefinedBodyForce();
 #endif
 #if DebugLevel >= 1
     ops_printf("Calculating the collision term...\n");
@@ -182,6 +184,9 @@ void StreamCollision(const Real time) {
     ops_printf("Updating the halos...\n");
 #endif
     TransferHalos();
+    for (auto& pair : g_NodeType()) {
+            pair.second.TransferHalos();
+    }
 
 #if DebugLevel >= 1
     ops_printf("Streaming...\n");

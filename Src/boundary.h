@@ -78,6 +78,7 @@ enum class BoundaryScheme {
     BounceBack = 20,
     FreeFlux = 21,
     ZouHeVelocity = 22,
+    ZouHeVelocityG = 27,
     EQNNoSlip = 23,
     EQMDiffuseRefl = 24,
     EQMDiffuseReflF = 25,

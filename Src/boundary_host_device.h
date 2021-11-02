@@ -417,6 +417,255 @@ static inline OPS_FUN_PREFIX std::array<Real, 3> findBdyNorm3D(const VertexGeome
                 unitNormal[1] = -1 / sqrt(3);
                 unitNormal[2] = -1 / sqrt(3);
             } break;
+
+
+
+
+            
+            case VG_IPJP_O_KP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPJP_O_KM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IPJM_O_KP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPJM_O_KM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMJP_O_KP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMJP_O_KM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMJM_O_KP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMJM_O_KM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IPKP_O_JP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPKP_O_JM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IPKM_O_JP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPKM_O_JM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMKP_O_JP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMKP_O_JM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMKM_O_JP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMKM_O_JM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_JPKP_O_IP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_JPKP_O_IM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_JPKM_O_IP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_JPKM_O_IM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_JMKP_O_IP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_JMKP_O_IM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_JMKM_O_IP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_JMKM_O_IM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+
+
+            case VG_IPJP_I_KP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPJP_I_KM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IPJM_I_KP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPJM_I_KM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMJP_I_KP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMJP_I_KM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMJM_I_KP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMJM_I_KM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IPKP_I_JP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPKP_I_JM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IPKM_I_JP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IPKM_I_JM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMKP_I_JP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMKP_I_JM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_IMKM_I_JP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_IMKM_I_JM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_JPKP_I_IP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_JPKP_I_IM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_JPKM_I_IP: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_JPKM_I_IM: {
+                unitNormal[0] = 1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_JMKP_I_IP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_JMKP_I_IM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = 1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+            case VG_JMKM_I_IP: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = 1 / sqrt(3);
+            } break;
+            case VG_JMKM_I_IM: {
+                unitNormal[0] = -1 / sqrt(3);
+                unitNormal[1] = -1 / sqrt(3);
+                unitNormal[2] = -1 / sqrt(3);
+            } break;
+
+
             default:
                 break;
         }
@@ -617,36 +866,36 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
 
         } break;
         case VG_IPJP_O: {
-            if ((cx <= 0 && cy < 0) || (cx < 0 && cy == 0)) {
+            if ((cx < 0 && cy < 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cx >= 0 && cy > 0) || (cx > 0 && cy == 0)) {
+            } else if ((cx > 0 && cy > 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
             }
         } break;
         case VG_IPJM_O: {
-            if ((cx <= 0 && cy > 0) || (cx < 0 && cy == 0)) {
+            if ((cx < 0 && cy > 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cx >= 0 && cy < 0) || (cx > 0 && cy == 0)) {
+            } else if ((cx > 0 && cy < 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
             }
         } break;
         case VG_IMJP_O: {
-            if ((cx >= 0 && cy < 0) || (cx > 0 && cy == 0)) {
+            if ((cx > 0 && cy < 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cx <= 0 && cy > 0) || (cx < 0 && cy == 0)) {
+            } else if ((cx < 0 && cy > 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
             }
         } break;
         case VG_IMJM_O: {
-            if ((cx >= 0 && cy > 0) || (cx > 0 && cy == 0)) {
+            if ((cx > 0 && cy > 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cx <= 0 && cy < 0) || (cx < 0 && cy == 0)) {
+            } else if ((cx < 0 && cy < 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
@@ -654,72 +903,72 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
 
         } break;
         case VG_IPKP_O: {
-            if ((cx <= 0 && cz < 0) || (cx < 0 && cz == 0)) {
+            if ((cx < 0 && cz < 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cx >= 0 && cz > 0) || (cx > 0 && cz == 0)) {
+            } else if ((cx > 0 && cz > 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
             }
         } break;
         case VG_IPKM_O: {
-            if ((cx <= 0 && cz > 0) || (cx < 0 && cz == 0)) {
+            if ((cx < 0 && cz > 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cx >= 0 && cz < 0) || (cx > 0 && cz == 0)) {
+            } else if ((cx > 0 && cz < 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
             }
         } break;
         case VG_IMKP_O: {
-            if ((cx >= 0 && cz < 0) || (cx > 0 && cz == 0)) {
+            if ((cx > 0 && cz < 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cx <= 0 && cz > 0) || (cx < 0 && cz == 0)) {
+            } else if ((cx < 0 && cz > 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
             }
         } break;
         case VG_IMKM_O: {
-            if ((cx >= 0 && cz > 0) || (cx > 0 && cz == 0)) {
+            if ((cx > 0 && cz > 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cx <= 0 && cz < 0) || (cx < 0 && cz == 0)) {
+            } else if ((cx < 0 && cz < 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
             }
         } break;
         case VG_JPKP_O: {
-            if ((cx <= 0 && cz < 0) || (cx < 0 && cz == 0)) {
+            if ((cx < 0 && cz < 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cx >= 0 && cz > 0) || (cx > 0 && cz == 0)) {
+            } else if ((cx > 0 && cz > 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
             }
         } break;
         case VG_JPKM_O: {
-            if ((cy <= 0 && cz > 0) || (cy < 0 && cz == 0)) {
+            if ((cy < 0 && cz > 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cy >= 0 && cz < 0) || (cy > 0 && cz == 0)) {
+            } else if ((cy > 0 && cz < 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
             }
         } break;
         case VG_JMKP_O: {
-            if ((cy >= 0 && cz < 0) || (cy > 0 && cz == 0)) {
+            if ((cy > 0 && cz < 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cy <= 0 && cz > 0) || (cy < 0 && cz == 0)) {
+            } else if ((cy < 0 && cz > 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
             }
         } break;
         case VG_JMKM_O: {
-            if ((cy >= 0 && cz > 0) || (cy > 0 && cz == 0)) {
+            if ((cy > 0 && cz > 0)) {
                 res = BndryDv_Incoming;
-            } else if ((cy <= 0 && cz < 0) || (cy < 0 && cz == 0)) {
+            } else if ((cy < 0 && cz < 0)) {
                 res = BndryDv_Outgoing;
             } else {
                 res = BndryDv_Parallel;
@@ -730,9 +979,9 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                 res = BndryDv_Parallel;
             } else {
                 if (cx <= 0 && cy <= 0 && cz <= 0) {
-                    res = BndryDv_Outgoing;
-                } else if (cx >= 0 && cy >= 0 && cz >= 0) {
                     res = BndryDv_Incoming;
+                } else if (cx >= 0 && cy >= 0 && cz >= 0) {
+                    res = BndryDv_Outgoing;
                 } else {
                     res = BndryDv_Parallel;
                 }
@@ -743,9 +992,9 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                 res = BndryDv_Parallel;
             } else {
                 if (cx <= 0 && cy <= 0 && cz >= 0) {
-                    res = BndryDv_Outgoing;
-                } else if (cx >= 0 && cy >= 0 && cz <= 0) {
                     res = BndryDv_Incoming;
+                } else if (cx >= 0 && cy >= 0 && cz <= 0) {
+                    res = BndryDv_Outgoing;
                 } else {
                     res = BndryDv_Parallel;
                 }
@@ -756,9 +1005,9 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                 res = BndryDv_Parallel;
             } else {
                 if (cx <= 0 && cy >= 0 && cz <= 0) {
-                    res = BndryDv_Outgoing;
-                } else if (cx >= 0 && cy <= 0 && cz >= 0) {
                     res = BndryDv_Incoming;
+                } else if (cx >= 0 && cy <= 0 && cz >= 0) {
+                    res = BndryDv_Outgoing;
                 } else {
                     res = BndryDv_Parallel;
                 }
@@ -769,9 +1018,9 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                 res = BndryDv_Parallel;
             } else {
                 if (cx <= 0 && cy >= 0 && cz >= 0) {
-                    res = BndryDv_Outgoing;
-                } else if (cx >= 0 && cy <= 0 && cz <= 0) {
                     res = BndryDv_Incoming;
+                } else if (cx >= 0 && cy <= 0 && cz <= 0) {
+                    res = BndryDv_Outgoing;
                 } else {
                     res = BndryDv_Parallel;
                 }
@@ -782,9 +1031,9 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                 res = BndryDv_Parallel;
             } else {
                 if (cx >= 0 && cy <= 0 && cz <= 0) {
-                    res = BndryDv_Outgoing;
-                } else if (cx <= 0 && cy >= 0 && cz >= 0) {
                     res = BndryDv_Incoming;
+                } else if (cx <= 0 && cy >= 0 && cz >= 0) {
+                    res = BndryDv_Outgoing;
                 } else {
                     res = BndryDv_Parallel;
                 }
@@ -795,9 +1044,9 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                 res = BndryDv_Parallel;
             } else {
                 if (cx >= 0 && cy <= 0 && cz >= 0) {
-                    res = BndryDv_Outgoing;
-                } else if (cx <= 0 && cy >= 0 && cz <= 0) {
                     res = BndryDv_Incoming;
+                } else if (cx <= 0 && cy >= 0 && cz <= 0) {
+                    res = BndryDv_Outgoing;
                 } else {
                     res = BndryDv_Parallel;
                 }
@@ -808,9 +1057,9 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                 res = BndryDv_Parallel;
             } else {
                 if (cx >= 0 && cy >= 0 && cz <= 0) {
-                    res = BndryDv_Outgoing;
-                } else if (cx <= 0 && cy <= 0 && cz >= 0) {
                     res = BndryDv_Incoming;
+                } else if (cx <= 0 && cy <= 0 && cz >= 0) {
+                    res = BndryDv_Outgoing;
                 } else {
                     res = BndryDv_Parallel;
                 }
@@ -821,15 +1070,21 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                 res = BndryDv_Parallel;
             } else {
                 if (cx >= 0 && cy >= 0 && cz >= 0) {
-                    res = BndryDv_Outgoing;
-                } else if (cx <= 0 && cy <= 0 && cz <= 0) {
                     res = BndryDv_Incoming;
+                } else if (cx <= 0 && cy <= 0 && cz <= 0) {
+                    res = BndryDv_Outgoing;
                 } else {
                     res = BndryDv_Parallel;
                 }
             }
         } break;
+
+
+
+
         case VG_IPJPKP_O: {
+            res = BndryDv_Parallel;
+            /*
             if (cx == 0 && cy == 0 && cz == 0) {
                 res = BndryDv_Parallel;
             } else {
@@ -841,8 +1096,11 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                     res = BndryDv_Parallel;
                 }
             }
+            */
         } break;
         case VG_IPJPKM_O: {
+            res = BndryDv_Parallel;
+            /*
             if (cx == 0 && cy == 0 && cz == 0) {
                 res = BndryDv_Parallel;
             } else {
@@ -854,8 +1112,11 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                     res = BndryDv_Parallel;
                 }
             }
+            */
         } break;
         case VG_IPJMKP_O: {
+            res = BndryDv_Parallel;
+            /*
             if (cx == 0 && cy == 0 && cz == 0) {
                 res = BndryDv_Parallel;
             } else {
@@ -867,8 +1128,11 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                     res = BndryDv_Parallel;
                 }
             }
+            */
         } break;
         case VG_IPJMKM_O: {
+            res = BndryDv_Parallel;
+            /*
             if (cx == 0 && cy == 0 && cz == 0) {
                 res = BndryDv_Parallel;
             } else {
@@ -880,8 +1144,11 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                     res = BndryDv_Parallel;
                 }
             }
+            */
         } break;
         case VG_IMJPKP_O: {
+            res = BndryDv_Parallel;
+            /*
             if (cx == 0 && cy == 0 && cz == 0) {
                 res = BndryDv_Parallel;
             } else {
@@ -893,8 +1160,11 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                     res = BndryDv_Parallel;
                 }
             }
+            */
         } break;
         case VG_IMJPKM_O: {
+            res = BndryDv_Parallel;
+            /*
             if (cx == 0 && cy == 0 && cz == 0) {
                 res = BndryDv_Parallel;
             } else {
@@ -906,8 +1176,11 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                     res = BndryDv_Parallel;
                 }
             }
+            */
         } break;
         case VG_IMJMKP_O: {
+            res = BndryDv_Parallel;
+            /*
             if (cx == 0 && cy == 0 && cz == 0) {
                 res = BndryDv_Parallel;
             } else {
@@ -919,8 +1192,11 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                     res = BndryDv_Parallel;
                 }
             }
+            */
         } break;
         case VG_IMJMKM_O: {
+            res = BndryDv_Parallel;
+            /*
             if (cx == 0 && cy == 0 && cz == 0) {
                 res = BndryDv_Parallel;
             } else {
@@ -932,7 +1208,643 @@ static inline OPS_FUN_PREFIX BndryDvType FindBdyDvType3D(const VertexGeometryTyp
                     res = BndryDv_Parallel;
                 }
             }
+            */
         } break;
+
+        case VG_IPJP_O_KP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz > 0 || (cz==0 && cx>0 && cy>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cx < 0 || (cz==0 && cx<=0 && cy<0) || (cz==0 && cx<0 && cy<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPJP_O_KM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz < 0 || (cz==0 && cx>0 && cy>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cz > 0 || (cz==0 && cx<=0 && cy<0) || (cz==0 && cx<0 && cy<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPJM_O_KP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz > 0 || (cz==0 && cx>0 && cy<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cz < 0 || (cz==0 && cx<=0 && cy>0) || (cz==0 && cx<0 && cy>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPJM_O_KM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz < 0 || (cz==0 && cx>0 && cy<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cz > 0 || (cz==0 && cx<=0 && cy>0) || (cz==0 && cx<0 && cy>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMJP_O_KP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz > 0 || (cz==0 && cx<0 && cy>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cz < 0 || (cz==0 && cx>=0 && cy<0) || (cz==0 && cx>0 && cy<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMJP_O_KM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz < 0 || (cz==0 && cx<0 && cy>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cz > 0 || (cz==0 && cx>=0 && cy<0) || (cz==0 && cx>0 && cy<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMJM_O_KP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz > 0 || (cz==0 && cx<0 && cy<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cz < 0 || (cz==0 && cx>=0 && cy>0) || (cz==0 && cx>0 && cy>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMJM_O_KM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz < 0 || (cz==0 && cx<0 && cy<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cz > 0 || (cz==0 && cx>=0 && cy>0) || (cz==0 && cx>0 && cy>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+
+        case VG_IPKP_O_JP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy > 0 || (cy==0 && cx>0 && cz>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cy < 0 || (cy==0 && cx<=0 && cz<0) || (cy==0 && cx<0 && cz<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPKP_O_JM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy < 0 || (cy==0 && cx>0 && cz>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cy > 0 || (cy==0 && cx<=0 && cz<0) || (cy==0 && cx<0 && cz<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPKM_O_JP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy > 0 || (cy==0 && cx>0 && cz<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cy < 0 || (cy==0 && cx<=0 && cz>0) || (cy==0 && cx<0 && cz>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPKM_O_JM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy < 0 || (cy==0 && cx>0 && cz<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cy > 0 || (cy==0 && cx<=0 && cz>0) || (cy==0 && cx<0 && cz>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMKP_O_JP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy > 0 || (cy==0 && cx<0 && cz>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cy < 0 || (cy==0 && cx>=0 && cz<0) || (cy==0 && cx>0 && cz<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMKP_O_JM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy < 0 || (cy==0 && cx<0 && cz>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cy > 0 || (cy==0 && cx>=0 && cz<0) || (cy==0 && cx>0 && cz<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMKM_O_JP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy > 0 || (cy==0 && cx<0 && cz<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cy < 0 || (cy==0 && cx>=0 && cz>0) || (cy==0 && cx>0 && cz>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMKM_O_JM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy < 0 || (cy==0 && cx<0 && cz<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cy > 0 || (cy==0 && cx>=0 && cz>0) || (cy==0 && cx>0 && cz>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+
+        case VG_JPKP_O_IP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx < 0 || (cx==0 && cy<0 && cz<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cx > 0 || (cx==0 && cy>=0 && cz>0) || (cx==0 && cy>0 && cz>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JPKP_O_IM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx > 0 || (cx==0 && cy<0 && cz<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cx < 0 || (cx==0 && cy>=0 && cz>0) || (cx==0 && cy>0 && cz>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JPKM_O_IP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx < 0 || (cx==0 && cy<0 && cz>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cx > 0 || (cx==0 && cy>=0 && cz<0) || (cx==0 && cy>0 && cz<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JPKM_O_IM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx > 0 || (cx==0 && cy<0 && cz>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cx < 0 || (cx==0 && cy>=0 && cz<0) || (cx==0 && cy>0 && cz<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JMKP_O_IP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx < 0 || (cx==0 && cy>0 && cz<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cx > 0 || (cx==0 && cy<=0 && cz>0) || (cx==0 && cy<0 && cz>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JMKP_O_IM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx > 0 || (cx==0 && cy>0 && cz<0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cx < 0 || (cx==0 && cy<=0 && cz>0) || (cx==0 && cy<0 && cz>=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JMKM_O_IP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx < 0 || (cx==0 && cy>0 && cz>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cx > 0 || (cx==0 && cy<=0 && cz<0) || (cx==0 && cy<0 && cz<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JMKM_O_IM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx > 0 || (cx==0 && cy>0 && cz>0)) {
+                    res = BndryDv_Outgoing;
+                } else if (cx < 0 || (cx==0 && cy<=0 && cz<0) || (cx==0 && cy<0 && cz<=0)) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+
+
+
+
+        case VG_IPJP_I_KP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz > 0 && ((cx==0 && cy>0) || (cx>0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cz < 0 && ((cx==0 && cy<0) || (cx<0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPJP_I_KM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz < 0 && ((cx==0 && cy>0) || (cx>0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cz > 0 && ((cx==0 && cy<0) || (cx<0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPJM_I_KP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz > 0 && ((cx==0 && cy<0) || (cx>0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cz < 0 && ((cx==0 && cy>0) || (cx<0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPJM_I_KM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz < 0 && ((cx==0 && cy<0) || (cx>0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cz > 0 && ((cx==0 && cy>0) || (cx<0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMJP_I_KP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz > 0 && ((cx==0 && cy>0) || (cx<0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cz < 0 && ((cx==0 && cy<0) || (cx>0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMJP_I_KM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz < 0 && ((cx==0 && cy>0) || (cx<0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cz > 0 && ((cx==0 && cy<0) || (cx>0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMJM_I_KP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz > 0 && ((cx==0 && cy<0) || (cx<0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cz < 0 && ((cx==0 && cy>0) || (cx>0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMJM_I_KM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cz < 0 && ((cx==0 && cy<0) || (cx<0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cz > 0 && ((cx==0 && cy>0) || (cx>0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+
+        case VG_IPKP_I_JP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy > 0 && ((cx==0 && cz>0) || (cx>0 && cz==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cy < 0 && ((cx==0 && cz<0) || (cx<0 && cz==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPKP_I_JM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy < 0 && ((cx==0 && cz>0) || (cx>0 && cz==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cy > 0 && ((cx==0 && cz<0) || (cx<0 && cz==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPKM_I_JP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy > 0 && ((cx==0 && cz<0) || (cx>0 && cz==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cy < 0 && ((cx==0 && cz>0) || (cx<0 && cz==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IPKM_I_JM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy < 0 && ((cx==0 && cz<0) || (cx>0 && cz==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cy > 0 && ((cx==0 && cz>0) || (cx<0 && cz==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMKP_I_JP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy > 0 && ((cx==0 && cz>0) || (cx<0 && cz==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cy < 0 && ((cx==0 && cz<0) || (cx>0 && cz==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMKP_I_JM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy < 0 && ((cx==0 && cz>0) || (cx<0 && cz==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cy > 0 && ((cx==0 && cz<0) || (cx>0 && cz==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMKM_I_JP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy > 0 && ((cx==0 && cz<0) || (cx<0 && cz==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cy < 0 && ((cx==0 && cz>0) || (cx>0 && cz==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_IMKM_I_JM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cy < 0 && ((cx==0 && cz<0) || (cx<0 && cz==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cy > 0 && ((cx==0 && cz>0) || (cx>0 && cz==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+
+        case VG_JPKP_I_IP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx > 0 && ((cz==0 && cy>0) || (cz>0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cx < 0 && ((cz==0 && cy<0) || (cz<0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JPKP_I_IM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx < 0 && ((cz==0 && cy>0) || (cz>0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cx > 0 && ((cz==0 && cy<0) || (cz<0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JPKM_I_IP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx > 0 && ((cz==0 && cy>0) || (cz<0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cx < 0 && ((cz==0 && cy<0) || (cz>0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JPKM_I_IM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx < 0 && ((cz==0 && cy>0) || (cz<0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cx > 0 && ((cz==0 && cy<0) || (cz>0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JMKP_I_IP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx > 0 && ((cz==0 && cy<0) || (cz>0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cx < 0 && ((cz==0 && cy>0) || (cz<0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JMKP_I_IM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx < 0 && ((cz==0 && cy<0) || (cz>0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cx < 0 && ((cz==0 && cy>0) || (cz<0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JMKM_I_IP: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx > 0 && ((cz==0 && cy<0) || (cz<0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cx < 0 && ((cz==0 && cy>0) || (cz>0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+        case VG_JMKM_I_IM: {
+            if (cx == 0 && cy == 0 && cz == 0) {
+                res = BndryDv_Parallel;
+            } else {
+                if (cx < 0 && ((cz==0 && cy<0) || (cz<0 && cy==0))) {
+                    res = BndryDv_Outgoing;
+                } else if (cx > 0 && ((cz==0 && cy>0) || (cz>0 && cy==0))) {
+                    res = BndryDv_Incoming;
+                } else {
+                    res = BndryDv_Parallel;
+                }
+            }
+        } break;
+
+
 
         default:
             break;

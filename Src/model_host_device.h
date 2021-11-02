@@ -36,29 +36,31 @@ static inline OPS_FUN_PREFIX Real CalcGuoForce(const int xiIndex, const Real rho
     Real cs2{1/sqrt(3)};
     Real cs4{cs2*cs2};
     Real cf{0};
-    Real uForce=u-((*dt) * acceleration[0] / (2*rho));
-    Real vForce=v-((*dt) * acceleration[1] / (2*rho));
+    Real uForce=u-((*dt) * acceleration[0] / (2.0*rho));
+    Real vForce=v-((*dt) * acceleration[1] / (2.0*rho));
+    //Real uForce=u;
+    //Real vForce=v;
     Real VEL[]{uForce,vForce};
     //std::cout<<u<<" "<<v<<" "<<*VEL<<"\n";
     for (int i = 0; i < LATTDIM; i++) {
-        cf += (3*((XI[xiIndex * LATTDIM + i])-VEL[i])+9*(XI[xiIndex * LATTDIM + i]*VEL[i]*XI[xiIndex * LATTDIM + i])) * acceleration[i];
+        cf += (3.0*((XI[xiIndex * LATTDIM + i])-VEL[i])+9.0*(XI[xiIndex * LATTDIM + i]*VEL[i]*XI[xiIndex * LATTDIM + i])) * acceleration[i];
     }
     return WEIGHTS[xiIndex] * cf;
 }
 
 static inline OPS_FUN_PREFIX Real CalcGuoForce3D(const int xiIndex, const Real rho,
                    const Real* acceleration, const Real u, const Real v, const Real w, const Real* dt) {
-    const Real cs2={1/3};
+    const Real cs2={1/3.0};
     const Real cs4={cs2*cs2};
     Real cf{0};
-    Real uForce=u-((*dt) * acceleration[0] / (2*rho));
-    Real vForce=v-((*dt) * acceleration[1] / (2*rho));
-    Real wForce=w-((*dt) * acceleration[2] / (2*rho));
+    Real uForce=u-((*dt) * acceleration[0] / (2.0*rho));
+    Real vForce=v-((*dt) * acceleration[1] / (2.0*rho));
+    Real wForce=w-((*dt) * acceleration[2] / (2.0*rho));
     Real VEL[]{uForce,vForce,wForce};
     
     //std::cout<<u<<" "<<v<<" "<<*VEL<<"\n";
     for (int i = 0; i < LATTDIM; i++) {
-        cf += (3*((XI[xiIndex * LATTDIM + i])-VEL[i])+9*(XI[xiIndex * LATTDIM + i]*VEL[i]*XI[xiIndex * LATTDIM + i])) * acceleration[i];
+        cf += (3.0*((XI[xiIndex * LATTDIM + i])-VEL[i])+9.0*(XI[xiIndex * LATTDIM + i]*VEL[i]*XI[xiIndex * LATTDIM + i])) * acceleration[i];
 	//std::cout<<LATTDIM<<" "<<acceleration[i]<<" "<<rho<<" "<<VEL[i]<<" "<<cf<<" "<<cs2<<" "<<cs4<<" "<<XI[xiIndex * LATTDIM + i]<<"  ";
     }
     return WEIGHTS[xiIndex] * cf;
@@ -89,10 +91,10 @@ static inline OPS_FUN_PREFIX Real CalcBGKFeq(const int l, const Real rho, const 
     return WEIGHTS[l] * rho * res;
 }
 
-static inline OPS_FUN_PREFIX Real CalcBGKFeqAD(const int l, const Real C, const Real uForce, const Real vForce, const Real *acceleration, const Real *dt,
+static inline OPS_FUN_PREFIX Real CalcBGKFeqAD(const int l, const Real C, const Real U, const Real V,
                 const Real T, const int polyOrder) {
-    Real u=uForce;
-    Real v=vForce;
+    Real u=U;
+    Real v=V;
     Real cSound{1/sqrt(3)};
     Real cu{(XI[l * LATTDIM] * u + XI[l * LATTDIM + 1] * v)/(cSound*cSound)};
     //Real c2{(cSound * XI[l * LATTDIM] * cSound * XI[l * LATTDIM] +
@@ -106,8 +108,8 @@ static inline OPS_FUN_PREFIX Real CalcBGKFeqAD(const int l, const Real C, const 
 
 static inline OPS_FUN_PREFIX Real CalcBGKFeqFE(const int l, const Real C, const Real uForce, const Real vForce, const Real *acceleration, const Real *dt,
                 const Real T, const int polyOrder) {
-    Real u=uForce-((*dt) * acceleration[0] / (2*C));
-    Real v=vForce-((*dt) * acceleration[1] / (2*C));
+    Real u=uForce-((*dt) * acceleration[0] / (2.0*C));
+    Real v=vForce-((*dt) * acceleration[1] / (2.0*C));
     Real cSound{1/sqrt(3)};
     Real cu{(XI[l * LATTDIM] * u + XI[l * LATTDIM + 1] * v)/(cSound*cSound)};
     //Real c2{(cSound * XI[l * LATTDIM] * cSound * XI[l * LATTDIM] +
@@ -128,14 +130,30 @@ static inline OPS_FUN_PREFIX Real CalcBGKGeqFE(const int l, const Real C, const 
     //         cSound * XI[l * LATTDIM + 1] * cSound * XI[l * LATTDIM + 1])};
     Real cu2{(cu * cu)};
     Real u2{(u * u + v * v)/(cSound*cSound)};
-    Real tau=1;
+    Real tau=1.0;
+    
+    Real css=1.0/sqrt(3);
+    Real taul=1.0;
+    Real taug=1.0;
+    Real Dt{*dt};
+    Real vl=css*css*(taul-Dt/2.0);
+    Real vg=css*css*(taug-Dt/2.0);
+    Real V=vg+(C+1.0)/2.0*(vl-vg);
+    Real W=2.0/(6.0*V+1.0);
     Real res = cu + 0.5 * (cu2 - u2);
-    Real R=1/(tau-*dt/2.0);
+    Real R=1.0/(W-*dt/2.0);
+    /*
+    Real res = cu + 0.5 * (cu2 - u2);
+    Real R=1.0/(tau-*dt/2.0);
+    */
     //std::cout<<mu<<" "<<res<<"   ";
     return WEIGHTS[l] * (C * res+R*mu/(cSound*cSound));
 }
 
-static inline OPS_FUN_PREFIX Real CalcBGKFeqAD3D(const int l, const Real C, const Real uForce, const Real vForce, const Real wForce, const Real *acceleration, const Real *dt,
+
+
+
+static inline OPS_FUN_PREFIX Real CalcBGKFeqAD3D(const int l, const Real C, const Real uForce, const Real vForce, const Real wForce,
                 const Real T, const int polyOrder) {
     Real u=uForce;
     Real v=vForce;
@@ -146,7 +164,7 @@ static inline OPS_FUN_PREFIX Real CalcBGKFeqAD3D(const int l, const Real C, cons
     //         cSound * XI[l * LATTDIM + 1] * cSound * XI[l * LATTDIM + 1])};
     Real cu2{(cu * cu)};
     Real u2{(u * u + v * v + w * w)/(cSound*cSound)};
-
+    //std::cout<<u<<" "<<cu<<" "<<u2<<"   ";
     Real res = 1.0 + cu + 0.5 * (cu2 - u2);
     //std::cout<<res<<" "<<C<<"   ";
     return WEIGHTS[l] * C * res;

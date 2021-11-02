@@ -69,6 +69,8 @@ extern Real CS;
  * XI: if using finite difference scheme, it may be real and CS=1 accordingly\n
  */
 extern Real* XI;
+extern std::vector<std::vector<Real> > M;
+extern std::vector<std::vector<Real> > Minv;
 /*!
  * XIMAXVALUE: maximum value of particle speed, for calculating the CFL.
  */
@@ -97,12 +99,14 @@ enum CollisionType {
     Collision_BGKThermal4th = 1,
     Collision_BGKSWE4th = 2,
     Collision_BGKADF = 3,
-    Collision_BGKADG = 4,
+    Collision_BGKFEF = 4,
+    Collision_BGKFEG = 5,
+    Collision_MRTFEF = 6,
 };
 
 enum BodyForceType {GuoForce = 2, BodyForce_1st = 1, BodyForce_None = 0};
 enum ModelType {None = 0, Ad_Diff = 1, Free_Energy = 2};
-enum InitialType {Initial_BGKFeq2nd = 1, Initial_BGKFeq2ndAD = 2, Initial_BGKGeq2ndAD = 3};
+enum InitialType {Initial_BGKFeq2nd = 1, Initial_BGKFeq2ndAD = 2, Initial_BGKFeq2ndFE = 3, Initial_BGKGeq2ndFE = 4};
 
 struct MacroVariable {
     std::string name;

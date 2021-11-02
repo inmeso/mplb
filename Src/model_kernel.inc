@@ -55,6 +55,50 @@
  */
 #ifdef OPS_2D
 
+//Function to compute the product of two nxn matrices
+std::vector<std::vector<Real> > KerMultMatrix(std::vector<std::vector<double> > matA, std::vector<std::vector<double> > matB){
+    Real S{0};
+    std::vector<std::vector<Real> > mA{matA};
+    std::vector<std::vector<Real> > mB{matB};
+    int rowsA =  mA.size(); 
+    int colsA = mA[0].size();
+    int rowsB =  mB.size();
+    int colsB = mB[0].size();
+    std::vector<std::vector<Real> > mult(rowsA, std::vector<Real>(colsB));
+    int i,j,k;
+    Real prod;
+    //std::cout<<colsA<<" "<<rowsA<<" "<<colsB<<" "<<rowsB<<"   ";
+    //std::cout<<mA.size()<<" "<<mB[0].size()<<" "<<mA[0].size()<<"  ";
+    /*
+    for(i = 0; i < 9; ++i)
+        for(j = 0; j < 9; ++j)
+        {
+            std::cout<<mA[i][j]<<"   ";
+        }
+    */
+    for(i = 0; i < rowsA; ++i)
+            for(j = 0; j < colsB; ++j)
+            {
+                mult[i][j]=0.0;
+            }
+    if (colsA==rowsB){
+        
+
+        for(i = 0; i < rowsA; ++i)
+            for(j = 0; j < colsB; ++j)
+                for(k = 0; k < colsA; ++k)
+                {
+                    prod = mA[i][k] * mB[k][j];
+                    mult[i][j] += prod;
+                }
+
+        }
+    else{
+        std::cout<<"Number of columns in the second matrix must equal the number of rows of the first matrix!\n";
+        
+    }
+    return mult;
+}
 
 //Calculates first-order or second-order finite difference gradients
 void KerCalcGradients(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType,
@@ -89,14 +133,14 @@ void KerCalcGradients(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType
 //Wetting boundary implementation
 void KerUpdateRhoWetting(ACC<Real>& rho,const ACC<int>& geometry,
                          const ACC<int>&nodeType,const ACC<Real>& coordinates,
-                         const int *theta, const int *Aconst, const int *Kappa) {
+                         const Real *theta, const Real *Aconst, const Real *Kappa) {
     const Real teta={*theta};
     const Real alpha={acos(sin(teta)*sin(teta))};
-    const Real Omga={2*((teta <= M_PI/2) - (M_PI/2 < teta))*sqrt(cos(alpha/3)*
-                     (1-cos(alpha/3)))};
+    const Real Omga={2.0*((teta <= M_PI/2.0) - (M_PI/2.0 < teta))*sqrt(cos(alpha/3.0)*
+                     (1.0-cos(alpha/3.0)))};
     const Real K={*Kappa};
     const Real A={*Aconst};
-    const Real h={Omga*sqrt(K*A/2)};
+    const Real h={Omga*sqrt(K*A/2.0)};
     VertexType vt = (VertexType)nodeType(0, 0);
     VertexGeometryType vg = (VertexGeometryType)geometry(0, 0);
     VertexGeometryType vg1 = (VertexGeometryType)geometry(1, 0);
@@ -196,14 +240,14 @@ void KerUpdateRhoWetting(ACC<Real>& rho,const ACC<int>& geometry,
 //Calculates chemical potential in the Free Energy model
 void KerCalcMu(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi,
                const ACC<int>& geometry, const ACC<int>&nodeType,
-               const ACC<Real>& coordinates, const int *Aconst, const int *Kappa){
+               const ACC<Real>& coordinates, const Real *Aconst, const Real *Kappa){
     Real phi{Phi(0,0)};
     Real phi3 = {phi*phi*phi};
     Real d2phix = {d2phi(0,0,0)};
     Real d2phiy = {d2phi(1,0,0)};
     const Real K={*Kappa};
     const Real A={*Aconst};
-
+    //std::cout<<A<<" "<<K<<" "<<phi<<" "<<d2phix<<" "<<d2phiy<<"   ";
     mu(0,0)=-A*phi+A*phi3-K*(d2phix+d2phiy);
 }
 
@@ -272,6 +316,7 @@ void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& Phi,
     
     force(0,0,0) = -phi*dmux;
     force(1,0,0) = -phi*dmuy;
+
 }
 
 
@@ -361,15 +406,15 @@ void KerCalcUForce(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
             u += CS * XI[xiIdx * LATTDIM] * f(xiIdx, 0, 0);
         }
         u /= Rho(0, 0);
-        if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt) {
+        if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt || VertexType::Wall == vt ) {
             u += ((*dt) * acceleration(0, 0, 0) / (2*Rho(0,0)));
         }
 #ifdef CPU
         if (isnan(u) || isinf(u)) {
             ops_printf(
                 "Error! Velocity U=%f becomes invalid! Maybe something wrong "
-                "at x=%f y=%f\n",
-                u, x, y);
+                "at x=%f y=%f, a=%f, rho=%f\n",
+                u, x, y, acceleration(0,0,0), Rho(0,0));
             assert(!(isnan(u) || isinf(u)));
         }
 #endif
@@ -391,7 +436,7 @@ void KerCalcVForce(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
             v += CS * XI[xiIdx * LATTDIM + 1] * f(xiIdx, 0, 0);
         }
         v /= Rho(0, 0);
-        if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt) {
+        if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt || VertexType::Wall == vt ) {
             v += ((*dt) * acceleration(1, 0, 0) / (2*Rho(0,0)));
         }
 #ifdef CPU
@@ -499,6 +544,35 @@ void KerInitialiseBGKADF(ACC<Real>& g, const ACC<int>& nodeType,
         Real C{Conc(0,0)};
         Real u{U(0, 0)};
         Real v{V(0, 0)};
+        const Real T{1};
+        const int polyOrder{2};
+        for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+            g(xiIdx, 0, 0) = CalcBGKFeqAD(xiIdx, C, u, v, T, polyOrder);
+
+#ifdef CPU
+            const Real res{g(xiIdx, 0, 0)};
+            if (isnan(res) || res <= -100.01 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes invalid at the "
+                    "lattice %i\n",
+                    res, xiIdx);
+                assert(!(isnan(res) || res <= -10.01 || isinf(res)));
+            }
+#endif  // CPU
+        }
+    }
+#endif  // OPS_2D
+}
+
+void KerInitialiseBGKFEF(ACC<Real>& g, const ACC<int>& nodeType,
+                         ACC<Real>& Conc, const ACC<Real>& U,
+                         const ACC<Real>& V,const ACC<Real>& acceleration,const Real* dt, const int* lattIdx) {
+#ifdef OPS_2D
+    VertexType vt = (VertexType)nodeType(0, 0);
+    if (vt != VertexType::ImmersedSolid) {
+        Real C{Conc(0,0)};
+        Real u{U(0, 0)};
+        Real v{V(0, 0)};
         Real ff[]{acceleration(0, 0, 0), acceleration(1, 0, 0)};
         const Real T{1};
         const int polyOrder{2};
@@ -520,7 +594,7 @@ void KerInitialiseBGKADF(ACC<Real>& g, const ACC<int>& nodeType,
 #endif  // OPS_2D
 }
 
-void KerInitialiseBGKADG(ACC<Real>& g, const ACC<int>& nodeType,const ACC<int>& geometry,
+void KerInitialiseBGKFEG(ACC<Real>& g, const ACC<int>& nodeType,const ACC<int>& geometry,
                          ACC<Real>& Conc, const ACC<Real>& U,
                          const ACC<Real>& V, const ACC<Real>& Mu, const Real* dt, const int* lattIdx) {
 #ifdef OPS_2D
@@ -556,6 +630,7 @@ void KerInitialiseBGKADG(ACC<Real>& g, const ACC<int>& nodeType,const ACC<int>& 
 #endif  // OPS_2D
 }
 
+
 void KerCollideBGKADF(ACC<Real>& gStage, const ACC<Real>& g,
                              const ACC<Real>& coordinates,
                              const ACC<int>& nodeType, const ACC<Real>& Conc,
@@ -572,21 +647,87 @@ void KerCollideBGKADF(ACC<Real>& gStage, const ACC<Real>& g,
         Real u{U(0, 0)};
         Real v{V(0, 0)};
         Real C{Conc(0,0)};
-        Real ff[]{acceleration(0, 0, 0), acceleration(1, 0, 0)};
+
         const Real T{1};
         const int polyOrder{2};
         Real tau = (*tauRef);
-        Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+        Real dtOvertauPlusdt = (*dt) / (tau);
+        for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
+            const Real geq{CalcBGKFeqAD(xiIndex, C, u, v, T, polyOrder)};
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
+
+                gStage(xiIndex, 0, 0) =
+                    geq - (dtOvertauPlusdt-1) * (g(xiIndex, 0, 0) - geq) +
+                    (1.0-1.0/(2.0*tau)) * gStage(xiIndex, 0, 0);
+            } else {
+                gStage(xiIndex, 0, 0) =
+                    geq - (dtOvertauPlusdt-1) * (g(xiIndex, 0, 0) - geq);
+            }
+#ifdef CPU
+            const Real res{gStage(xiIndex, 0, 0)};
+            if (isnan(res) || res <= -100.01 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function = %e becomes invalid at  "
+                    "the lattice %i where feq=%e and rho=%e u=%e v=%e at "
+                    "x=%e y=%e\n",
+                    res, xiIndex, geq, C, u, v, coordinates(0, 0, 0),
+                    coordinates(1, 0, 0));
+                std::cout << C << "Conc\n";
+                assert(!(isnan(res) || res <= -10.01 || isinf(res)));
+            }
+#endif  // CPU
+        }
+        
+    }
+#endif  // OPS_2D
+}
+
+
+
+void KerCollideBGKFEF(ACC<Real>& gStage, const ACC<Real>& g,
+                             const ACC<Real>& coordinates,
+                             const ACC<int>& nodeType, const ACC<Real>& Conc,
+                             const ACC<Real>& Phi,
+                             const ACC<Real>& U, const ACC<Real>& V,
+                             const ACC<Real>& acceleration, 
+                              const Real* tauRef,
+                             const Real* dt, const int* lattIdx) {
+#ifdef OPS_2D
+    VertexType vt = (VertexType)nodeType(0, 0);
+    // collisionRequired: means if collision is required at boundary
+    // e.g., the ZouHe boundary condition explicitly requires collision
+    bool collisionRequired = (vt != VertexType::ImmersedSolid);
+    if (collisionRequired) {
+        Real u{U(0, 0)};
+        Real v{V(0, 0)};
+        Real C{Conc(0,0)};
+        Real phi{Phi(0,0)};
+        Real ff[]{acceleration(0, 0, 0), acceleration(1, 0, 0)};
+        const Real T{1};
+        const int polyOrder{2};
+        //Real tau = (*tauRef);
+        //Real dtOvertauPlusdt = (*dt) / (tau);
+        Real css=1/sqrt(3);
+        Real taul=1.0;
+        Real taug=0.51;
+        Real Dt{*dt};
+        Real vl=css*css*(taul-Dt/2.0);
+        Real vg=css*css*(taug-Dt/2.0);
+        //Real vl=1.17;
+        //Real vg=0.05;
+        Real V=vg+(phi+1.0)/2.0*(vl-vg);
+        Real W=2.0/(6.0*V+1.0);
+        Real dtOvertauPlusdt = (*dt) / (W);
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real geq{CalcBGKFeqFE(xiIndex, C, u, v, ff, dt, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
 
                 gStage(xiIndex, 0, 0) =
-                    geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq) +
-                    (1-1/(2*tau)) * gStage(xiIndex, 0, 0);
+                    geq - (dtOvertauPlusdt-1) * (g(xiIndex, 0, 0) - geq) +
+                    (*dt)*(1.0-(*dt)/(2.0*W)) * gStage(xiIndex, 0, 0);
             } else {
                 gStage(xiIndex, 0, 0) =
-                    geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq);
+                    geq - (dtOvertauPlusdt-1) * (g(xiIndex, 0, 0) - geq);
             }
 #ifdef CPU
             const Real res{gStage(xiIndex, 0, 0)};
@@ -608,7 +749,7 @@ void KerCollideBGKADF(ACC<Real>& gStage, const ACC<Real>& g,
 }
 
 
-void KerCollideBGKADG(ACC<Real>& gStage, const ACC<Real>& g,
+void KerCollideBGKFEG(ACC<Real>& gStage, const ACC<Real>& g,
                              const ACC<Real>& coordinates,
                              const ACC<int>& nodeType,const ACC<int>& geometry, const ACC<Real>& Conc,
                              const ACC<Real>& U, const ACC<Real>& V, const ACC<Real>& Mu, 
@@ -626,17 +767,27 @@ void KerCollideBGKADG(ACC<Real>& gStage, const ACC<Real>& g,
         Real C{Conc(0,0)};
         Real mu{Mu(0,0)};
         const int polyOrder{2};
-        Real tau = (*tauRef);
-        Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+        //Real tau = (*tauRef);
+        //Real dtOvertauPlusdt = (*dt) / (tau);
         Real S{0.0};
+
+        Real css=1/sqrt(3);
+        Real taul=1.0;
+        Real taug=1.0;
+        Real Dt{*dt};
+        Real vl=css*css*(taul-Dt/2.0);
+        Real vg=css*css*(taug-Dt/2.0);
+        Real V=vg+(C+1.0)/2.0*(vl-vg);
+        Real W=2.0/(6.0*V+1.0);
+        Real dtOvertauPlusdt = (*dt) / (W);
         for (int xiIndex = lattIdx[0]+1; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real geq{CalcBGKGeqFE(xiIndex, C, u, v, mu, dt, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
                 gStage(xiIndex, 0, 0) =
-                    geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq);
+                    geq - (dtOvertauPlusdt-1) * (g(xiIndex, 0, 0) - geq);
             } else {
                 gStage(xiIndex, 0, 0) =
-                    geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0) - geq);
+                    geq - (dtOvertauPlusdt-1) * (g(xiIndex, 0, 0) - geq);
             }
             S+=gStage(xiIndex,0,0);
         
@@ -656,9 +807,127 @@ void KerCollideBGKADG(ACC<Real>& gStage, const ACC<Real>& g,
         }
 
         gStage(lattIdx[0],0,0)=C-S;
+        //std::cout<<gStage(lattIdx[0],0,0)<<"   ";
     }
 #endif  // OPS_2D
 }
+
+
+
+void KerCollideMRTFEF(ACC<Real>& gStage, const ACC<Real>& g,
+                             const ACC<Real>& coordinates,
+                             const ACC<int>& nodeType, const ACC<Real>& Conc,
+                             const ACC<Real>& U, const ACC<Real>& V,
+                             const ACC<Real>& acceleration, 
+                              const Real* tauRef,
+                             const Real* dt, const int* lattIdx) {
+#ifdef OPS_2D
+    VertexType vt = (VertexType)nodeType(0, 0);
+    // collisionRequired: means if collision is required at boundary
+    // e.g., the ZouHe boundary condition explicitly requires collision
+    bool collisionRequired = (vt != VertexType::ImmersedSolid);
+    if (collisionRequired) {
+        Real u{U(0, 0)};
+        Real v{V(0, 0)};
+        Real C{Conc(0,0)};
+        Real ff[]{acceleration(0, 0, 0), acceleration(1, 0, 0)};
+        //STORE SEPERATELY
+
+
+        ///////
+        Real taul=1.0;
+        Real taug=1.0;
+        Real Dt{*dt};
+        Real vl=CS*CS*(taul-Dt/2);
+        Real vg=CS*CS*(taug-Dt/2);
+        Real V=vg+(C+1.0)/2.0*(vl-vg);
+        Real W=2.0/(6.0*V+1.0);
+        
+        std::vector<std::vector<Real> > S = {
+            {0, 0, 0, 0, 0, 0, 0, 0, 0} , 
+            {0, Dt, 0, 0, 0, 0, 0, 0, 0} , 
+            {0, 0, Dt, 0, 0, 0, 0, 0, 0} , 
+            {0, 0, 0, 0, 0, 0, 0, 0, 0} , 
+            {0, 0, 0, 0, Dt, 0, 0, 0, 0} , 
+            {0, 0, 0, 0, 0, 0, 0, 0, 0} , 
+            {0, 0, 0, 0, 0, 0, Dt, 0, 0} , 
+            {0, 0, 0, 0, 0, 0, 0, Dt*W, 0} , 
+            {0, 0, 0, 0, 0, 0, 0, 0, Dt*W} , 
+        };
+        const Real T{1};
+        /*
+        Real G1{g(lattIdx[0], 0, 0)};
+        Real G2{};
+        Real G3{};
+        Real G4{};
+        Real G2{};
+        Real G2{};
+        Real G2{};
+        Real G2{};
+        Real G2{};
+        */
+        const int polyOrder{2};
+        Real tau = (*tauRef);
+        Real dtOvertauPlusdt = (Dt) / (tau);
+        std::vector<std::vector<Real> > gm = {
+            {(Real)g(lattIdx[0], 0, 0)-(Real)CalcBGKFeqFE(lattIdx[0], C, u, v, ff, dt, T, polyOrder)},
+            {(Real)g(lattIdx[0]+1, 0, 0)-(Real)CalcBGKFeqFE(lattIdx[0]+1, C, u, v, ff, dt, T, polyOrder)},
+            {(Real)g(lattIdx[0]+2, 0, 0)-(Real)CalcBGKFeqFE(lattIdx[0]+2, C, u, v, ff, dt, T, polyOrder)},
+            {(Real)g(lattIdx[0]+3, 0, 0)-(Real)CalcBGKFeqFE(lattIdx[0]+3, C, u, v, ff, dt, T, polyOrder)},
+            {(Real)g(lattIdx[0]+4, 0, 0)-(Real)CalcBGKFeqFE(lattIdx[0]+4, C, u, v, ff, dt, T, polyOrder)},
+            {(Real)g(lattIdx[0]+5, 0, 0)-(Real)CalcBGKFeqFE(lattIdx[0]+5, C, u, v, ff, dt, T, polyOrder)},
+            {(Real)g(lattIdx[0]+6, 0, 0)-(Real)CalcBGKFeqFE(lattIdx[0]+6, C, u, v, ff, dt, T, polyOrder)},
+            {(Real)g(lattIdx[0]+7, 0, 0)-(Real)CalcBGKFeqFE(lattIdx[0]+7, C, u, v, ff, dt, T, polyOrder)},
+            {(Real)g(lattIdx[0]+8, 0, 0)-(Real)CalcBGKFeqFE(lattIdx[0]+8, C, u, v, ff, dt, T, polyOrder)}};
+        std::vector<std::vector<Real> > Force = {
+            {0.5*gStage(lattIdx[0],0,0)},
+            {0.5*gStage(lattIdx[0]+1,0,0)},
+            {0.5*gStage(lattIdx[0]+2,0,0)},
+            {0.5*gStage(lattIdx[0]+3,0,0)},
+            {0.5*gStage(lattIdx[0]+4,0,0)},
+            {0.5*gStage(lattIdx[0]+5,0,0)},
+            {0.5*gStage(lattIdx[0]+6,0,0)},
+            {0.5*gStage(lattIdx[0]+7,0,0)},
+            {0.5*gStage(lattIdx[0]+8,0,0)},
+        };
+        std::vector<std::vector<Real> > Mgm=KerMultMatrix(M,gm);
+        std::vector<std::vector<Real> > SMgm=KerMultMatrix(S,Mgm);
+        std::vector<std::vector<Real> > MF=KerMultMatrix(M,Force);
+        std::vector<std::vector<Real> > SMF=KerMultMatrix(S,MF);
+        std::vector<std::vector<Real> > MinvSMgm=KerMultMatrix(Minv,SMgm);
+        std::vector<std::vector<Real> > MinvSMF=KerMultMatrix(Minv,SMF);
+        
+        
+        for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
+                std::cout<<Mgm[0][xiIndex]<<" "<<SMgm[0][xiIndex]<<" "<<MinvSMgm[0][xiIndex]<<" ";
+                gStage(xiIndex, 0, 0) =
+                    g(xiIndex, 0, 0) + gStage(xiIndex, 0, 0) - MinvSMgm[0][xiIndex] - MinvSMF[0][xiIndex];
+                
+            } else {
+                gStage(xiIndex, 0, 0) =
+                    g(xiIndex, 0, 0) - MinvSMgm[0][xiIndex];
+            }
+#ifdef CPU
+            const Real res{gStage(xiIndex, 0, 0)};
+            if (isnan(res) || res <= -100.01 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function = %e becomes invalid at  "
+                    "the lattice %i where rho=%e u=%e v=%e at "
+                    "x=%e y=%e force=%e,%e\n",
+                    res, xiIndex, C, u, v, coordinates(0, 0, 0),
+                    coordinates(1, 0, 0),ff[0],ff[1]);
+                std::cout << C << "Conc\n";
+                //assert(!(isnan(res) || res <= -10.01 || isinf(res)));
+            }
+#endif  // CPU
+        }
+        
+    }
+#endif  // OPS_2D
+}
+
+
 
 void KerCollideBGKThermal(ACC<Real>& fStage, const ACC<Real>& f,
                           const ACC<int>& nodeType, const ACC<Real>& Rho,
@@ -904,7 +1173,41 @@ void KerCollideBGKThermal3D(ACC<Real>& fStage, const ACC<Real>& f,
 #endif  // OPS_3D
 }
 
+
 void KerInitialiseBGKADF3D(ACC<Real>& g, const ACC<int>& nodeType,
+                         ACC<Real>& Conc, const ACC<Real>& U,
+                         const ACC<Real>& V,const ACC<Real>& W,const ACC<Real>& acceleration,const Real* dt, const int* lattIdx) {
+#ifdef OPS_3D
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    if (vt != VertexType::ImmersedSolid) {
+        Real C{Conc(0,0,0)};
+        Real u{U(0, 0, 0)};
+        Real v{V(0, 0, 0)};
+        Real w{W(0, 0, 0)};
+
+        const Real T{1};
+        const int polyOrder{2};
+        for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+            g(xiIdx, 0, 0, 0) = CalcBGKFeqAD3D(xiIdx, C, u, v, w, T, polyOrder);
+            //std::cout<<xiIdx<<" "<<g(xiIdx,0,0,0)<<" "<<u<<"   ";
+
+#ifdef CPU
+            const Real res{g(xiIdx, 0, 0, 0)};
+            if (isnan(res) || res <= -100.01 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function %f becomes invalid at the "
+                    "lattice %i\n",
+                    res, xiIdx);
+                assert(!(isnan(res) || res <= -10.01 || isinf(res)));
+            }
+#endif  // CPU
+        }
+    }
+#endif  // OPS_3D
+}
+
+
+void KerInitialiseBGKFEF3D(ACC<Real>& g, const ACC<int>& nodeType,
                          ACC<Real>& Conc, const ACC<Real>& U,
                          const ACC<Real>& V,const ACC<Real>& W,const ACC<Real>& acceleration,const Real* dt, const int* lattIdx) {
 #ifdef OPS_3D
@@ -935,7 +1238,7 @@ void KerInitialiseBGKADF3D(ACC<Real>& g, const ACC<int>& nodeType,
 #endif  // OPS_3D
 }
 
-void KerInitialiseBGKADG3D(ACC<Real>& g, const ACC<int>& nodeType,
+void KerInitialiseBGKFEG3D(ACC<Real>& g, const ACC<int>& nodeType,
                          ACC<Real>& Conc, const ACC<Real>& U,
                          const ACC<Real>& V, const ACC<Real>& W, const ACC<Real>& Mu, const Real* dt, const int* lattIdx) {
 #ifdef OPS_3D
@@ -969,7 +1272,68 @@ void KerInitialiseBGKADG3D(ACC<Real>& g, const ACC<int>& nodeType,
 #endif  // OPS_3D
 }
 
+
 void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
+                             const ACC<Real>& coordinates,
+                             const ACC<int>& nodeType, const ACC<Real>& Conc,
+                             const ACC<Real>& U, const ACC<Real>& V, const ACC<Real>& W,
+                             const ACC<Real>& acceleration, 
+                              const Real* tauRef,
+                             const Real* dt, const int* lattIdx) {
+#ifdef OPS_3D
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    // collisionRequired: means if collision is required at boundary
+    // e.g., the ZouHe boundary condition explicitly requires collision
+    //std::cout<<"test ";
+    bool collisionRequired = (vt != VertexType::ImmersedSolid);
+    if (collisionRequired) {
+        Real u{U(0, 0, 0)};
+        Real v{V(0, 0, 0)};
+        Real w{W(0, 0, 0)};
+        Real C{Conc(0,0, 0)};
+
+        const Real T{1};
+        const int polyOrder{2};
+        Real tau = (*tauRef);
+        Real test=0;
+        Real dtOvertauPlusdt = (*dt) / (tau);
+        
+        //Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+        for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
+            const Real geq{CalcBGKFeqAD3D(xiIndex, C, u, v, w, T, polyOrder)};
+            test=gStage(xiIndex, 0, 0, 0);
+            if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
+                
+                gStage(xiIndex, 0, 0, 0) =
+                    geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0, 0) - geq) +
+                    //tau * dtOvertauPlusdt * gStage(xiIndex, 0, 0, 0);
+                    (1-1/(2*tau)) * gStage(xiIndex, 0, 0, 0);
+                //std::cout<<xiIndex<<" "<<g(xiIndex,0,0,0)<<" "<<u<<"   ";
+            } else {
+                gStage(xiIndex, 0, 0, 0) =
+                    geq + (1-dtOvertauPlusdt) * (g(xiIndex, 0, 0, 0) - geq);
+            }
+#ifdef CPU
+            const Real res{gStage(xiIndex, 0, 0, 0)};
+            if (isnan(res) || res <= -200.01 || isinf(res)) {
+                ops_printf(
+                    "Error! Distribution function = %e becomes invalid at  "
+                    "the lattice %i where feq=%e and rho=%e u=%e v=%e at "
+                    "x=%e y=%e z=%e force=%e\n",
+                    res, xiIndex, geq, C, u, v, coordinates(0, 0, 0, 0),
+                    coordinates(1, 0, 0, 0),coordinates(2, 0, 0, 0),test);
+                std::cout << C << "Conc\n";
+                assert(!(isnan(res) || res <= 0 || isinf(res)));
+            }
+#endif  // CPU
+        }
+        
+    }
+#endif  // OPS_3D
+}
+
+
+void KerCollideBGKFEF3D(ACC<Real>& gStage, const ACC<Real>& g,
                              const ACC<Real>& coordinates,
                              const ACC<int>& nodeType, const ACC<Real>& Conc,
                              const ACC<Real>& U, const ACC<Real>& V, const ACC<Real>& W,
@@ -990,7 +1354,8 @@ void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
         const Real T{1};
         const int polyOrder{2};
         Real tau = (*tauRef);
-        Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+        //Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+        Real dtOvertauPlusdt = (*dt) / (tau);
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real geq{CalcBGKFeqFE3D(xiIndex, C, u, v, w, ff, dt, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
@@ -1004,7 +1369,7 @@ void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
             }
 #ifdef CPU
             const Real res{gStage(xiIndex, 0, 0, 0)};
-            if (isnan(res) || res <= -2.01 || isinf(res)) {
+            if (isnan(res) || res <= -200.01 || isinf(res)) {
                 ops_printf(
                     "Error! Distribution function = %e becomes invalid at  "
                     "the lattice %i where feq=%e and rho=%e u=%e v=%e at "
@@ -1021,7 +1386,7 @@ void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
 #endif  // OPS_3D
 }
 
-void KerCollideBGKADG3D(ACC<Real>& gStage, const ACC<Real>& g,
+void KerCollideBGKFEG3D(ACC<Real>& gStage, const ACC<Real>& g,
                              const ACC<Real>& coordinates,
                              const ACC<int>& nodeType, const ACC<Real>& Conc,
                              const ACC<Real>& U, const ACC<Real>& V, const ACC<Real>& W,
@@ -1040,7 +1405,8 @@ void KerCollideBGKADG3D(ACC<Real>& gStage, const ACC<Real>& g,
         Real mu{Mu(0,0,0)};
         const int polyOrder{2};
         Real tau = (*tauRef);
-        Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+        //Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+        Real dtOvertauPlusdt = (*dt) / (tau);
         Real S{0.0};
         for (int xiIndex = lattIdx[0]+1; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real geq{CalcBGKGeqFE3D(xiIndex, C, u, v, w, mu, dt, polyOrder)};
@@ -1155,17 +1521,23 @@ void KerCalcDensity3D(ACC<Real>& Rho, const ACC<Real>& f,
         Real rho{0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
             rho += f(xiIdx, 0, 0, 0);
+            //if (rho<=-10){
+            //std::cout<<f(xiIdx,0,0,0)<<" "<<xiIdx<<"  ";
+            //}
         }
 #ifdef CPU
-        if (isnan(rho) || rho <= -10 || isinf(rho)) {
+        if (isnan(rho) || rho <= -100000 || isinf(rho)) {
             ops_printf(
                 "Error! Density %f becomes invalid！Something "
                 "wrong...",
                 rho);
-            assert(!(isnan(rho) || rho <= -10 || isinf(rho)));
+            //assert(!(isnan(rho) || rho <= -1000 || isinf(rho)));
         }
 #endif
         Rho(0, 0, 0) = rho;
+        //if (rho<=-2){
+        //std::cout<<rho<<" ";
+        //}
     }
 #endif // OPS_3D
 }
@@ -1178,6 +1550,7 @@ void KerCalcU3D(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
         Real u{0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
             u += CS * XI[xiIdx * LATTDIM] * f(xiIdx, 0, 0, 0);
+            //std::cout<<f(xiIdx,0,0,0)<<" "<<u<<" ";
         }
         u /= Rho(0, 0, 0);
 #ifdef CPU
@@ -1264,8 +1637,11 @@ void KerCalcUForce3D(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
         if (isnan(u) || isinf(u)) {
             ops_printf(
                 "Error! Velocity U=%f becomes invalid! Maybe something wrong "
-                "at x=%f y=%f z=%f, a=%f\n",
-                u, x, y, z,acceleration(0,0,0,0));
+                "at x=%f y=%f z=%f, a=%f, rho=%f, f=%f,\n",
+                u, x, y, z,acceleration(0,0,0,0),Rho(0, 0, 0));
+            for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
+                std::cout<<f(xiIdx, 0, 0, 0)<<"  ";
+            }
             assert(!(isnan(u) || isinf(u)));
         }
 #endif
@@ -1375,14 +1751,14 @@ void KerCalcGradients3D(ACC<Real>&grad, const ACC<Real>&f,
 void KerUpdateRhoWetting3D(ACC<Real>& rho,const ACC<int>& geometry,
                            const ACC<int>&nodeType,
                            const ACC<Real>& coordinates,
-                           const int *theta, const int *Aconst, const int *Kappa) {
+                           const Real *theta, const Real *Aconst, const Real *Kappa) {
     const Real teta={*theta};
     const Real alpha={acos(sin(teta)*sin(teta))};
-    const Real Omga={2*((teta <= M_PI/2) - (M_PI/2 < teta))*sqrt(cos(alpha/3)
-                     *(1-cos(alpha/3)))};
+    const Real Omga={2*((teta <= M_PI/2.0) - (M_PI/2.0 < teta))*sqrt(cos(alpha/3.0)
+                     *(1-cos(alpha/3.0)))};
     const Real K={*Kappa};
     const Real A={*Aconst};
-    const Real h={Omga*sqrt(K*A/2)};
+    const Real h={Omga*sqrt(K*A/2.0)};
     VertexType vt = (VertexType)nodeType(0, 0, 0);
     VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
     VertexGeometryType vg0 = (VertexGeometryType)geometry(1, 0, 0);
@@ -1984,7 +2360,7 @@ void KerUpdateRhoWetting3D(ACC<Real>& rho,const ACC<int>& geometry,
 
 //Calculate chemical potential within Free Energy Model
 void KerCalcMu3D(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi,
-                 const ACC<int>&nodeType, const int *Aconst, const int *Kappa){
+                 const ACC<int>&nodeType, const Real *Aconst, const Real *Kappa){
     Real phi{Phi(0,0,0)};
     Real phi3 = {phi*phi*phi};
     const Real A={*Aconst};
@@ -1992,6 +2368,9 @@ void KerCalcMu3D(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi,
     VertexType vt = (VertexType)nodeType(0, 0, 0);
     if (vt != VertexType::ImmersedSolid){
     mu(0,0,0)=-A*phi+A*phi3-kappa*(d2phi(0,0,0,0)+d2phi(1,0,0,0)+d2phi(2,0,0,0));
+    //if (mu(0,0,0)>=10){
+    //std::cout<<A<<" "<<kappa<<" "<<phi<<" "<<mu(0,0,0)<<"    ";
+    //}
     }
 }
 

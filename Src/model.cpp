@@ -48,9 +48,11 @@
 int NUMXI{9};
 int FEQORDER{2};
 int LATTDIM{2};
-Real CS{1};
+Real CS{1.0};
 Real* XI{nullptr};
 Real* WEIGHTS{nullptr};
+std::vector<std::vector<Real> > M;
+std::vector<std::vector<Real> > Minv;
 int* OPP{nullptr};
 int NUMCOMPONENTS{1};
 
@@ -65,6 +67,7 @@ struct lattice {
 };
 // Giving the parameters of commonly used lattices.
 lattice d2q9_diffusive{2, 9, 1};
+lattice d2q9_diffusiveMRT{2, 9, 1};
 lattice d2q9{2, 9, sqrt(3)};
 lattice d3q19_diffusive{3, 19, 1};
 lattice d3q19{3, 19, sqrt(3)};
@@ -73,6 +76,7 @@ lattice d2q16{2, 16, 1};
 lattice d2q36{2, 36, 1};
 
 std::map<std::string, lattice> latticeSet{{"d2q9_diffusive", d2q9_diffusive},
+    {"d2q9_diffusiveMRT", d2q9_diffusiveMRT},
     {"d2q9", d2q9}, {"d3q19_diffusive", d3q19_diffusive}, {"d3q19", d3q19}, 
     {"d3q15", d3q15}, {"d2q36", d2q36}};
 
@@ -123,6 +127,44 @@ void SetupD2Q9_diffusiveLatt(const int startPos) {
         WEIGHTS[startPos + l] = t[l];
         OPP[startPos + l] = startPos+op9[l];
     }
+}
+
+void SetupD2Q9_diffusiveLattMRT(const int startPos) {
+    const int nc9{9};
+    Real t00 = 4.0 / 9.0, t01 = 1.0 / 9.0, t11 = 1.0 / 36.0;
+    Real t[nc9] = {t00, t01, t01, t01, t01, t11, t11, t11, t11};
+    int cxi[nc9] = {0, 1, 0, -1, 0, 1, -1, -1, 1};
+    int cyi[nc9] = {0, 0, 1, 0, -1, 1, 1, -1, -1};
+    int op9[nc9] = {0, 3, 4, 1, 2, 7, 8, 5, 6};
+    for (int l = 0; l < nc9; l++) {
+        XI[(startPos + l) * LATTDIM] = cxi[l];
+        XI[(startPos + l) * LATTDIM + 1] = cyi[l];
+        WEIGHTS[startPos + l] = t[l];
+        OPP[startPos + l] = startPos+op9[l];
+        
+    }
+    M = {  
+        {1, 1, 1, 1, 1, 1, 1, 1, 1} ,   
+        {-4, -1, -1, -1, -1, 2, 2, 2, 2} ,   
+        {4, -2, -2, -2, -2, 1, 1, 1, 1} ,  
+        {0, 1, -1, 0, 0, 1, -1, -1, 1} ,   
+        {0, -2, 2, 0, 0, 1, -1, -1, 1} ,   
+        {0, 0, 0, 1, -1, 1, -1, 1, -1} , 
+        {0, 0, 0, -2, 2, 1, -1, 1, -1} ,   
+        {0, 1, 1, -1, -1, 0, 0, 0, 0} ,   
+        {0, 0, 0, 0, 0, 1, 1, -1, -1} , 
+    };
+    Minv = {  
+        {1.0/9.0, -1.0/9.0, 0, 0, 0, 0, 0, 0, 0} ,   
+        {1.0/9.0, -1.0/36.0, -1.0/18.0, 1.0/6.0, -1.0/6.0, 0, 0, 1.0/4.0, 0} ,   
+        {1.0/9.0, -1.0/36.0, -1.0/18.0, -1.0/6.0, 1.0/6.0, 0, 0, 1.0/4.0, 0} ,   
+        {1.0/9.0, -1.0/36.0, -1.0/18.0, 0, 0, 1.0/6.0, -1.0/6.0, -1.0/4.0, 0} ,  
+        {1.0/9.0, -1.0/36.0, -1.0/18.0, 0, 0, -1.0/6.0, 1.0/6.0, -1.0/4.0, 0} ,  
+        {1.0/9.0, 1.0/18.0, 1.0/36.0, 1.0/6.0, 1.0/12.0, 1.0/6.0, 1.0/12.0, 0, 1.0/4.0} , 
+        {1.0/9.0, 1.0/18.0, 1.0/36.0, -1.0/6.0, -1.0/12.0, -1.0/6.0, -1.0/12.0, 0, 1.0/4.0} , 
+        {1.0/9.0, 1.0/18.0, 1.0/36.0, -1.0/6.0, -1.0/12.0, 1.0/6.0, 1.0/12.0, 0, -1.0/4.0} , 
+        {1.0/9.0, 1.0/18.0, 1.0/36.0, 1.0/6.0, 1.0/12.0, -1.0/6.0, -1.0/12.0, 0, -1.0/4.0} , 
+    };
 }
 
 void SetupD3Q19Latt(const int startPos) {
@@ -295,6 +337,9 @@ void DefineComponents(const std::vector<std::string>& compoNames,
             if ("d2q9_diffusive" == lattNames[idx]) {
                 SetupD2Q9_diffusiveLatt(startPos);
             }
+            if ("d2q9_diffusiveMRT" == lattNames[idx]) {
+                SetupD2Q9_diffusiveLattMRT(startPos);
+            }
             if ("d3q19_diffusive" == lattNames[idx]) {
                 SetupD3Q19Latt(startPos);
             }
@@ -320,12 +365,14 @@ void DefineComponents(const std::vector<std::string>& compoNames,
         IntField nodeType{"NodeType" + pair.second.name};
         g_NodeType().emplace(pair.second.id, nodeType);
     }
+    
 
     g_f().SetDataDim(NUMXI);
     if (timeStep == 0) {
         g_f().CreateFieldFromScratch(g_Block());
         for (auto& pair : g_NodeType()) {
             pair.second.CreateFieldFromScratch(g_Block());
+            pair.second.CreateHalos();
         }
     
     } else {

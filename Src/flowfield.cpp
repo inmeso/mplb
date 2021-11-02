@@ -98,7 +98,7 @@ RealFieldGroup& g_MacroBodyforce() { return MacroBodyforce; };
  * DT: time step
  */
 Real DT{1};
-Real theta_FE=M_PI/2;
+Real theta_FE=M_PI/4;
 Real A_FE=0.02;
 Real kappa_FE=0.02;
 
@@ -169,6 +169,7 @@ void SetFEParams(Real teta,Real A,Real k){
     theta_FE=teta;
     A_FE=A;
     kappa_FE=k;
+    std::cout<<theta_FE<<" "<<A_FE<<" "<<kappa_FE<<"    ";
 }
 
 Real GetMaximumResidual(const SizeType checkPeriod) {

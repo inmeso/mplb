@@ -380,9 +380,11 @@ void BoundaryNormal3D(const VertexGeometryType vg, int* unitNormal) {
 void ImplementBoundary3D() {
     for (const auto& boundary : BlockBoundaries()) {
         const Block& block{g_Block().at(boundary.blockIndex)};
+        if (boundary.boundarySurface != BoundarySurface::None) {
         TreatBlockBoundary3D(block, boundary.componentID,
                              boundary.givenVars.data(), boundary.boundaryScheme,
                              boundary.boundarySurface);
+        }
     }
 }
 #endif

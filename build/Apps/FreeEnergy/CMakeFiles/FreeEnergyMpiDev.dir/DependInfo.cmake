@@ -23,7 +23,7 @@ set(CMAKE_CXX_COMPILER_ID "GNU")
 set(CMAKE_TARGET_DEFINITIONS_CXX
   "CPU"
   "LEVEL=DebugLevel=0"
-  "OPS_3D"
+  "OPS_2D"
   "OPS_MPI"
   )
 

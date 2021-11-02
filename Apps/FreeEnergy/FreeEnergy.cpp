@@ -334,21 +334,27 @@ void simulate() {
     //Define one block this application
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{200, 200};
+    std::vector<int> blockSize{360, 80};
     Real meshSize{1.};
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
-    std::vector<int> fromBlockIds{0, 0};
-    std::vector<int> toBlockIds{0, 0};
+    std::vector<int> fromBlockIds{0, 0, 0, 0,0,0,0,0};
+    std::vector<int> toBlockIds{0, 0, 0, 0,0,0,0,0};
 
     std::vector<BoundarySurface> fromBoundarySurface{BoundarySurface::Top,
-        BoundarySurface::Bottom};
+        BoundarySurface::Bottom,BoundarySurface::Left,
+        BoundarySurface::Right,BoundarySurface::LeftTop,
+        BoundarySurface::LeftBottom,BoundarySurface::RightTop,
+        BoundarySurface::RightBottom};
     std::vector<BoundarySurface> toBoundarySurface{BoundarySurface::Bottom,
-        BoundarySurface::Top};
+        BoundarySurface::Top,BoundarySurface::Right,
+        BoundarySurface::Left,BoundarySurface::RightBottom,
+        BoundarySurface::RightTop,BoundarySurface::LeftBottom,
+        BoundarySurface::LeftTop};
 
     std::vector<VertexType> blockConnectionType{
-        VertexType::MDPeriodic, VertexType::MDPeriodic};
+        VertexType::MDPeriodic, VertexType::MDPeriodic, VertexType::MDPeriodic, VertexType::MDPeriodic,VertexType::FDPeriodic, VertexType::FDPeriodic, VertexType::FDPeriodic, VertexType::FDPeriodic};
 
     DefineBlockConnection(fromBlockIds, fromBoundarySurface, toBlockIds,
                           toBoundarySurface, blockConnectionType);
@@ -357,9 +363,9 @@ void simulate() {
     std::vector<std::string> compoNames{"Fluid","Diffusion"};
     std::vector<int> compoid{0,1};
     std::vector<std::string> lattNames{"d2q9_diffusive","d2q9_diffusive"};
-    std::vector<Real> tauRef{1,1};
+    std::vector<Real> tauRef{1.0,1.0};
 
-    SetFEParams(2*M_PI/3,0.02,0.02);
+    SetFEParams(M_PI/3,0.02,0.02);
 
     DefineComponents(compoNames, compoid, lattNames, tauRef);
 
@@ -370,7 +376,7 @@ void simulate() {
     std::vector<int> macroCompoId{0, 0, 0, 1};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
-    std::vector<CollisionType> collisionTypes{Collision_BGKADF,Collision_BGKADG};
+    std::vector<CollisionType> collisionTypes{Collision_BGKFEF,Collision_BGKFEG};
     std::vector<int> collisionCompoId{0,1};
     DefineCollision(collisionTypes, collisionCompoId);
 
@@ -389,7 +395,7 @@ void simulate() {
 
     // Periodic Boundary Conditions
 
-
+    
     DefineBlockBoundary(0,componentId , BoundarySurface::Top,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
@@ -402,6 +408,20 @@ void simulate() {
     DefineBlockBoundary(0, componentId, BoundarySurface::Right,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
+    /*
+    DefineBlockBoundary(0,componentId , BoundarySurface::LeftTop,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::FDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::RightBottom,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::FDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::LeftBottom,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::FDPeriodic);
+    DefineBlockBoundary(0, componentId, BoundarySurface::RightTop,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::FDPeriodic);
+    */
 
     DefineBlockBoundary(0, 1, BoundarySurface::Left,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
@@ -415,14 +435,35 @@ void simulate() {
     DefineBlockBoundary(0, 1, BoundarySurface::Bottom,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
+    /*
+    DefineBlockBoundary(0, 1, BoundarySurface::LeftTop,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::FDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::RightBottom,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::FDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::RightTop,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::FDPeriodic);
+    DefineBlockBoundary(0, 1, BoundarySurface::LeftBottom,
+                        BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
+                        noSlipStationaryWall, VertexType::FDPeriodic);
+    */
+    
+    DefineBlockBoundary(0, componentId, BoundarySurface::None, BoundaryScheme::ZouHeVelocity, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
+    DefineBlockBoundary(0, 1, BoundarySurface::None, BoundaryScheme::ZouHeVelocityG, macroVarTypesatBoundary,
+                        noSlipStationaryWall);
 
-
-    std::vector<InitialType> initType{Initial_BGKFeq2ndAD,Initial_BGKGeq2ndAD};
+    std::vector<InitialType> initType{Initial_BGKFeq2ndFE,Initial_BGKGeq2ndFE};
     std::vector<SizeType> initalCompoId{0,1};
 
     g_mu().CreateHalos();
     const auto& compoC = g_Components().at(1);
     g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).CreateHalos();
+    for (auto& pair : g_NodeType()) {
+            pair.second.TransferHalos();
+    }
     DefineInitialCondition(initType, initalCompoId);
 
     Partition();
@@ -435,12 +476,13 @@ void simulate() {
     CalcPhiWetting();
 
     PreDefinedInitialConditionAD();
+    TransferHalos();
     UpdateMacroVars();
     
     SetTimeStep(1);
-
+    
     const Real convergenceCriteria{-1E-7};
-    const SizeType checkPeriod{1000};
+    const SizeType checkPeriod{5000};
     Real iter{0};
     WriteFlowfieldToHdf5(iter);
     WriteDistributionsToHdf5(iter);
@@ -458,7 +500,7 @@ void simulate() {
     DefineModelType(modeltypes);
     std::vector<int> blockIds{0};
     std::vector<std::string> blockNames{"Cavity"};
-    std::vector<int> blockSize{40, 40, 40};
+    std::vector<int> blockSize{80, 80, 80};
     Real meshSize{1.};
     SetFEParams(2*M_PI/3,0.02,0.02);
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
@@ -494,7 +536,7 @@ void simulate() {
     std::vector<int> macroCompoId{0, 0, 0, 0, 1};
     DefineMacroVars(marcoVarTypes, macroVarNames, macroVarId, macroCompoId);
 
-    std::vector<CollisionType> collisionTypes{Collision_BGKADF,Collision_BGKADG};
+    std::vector<CollisionType> collisionTypes{Collision_BGKFEF,Collision_BGKFEG};
     std::vector<int> collisionCompoId{0,1};
     DefineCollision(collisionTypes, collisionCompoId);
 
@@ -510,7 +552,7 @@ void simulate() {
     std::vector<VariableTypes> macroVarTypesatBoundary{
         Variable_U_Force, Variable_V_Force, Variable_W_Force};
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
-
+    /*
     DefineBlockBoundary(0, componentId, BoundarySurface::Front,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
@@ -523,13 +565,13 @@ void simulate() {
     DefineBlockBoundary(0, 1, BoundarySurface::Back,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
-
-    DefineBlockBoundary(0, componentId, BoundarySurface::None, BoundaryScheme::EQMDiffuseReflF, macroVarTypesatBoundary,
+    */
+    DefineBlockBoundary(0, componentId, BoundarySurface::None, BoundaryScheme::ZouHeVelocity, macroVarTypesatBoundary,
                         noSlipStationaryWall);
-    DefineBlockBoundary(0, 1, BoundarySurface::None, BoundaryScheme::EQMDiffuseReflG, macroVarTypesatBoundary,
+    DefineBlockBoundary(0, 1, BoundarySurface::None, BoundaryScheme::ZouHeVelocityG, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
-    std::vector<InitialType> initType{Initial_BGKFeq2ndAD,Initial_BGKGeq2ndAD};
+    std::vector<InitialType> initType{Initial_BGKFeq2ndFE,Initial_BGKGeq2ndFE};
     std::vector<SizeType> initalCompoId{0,1};
     g_mu().CreateHalos();
     const auto& compoC = g_Components().at(1);

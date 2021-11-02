@@ -263,6 +263,32 @@ PoiseuilleSeqDev/fast:
 .PHONY : PoiseuilleSeqDev/fast
 
 #=============================================================================
+# Target rules for targets named Poiseuille2MpiDev
+
+# Build rule for target.
+Poiseuille2MpiDev: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Poiseuille2MpiDev
+.PHONY : Poiseuille2MpiDev
+
+# fast build rule for target.
+Poiseuille2MpiDev/fast:
+	$(MAKE) $(MAKESILENT) -f Apps/Poiseuille2/CMakeFiles/Poiseuille2MpiDev.dir/build.make Apps/Poiseuille2/CMakeFiles/Poiseuille2MpiDev.dir/build
+.PHONY : Poiseuille2MpiDev/fast
+
+#=============================================================================
+# Target rules for targets named Poiseuille2SeqDev
+
+# Build rule for target.
+Poiseuille2SeqDev: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 Poiseuille2SeqDev
+.PHONY : Poiseuille2SeqDev
+
+# fast build rule for target.
+Poiseuille2SeqDev/fast:
+	$(MAKE) $(MAKESILENT) -f Apps/Poiseuille2/CMakeFiles/Poiseuille2SeqDev.dir/build.make Apps/Poiseuille2/CMakeFiles/Poiseuille2SeqDev.dir/build
+.PHONY : Poiseuille2SeqDev/fast
+
+#=============================================================================
 # Target rules for targets named AdDiffMpiDev
 
 # Build rule for target.
@@ -362,6 +388,8 @@ help:
 	@echo "... FreeEnergySeqDev"
 	@echo "... LChannel3DMpiDev"
 	@echo "... LChannel3DSeqDev"
+	@echo "... Poiseuille2MpiDev"
+	@echo "... Poiseuille2SeqDev"
 	@echo "... PoiseuilleMpiDev"
 	@echo "... PoiseuilleSeqDev"
 .PHONY : help

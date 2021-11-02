@@ -20,6 +20,10 @@
 /home/chocolateftd/mplb/build/Apps/Poiseuille/CMakeFiles/edit_cache.dir
 /home/chocolateftd/mplb/build/Apps/Poiseuille/CMakeFiles/PoiseuilleMpiDev.dir
 /home/chocolateftd/mplb/build/Apps/Poiseuille/CMakeFiles/PoiseuilleSeqDev.dir
+/home/chocolateftd/mplb/build/Apps/Poiseuille2/CMakeFiles/rebuild_cache.dir
+/home/chocolateftd/mplb/build/Apps/Poiseuille2/CMakeFiles/edit_cache.dir
+/home/chocolateftd/mplb/build/Apps/Poiseuille2/CMakeFiles/Poiseuille2MpiDev.dir
+/home/chocolateftd/mplb/build/Apps/Poiseuille2/CMakeFiles/Poiseuille2SeqDev.dir
 /home/chocolateftd/mplb/build/Apps/AdDiff/CMakeFiles/edit_cache.dir
 /home/chocolateftd/mplb/build/Apps/AdDiff/CMakeFiles/rebuild_cache.dir
 /home/chocolateftd/mplb/build/Apps/AdDiff/CMakeFiles/AdDiffMpiDev.dir
