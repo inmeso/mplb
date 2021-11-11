@@ -99,10 +99,10 @@ void FindReverseXi(const int startPos, const int latticeSize) {
 void SetupD2Q9Latt(const int startPos) {
     const int nc9{9};
     Real t00 = 4.0 / 9.0, t01 = 1.0 / 9.0, t11 = 1.0 / 36.0;
-    Real t[nc9] = {t00, t01, t01, t01, t01, t11, t11, t11, t11};
-    int cxi[nc9] = {0, 1, 0, -1, 0, 1, -1, -1, 1};
-    int cyi[nc9] = {0, 0, 1, 0, -1, 1, 1, -1, -1};
-    int op9[nc9] = {0, 3, 4, 1, 2, 7, 8, 5, 6};
+    Real t[nc9] = {t00, t11, t01, t11, t01, t11, t01, t11, t01};
+    int cxi[nc9] = {0, -1, -1, -1,  0,  1,  1,  1,  0};
+    int cyi[nc9] = {0,  1,  0, -1, -1, -1,  0,  1,  1};
+    int op9[nc9] = {0, 5, 6, 7, 8, 1, 2, 3, 4};
     for (int l = 0; l < nc9; l++) {
         XI[(startPos + l) * LATTDIM] = cxi[l];
         XI[(startPos + l) * LATTDIM + 1] = cyi[l];
