@@ -132,20 +132,9 @@ static inline OPS_FUN_PREFIX Real CalcBGKGeqFE(const int l, const Real C, const 
     Real u2{(u * u + v * v)/(cSound*cSound)};
     Real tau=1.0;
     
-    Real css=1.0/sqrt(3);
-    Real taul=1.0;
-    Real taug=1.0;
-    Real Dt{*dt};
-    Real vl=css*css*(taul-Dt/2.0);
-    Real vg=css*css*(taug-Dt/2.0);
-    Real V=vg+(C+1.0)/2.0*(vl-vg);
-    Real W=2.0/(6.0*V+1.0);
-    Real res = cu + 0.5 * (cu2 - u2);
-    Real R=1.0/(W-*dt/2.0);
-    /*
     Real res = cu + 0.5 * (cu2 - u2);
     Real R=1.0/(tau-*dt/2.0);
-    */
+    
     //std::cout<<mu<<" "<<res<<"   ";
     return WEIGHTS[l] * (C * res+R*mu/(cSound*cSound));
 }

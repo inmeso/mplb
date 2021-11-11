@@ -169,7 +169,7 @@ void SetEmbeddedBodyGeometry() {
                      ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
                                  LOCALSTENCIL, "int", OPS_WRITE),
                      ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
-                                 ONEPTLATTICESTENCIL, "int", OPS_READ));
+                                 ONEPTLATTICESTENCIL, "int", OPS_RW));
         }
     }
 }
@@ -314,7 +314,7 @@ void SetEmbeddedBodyGeometry3D() {
                      ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
                                  LOCALSTENCIL, "int", OPS_WRITE),
                      ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
-                                 ONEPTLATTICESTENCIL, "int", OPS_READ));
+                                 ONEPTLATTICESTENCIL, "int", OPS_RW));
         }
     }
 }
@@ -461,13 +461,14 @@ void simulate() {
     g_mu().CreateHalos();
     const auto& compoC = g_Components().at(1);
     g_MacroVars().at(compoC.macroVars.at(Variable_Rho).id).CreateHalos();
-    for (auto& pair : g_NodeType()) {
-            pair.second.TransferHalos();
-    }
+
     DefineInitialCondition(initType, initalCompoId);
 
     Partition();
     SetSolid();
+    //for (auto& pair : g_NodeType()) {
+    //    pair.second.TransferHalos();
+    //}
     SetEmbeddedBodyGeometry();
     ops_diagnostic_output();
 
@@ -482,7 +483,7 @@ void simulate() {
     SetTimeStep(1);
     
     const Real convergenceCriteria{-1E-7};
-    const SizeType checkPeriod{5000};
+    const SizeType checkPeriod{10};
     Real iter{0};
     WriteFlowfieldToHdf5(iter);
     WriteDistributionsToHdf5(iter);

@@ -817,11 +817,12 @@ void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
     if (vt == VertexType::Wall) {
     VertexGeometryType vg = (VertexGeometryType)geometryProperty(0, 0);
     Real rho{0};
-    //Real u{givenMacroVars[1]};
-    //Real v{givenMacroVars[2]};
-    Real u{0};
-    Real v{0};
+    Real u{givenMacroVars[1]};
+    Real v{givenMacroVars[2]};
+    //Real u{0};
+    //Real v{0};
     int lattStart{lattIdx[0]};
+    
     Real css = 1/sqrt(3);
     Real invcss=1/css;
     switch (vg) {
@@ -906,7 +907,8 @@ void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
             Real f2 = f(lattStart+2, 0, 0);
             Real f6 = f(lattStart+6, 0, 0);
             Real f3 = f(lattStart+3, 0, 0);
-            rho = macroVars(1, -1);
+            rho = macroVars(0, 0);
+            //std::cout<<rho<<" "<< std::endl;
             f(lattStart+1, 0, 0) = (6 * invcss * u * rho + 9 * f3) / 9.0;
             f(lattStart+5, 0, 0) = (1 * invcss * u * rho + 1 * invcss * v * rho) /
                          12.0;
@@ -914,7 +916,9 @@ void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
                          12.0;
             f(lattStart+4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
             f(lattStart+8, 0, 0) = (3*invcss * u * rho - 3*invcss * v * rho + 18 * f6) / 18.0;
+            Real Val{-f(lattStart+1,0,0)-f2-f3-f(lattStart+4,0,0)-f(lattStart+5,0,0)-f6-f(lattStart+7,0,0)-f(lattStart+8,0,0)};
             f(lattStart+0, 0, 0) = rho-f(lattStart+1,0,0)-f2-f3-f(lattStart+4,0,0)-f(lattStart+5,0,0)-f6-f(lattStart+7,0,0)-f(lattStart+8,0,0);
+            std::cout<<lattStart<<" "<<rho<<" "<<f(lattStart+0, 0, 0)<<" "<<f(lattStart+1, 0, 0)<<" "<<f(lattStart+4, 0, 0)<<" "<<f(lattStart+8, 0, 0)<<" "<<f(lattStart+3, 0, 0)<<" "<<f(lattStart+2, 0, 0)<<" "<<f(lattStart+6, 0, 0)<<" "<<Val<<std::endl;
         } break;
         case VG_IPJP_I: {
             // Knows
@@ -922,7 +926,8 @@ void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
             Real f4 = f(lattStart+4, 0, 0);
             Real f3 = f(lattStart+3, 0, 0);
             Real f7 = f(lattStart+7, 0, 0);
-            rho = macroVars(1, 1);
+            rho = macroVars(0, 0);
+
             f(lattStart+1, 0, 0) = (6 * invcss * u * rho + 9 * f3) / 9.0;
             f(lattStart+5, 0, 0) = (3*invcss * u * rho + 3*invcss * v * rho + 18 * f7) / 18.0;
             f(lattStart+8, 0, 0) = (-1 * invcss * u * rho + 1 * invcss * v * rho) /
@@ -938,7 +943,8 @@ void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
             Real f1 = f(lattStart+1, 0, 0);
             Real f8 = f(lattStart+8, 0, 0);
             Real f4 = f(lattStart+4, 0, 0);
-            rho = macroVars(-1, 1);
+            rho = macroVars(0, 0);
+            
             f(lattStart+5, 0, 0) = (1 * invcss * u * rho + 1 * invcss * v * rho) /
                          12.0;
             f(lattStart+2, 0, 0) = (6 * invcss * v * rho + 9 * f4) / 9.0;
@@ -947,7 +953,9 @@ void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
             f(lattStart+3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
             f(lattStart+7, 0, 0) = (- 1 * invcss * u * rho - 1 * invcss * v * rho) /
                          12.0;
+            
             f(lattStart+0, 0, 0) = rho-f(lattStart+2,0,0)-f1-f4-f(lattStart+3,0,0)-f(lattStart+5,0,0)-f8-f(lattStart+7,0,0)-f(lattStart+6,0,0);
+            //std::cout<<rho<<" "<<f(lattStart+0,0,0)<<" "<< std::endl;
         } break;
         case VG_IMJM_I: {
             // Knows
@@ -955,16 +963,16 @@ void KerCutCellZouHeVelocityADG(const Real *givenMacroVars,
             Real f1 = f(lattStart+1, 0, 0);
             Real f2 = f(lattStart+2, 0, 0);
             Real f5 = f(lattStart+5, 0, 0);
-            rho = macroVars(-1, -1);
-            f(6, 0, 0) = (1 * invcss * u * rho - 1 * invcss * v * rho) /
+            rho = macroVars(0, 0);
+            f(lattStart+6, 0, 0) = (1 * invcss * u * rho - 1 * invcss * v * rho) /
                          12.0;
-            f(3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
-            f(7, 0, 0) =
+            f(lattStart+3, 0, 0) = (-6 * invcss * u * rho + 9 * f1) / 9.0;
+            f(lattStart+7, 0, 0) =
                 (-3*(invcss * u * rho) - 3*invcss * v * rho + 18 * f5) / 18.0;
-            f(4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
-            f(8, 0, 0) = (- 1 * invcss * u * rho + 1 * invcss * v * rho) /
+            f(lattStart+4, 0, 0) = (-6 * invcss * v * rho + 9 * f2) / 9.0;
+            f(lattStart+8, 0, 0) = (- 1 * invcss * u * rho + 1 * invcss * v * rho) /
                          12.0;
-            f(0, 0, 0) = rho-f(lattStart+3,0,0)-f2-f1-f(lattStart+4,0,0)-f(lattStart+6,0,0)-f5-f(lattStart+7,0,0)-f(lattStart+8,0,0);
+            f(lattStart+0, 0, 0) = rho-f(lattStart+3,0,0)-f2-f1-f(lattStart+4,0,0)-f(lattStart+6,0,0)-f5-f(lattStart+7,0,0)-f(lattStart+8,0,0);
         } break;
         case VG_IPJP_O: {
             Real f7 = f(lattStart+7, 0, 0);

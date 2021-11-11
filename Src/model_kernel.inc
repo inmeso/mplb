@@ -332,12 +332,12 @@ void KerCalcDensity(ACC<Real>& Rho, const ACC<Real>& f,
         }
         
 #ifdef CPU
-        if (isnan(rho) || rho <= -3 || isinf(rho)) {
+        if (isnan(rho) || rho <= -10 || isinf(rho)) {
             ops_printf(
                 "Error! Density %f becomes invalid！Something "
                 "wrong...",
                 rho);
-            assert(!(isnan(rho) || rho <= -3 || isinf(rho)));
+            assert(!(isnan(rho) || rho <= -10 || isinf(rho)));
         }
 #endif
         Rho(0, 0) = rho;
@@ -406,7 +406,7 @@ void KerCalcUForce(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
             u += CS * XI[xiIdx * LATTDIM] * f(xiIdx, 0, 0);
         }
         u /= Rho(0, 0);
-        if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt || VertexType::Wall == vt ) {
+        if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt) {
             u += ((*dt) * acceleration(0, 0, 0) / (2*Rho(0,0)));
         }
 #ifdef CPU
@@ -436,7 +436,7 @@ void KerCalcVForce(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
             v += CS * XI[xiIdx * LATTDIM + 1] * f(xiIdx, 0, 0);
         }
         v /= Rho(0, 0);
-        if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt || VertexType::Wall == vt ) {
+        if (VertexType::Fluid == vt || VertexType::MDPeriodic == vt) {
             v += ((*dt) * acceleration(1, 0, 0) / (2*Rho(0,0)));
         }
 #ifdef CPU
@@ -709,7 +709,7 @@ void KerCollideBGKFEF(ACC<Real>& gStage, const ACC<Real>& g,
         //Real dtOvertauPlusdt = (*dt) / (tau);
         Real css=1/sqrt(3);
         Real taul=1.0;
-        Real taug=0.51;
+        Real taug=1.0;
         Real Dt{*dt};
         Real vl=css*css*(taul-Dt/2.0);
         Real vg=css*css*(taug-Dt/2.0);
@@ -717,17 +717,17 @@ void KerCollideBGKFEF(ACC<Real>& gStage, const ACC<Real>& g,
         //Real vg=0.05;
         Real V=vg+(phi+1.0)/2.0*(vl-vg);
         Real W=2.0/(6.0*V+1.0);
-        Real dtOvertauPlusdt = (*dt) / (W);
+        //Real dtOvertauPlusdt = (*dt) / (W);
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real geq{CalcBGKFeqFE(xiIndex, C, u, v, ff, dt, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
 
                 gStage(xiIndex, 0, 0) =
-                    geq - (dtOvertauPlusdt-1) * (g(xiIndex, 0, 0) - geq) +
-                    (*dt)*(1.0-(*dt)/(2.0*W)) * gStage(xiIndex, 0, 0);
+                    geq - (W-1) * (g(xiIndex, 0, 0) - g                gStage(xiIndex, 0, 0) =
+                    geq - (W-1) * (g(xiIndex, 0, 0) - geq);eq) +
+                    (*dt)*(1.0-(*dt*W)/(2.0)) * gStage(xiIndex, 0, 0);
             } else {
-                gStage(xiIndex, 0, 0) =
-                    geq - (dtOvertauPlusdt-1) * (g(xiIndex, 0, 0) - geq);
+
             }
 #ifdef CPU
             const Real res{gStage(xiIndex, 0, 0)};
@@ -767,19 +767,10 @@ void KerCollideBGKFEG(ACC<Real>& gStage, const ACC<Real>& g,
         Real C{Conc(0,0)};
         Real mu{Mu(0,0)};
         const int polyOrder{2};
-        //Real tau = (*tauRef);
-        //Real dtOvertauPlusdt = (*dt) / (tau);
+        Real tau = (*tauRef);
+        Real dtOvertauPlusdt = (*dt) / (tau);
         Real S{0.0};
 
-        Real css=1/sqrt(3);
-        Real taul=1.0;
-        Real taug=1.0;
-        Real Dt{*dt};
-        Real vl=css*css*(taul-Dt/2.0);
-        Real vg=css*css*(taug-Dt/2.0);
-        Real V=vg+(C+1.0)/2.0*(vl-vg);
-        Real W=2.0/(6.0*V+1.0);
-        Real dtOvertauPlusdt = (*dt) / (W);
         for (int xiIndex = lattIdx[0]+1; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real geq{CalcBGKGeqFE(xiIndex, C, u, v, mu, dt, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {

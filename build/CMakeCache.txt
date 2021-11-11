@@ -26,8 +26,8 @@ CMAKE_BUILD_TYPE:STRING=Debug
 //Enable/Disable color output during build.
 CMAKE_COLOR_MAKEFILE:BOOL=ON
 
-//No help, variable specified on the command line.
-CMAKE_CXX_COMPILER:FILEPATH=/bin/x86_64-linux-gnu-g++-9
+//CXX compiler
+CMAKE_CXX_COMPILER:STRING=/bin/x86_64-linux-gnu-g++-9
 
 //A wrapper around 'ar' adding the appropriate '--plugin' option
 // for the GCC compiler
@@ -52,8 +52,8 @@ CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
 //Flags used by the CXX compiler during RELWITHDEBINFO builds.
 CMAKE_CXX_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG
 
-//No help, variable specified on the command line.
-CMAKE_C_COMPILER:FILEPATH=/bin/x86_64-linux-gnu-gcc-9
+//C compiler
+CMAKE_C_COMPILER:STRING=/bin/x86_64-linux-gnu-gcc-9
 
 //A wrapper around 'ar' adding the appropriate '--plugin' option
 // for the GCC compiler
@@ -239,7 +239,7 @@ HDF5_DIR:PATH=HDF5_DIR-NOTFOUND
 MPIEXEC_EXECUTABLE:FILEPATH=/usr/bin/mpiexec
 
 //Maximum number of processors available to run MPI applications.
-MPIEXEC_MAX_NUMPROCS:STRING=4
+MPIEXEC_MAX_NUMPROCS:STRING=6
 
 //Flag used by MPI to specify the number of processes for mpiexec;
 // the next option will be the number of processes.
@@ -319,13 +319,13 @@ MPLB_SOURCE_DIR:STATIC=/home/chocolateftd/mplb
 OPS_DIR:PATH=/home/chocolateftd/OPS-INSTALL/lib/cmake
 
 //No help, variable specified on the command line.
-OPS_ROOT:STRING=/home/chocolateftd/OPS-INSTALL
+OPS_ROOT:UNINITIALIZED=/home/chocolateftd/OPS-INSTALL
 
 //Turn on optimised mode
-OPTIMISE:STRING=OFF
+OPTIMISE:BOOL=OFF
 
 //Turn on verbose warning messages
-VERBOSE:STRING=ON
+VERBOSE:BOOL=OFF
 
 
 ########################

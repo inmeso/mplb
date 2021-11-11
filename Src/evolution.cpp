@@ -201,7 +201,9 @@ void StreamCollision(const Real time) {
 #if DebugLevel >= 1
     ops_printf("Implementing the boundary conditions...\n");
 #endif
-
+#ifdef OPS_2D
+    UpdateMacroVars(); 
+#endif
 #ifdef OPS_3D
     ImplementBoundary3D();
     ImplementBoundaryComplex3D();

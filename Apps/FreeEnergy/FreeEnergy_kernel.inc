@@ -68,7 +68,7 @@ void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex,
     Real R=sqrt(x*x+y*y);
     Real r=70.0;
     
-    if (x<=95&&x>=10){
+    if (x<=105-0.045*(y-30)||x>=275){
         concentration(0,0) = 1;
     }
     else{
@@ -119,7 +119,7 @@ void KerSetSolid(ACC<int>& nodeType, ACC<int>& geometry,
     //    geometry(0,0)=(int)VG_ImmersedSolid;
     //}
     
-    if ((X>=90&&X<230)&&(Y>=YMax-20||Y<=20)){
+    if ((X>=90&&X<230)&&((Y>=YMax-30+0.045*(X-85))||Y<10+0.045*(X-85))){
         nodeType(0,0)=(int)VertexType::ImmersedSolid;
         geometry(0,0)=(int)VG_ImmersedSolid;
     }
@@ -161,8 +161,10 @@ void KerPrintPhi(const ACC<Real>& Phi){
 void KerSetEmbeddedBodyGeometry(ACC<int>& geometryProperty,
                                 ACC<int>& nodeType) {
 #ifdef OPS_2D
+    
     VertexType vt = (VertexType)nodeType(0, 0);
     if (VertexType::ImmersedSolid == vt) {
+        
         VertexType neiborVertexType[8];
         /*
                         6*****2*****4
@@ -187,6 +189,7 @@ void KerSetEmbeddedBodyGeometry(ACC<int>& geometryProperty,
             if (VertexType::ImmersedSolid != neiborVertexType[i]
                 &&VertexType::Wall != neiborVertexType[i]) {
                 fluidNeiborNum++;
+                
             }
         }
 
@@ -197,10 +200,12 @@ void KerSetEmbeddedBodyGeometry(ACC<int>& geometryProperty,
             if (VertexType::ImmersedSolid == neiborVertexType[i]
                 ||VertexType::Wall == neiborVertexType[i]) {
                 solidNeiborNumatCoord++;
+                
             }
         }
+        
         if (fluidNeiborNum > 0) {
-            
+
             // outer corner
             if (2 == solidNeiborNumatCoord) {
                 if ((VertexType::ImmersedSolid == neiborVertexType[0] &&
@@ -288,6 +293,7 @@ void KerSetEmbeddedBodyGeometry(ACC<int>& geometryProperty,
             }
             // Inner corner
             if (4 == solidNeiborNumatCoord) {
+
                 nodeType(0,0)=(int)VertexType::Wall;
                 if (1 == fluidNeiborNum) {
                     if (VertexType::ImmersedSolid != neiborVertexType[4]
@@ -301,10 +307,12 @@ void KerSetEmbeddedBodyGeometry(ACC<int>& geometryProperty,
                     if (VertexType::ImmersedSolid != neiborVertexType[6]
                         &&VertexType::Wall != neiborVertexType[6]) {
                         geometryProperty(0, 0) = (int)VG_IMJP_I;
+                        
                     }
                     if (VertexType::ImmersedSolid != neiborVertexType[7]
                         &&VertexType::Wall != neiborVertexType[7]) {
                         geometryProperty(0, 0) = (int)VG_IPJM_I;
+
                     }
                 } else {
                     ops_printf("%s\n",
