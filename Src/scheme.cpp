@@ -29,7 +29,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 /*! @brief Define functions for numerical schemes.
  *  @author Jianping Meng
@@ -37,10 +37,43 @@
  *  kernels for implementing numerical schemes
  */
 #include "scheme.h"
-ops_stencil LOCALSTENCIL;
-ops_stencil ONEPTREGULARSTENCIL;
-ops_stencil ONEPTLATTICESTENCIL;
-ops_stencil TWOPTREGULARSTENCIL;
+#ifdef OPS_2D
+int currentNode[] = {0, 0};
+ops_stencil LOCALSTENCIL{ops_decl_stencil(2, 1, currentNode, "00")};
+int rectangle[] = {0, 0, 1, 0, -1, 0, 0, 1, 0, -1};
+ops_stencil ONEPTREGULARSTENCIL{
+    ops_decl_stencil(2, 5, rectangle, "00:10:-10:01:0-1")};
+int twoPtRectangle[] = {0,  0, 1, 0,  -1, 0, 0, 1, 0,
+                        -1, 2, 0, -2, 0,  0, 2, 0, -2};
+ops_stencil TWOPTREGULARSTENCIL{
+    ops_decl_stencil(2, 9, twoPtRectangle, "00:10:-10:01:0-1:20:-20:02:0-2")};
+
+int d2q9pts[] = {0, 0, 1, 0, -1, 0, 0, 1, 0, -1, 1, 1, -1, -1, 1, -1, -1, 1};
+ops_stencil ONEPTLATTICESTENCIL{
+    ops_decl_stencil(2, 9, d2q9pts, "00:10:-10:01:0-1:11:-1-1:1-1:-11")};
+#endif /* OPS_2D */
+#ifdef OPS_3D
+int currentNode[]{0, 0, 0};
+ops_stencil LOCALSTENCIL{ops_decl_stencil(3, 1, currentNode, "000")};
+int rectangle[]{0, 0, 0,  1, 0, 0, -1, 0, 0, 0, 1,
+                0, 0, -1, 0, 0, 0, 1,  0, 0, -1};
+ops_stencil ONEPTREGULARSTENCIL{
+    ops_decl_stencil(3, 7, rectangle, "000:100:-100:010:0-10:001:00-1")};
+// ops_printf("%s\n", "ONEPTREGULAR finished!");
+int twoPtRectangle[]{0,  0, 0, 1, 0, 0,  -1, 0,  0, 0, 1, 0,  0,
+                     -1, 0, 0, 0, 1, 0,  0,  -1, 2, 0, 0, -2, 0,
+                     0,  0, 2, 0, 0, -2, 0,  0,  0, 2, 0, 0,  -2};
+ops_stencil TWOPTREGULARSTENCIL{ops_decl_stencil(
+    3, 13, twoPtRectangle,
+    "000:100:-100:010:0-10:001:00-1:200:-200:020:0-20:002:00-2")};
+int d3q27[] = {-1, -1, -1, -1, -1, 0,  -1, -1, 1, -1, 0,  -1, -1, 0,  0,  -1, 0,
+               1,  -1, 1,  -1, -1, 1,  0,  -1, 1, 1,  0,  -1, -1, 0,  -1, 0,  0,
+               -1, 1,  0,  0,  -1, 0,  0,  0,  0, 0,  1,  0,  1,  -1, 0,  1,  0,
+               0,  1,  1,  1,  -1, -1, 1,  -1, 0, 1,  -1, 1,  1,  0,  -1, 1,  0,
+               0,  1,  0,  1,  1,  1,  -1, 1,  1, 0,  1,  1,  1};
+ops_stencil ONEPTLATTICESTENCIL{ops_decl_stencil(3, 27, d3q27, "D3Q27")};
+#endif /* OPS_3D */
+
 /*!
  * A numerical scheme may need two kinds of halo points:
  * 1. Halo points between two blocks, we may call them connection boundary.
@@ -55,48 +88,9 @@ ops_stencil TWOPTREGULARSTENCIL;
 int schemeHaloPt{1};
 SchemeType schemeType{Scheme_StreamCollision};
 const SchemeType Scheme() { return schemeType; }
-void SetupCommonStencils() {
-#ifdef OPS_2D
-    int currentNode[] = {0, 0};
-    LOCALSTENCIL = ops_decl_stencil(2, 1, currentNode, "00");
-    int rectangle[] = {0, 0, 1, 0, -1, 0, 0, 1, 0, -1};
-    ONEPTREGULARSTENCIL = ops_decl_stencil(2, 5, rectangle, "00:10:-10:01:0-1");
-    int twoPtRectangle[] = {0,  0, 1, 0,  -1, 0, 0, 1, 0,
-                            -1, 2, 0, -2, 0,  0, 2, 0, -2};
-    TWOPTREGULARSTENCIL = ops_decl_stencil(2, 9, twoPtRectangle,
-                                           "00:10:-10:01:0-1:20:-20:02:0-2");
-
-    int d2q9[] = {0, 0, 1, 0, -1, 0, 0, 1, 0, -1, 1, 1, -1, -1, 1, -1, -1, 1};
-    ONEPTLATTICESTENCIL =
-        ops_decl_stencil(2, 9, d2q9, "00:10:-10:01:0-1:11:-1-1:1-1:-11");
-#endif /* OPS_2D */
-#ifdef OPS_3D
-    int currentNode[]{0, 0, 0};
-    LOCALSTENCIL = ops_decl_stencil(3, 1, currentNode, "000");
-    int rectangle[]{0, 0, 0,  1, 0, 0, -1, 0, 0, 0, 1,
-                    0, 0, -1, 0, 0, 0, 1,  0, 0, -1};
-    ONEPTREGULARSTENCIL =
-        ops_decl_stencil(3, 7, rectangle, "000:100:-100:010:0-10:001:00-1");
-    // ops_printf("%s\n", "ONEPTREGULAR finished!");
-    int twoPtRectangle[]{0,  0, 0, 1, 0, 0,  -1, 0,  0, 0, 1, 0,  0,
-                         -1, 0, 0, 0, 1, 0,  0,  -1, 2, 0, 0, -2, 0,
-                         0,  0, 2, 0, 0, -2, 0,  0,  0, 2, 0, 0,  -2};
-    TWOPTREGULARSTENCIL = ops_decl_stencil(
-        3, 13, twoPtRectangle,
-        "000:100:-100:010:0-10:001:00-1:200:-200:020:0-20:002:00-2");
-    int d3q27[] = {-1, -1, -1, -1, -1, 0,  -1, -1, 1, -1, 0,  -1, -1, 0,
-                   0,  -1, 0,  1,  -1, 1,  -1, -1, 1, 0,  -1, 1,  1,  0,
-                   -1, -1, 0,  -1, 0,  0,  -1, 1,  0, 0,  -1, 0,  0,  0,
-                   0,  0,  1,  0,  1,  -1, 0,  1,  0, 0,  1,  1,  1,  -1,
-                   -1, 1,  -1, 0,  1,  -1, 1,  1,  0, -1, 1,  0,  0,  1,
-                   0,  1,  1,  1,  -1, 1,  1,  0,  1, 1,  1};
-    ONEPTLATTICESTENCIL = ops_decl_stencil(3, 27, d3q27, "D3Q27");
-#endif /* OPS_3D */
-}
 
 void DefineScheme(const SchemeType scheme) {
     schemeType = scheme;
-    SetupCommonStencils();
     switch (schemeType) {
         case Scheme_StreamCollision: {
             SetSchemeHaloNum(1);
@@ -108,4 +102,3 @@ void DefineScheme(const SchemeType scheme) {
 }
 const int SchemeHaloNum() { return schemeHaloPt; }
 void SetSchemeHaloNum(const int schemeHaloNum) { schemeHaloPt = schemeHaloNum; }
-
