@@ -108,4 +108,10 @@ static inline OPS_FUN_PREFIX Real CalcSWEFeq(const int l, const Real h, const Re
     return WEIGHTS[l] * h * res;
 }
 
+static inline OPS_FUN_PREFIX void Swap(Real& a, Real& b) {
+    const Real tmp{a};
+    a = b;
+    b = tmp;
+}
+
 #endif //MODEL_HOST_DEVICE_H
