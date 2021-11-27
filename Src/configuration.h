@@ -56,6 +56,7 @@
 #include "model_host_device.h"
 #include "flowfield_host_device.h"
 #include "boundary.h"
+#include "scheme.h"
 
 /**
  * Structure for holding various input parameters.
