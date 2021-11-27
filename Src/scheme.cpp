@@ -87,7 +87,7 @@ ops_stencil ONEPTLATTICESTENCIL{ops_decl_stencil(3, 27, d3q27, "D3Q27")};
  */
 int schemeHaloPt{1};
 SchemeType schemeType{Scheme_StreamCollision};
-const SchemeType Scheme() { return schemeType; }
+SchemeType Scheme() { return schemeType; }
 
 void DefineScheme(const SchemeType scheme) {
     schemeType = scheme;
@@ -100,5 +100,5 @@ void DefineScheme(const SchemeType scheme) {
             break;
     }
 }
-const int SchemeHaloNum() { return schemeHaloPt; }
+int SchemeHaloNum() { return schemeHaloPt; }
 void SetSchemeHaloNum(const int schemeHaloNum) { schemeHaloPt = schemeHaloNum; }

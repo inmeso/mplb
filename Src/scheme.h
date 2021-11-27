@@ -64,14 +64,21 @@ extern ops_stencil TWOPTREGULARSTENCIL;
  */
 extern ops_stencil ONEPTLATTICESTENCIL;
 
+enum SchemeType {
+    Scheme_E1st2nd = 1,
+    Scheme_I1st2nd = -1,
+    Scheme_StreamCollision = 10,
+    Scheme_StreamCollision_Swap=11,
+} ;
+
 void SetupCommonStencils();
 // End Define common stencils
 
 //HiLeMMS interface see https://gitlab.com/jpmeng/hilemms
 void DefineScheme(const SchemeType scheme);
-const int SchemeHaloNum();
+int SchemeHaloNum();
 void SetSchemeHaloNum(const int schemeHaloNum);
-const SchemeType Scheme();
+SchemeType Scheme();
 #ifdef OPS_3D
 void Stream3D();
 #endif //OPS_3D
