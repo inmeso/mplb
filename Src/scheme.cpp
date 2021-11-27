@@ -94,7 +94,15 @@ void DefineScheme(const SchemeType scheme) {
     switch (schemeType) {
         case Scheme_StreamCollision: {
             SetSchemeHaloNum(1);
+            g_fStage().SetDataDim(SizeF());
+            g_fStage().CreateFieldFromScratch(g_Block());
+            RegisterFieldNeedHalo(g_fStage());
             ops_printf("The stream-collision scheme is chosen!\n");
+        } break;
+         case Scheme_StreamCollision_Swap: {
+            SetSchemeHaloNum(1);
+            RegisterFieldNeedHalo(g_f());
+            ops_printf("The stream-collision_swap scheme is chosen!\n");
         } break;
         default:
             break;
