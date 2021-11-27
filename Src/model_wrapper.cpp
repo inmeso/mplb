@@ -332,6 +332,8 @@ void PreDefinedBodyForce3D() {
                                     LOCALSTENCIL, "int", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
                     break;
+                  case BodyForce_None_Swap:
+                    break;
                 default:
                     ops_printf(
                         "The specified force type is not implemented!\n");
