@@ -80,7 +80,7 @@ int SchemeHaloNum();
 void SetSchemeHaloNum(const int schemeHaloNum);
 SchemeType Scheme();
 #ifdef OPS_3D
-void Stream3D();
+void  PredefinedStream3D();
 #endif //OPS_3D
 
 #ifdef OPS_2D
