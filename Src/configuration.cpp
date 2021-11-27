@@ -88,13 +88,17 @@ NLOHMANN_JSON_SERIALIZE_ENUM(
     });
 
 NLOHMANN_JSON_SERIALIZE_ENUM(
-    CollisionType, {{Collision_BGKIsothermal2nd, "Collision_BGKIsothermal2nd"},
-                    {Collision_BGKThermal4th, "Collision_BGKThermal4th"},
-                    {Collision_BGKSWE4th, "Collision_BGKSWE4th"}});
+    CollisionType,
+    {{Collision_BGKIsothermal2nd, "Collision_BGKIsothermal2nd"},
+     {Collision_BGKIsothermal2nd_Swap, "Collision_BGKIsothermal2nd_Swap"},
+     {Collision_BGKThermal4th, "Collision_BGKThermal4th"},
+     {Collision_BGKSWE4th, "Collision_BGKSWE4th"}});
 
 NLOHMANN_JSON_SERIALIZE_ENUM(BodyForceType,
                              {{BodyForce_1st, "BodyForce_1st"},
-                              {BodyForce_None, "BodyForce_None"}});
+                              {BodyForce_None, "BodyForce_None"},
+                              {BodyForce_1st_Swap, "BodyForce_1st_Swap"},
+                              {BodyForce_None_Swap, "BodyForce_None_Swap"}});
 
 NLOHMANN_JSON_SERIALIZE_ENUM(BoundarySurface,
                              {
@@ -125,13 +129,11 @@ NLOHMANN_JSON_SERIALIZE_ENUM(InitialType,
                                  {Initial_BGKFeq2nd, "Initial_BGKFeq2nd"},
                              });
 
-NLOHMANN_JSON_SERIALIZE_ENUM(SchemeType,
-                             {
-                                 {Scheme_E1st2nd, "Scheme_E1st2nd"},
-                                 {Scheme_StreamCollision,
-                                  "Scheme_StreamCollision"},
-                                 {Scheme_I1st2nd, " Scheme_I1st2nd"},
-                             });
+NLOHMANN_JSON_SERIALIZE_ENUM(
+    SchemeType, {{Scheme_E1st2nd, "Scheme_E1st2nd"},
+                 {Scheme_StreamCollision, "Scheme_StreamCollision"},
+                 {Scheme_I1st2nd, " Scheme_I1st2nd"},
+                 {Scheme_StreamCollision_Swap, "Scheme_StreamCollision_Swap"}});
 
 const Configuration& Config() { return config; }
 

@@ -174,7 +174,66 @@ void StreamCollision(const Real time) {
     ops_printf("Streaming...\n");
 #endif
 #ifdef OPS_3D
-    Stream3D();
+    PredefinedStream3D();
+#endif
+#ifdef OPS_2D
+    Stream();
+#endif
+
+#if DebugLevel >= 1
+    ops_printf("Implementing the boundary conditions...\n");
+#endif
+
+#ifdef OPS_3D
+    ImplementBoundary3D();
+#endif
+#ifdef OPS_2D
+    ImplementBoundary();
+#endif
+}
+
+void SwapStreamCollision(const Real time) {
+#if DebugLevel >= 1
+    ops_printf("Calculating the macroscopic variables...\n");
+#endif
+#ifdef OPS_3D
+    UpdateMacroVars3D();
+#endif
+#ifdef OPS_2D
+    UpdateMacroVars();
+#endif
+#if DebugLevel >= 1
+    ops_printf("Calculating the mesoscopic body force term...\n");
+#endif
+    UpdateMacroscopicBodyForce(time);
+
+#if DebugLevel >= 1
+    ops_printf("Calculating the collision term...\n");
+#endif
+#ifdef OPS_3D
+    PreDefinedCollision3D();
+#endif
+#ifdef OPS_2D
+    PreDefinedCollision();
+#endif
+
+#ifdef OPS_3D
+    PreDefinedBodyForce3D();
+#endif
+#ifdef OPS_2D
+    PreDefinedBodyForce();
+#endif
+
+#if DebugLevel >= 1
+    ops_printf("Updating the halos...\n");
+#endif
+    TransferHalos();
+
+#if DebugLevel >= 1
+    ops_printf("Streaming...\n");
+#endif
+#ifdef OPS_3D
+    PredefinedStream3D();
 #endif
 #ifdef OPS_2D
     Stream();

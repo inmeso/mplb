@@ -118,5 +118,19 @@ void DefineBlockConnection(const std::vector<int>& fromBlock,
                            const std::vector<int>& toBlock,
                            const std::vector<BoundarySurface>& toSurface,
                            const std::vector<VertexType>& connectionType);
+
+template <typename T>
+void TransferHalos(T field) {
+    field.TransferHalos();
+}
+
+template <typename T, typename... Args>
+void TransferHalos(T field, Args... fields) {
+    TransferHalos(fields...);
+}
 void TransferHalos();
+
+void RegisterFieldNeedHalo(RealField& field);
+void RegisterFieldNeedHalo(IntField& field);
+
 #endif

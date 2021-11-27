@@ -68,6 +68,7 @@
  * Overall wrap for stream-collision scheme
  */
 void StreamCollision(const Real time);
+void SwapStreamCollision(const Real time);
 
 void Iterate(const SizeType steps, const SizeType checkPointPeriod,
              const SizeType start = 0);

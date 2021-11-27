@@ -297,9 +297,10 @@ if (CUDAToolkit_FOUND)
 endif()
 endmacro(CudaTarget)
 add_subdirectory(Apps/3DCavity)
+add_subdirectory(Apps/3DCavity-Swap)
 add_subdirectory(Apps/2DCavity)
 add_subdirectory(Apps/3DLChannel)
 add_subdirectory(Tests/FieldBlock)
-
+add_subdirectory(Tests/ConservationTest3D)
 
 

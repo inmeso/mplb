@@ -47,6 +47,7 @@
 #include "model.h"
 #include "boundary.h"
 #include "scheme.h"
+#include <vector>
 std::string CASENAME;
 bool TRANSIENT{false};
 /*!
@@ -77,6 +78,8 @@ RealField& g_fStage() { return fStage; };
 RealFieldGroup& g_MacroVars() { return MacroVars; };
 RealFieldGroup& g_MacroVarsCopy() { return MacroVarsCopy; };
 RealFieldGroup& g_MacroBodyforce() { return MacroBodyforce; };
+std::vector<RealField*> RealFieldWithHalos;
+std::vector<IntField*> IntFieldWithHalos;
 /**
  * DT: time step
  */
@@ -152,10 +155,6 @@ Real GetMaximumResidual(const SizeType checkPeriod) {
         }
     }
     return maxResError;
-}
-
-void TransferHalos() {
-    fStage.TransferHalos();
 }
 
 void DefineBlocks(const std::vector<int>& blockIds,
@@ -280,5 +279,24 @@ void DefineBlockConnection(const std::vector<int>& fromBlock,
         neighbor.surface = toSurface.at(idx);
         neighbor.type = connectionType.at(idx);
         BLOCKS.at(fromBlock.at(idx)).AddNeighbor(fromSurface.at(idx), neighbor);
+    }
+}
+
+void RegisterFieldNeedHalo(RealField& field) {
+    field.CreateHalos();
+    RealFieldWithHalos.push_back(&field);
+}
+void RegisterFieldNeedHalo(IntField& field) {
+    field.CreateHalos();
+    IntFieldWithHalos.push_back(&field);
+}
+
+void TransferHalos() {
+    for (auto field : RealFieldWithHalos) {
+        field->TransferHalos();
+    }
+
+    for (auto field : IntFieldWithHalos) {
+        field->TransferHalos();
     }
 }

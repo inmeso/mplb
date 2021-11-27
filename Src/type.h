@@ -128,11 +128,6 @@ typedef enum {
     sbpke = 5,
 } StructuredBoundaryPosition;
 
-enum SchemeType {
-    Scheme_E1st2nd = 1,
-    Scheme_I1st2nd = -1,
-    Scheme_StreamCollision = 10,
-} ;
 
 inline bool EssentiallyEqual(const Real* a, const Real* b, const Real epsilon) {
     return fabs(*a - *b) <=

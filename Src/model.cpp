@@ -99,10 +99,10 @@ void FindReverseXi(const int startPos, const int latticeSize) {
 void SetupD2Q9Latt(const int startPos) {
     const int nc9{9};
     Real t00 = 4.0 / 9.0, t01 = 1.0 / 9.0, t11 = 1.0 / 36.0;
-    Real t[nc9] = {t00, t01, t01, t01, t01, t11, t11, t11, t11};
-    int cxi[nc9] = {0, 1, 0, -1, 0, 1, -1, -1, 1};
-    int cyi[nc9] = {0, 0, 1, 0, -1, 1, 1, -1, -1};
-    int op9[nc9] = {0, 3, 4, 1, 2, 7, 8, 5, 6};
+    Real t[nc9] = {t00, t11, t01, t11, t01, t11, t01, t11, t01};
+    int cxi[nc9] = {0, -1, -1, -1,  0,  1,  1,  1,  0};
+    int cyi[nc9] = {0,  1,  0, -1, -1, -1,  0,  1,  1};
+    int op9[nc9] = {0, 5, 6, 7, 8, 1, 2, 3, 4};
     for (int l = 0; l < nc9; l++) {
         XI[(startPos + l) * LATTDIM] = cxi[l];
         XI[(startPos + l) * LATTDIM + 1] = cyi[l];
@@ -116,14 +116,11 @@ void SetupD3Q19Latt(const int startPos) {
     Real t000{1 / ((Real)3)};
     Real t001{1 / ((Real)18)};
     Real t011{1 / ((Real)36)};
-    Real t[nc19] = {t000, t001, t001, t001, t001, t001, t001, t011, t011, t011,
-                    t011, t011, t011, t011, t011, t011, t011, t011, t011};
-    int cxi[nc19] = {0,  1, -1, 0, 0,  0, 0,  1, -1, 1,
-                     -1, 0, 0,  1, -1, 1, -1, 0, 0};
-    int cyi[nc19] = {0, 0, 0,  1,  -1, 0, 0, 1, -1, 0,
-                     0, 1, -1, -1, 1,  0, 0, 1, -1};
-    int czi[nc19] = {0,  0, 0,  0, 0, 1,  -1, 0,  0, 1,
-                     -1, 1, -1, 0, 0, -1, 1,  -1, 1};
+    Real t[nc19] = {t000, t001, t001, t001, t011, t011, t011, t011, t011, t011,
+                    t001, t001, t001, t011, t011, t011, t011, t011, t011};
+    int cxi[nc19] = {0, -1, 0, 0, -1, -1, -1, -1, 0, 0, 1, 0,  0, 1, 1,  1,  1,  0,  0};
+    int cyi[nc19] = {0, 0, -1, 0, -1, 1, 0, 0, -1, -1, 0, 1, 0,  1, -1, 0, 0, 1, 1};
+    int czi[nc19] = {0, 0, 0, -1, 0, 0, -1, 1, -1, 1, 0, 0, 1, 0,  0, 1, -1, 1, -1};
     for (int l = 0; l < nc19; l++) {
         XI[(startPos + l) * LATTDIM] = cxi[l];
         XI[(startPos + l) * LATTDIM + 1] = cyi[l];
@@ -138,11 +135,11 @@ void SetupD3Q15Latt(const int startPos) {
     Real t000{2 / ((Real)9)};
     Real t001{1 / ((Real)9)};
     Real t111{1 / ((Real)72)};
-    Real t[nc15] = {t000, t001, t001, t001, t001, t001, t001, t111,
-                    t111, t111, t111, t111, t111, t111, t111};
-    int cxi[nc15] = {0, 1, -1, 0, 0, 0, 0, 1, -1, 1, -1, 1, -1, -1, 1};
-    int cyi[nc15] = {0, 0, 0, 1, -1, 0, 0, 1, -1, 1, -1, -1, 1, 1, -1};
-    int czi[nc15] = {0, 0, 0, 0, 0, 1, -1, 1, -1, -1, 1, 1, -1, 1, -1};
+    Real t[nc15] = {t000, t001, t001, t001, t111, t111, t111, t111,
+                    t001, t001, t001, t111, t111, t111, t111};
+    int cxi[nc15] = {0,-1, 0, 0,-1,-1,-1,-1, 1, 0, 0, 1, 1, 1, 1};
+    int cyi[nc15] = {0, 0,-1, 0,-1,-1, 1, 1, 0, 1, 0, 1, 1,-1,-1};
+    int czi[nc15] = {0, 0, 0,-1,-1, 1,-1, 1, 0, 0, 1, 1,-1, 1,-1};
     for (int l = 0; l < nc15; l++) {
         XI[(startPos + l) * LATTDIM] = cxi[l];
         XI[(startPos + l) * LATTDIM + 1] = cyi[l];
@@ -310,9 +307,6 @@ void DefineComponents(const std::vector<std::string>& compoNames,
             pair.second.CreateFieldFromFile(CaseName(), g_Block(), timeStep);
         }
     }
-    g_fStage().SetDataDim(NUMXI);
-    g_fStage().CreateFieldFromScratch(g_Block());
-    g_fStage().CreateHalos();
 }
 
 void DefineMacroVars(std::vector<VariableTypes> types,

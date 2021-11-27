@@ -87,18 +87,26 @@ ops_stencil ONEPTLATTICESTENCIL{ops_decl_stencil(3, 27, d3q27, "D3Q27")};
  */
 int schemeHaloPt{1};
 SchemeType schemeType{Scheme_StreamCollision};
-const SchemeType Scheme() { return schemeType; }
+SchemeType Scheme() { return schemeType; }
 
 void DefineScheme(const SchemeType scheme) {
     schemeType = scheme;
     switch (schemeType) {
         case Scheme_StreamCollision: {
             SetSchemeHaloNum(1);
+            g_fStage().SetDataDim(SizeF());
+            g_fStage().CreateFieldFromScratch(g_Block());
+            RegisterFieldNeedHalo(g_fStage());
             ops_printf("The stream-collision scheme is chosen!\n");
+        } break;
+         case Scheme_StreamCollision_Swap: {
+            SetSchemeHaloNum(1);
+            RegisterFieldNeedHalo(g_f());
+            ops_printf("The stream-collision_swap scheme is chosen!\n");
         } break;
         default:
             break;
     }
 }
-const int SchemeHaloNum() { return schemeHaloPt; }
+int SchemeHaloNum() { return schemeHaloPt; }
 void SetSchemeHaloNum(const int schemeHaloNum) { schemeHaloPt = schemeHaloNum; }
