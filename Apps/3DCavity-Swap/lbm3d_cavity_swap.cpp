@@ -69,115 +69,8 @@ void SetInitialMacrosVars() {
 // Provide macroscopic body-force term
 void UpdateMacroscopicBodyForce(const Real time) {}
 
-void SwapCollision3D() {
-#ifdef OPS_3D
-    for (const auto& idBlock : g_Block()) {
-        const Block& block{idBlock.second};
-        std::vector<int> iterRng;
-        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
-        const int blockIndex{block.ID()};
-        for (const auto& idCompo : g_Components()) {
-            const Component& compo{idCompo.second};
-            const Real tau{compo.tauRef};
-            const Real* pdt{pTimeStep()};
-            ops_par_loop(
-                KerSwapCollide3D, "KerSwapCollide3D", block.Get(), SpaceDim(),
-                iterRng.data(),
-                ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL, "double",
-                            OPS_RW),
-                ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
-                            LOCALSTENCIL, "int", OPS_READ),
-                 ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
-                            LOCALSTENCIL, "int", OPS_READ),
-                ops_arg_dat(g_MacroVars()
-                                .at(compo.macroVars.at(Variable_Rho).id)
-                                .at(blockIndex),
-                            1, LOCALSTENCIL, "double", OPS_READ),
-                ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex), 1,
-                            LOCALSTENCIL, "double", OPS_READ),
-                ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex), 1,
-                            LOCALSTENCIL, "double", OPS_READ),
-                ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIndex), 1,
-                            LOCALSTENCIL, "double", OPS_READ),
-                ops_arg_gbl(&tau, 1, "double", OPS_READ),
-                ops_arg_gbl(pdt, 1, "double", OPS_READ),
-                ops_arg_gbl(compo.index, 2, "int", OPS_READ));
-        }
-    }
-
-#endif  // OPS_3D
-}
-
-void SwapStream3D() {
-#ifdef OPS_3D
-    for (const auto& idBlock : g_Block()) {
-        const Block& block{idBlock.second};
-        std::vector<int> iterRng;
-        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
-        const int blockIndex{block.ID()};
-        for (const auto& compo : g_Components()) {
-            ops_par_loop(
-                KerSwapStream3D, "KerSwapStream3D", block.Get(), SpaceDim(),
-                iterRng.data(),
-                ops_arg_dat(g_f().at(blockIndex), NUMXI, LOCALSTENCIL, "double",
-                            OPS_RW),
-                ops_arg_dat(g_NodeType().at(compo.first).at(blockIndex), 1,
-                            LOCALSTENCIL, "int", OPS_READ),
-                ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
-                            LOCALSTENCIL, "int", OPS_READ),
-                ops_arg_gbl(compo.second.index, 2, "int", OPS_READ));
-        }
-    }
-#endif  // OPS_3Ds
-}
-
-void SwapStreamCollision(const Real time) {
-#if DebugLevel >= 1
-    ops_printf("Calculating the macroscopic variables...\n");
-#endif
-#ifdef OPS_3D
-    UpdateMacroVars3D();
-#endif
-#if DebugLevel >= 1
-    ops_printf("Calculating the mesoscopic body force term...\n");
-#endif
-    UpdateMacroscopicBodyForce(time);
-#ifdef OPS_3D
-    PreDefinedBodyForce3D();
-#endif
-
-#if DebugLevel >= 1
-    ops_printf("Calculating the collision term...\n");
-#endif
-#ifdef OPS_3D
-    SwapCollision3D();
-#endif
-
-
-#if DebugLevel >= 1
-    ops_printf("Updating the halos...\n");
-#endif
-    TransferHalos();
-
-#if DebugLevel >= 1
-    ops_printf("Streaming...\n");
-#endif
-#ifdef OPS_3D
-    SwapStream3D();
-#endif
-
-
-#if DebugLevel >= 1
-    ops_printf("Implementing the boundary conditions...\n");
-#endif
-
-#ifdef OPS_3D
-    ImplementBoundary3D();
-#endif
-
-}
 void simulate(const Configuration& config) {
-    DefineCase(config.caseName, config.spaceDim,config.transient);
+    DefineCase(config.caseName, config.spaceDim, config.transient);
     DefineBlocks(config.blockIds, config.blockNames, config.blockSize,
                  config.meshSize, config.startPos);
     DefineComponents(config.compoNames, config.compoIds, config.lattNames,
@@ -203,11 +96,11 @@ void simulate(const Configuration& config) {
     };
     SetTimeStep(config.meshSize / SoundSpeed());
     if (config.transient) {
-        Iterate(SwapStreamCollision, config.timeStepsToRun, config.checkPeriod,
+        Iterate(SwapStreamCollision,config.timeStepsToRun, config.checkPeriod,
                 config.currentTimeStep);
     } else {
-        Iterate(SwapStreamCollision, config.convergenceCriteria,
-                config.checkPeriod, config.currentTimeStep);
+        Iterate(SwapStreamCollision,config.convergenceCriteria, config.checkPeriod,
+                config.currentTimeStep);
     }
 }
 
