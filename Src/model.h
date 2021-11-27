@@ -28,7 +28,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 /** @brief Declare functions for constructing lattice models
  *  @author Jianping Meng
@@ -62,10 +62,10 @@ extern int LATTDIM;
 extern Real CS;
 /**
  * @brief lattice set stored in a linear array
- * @details XI the storage looks like \f$ c^0_x \f$, \f$ c^0_y \f$, \f$ c^0_z \f$,
- * \f$ c^1_x \f$, \f$ c^1_y \f$,\f$ c^1_z \f$.... If there are multiple components
- * they are orgranised in the order when they are defined in the DefineComponent
- * call.
+ * @details XI the storage looks like \f$ c^0_x \f$, \f$ c^0_y \f$, \f$ c^0_z
+ * \f$, \f$ c^1_x \f$, \f$ c^1_y \f$,\f$ c^1_z \f$.... If there are multiple
+ * components they are orgranised in the order when they are defined in the
+ * DefineComponent call.
  */
 extern Real* XI;
 /**
@@ -77,7 +77,8 @@ extern Real XIMAXVALUE;
  */
 extern Real* WEIGHTS;
 /**
- * @brief NUMBCOMPONENTS Total number of components for multiple-component applications
+ * @brief NUMBCOMPONENTS Total number of components for multiple-component
+ * applications
  */
 extern int NUMCOMPONENTS;
 /**
@@ -92,13 +93,19 @@ extern int* OPP;
 
 enum CollisionType {
     Collision_BGKIsothermal2nd = 0,
+    Collision_BGKIsothermal2nd_Swap = 10,
     Collision_BGKThermal4th = 1,
     Collision_BGKSWE4th = 2,
 };
 
-enum BodyForceType { BodyForce_1st = 1, BodyForce_None = 0 };
+enum BodyForceType {
+    BodyForce_1st = 1,
+    BodyForce_None = 0,
+    BodyForce_1st_Swap = 2,
+    BodyForce_None_Swap = 3,
+};
 
-enum InitialType {Initial_BGKFeq2nd = 1};
+enum InitialType { Initial_BGKFeq2nd = 1 };
 
 struct MacroVariable {
     std::string name;
@@ -132,26 +139,23 @@ inline const Real MaximumSpeed() { return XIMAXVALUE; }
  */
 void DestroyModel();
 
-
 void DefineComponents(const std::vector<std::string>& compoNames,
                       const std::vector<int>& compoId,
                       const std::vector<std::string>& lattNames,
                       const std::vector<Real> tauRef,
                       const SizeType timeStep = 0);
 
-
 void DefineMacroVars(std::vector<VariableTypes> types,
-                     std::vector<std::string> names,
-                     std::vector<int> varId, std::vector<int> compoId,
-                     const SizeType timeStep=0);
+                     std::vector<std::string> names, std::vector<int> varId,
+                     std::vector<int> compoId, const SizeType timeStep = 0);
 
 /*!
-* Define collision terms for specified components
-* Must be called after DefineComponets()
-* HiLeMMS interface, , https://gitlab.com/jpmeng/hilemms
-*/
+ * Define collision terms for specified components
+ * Must be called after DefineComponets()
+ * HiLeMMS interface, , https://gitlab.com/jpmeng/hilemms
+ */
 void DefineCollision(std::vector<CollisionType> types,
-                       std::vector<int> compoId);
+                     std::vector<int> compoId);
 
 void DefineBodyForce(std::vector<BodyForceType> types,
                      std::vector<SizeType> compoId);

@@ -307,9 +307,6 @@ void DefineComponents(const std::vector<std::string>& compoNames,
             pair.second.CreateFieldFromFile(CaseName(), g_Block(), timeStep);
         }
     }
-    g_fStage().SetDataDim(NUMXI);
-    g_fStage().CreateFieldFromScratch(g_Block());
-    g_fStage().CreateHalos();
 }
 
 void DefineMacroVars(std::vector<VariableTypes> types,

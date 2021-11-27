@@ -28,7 +28,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 /*! @brief   Define kernel functions related to discrete velocity model
  * @author  Jianping Meng
@@ -222,8 +222,8 @@ void KerCollideBGKIsothermal(ACC<Real>& fStage, const ACC<Real>& f,
                              const ACC<Real>& coordinates,
                              const ACC<int>& nodeType, const ACC<Real>& Rho,
                              const ACC<Real>& U, const ACC<Real>& V,
-                              const Real* tauRef,
-                             const Real* dt, const int* lattIdx) {
+                             const Real* tauRef, const Real* dt,
+                             const int* lattIdx) {
 #ifdef OPS_2D
     VertexType vt = (VertexType)nodeType(0, 0);
     // collisionRequired: means if collision is required at boundary
@@ -346,7 +346,7 @@ void KerCalcBodyForceNone(ACC<Real>& fStage, const ACC<Real>& acceration,
     }
 #endif  // OPS_2D
 }
-#endif // OPS_2D outter
+#endif  // OPS_2D outter
 
 #ifdef OPS_3D
 void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<int>& nodeType,
@@ -375,6 +375,34 @@ void KerInitialiseBGK2nd3D(ACC<Real>& f, const ACC<int>& nodeType,
             }
 #endif  // CPU
         }
+    }
+#endif  // OPS_3D
+}
+
+// This kernel function needs lattices sorted in a special order
+// see Jonas Latt: Technical report: How to implement your DdQq dynamics with
+// only q variables per node (instead of 2q)
+void KerSwapCollideBGKIsothermal3D(ACC<Real>& f, const ACC<Real>& coordinates,
+                                   const ACC<int>& nodeType,
+                                   const ACC<Real>& Rho, const ACC<Real>& U,
+                                   const ACC<Real>& V, const ACC<Real>& W,
+                                   const Real* tauRef, const Real* dt,
+                                   const int* lattIdx) {
+#ifdef OPS_3D
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+
+    Real rho{Rho(0, 0, 0)};
+    Real u{U(0, 0, 0)};
+    Real v{V(0, 0, 0)};
+    Real w{W(0, 0, 0)};
+    const Real T{1};
+    const int polyOrder{2};
+    Real tau = (*tauRef);
+    Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
+    for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
+        const Real feq{CalcBGKFeq(xiIndex, rho, u, v, w, T, polyOrder)};
+        f(xiIndex, 0, 0, 0) =
+            feq + (1 - dtOvertauPlusdt) * (f(xiIndex, 0, 0, 0) - feq);
     }
 #endif  // OPS_3D
 }
@@ -512,6 +540,33 @@ void KerCalcBodyForceNone3D(ACC<Real>& fStage, const ACC<Real>& acceration,
 #endif  // OPS_3D
 }
 
+void KerSwapCalcBodyForce1ST3D(ACC<Real>& f, const ACC<Real>& acceration,
+                               const ACC<Real>& Rho, const ACC<int>& nodeType,
+                               const int* lattIdx) {
+#ifdef OPS_3D
+
+    VertexType vt = (VertexType)nodeType(0, 0, 0);
+    if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
+        Real rho{Rho(0, 0, 0)};
+        Real g[]{acceration(0, 0, 0, 0), acceration(1, 0, 0, 0),
+                 acceration(2, 0, 0, 0)};
+        for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
+            const Real bodyForce{CalcBodyForce(xiIndex, rho, g)};
+#ifdef CPU
+            if (isnan(bodyForce) || isinf(bodyForce)) {
+                ops_printf(
+                    "Error! Body force  %f becomes invalid  at  the lattice "
+                    "%i\n",
+                    bodyForce, xiIndex);
+                assert(!(isnan(bodyForce) || isinf(bodyForce)));
+            }
+#endif
+            f(xiIndex, 0, 0, 0) += bodyForce;
+        }
+    }
+#endif  // OPS_3D
+}
+
 void KerCalcDensity3D(ACC<Real>& Rho, const ACC<Real>& f,
                       const ACC<int>& nodeType, const int* lattIdx) {
 #ifdef OPS_3D
@@ -532,7 +587,7 @@ void KerCalcDensity3D(ACC<Real>& Rho, const ACC<Real>& f,
 #endif
         Rho(0, 0, 0) = rho;
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
 void KerCalcU3D(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
@@ -556,7 +611,7 @@ void KerCalcU3D(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
 #endif
         U(0, 0, 0) = u;
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
 void KerCalcV3D(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
@@ -580,7 +635,7 @@ void KerCalcV3D(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
 #endif
         V(0, 0, 0) = v;
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
 void KerCalcW3D(ACC<Real>& W, const ACC<Real>& f, const ACC<int>& nodeType,
@@ -604,7 +659,7 @@ void KerCalcW3D(ACC<Real>& W, const ACC<Real>& f, const ACC<int>& nodeType,
 #endif
         W(0, 0, 0) = w;
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
 void KerCalcUForce3D(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
@@ -636,7 +691,7 @@ void KerCalcUForce3D(ACC<Real>& U, const ACC<Real>& f, const ACC<int>& nodeType,
 #endif
         U(0, 0, 0) = u;
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
 void KerCalcVForce3D(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
@@ -668,7 +723,7 @@ void KerCalcVForce3D(ACC<Real>& V, const ACC<Real>& f, const ACC<int>& nodeType,
 #endif
         V(0, 0, 0) = v;
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
 void KerCalcWForce3D(ACC<Real>& W, const ACC<Real>& f, const ACC<int>& nodeType,
@@ -700,8 +755,8 @@ void KerCalcWForce3D(ACC<Real>& W, const ACC<Real>& f, const ACC<int>& nodeType,
 #endif
         W(0, 0, 0) = w;
     }
-#endif //OPS_3D
+#endif  // OPS_3D
 }
-#endif //OPS_3D outter
+#endif  // OPS_3D outter
 
-#endif //MODEL_KERNEL_INC
+#endif  // MODEL_KERNEL_INC

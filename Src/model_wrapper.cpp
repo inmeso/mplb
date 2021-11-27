@@ -46,6 +46,31 @@ void PreDefinedCollision3D() {
                         ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
                     break;
+                case Collision_BGKIsothermal2nd_Swap:
+                    ops_par_loop(
+                        KerSwapCollideBGKIsothermal3D,
+                        "KerSwapCollideBGKIsothermal3D", block.Get(),
+                        SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_READ),
+                        ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
+                                    LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                        .at(compo.macroVars.at(Variable_Rho).id)
+                                        .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_gbl(&tau, 1, "double", OPS_READ),
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    break;
                 case Collision_BGKThermal4th:
                     ops_par_loop(
                         KerCollideBGKThermal3D, "KerCollideBGKThermal3D",
@@ -81,7 +106,7 @@ void PreDefinedCollision3D() {
             }
         }
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
 void UpdateMacroVars3D() {
@@ -246,7 +271,7 @@ void UpdateMacroVars3D() {
             }
         }
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
 void PreDefinedBodyForce3D() {
@@ -265,6 +290,23 @@ void PreDefinedBodyForce3D() {
                         KerCalcBodyForce1ST3D, "KerCalcBodyForce1ST3D",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
+                                    "double", OPS_WRITE),
+                        ops_arg_dat(
+                            g_MacroBodyforce().at(compo.id).at(blockIndex),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
+                        ops_arg_dat(g_MacroVars()
+                                        .at(compo.macroVars.at(Variable_Rho).id)
+                                        .at(blockIndex),
+                                    1, LOCALSTENCIL, "double", OPS_RW),
+                        ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
+                                    LOCALSTENCIL, "int", OPS_READ),
+                        ops_arg_gbl(compo.index, 2, "int", OPS_READ));
+                    break;
+                case BodyForce_1st_Swap:
+                    ops_par_loop(
+                        KerSwapCalcBodyForce1ST3D, "KerSwapCalcBodyForce1ST3D",
+                        block.Get(), SpaceDim(), iterRng.data(),
+                        ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
                         ops_arg_dat(
                             g_MacroBodyforce().at(compo.id).at(blockIndex),
@@ -297,7 +339,7 @@ void PreDefinedBodyForce3D() {
             }
         }
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
 void PreDefinedInitialCondition3D() {
@@ -343,10 +385,10 @@ void PreDefinedInitialCondition3D() {
     if (!IsTransient()) {
         CopyCurrentMacroVar();
     }
-#endif // OPS_3D
+#endif  // OPS_3D
 }
 
-#endif // OPS_3D outter
+#endif  // OPS_3D outter
 #ifdef OPS_2D
 void PreDefinedCollision() {
 #ifdef OPS_2D
@@ -418,10 +460,8 @@ void PreDefinedCollision() {
             }
         }
     }
-#endif // OPS_2D
+#endif  // OPS_2D
 }
-
-
 
 void UpdateMacroVars() {
 #ifdef OPS_2D
@@ -542,9 +582,8 @@ void UpdateMacroVars() {
             }
         }
     }
-#endif // OPS_2D
+#endif  // OPS_2D
 }
-
 
 void PreDefinedBodyForce() {
 #ifdef OPS_2D
@@ -559,8 +598,8 @@ void PreDefinedBodyForce() {
             switch (forceType) {
                 case BodyForce_1st:
                     ops_par_loop(
-                        KerCalcBodyForce1ST, "KerCalcBodyForce1ST",
-                        block.Get(), SpaceDim(), iterRng.data(),
+                        KerCalcBodyForce1ST, "KerCalcBodyForce1ST", block.Get(),
+                        SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
                         ops_arg_dat(
@@ -594,10 +633,8 @@ void PreDefinedBodyForce() {
             }
         }
     }
-#endif // OPS_2D
+#endif  // OPS_2D
 }
-
-
 
 void PreDefinedInitialCondition() {
 #ifdef OPS_2D
@@ -613,8 +650,8 @@ void PreDefinedInitialCondition() {
             switch (initialType) {
                 case Initial_BGKFeq2nd: {
                     ops_par_loop(
-                        KerInitialiseBGK2nd, "KerInitialiseBGK2nd",
-                        block.Get(), SpaceDim(), iterRng.data(),
+                        KerInitialiseBGK2nd, "KerInitialiseBGK2nd", block.Get(),
+                        SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
                         ops_arg_dat(g_NodeType().at(compoId).at(blockIndex), 1,
@@ -640,6 +677,6 @@ void PreDefinedInitialCondition() {
     if (!IsTransient()) {
         CopyCurrentMacroVar();
     }
-#endif // OPS_2D
+#endif  // OPS_2D
 }
-#endif //OPS_2D outter
+#endif  // OPS_2D outter
