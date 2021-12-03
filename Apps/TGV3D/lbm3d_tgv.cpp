@@ -140,13 +140,26 @@ void simulate(const Configuration& config) {
         SetInitialMacrosVars();
         TGVInitialCondition();
     };
+    WriteFieldsToHdf5(0);
     SetTimeStep(config.meshSize / SoundSpeed());
-    if (config.transient) {
-        Iterate(SwapStreamCollision, config.timeStepsToRun, config.checkPeriod,
-                config.currentTimeStep);
-    } else {
-        Iterate(SwapStreamCollision, config.convergenceCriteria,
-                config.checkPeriod, config.currentTimeStep);
+    if (config.schemeType == Scheme_StreamCollision_Swap) {
+        if (config.transient) {
+            Iterate(SwapStreamCollision, config.timeStepsToRun,
+                    config.checkPeriod, config.currentTimeStep);
+        } else {
+            Iterate(SwapStreamCollision, config.convergenceCriteria,
+                    config.checkPeriod, config.currentTimeStep);
+        }
+    }
+
+    if (config.schemeType == Scheme_StreamCollision) {
+        if (config.transient) {
+            Iterate(StreamCollision, config.timeStepsToRun,
+                    config.checkPeriod, config.currentTimeStep);
+        } else {
+            Iterate(StreamCollision, config.convergenceCriteria,
+                    config.checkPeriod, config.currentTimeStep);
+        }
     }
 }
 
