@@ -90,9 +90,7 @@ void Iterate(void (*cycle)(T), const SizeType steps,
 #ifdef OPS_2D
             UpdateMacroVars();
 #endif
-            WriteFlowfieldToHdf5((iter + 1));
-            WriteDistributionsToHdf5((iter + 1));
-            WriteNodePropertyToHdf5((iter + 1));
+            WriteFieldsToHdf5(iter + 1);
         }
     }
     ops_printf("Simulation finished! Exiting...\n");
@@ -118,9 +116,7 @@ void Iterate(void (*cycle)(T), const Real convergenceCriteria,
             CalcResidualError();
             residualError = GetMaximumResidual(checkPointPeriod);
             DispResidualError(iter, checkPointPeriod);
-            WriteFlowfieldToHdf5(iter);
-            WriteDistributionsToHdf5(iter);
-            WriteNodePropertyToHdf5(iter);
+            WriteFieldsToHdf5(iter + 1);
         }
     } while (residualError >= convergenceCriteria);
 

@@ -80,6 +80,8 @@ RealFieldGroup& g_MacroVarsCopy() { return MacroVarsCopy; };
 RealFieldGroup& g_MacroBodyforce() { return MacroBodyforce; };
 std::vector<RealField*> RealFieldWithHalos;
 std::vector<IntField*> IntFieldWithHalos;
+std::vector<RealField*> RealFieldToSave;
+std::vector<IntField*> IntFieldToSave;
 /**
  * DT: time step
  */
@@ -123,10 +125,6 @@ void WriteFlowfieldToHdf5(const SizeType timeStep) {
     for (const auto& force : MacroBodyforce) {
         force.second.WriteToHDF5(CASENAME, timeStep);
     }
-}
-
-void WriteDistributionsToHdf5(const SizeType timeStep) {
-    f.WriteToHDF5(CASENAME, timeStep);
 }
 
 void WriteNodePropertyToHdf5(const SizeType timeStep) {
@@ -289,6 +287,24 @@ void RegisterFieldNeedHalo(RealField& field) {
 void RegisterFieldNeedHalo(IntField& field) {
     field.CreateHalos();
     IntFieldWithHalos.push_back(&field);
+}
+
+void RegisterFieldToSave(RealField& field) {
+
+    RealFieldToSave.push_back(&field);
+}
+void RegisterFieldToSave(IntField& field) {
+    IntFieldToSave.push_back(&field);
+}
+
+void WriteFieldsToHdf5(const SizeType timeStep) {
+    WriteFlowfieldToHdf5(timeStep);
+    for (auto field : RealFieldToSave) {
+        field->WriteToHDF5(CASENAME, timeStep);
+    }
+    for (auto field : IntFieldToSave) {
+        field->WriteToHDF5(CASENAME, timeStep);
+    }
 }
 
 void TransferHalos() {

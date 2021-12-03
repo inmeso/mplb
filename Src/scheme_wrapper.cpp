@@ -39,6 +39,7 @@ void PredefinedStream3D() {
                         ops_arg_dat(g_GeometryProperty().at(blockIndex), 1,
                                     LOCALSTENCIL, "int", OPS_READ),
                         ops_arg_gbl(compo.second.index, 2, "int", OPS_READ));
+                    TransferHalos();
                     ops_par_loop(
                         KerSwapStream3D, "KerSwapStream3D", block.Get(),
                         SpaceDim(), iterRng.data(),

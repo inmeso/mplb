@@ -85,9 +85,7 @@ void Iterate(const SizeType steps, const SizeType checkPointPeriod,
 #ifdef OPS_2D
                     UpdateMacroVars();
 #endif
-                    WriteFlowfieldToHdf5((iter + 1));
-                    WriteDistributionsToHdf5((iter + 1));
-                    WriteNodePropertyToHdf5((iter + 1));
+                    WriteFieldsToHdf5(iter + 1);
                 }
             }
         } break;
@@ -121,9 +119,7 @@ void Iterate(const Real convergenceCriteria, const SizeType checkPointPeriod,
                     CalcResidualError();
                     residualError = GetMaximumResidual(checkPointPeriod);
                     DispResidualError(iter, checkPointPeriod);
-                    WriteFlowfieldToHdf5(iter);
-                    WriteDistributionsToHdf5(iter);
-                    WriteNodePropertyToHdf5(iter);
+                    WriteFieldsToHdf5(iter + 1);
                 }
             } while (residualError >= convergenceCriteria);
         } break;
@@ -227,7 +223,6 @@ void SwapStreamCollision(const Real time) {
 #if DebugLevel >= 1
     ops_printf("Updating the halos...\n");
 #endif
-    TransferHalos();
 
 #if DebugLevel >= 1
     ops_printf("Streaming...\n");

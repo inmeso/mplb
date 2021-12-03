@@ -75,10 +75,6 @@ void SetTimeStep(Real dt);
  */
 std::map<int, Real>& g_ResidualError();
 std::map<int, ops_reduction>& g_ResidualErrorHandle();
-
-void WriteFlowfieldToHdf5(const SizeType timeStep);
-void WriteDistributionsToHdf5(const SizeType timeStep);
-void WriteNodePropertyToHdf5(const SizeType timeStep);
 void Partition();
 void PrepareFlowField();
 // caseName: case name
@@ -132,5 +128,8 @@ void TransferHalos();
 
 void RegisterFieldNeedHalo(RealField& field);
 void RegisterFieldNeedHalo(IntField& field);
+void RegisterFieldToSave(RealField& field);
+void RegisterFieldToSave(IntField& field);
+void WriteFieldsToHdf5(const SizeType timeStep);
 
 #endif
