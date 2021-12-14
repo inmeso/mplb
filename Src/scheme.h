@@ -75,7 +75,7 @@ void SetupCommonStencils();
 // End Define common stencils
 
 //HiLeMMS interface see https://gitlab.com/jpmeng/hilemms
-void DefineScheme(const SchemeType scheme);
+void DefineScheme(const SchemeType scheme, const SizeType timeStep = 0);
 int SchemeHaloNum();
 void SetSchemeHaloNum(const int schemeHaloNum);
 SchemeType Scheme();

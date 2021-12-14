@@ -89,18 +89,28 @@ int schemeHaloPt{1};
 SchemeType schemeType{Scheme_StreamCollision};
 SchemeType Scheme() { return schemeType; }
 
-void DefineScheme(const SchemeType scheme) {
+
+void DefineScheme(const SchemeType scheme, const SizeType timeStep) {
     schemeType = scheme;
     switch (schemeType) {
         case Scheme_StreamCollision: {
             SetSchemeHaloNum(1);
-            g_fStage().SetDataDim(SizeF());
+            if (timeStep == 0) {
+                g_f().CreateFieldFromScratch(g_Block());
+            } else {
+                g_f().CreateFieldFromFile(CaseName(), g_Block(), timeStep);
+            }
             g_fStage().CreateFieldFromScratch(g_Block());
             RegisterFieldNeedHalo(g_fStage());
             ops_printf("The stream-collision scheme is chosen!\n");
         } break;
-         case Scheme_StreamCollision_Swap: {
+        case Scheme_StreamCollision_Swap: {
             SetSchemeHaloNum(1);
+            if (timeStep == 0) {
+                g_f().CreateFieldFromScratch(g_Block());
+            } else {
+                g_f().CreateFieldFromFile(CaseName(), g_Block(), timeStep);
+            }
             RegisterFieldNeedHalo(g_f());
             ops_printf("The stream-collision_swap scheme is chosen!\n");
         } break;
