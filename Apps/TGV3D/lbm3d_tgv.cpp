@@ -40,6 +40,15 @@
 #include "mplb.h"
 #include "ops_seq_v2.h"
 #include "tgv3d_kernel.inc"
+RealField KineticEnergy{"KineticEnergy"};
+RealField KineticEnergyDissipation{"KineticEnergyDissipation"};
+RealField Enstrophy{"Enstrophy"};
+ops_reduction KeHandle{
+    ops_decl_reduction_handle(sizeof(Real), "double", "KeHandle")};
+ops_reduction KedHandle{
+    ops_decl_reduction_handle(sizeof(Real), "double", "KedHandle")};
+ops_reduction EnHandle{
+    ops_decl_reduction_handle(sizeof(Real), "double", "EnHandle")};
 // Provide macroscopic initial conditions
 void SetInitialMacrosVars() {
     for (auto idBlock : g_Block()) {
@@ -108,6 +117,39 @@ void TGVInitialCondition() {
 #endif  // OPS_3D
 }
 
+void CalcTurburlentQuantities() {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIdx{block.ID()};
+        for (auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            const int rhoId{compo.macroVars.at(Variable_Rho).id};
+            ops_par_loop(
+                KerCalcTurburlentQuantities, "KerCalcTurburlentQuantities",
+                block.Get(), SpaceDim(), iterRng.data(),
+                ops_arg_dat(KineticEnergy.at(blockIdx), 1, TWOPTREGULARSTENCIL,
+                            "double", OPS_READ),
+                ops_arg_dat(KineticEnergyDissipation.at(blockIdx), 1,
+                            TWOPTREGULARSTENCIL, "double", OPS_READ),
+                ops_arg_dat(Enstrophy.at(blockIdx), 1, TWOPTREGULARSTENCIL,
+                            "double", OPS_READ),
+                ops_arg_reduce(EnHandle, 1, "double", OPS_INC),
+                ops_arg_reduce(KeHandle, 1, "double", OPS_INC),
+                ops_arg_reduce(KedHandle, 1, "double", OPS_INC),
+                ops_arg_dat(g_MacroVars().at(rhoId).at(blockIdx), 1,
+                            LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIdx), 1,
+                            LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIdx), 1,
+                            LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIdx), 1,
+                            LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_gbl(&Config().meshSize, 1, "double", OPS_READ));
+        }
+    }
+}
 
 // Provide macroscopic body-force term
 void UpdateMacroscopicBodyForce(const Real time) {}
@@ -134,6 +176,20 @@ void simulate(const Configuration& config) {
                             bcConfig.macroVarTypesatBoundary,
                             bcConfig.givenVars, bcConfig.boundaryType);
     }
+
+    KineticEnergy.SetDataDim(1);
+    KineticEnergy.CreateFieldFromScratch(g_Block());
+    KineticEnergy.SetDataHalo(2);
+    KineticEnergy.CreateHalos();
+    KineticEnergyDissipation.SetDataDim(1);
+    KineticEnergyDissipation.CreateFieldFromScratch(g_Block());
+    KineticEnergyDissipation.SetDataHalo(2);
+    KineticEnergyDissipation.CreateHalos();
+    Enstrophy.SetDataDim(1);
+    Enstrophy.CreateFieldFromScratch(g_Block());
+    Enstrophy.SetDataHalo(2);
+    Enstrophy.CreateHalos();
+
     Partition();
     ops_diagnostic_output();
     if (config.currentTimeStep == 0) {
@@ -154,15 +210,14 @@ void simulate(const Configuration& config) {
 
     if (config.schemeType == Scheme_StreamCollision) {
         if (config.transient) {
-            Iterate(StreamCollision, config.timeStepsToRun,
-                    config.checkPeriod, config.currentTimeStep);
+            Iterate(StreamCollision, config.timeStepsToRun, config.checkPeriod,
+                    config.currentTimeStep);
         } else {
             Iterate(StreamCollision, config.convergenceCriteria,
                     config.checkPeriod, config.currentTimeStep);
         }
     }
 }
-
 
 int main(int argc, const char** argv) {
     // OPS initialisation where a few arguments can be passed to set
