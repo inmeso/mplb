@@ -147,7 +147,8 @@ void DefineComponents(const std::vector<std::string>& compoNames,
 
 void DefineMacroVars(std::vector<VariableTypes> types,
                      std::vector<std::string> names, std::vector<int> varId,
-                     std::vector<int> compoId, const SizeType timeStep = 0);
+                     std::vector<int> compoId, const SizeType timeStep = 0,
+                     const int haloNum = 1);
 
 /*!
  * Define collision terms for specified components

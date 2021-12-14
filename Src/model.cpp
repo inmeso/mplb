@@ -296,13 +296,12 @@ void DefineComponents(const std::vector<std::string>& compoNames,
     }
 
     g_f().SetDataDim(NUMXI);
+    g_fStage().SetDataDim(NUMXI);
     if (timeStep == 0) {
-        g_f().CreateFieldFromScratch(g_Block());
         for (auto& pair : g_NodeType()) {
             pair.second.CreateFieldFromScratch(g_Block());
         }
     } else {
-        g_f().CreateFieldFromFile(CaseName(), g_Block(), timeStep);
         for (auto& pair : g_NodeType()) {
             pair.second.CreateFieldFromFile(CaseName(), g_Block(), timeStep);
         }
@@ -311,7 +310,7 @@ void DefineComponents(const std::vector<std::string>& compoNames,
 
 void DefineMacroVars(std::vector<VariableTypes> types,
                      std::vector<std::string> names, std::vector<int> varId,
-                     std::vector<int> compoId, const SizeType timeStep) {
+                     std::vector<int> compoId, const SizeType timeStep, const int haloNum) {
     if (components.size() < 1) {
         ops_printf("Error:please call DefineComponent first!\n");
         assert(components.size() == 0);
@@ -337,6 +336,7 @@ void DefineMacroVars(std::vector<VariableTypes> types,
                    names[idx].c_str(),
                    components.at(compoId.at(idx)).name.c_str());
         RealField macroVarField{macroVar.name};
+        macroVarField.SetDataHalo(haloNum);
         g_MacroVars().emplace(macroVar.id, macroVarField);
         if (!IsTransient()) {
             RealField macroVarFieldCopy{macroVar.name + "Copy"};
