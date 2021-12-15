@@ -66,6 +66,16 @@ int twoPtRectangle[]{0,  0, 0, 1, 0, 0,  -1, 0,  0, 0, 1, 0,  0,
 ops_stencil TWOPTREGULARSTENCIL{ops_decl_stencil(
     3, 13, twoPtRectangle,
     "000:100:-100:010:0-10:001:00-1:200:-200:020:0-20:002:00-2")};
+
+int threePtRectangle[]{0, 0,  0, 1,  0, 0,  -1, 0,  0, 2, 0,  0, -2, 0, 0,
+                       3, 0,  0, -3, 0, 0,  0,  1,  0, 0, -1, 0, 0,  2, 0,
+                       0, -2, 0, 0,  3, 0,  0,  -3, 0, 0, 0,  1, 0,  0, -1,
+                       0, 0,  2, 0,  0, -2, 0,  0,  3, 0, 0,  -3};
+ops_stencil THREEPTREGULARSTENCIL{
+    ops_decl_stencil(3, 19, threePtRectangle,
+                     "000:100:-100:200:-200:300:-300:010:0-10:020:0-20:030:0-"
+                     "30:001:00-1:002:00-2:003:00-3")};
+
 int d3q27[] = {-1, -1, -1, -1, -1, 0,  -1, -1, 1, -1, 0,  -1, -1, 0,  0,  -1, 0,
                1,  -1, 1,  -1, -1, 1,  0,  -1, 1, 1,  0,  -1, -1, 0,  -1, 0,  0,
                -1, 1,  0,  0,  -1, 0,  0,  0,  0, 0,  1,  0,  1,  -1, 0,  1,  0,
@@ -88,7 +98,6 @@ ops_stencil ONEPTLATTICESTENCIL{ops_decl_stencil(3, 27, d3q27, "D3Q27")};
 int schemeHaloPt{1};
 SchemeType schemeType{Scheme_StreamCollision};
 SchemeType Scheme() { return schemeType; }
-
 
 void DefineScheme(const SchemeType scheme, const SizeType timeStep) {
     schemeType = scheme;

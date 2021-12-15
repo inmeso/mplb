@@ -64,6 +64,8 @@ extern ops_stencil TWOPTREGULARSTENCIL;
  */
 extern ops_stencil ONEPTLATTICESTENCIL;
 
+extern ops_stencil THREEPTREGULARSTENCIL;
+
 enum SchemeType {
     Scheme_E1st2nd = 1,
     Scheme_I1st2nd = -1,
