@@ -121,10 +121,6 @@ void WriteFlowfieldToHdf5(const SizeType timeStep) {
     for (const auto& macroVar : MacroVars) {
         macroVar.second.WriteToHDF5(CASENAME, timeStep);
     }
-    CoordinateXYZ.WriteToHDF5(CASENAME, timeStep);
-    for (const auto& force : MacroBodyforce) {
-        force.second.WriteToHDF5(CASENAME, timeStep);
-    }
 }
 
 void WriteNodePropertyToHdf5(const SizeType timeStep) {
