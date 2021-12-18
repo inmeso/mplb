@@ -36,19 +36,17 @@
 #include <cmath>
 #include <iostream>
 #include <ostream>
+#include <fstream>
 #include <string>
 #include "mplb.h"
 #include "ops_seq_v2.h"
 #include "tgv3d_kernel.inc"
-RealField KineticEnergy{"KineticEnergy"};
-RealField KineticEnergyDissipation{"KineticEnergyDissipation"};
-RealField Enstrophy{"Enstrophy"};
-ops_reduction KeHandle{
-    ops_decl_reduction_handle(sizeof(Real), "double", "KeHandle")};
-ops_reduction KedHandle{
-    ops_decl_reduction_handle(sizeof(Real), "double", "KedHandle")};
-ops_reduction EnHandle{
-    ops_decl_reduction_handle(sizeof(Real), "double", "EnHandle")};
+long long totalMeshSize;
+ops_reduction KeHandle;
+ops_reduction KedHandle;
+ops_reduction EnHandle;
+std::ofstream datCentral2nd, datCentral4th, datCentral6th, datKed;
+
 // Provide macroscopic initial conditions
 void SetInitialMacrosVars() {
     for (auto idBlock : g_Block()) {
@@ -117,7 +115,7 @@ void TGVInitialCondition() {
 #endif  // OPS_3D
 }
 
-void CalcTurburlentQuantities() {
+void CalcTurburlentQuantities4th() {
     for (auto idBlock : g_Block()) {
         Block& block{idBlock.second};
         std::vector<int> iterRng;
@@ -127,37 +125,195 @@ void CalcTurburlentQuantities() {
             const Component& compo{idCompo.second};
             const int rhoId{compo.macroVars.at(Variable_Rho).id};
             ops_par_loop(
-                KerCalcTurburlentQuantities, "KerCalcTurburlentQuantities",
-                block.Get(), SpaceDim(), iterRng.data(),
-                ops_arg_dat(KineticEnergy.at(blockIdx), 1, TWOPTREGULARSTENCIL,
-                            "double", OPS_READ),
-                ops_arg_dat(KineticEnergyDissipation.at(blockIdx), 1,
-                            TWOPTREGULARSTENCIL, "double", OPS_READ),
-                ops_arg_dat(Enstrophy.at(blockIdx), 1, TWOPTREGULARSTENCIL,
-                            "double", OPS_READ),
-                ops_arg_reduce(EnHandle, 1, "double", OPS_INC),
-                ops_arg_reduce(KeHandle, 1, "double", OPS_INC),
+                KerCalcTurburlentQuantities4th,
+                "KerCalcTurburlentQuantities4th", block.Get(), SpaceDim(),
+                iterRng.data(), ops_arg_reduce(KeHandle, 1, "double", OPS_INC),
                 ops_arg_reduce(KedHandle, 1, "double", OPS_INC),
-                ops_arg_dat(g_MacroVars().at(rhoId).at(blockIdx), 1,
-                            LOCALSTENCIL, "Real", OPS_READ),
+                ops_arg_reduce(EnHandle, 1, "double", OPS_INC),
                 ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIdx), 1,
-                            LOCALSTENCIL, "Real", OPS_READ),
+                            TWOPTREGULARSTENCIL, "Real", OPS_READ),
                 ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIdx), 1,
-                            LOCALSTENCIL, "Real", OPS_READ),
+                            TWOPTREGULARSTENCIL, "Real", OPS_READ),
                 ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIdx), 1,
-                            LOCALSTENCIL, "Real", OPS_READ),
+                            TWOPTREGULARSTENCIL, "Real", OPS_READ),
                 ops_arg_gbl(&Config().meshSize, 1, "double", OPS_READ));
         }
     }
 }
 
+void CalcTurburlentQuantities6th() {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIdx{block.ID()};
+        for (auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            const int rhoId{compo.macroVars.at(Variable_Rho).id};
+            ops_par_loop(
+                KerCalcTurburlentQuantities6th,
+                "KerCalcTurburlentQuantities6th", block.Get(), SpaceDim(),
+                iterRng.data(), ops_arg_reduce(KeHandle, 1, "double", OPS_INC),
+                ops_arg_reduce(KedHandle, 1, "double", OPS_INC),
+                ops_arg_reduce(EnHandle, 1, "double", OPS_INC),
+                ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIdx), 1,
+                            THREEPTREGULARSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIdx), 1,
+                            THREEPTREGULARSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIdx), 1,
+                            THREEPTREGULARSTENCIL, "Real", OPS_READ),
+                ops_arg_gbl(&Config().meshSize, 1, "double", OPS_READ));
+        }
+    }
+}
+
+void CalcTurburlentQuantities2nd() {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIdx{block.ID()};
+        for (auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            const int rhoId{compo.macroVars.at(Variable_Rho).id};
+            ops_par_loop(
+                KerCalcTurburlentQuantities2nd,
+                "KerCalcTurburlentQuantities2nd", block.Get(), SpaceDim(),
+                iterRng.data(), ops_arg_reduce(KeHandle, 1, "double", OPS_INC),
+                ops_arg_reduce(KedHandle, 1, "double", OPS_INC),
+                ops_arg_reduce(EnHandle, 1, "double", OPS_INC),
+                ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIdx), 1,
+                            ONEPTREGULARSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIdx), 1,
+                            ONEPTREGULARSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIdx), 1,
+                            ONEPTREGULARSTENCIL, "Real", OPS_READ),
+                ops_arg_gbl(&Config().meshSize, 1, "double", OPS_READ));
+        }
+    }
+}
+
+
 // Provide macroscopic body-force term
 void UpdateMacroscopicBodyForce(const Real time) {}
+
+void TGVIterate(const SizeType steps, const SizeType checkPointPeriod,
+                const SizeType start) {
+    const SchemeType scheme = Scheme();
+    switch (scheme) {
+        case Scheme_StreamCollision: {
+            for (SizeType iter = start; iter < start + steps; iter++) {
+                const Real time{iter * TimeStep()};
+                StreamCollision(time);
+                if (((iter + 1) % checkPointPeriod) == 0) {
+                    Real ked2nd, ked4th, ked6th;
+#ifdef OPS_3D
+                    UpdateMacroVars3D();
+                    if ((90-TimeStep())<=(iter+1) *TimeStep()) && (iter+1) *TimeStep())<=(90+TimeStep())){
+                            WriteFieldsToHdf5(iter + 1);
+                        }
+                    g_MacroVars().at(g_Components().at(0).uId).TransferHalos();
+                    g_MacroVars().at(g_Components().at(0).vId).TransferHalos();
+                    g_MacroVars().at(g_Components().at(0).wId).TransferHalos();
+                    CalcTurburlentQuantities4th();
+                    Real enRes, keRes, kedRes;
+                    ops_reduction_result(KeHandle, &keRes);
+                    ops_reduction_result(KedHandle, &kedRes);
+                    ops_reduction_result(EnHandle, &enRes);
+                    ked4th = kedRes * Config().tauRef[0] / totalMeshSize / 0.01;
+#ifdef OPS_MPI
+                    if (ops_my_global_rank == MPI_ROOT) {
+#endif
+                        datCentral4th
+                            << TimeStep() * (iter + 1) << " "
+                            << keRes / totalMeshSize / 0.01 << " " << ked4th
+                            << " " << enRes / totalMeshSize / 0.01 << std::endl;
+#ifdef OPS_MPI
+                    }
+#endif
+                    CalcTurburlentQuantities2nd();
+                    ops_reduction_result(KeHandle, &keRes);
+                    ops_reduction_result(KedHandle, &kedRes);
+                    ops_reduction_result(EnHandle, &enRes);
+                    ked2nd = kedRes * Config().tauRef[0] / totalMeshSize / 0.01;
+#ifdef OPS_MPI
+                    if (ops_my_global_rank == MPI_ROOT) {
+#endif
+                        datCentral2nd
+                            << TimeStep() * (iter + 1) << " "
+                            << keRes / totalMeshSize / 0.01 << " " << ked2nd
+                            << " " << enRes / totalMeshSize / 0.01 << std::endl;
+#ifdef OPS_MPI
+                    }
+#endif
+
+                    CalcTurburlentQuantities6th();
+                    ops_reduction_result(KeHandle, &keRes);
+                    ops_reduction_result(KedHandle, &kedRes);
+                    ops_reduction_result(EnHandle, &enRes);
+                    ked6th = kedRes * Config().tauRef[0] / totalMeshSize / 0.01;
+#ifdef OPS_MPI
+                    if (ops_my_global_rank == MPI_ROOT) {
+#endif
+                        datCentral6th
+                            << TimeStep() * (iter + 1) << " "
+                            << keRes / totalMeshSize / 0.01 << " " << ked6th
+                            << " " << enRes / totalMeshSize / 0.01 << std::endl;
+#ifdef OPS_MPI
+                    }
+#endif
+
+#endif
+#ifdef OPS_2D
+                    UpdateMacroVars();
+#endif
+                }
+            }
+        } break;
+        default:
+            break;
+    }
+    DestroyModel();
+}
 
 void simulate(const Configuration& config) {
     DefineCase(config.caseName, config.spaceDim, config.transient);
     DefineBlocks(config.blockIds, config.blockNames, config.blockSize,
                  config.meshSize, config.startPos);
+#ifdef OPS_MPI
+    if (ops_my_global_rank == MPI_ROOT) {
+#endif
+        datCentral2nd.open(CaseName() +
+                           std::to_string(g_Block().at(0).Size().at(0)) +
+                           "2nd.dat");
+        datCentral4th.open(CaseName() +
+                           std::to_string(g_Block().at(0).Size().at(0)) +
+                           "4th.dat");
+        datCentral6th.open(CaseName() +
+                           std::to_string(g_Block().at(0).Size().at(0)) +
+                           "6th.dat");
+        datCentral2nd.precision(16);
+        datCentral4th.precision(16);
+        datCentral6th.precision(16);
+        datCentral4th
+            << "#Time kineticEnergy KineticEnergyDissipation Enstrophy "
+            << std::endl;
+        datCentral2nd
+            << "#Time kineticEnergy KineticEnergyDissipation Enstrophy "
+            << std::endl;
+        datCentral6th
+            << "#Time kineticEnergy KineticEnergyDissipation Enstrophy "
+            << std::endl;
+#ifdef OPS_MPI
+    }
+#endif
+
+    KeHandle = ops_decl_reduction_handle(sizeof(Real), "double", "KeHandle");
+    KedHandle = ops_decl_reduction_handle(sizeof(Real), "double", "KedHandle");
+    EnHandle = ops_decl_reduction_handle(sizeof(Real), "double", "EnHandle");
+
+    totalMeshSize =
+        config.blockSize[0] * config.blockSize[1] * config.blockSize[2];
     DefineBlockConnection(config.fromBlockIds, config.fromBoundarySurface,
                           config.toBlockIds, config.toBoundarySurface,
                           config.blockConnectionType);
@@ -165,7 +321,10 @@ void simulate(const Configuration& config) {
                      config.tauRef, config.currentTimeStep);
     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
                     config.macroVarIds, config.macroCompoIds,
-                    config.currentTimeStep);
+                    config.currentTimeStep, 3);
+    g_MacroVars().at(g_Components().at(0).uId).CreateHalos();
+    g_MacroVars().at(g_Components().at(0).vId).CreateHalos();
+    g_MacroVars().at(g_Components().at(0).wId).CreateHalos();
     DefineCollision(config.CollisionTypes, config.CollisionCompoIds);
     DefineBodyForce(config.bodyForceTypes, config.bodyForceCompoIds);
     DefineScheme(config.schemeType);
@@ -176,47 +335,80 @@ void simulate(const Configuration& config) {
                             bcConfig.macroVarTypesatBoundary,
                             bcConfig.givenVars, bcConfig.boundaryType);
     }
-
-    KineticEnergy.SetDataDim(1);
-    KineticEnergy.CreateFieldFromScratch(g_Block());
-    KineticEnergy.SetDataHalo(2);
-    KineticEnergy.CreateHalos();
-    KineticEnergyDissipation.SetDataDim(1);
-    KineticEnergyDissipation.CreateFieldFromScratch(g_Block());
-    KineticEnergyDissipation.SetDataHalo(2);
-    KineticEnergyDissipation.CreateHalos();
-    Enstrophy.SetDataDim(1);
-    Enstrophy.CreateFieldFromScratch(g_Block());
-    Enstrophy.SetDataHalo(2);
-    Enstrophy.CreateHalos();
-
     Partition();
     ops_diagnostic_output();
     if (config.currentTimeStep == 0) {
         SetInitialMacrosVars();
         TGVInitialCondition();
     };
-    WriteFieldsToHdf5(0);
+    g_MacroVars().at(g_Components().at(0).uId).TransferHalos();
+    g_MacroVars().at(g_Components().at(0).vId).TransferHalos();
+    g_MacroVars().at(g_Components().at(0).wId).TransferHalos();
+    Real ked2nd, ked4th, ked6th;
+    CalcTurburlentQuantities4th();
+    Real enRes, keRes, kedRes;
+    ops_reduction_result(KeHandle, &keRes);
+    ops_reduction_result(KedHandle, &kedRes);
+    ops_reduction_result(EnHandle, &enRes);
+    ked4th = kedRes * Config().tauRef[0] / totalMeshSize / 0.01;
+#ifdef OPS_MPI
+    if (ops_my_global_rank == MPI_ROOT) {
+#endif
+        datCentral4th << 0.0 << " " << keRes / totalMeshSize / 0.01 << " "
+                      << ked4th << " " << enRes / totalMeshSize / 0.01
+                      << std::endl;
+#ifdef OPS_MPI
+    }
+#endif
+    CalcTurburlentQuantities2nd();
+    ops_reduction_result(KeHandle, &keRes);
+    ops_reduction_result(KedHandle, &kedRes);
+    ops_reduction_result(EnHandle, &enRes);
+    ked2nd = kedRes * Config().tauRef[0] / totalMeshSize / 0.01;
+#ifdef OPS_MPI
+    if (ops_my_global_rank == MPI_ROOT) {
+#endif
+        datCentral2nd << 0.0 << " " << keRes / totalMeshSize / 0.01 << " "
+                      << ked2nd << " " << enRes / totalMeshSize / 0.01
+                      << std::endl;
+#ifdef OPS_MPI
+    }
+#endif
+
+    CalcTurburlentQuantities6th();
+    ops_reduction_result(KeHandle, &keRes);
+    ops_reduction_result(KedHandle, &kedRes);
+    ops_reduction_result(EnHandle, &enRes);
+    ked6th = kedRes * Config().tauRef[0] / totalMeshSize / 0.01;
+#ifdef OPS_MPI
+    if (ops_my_global_rank == MPI_ROOT) {
+#endif
+        datCentral6th << 0.0 << " " << keRes / totalMeshSize / 0.01 << " "
+                      << ked6th << " " << enRes / totalMeshSize / 0.01
+                      << std::endl;
+#ifdef OPS_MPI
+    }
+#endif
+
+    //WriteFieldsToHdf5(0);
     SetTimeStep(config.meshSize / SoundSpeed());
     if (config.schemeType == Scheme_StreamCollision_Swap) {
-        if (config.transient) {
-            Iterate(SwapStreamCollision, config.timeStepsToRun,
-                    config.checkPeriod, config.currentTimeStep);
-        } else {
-            Iterate(SwapStreamCollision, config.convergenceCriteria,
-                    config.checkPeriod, config.currentTimeStep);
-        }
     }
 
     if (config.schemeType == Scheme_StreamCollision) {
-        if (config.transient) {
-            Iterate(StreamCollision, config.timeStepsToRun, config.checkPeriod,
-                    config.currentTimeStep);
-        } else {
-            Iterate(StreamCollision, config.convergenceCriteria,
-                    config.checkPeriod, config.currentTimeStep);
-        }
+        TGVIterate(config.timeStepsToRun, config.checkPeriod,
+                   config.currentTimeStep);
     }
+#ifdef OPS_MPI
+    if (ops_my_global_rank == MPI_ROOT) {
+#endif
+        datCentral2nd.close();
+        datCentral4th.close();
+        datCentral6th.close();
+        datKed.close();
+#ifdef OPS_MPI
+    }
+#endif
 }
 
 int main(int argc, const char** argv) {

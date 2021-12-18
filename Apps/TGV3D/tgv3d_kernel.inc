@@ -33,8 +33,13 @@
 #ifndef TGV3D_KERNEL_INC
 #define TGV3D_KERNEL_INC
 
+#define Central2nd(p1, m1, dx) (((p1) - (m1)) / (2 * (dx)));
+
 #define Central4th(p1, p2, m1, m2, dx) \
     ((-(p2) + 8 * (p1)-8 * (m1) + (m2)) / (12 * (dx)));
+
+#define Central6th(p1, p2, p3, m1, m2, m3, dx) \
+    (((p3)-9 * (p2) + 45 * (p1)-45 * (m1) + 9 * (m2) - (m3)) / (60 * (dx)));
 
 void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
                             ACC<Real>& w, const ACC<Real>& coordinates,
@@ -92,11 +97,42 @@ void KerTGV3DInit(ACC<Real>& f, const ACC<int>& nodeType, const ACC<Real>& Rho,
 #endif  // OPS_3D
 }
 
-void KerCalcTurburlentQuantities(ACC<Real>& ke, ACC<Real>& ked, ACC<Real>& en,
-                                 Real* keSum, Real* kedSum, Real* enSum,
-                                 const ACC<Real>& rho, const ACC<Real>& u,
-                                 const ACC<Real>& v, const ACC<Real>& w,
-                                 const Real* meshSize) {
+void KerCalcTurburlentQuantities6th(Real* keSum, Real* kedSum, Real* enSum,
+                                    const ACC<Real>& u, const ACC<Real>& v,
+                                    const ACC<Real>& w, const Real* meshSize) {
+    const Real dx{*meshSize};
+    Real ux, uy, uz, vx, vy, vz, wx, wy, wz;
+    ux = Central6th(u(1, 0, 0), u(2, 0, 0), u(3, 0, 0), u(-1, 0, 0),
+                    u(-2, 0, 0), u(-3, 0, 0), dx);
+    uy = Central6th(u(0, 1, 0), u(0, 2, 0), u(0, 3, 0), u(0, -1, 0),
+                    u(0, -2, 0), u(0, -3, 0), dx);
+    uz = Central6th(u(0, 0, 1), u(0, 0, 2), u(0, 0, 3), u(0, 0, -1),
+                    u(0, 0, -2), u(0, 0, -3), dx);
+    vx = Central6th(v(1, 0, 0), v(2, 0, 0), v(3, 0, 0), v(-1, 0, 0),
+                    v(-2, 0, 0), v(-3, 0, 0), dx);
+    vy = Central6th(v(0, 1, 0), v(0, 2, 0), v(0, 3, 0), v(0, -1, 0),
+                    v(0, -2, 0), v(0, -3, 0), dx);
+    vz = Central6th(v(0, 0, 1), v(0, 0, 2), v(0, 0, 3), v(0, 0, -1),
+                    v(0, 0, -2), v(0, 0, -3), dx);
+    wx = Central6th(w(1, 0, 0), w(2, 0, 0), w(3, 0, 0), w(-1, 0, 0),
+                    w(-2, 0, 0), w(-3, 0, 0), dx);
+    wy = Central6th(w(0, 1, 0), w(0, 2, 0), w(0, 3, 0), w(0, -1, 0),
+                    w(0, -2, 0), w(0, -3, 0), dx);
+    wz = Central6th(w(0, 0, 1), w(0, 0, 2), w(0, 0, 3), w(0, 0, -1),
+                    w(0, 0, -2), w(0, 0, -3), dx);
+    *enSum = *enSum + 0.5 * ((vx - uy) * (vx - uy) + (uz - wx) * (uz - wx) +
+                             (wy - vz) * (wy - vz));
+    *keSum = *keSum + 0.5 * (u(0, 0, 0) * u(0, 0, 0) + v(0, 0, 0) * v(0, 0, 0) +
+                             w(0, 0, 0) * w(0, 0, 0));
+    *kedSum =
+        *kedSum + 2 * (0.5 * ((vx + uy) * (vx + uy) + (uz + wx) * (uz + wx) +
+                              (wy + vz) * (wy + vz)) +
+                       ux * ux + vy * vy + wz * wz);
+}
+
+void KerCalcTurburlentQuantities4th(Real* keSum, Real* kedSum, Real* enSum,
+                                    const ACC<Real>& u, const ACC<Real>& v,
+                                    const ACC<Real>& w, const Real* meshSize) {
     const Real dx{*meshSize};
     Real ux, uy, uz, vx, vy, vz, wx, wy, wz;
     ux = Central4th(u(1, 0, 0), u(2, 0, 0), u(-1, 0, 0), u(-2, 0, 0), dx);
@@ -108,6 +144,30 @@ void KerCalcTurburlentQuantities(ACC<Real>& ke, ACC<Real>& ked, ACC<Real>& en,
     wx = Central4th(w(1, 0, 0), w(2, 0, 0), w(-1, 0, 0), w(-2, 0, 0), dx);
     wy = Central4th(w(0, 1, 0), w(0, 2, 0), w(0, -1, 0), w(0, -2, 0), dx);
     wz = Central4th(w(0, 0, 1), w(0, 0, 2), w(0, 0, -1), w(0, 0, -2), dx);
+    *enSum = *enSum + 0.5 * ((vx - uy) * (vx - uy) + (uz - wx) * (uz - wx) +
+                             (wy - vz) * (wy - vz));
+    *keSum = *keSum + 0.5 * (u(0, 0, 0) * u(0, 0, 0) + v(0, 0, 0) * v(0, 0, 0) +
+                             w(0, 0, 0) * w(0, 0, 0));
+    *kedSum =
+        *kedSum + 2 * (0.5 * ((vx + uy) * (vx + uy) + (uz + wx) * (uz + wx) +
+                              (wy + vz) * (wy + vz)) +
+                       ux * ux + vy * vy + wz * wz);
+}
+
+void KerCalcTurburlentQuantities2nd(Real* keSum, Real* kedSum, Real* enSum,
+                                    const ACC<Real>& u, const ACC<Real>& v,
+                                    const ACC<Real>& w, const Real* meshSize) {
+    const Real dx{*meshSize};
+    Real ux, uy, uz, vx, vy, vz, wx, wy, wz;
+    ux = Central2nd(u(1, 0, 0), u(-1, 0, 0), dx);
+    uy = Central2nd(u(0, 1, 0), u(0, -1, 0), dx);
+    uz = Central2nd(u(0, 0, 1), u(0, 0, -1), dx);
+    vx = Central2nd(v(1, 0, 0), v(-1, 0, 0), dx);
+    vy = Central2nd(v(0, 1, 0), v(0, -1, 0), dx);
+    vz = Central2nd(v(0, 0, 1), v(0, 0, -1), dx);
+    wx = Central2nd(w(1, 0, 0), w(-1, 0, 0), dx);
+    wy = Central2nd(w(0, 1, 0), w(0, -1, 0), dx);
+    wz = Central2nd(w(0, 0, 1), w(0, 0, -1), dx);
     *enSum = *enSum + 0.5 * ((vx - uy) * (vx - uy) + (uz - wx) * (uz - wx) +
                              (wy - vz) * (wy - vz));
     *keSum = *keSum + 0.5 * (u(0, 0, 0) * u(0, 0, 0) + v(0, 0, 0) * v(0, 0, 0) +
