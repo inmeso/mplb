@@ -41,6 +41,11 @@
 #define Central6th(p1, p2, p3, m1, m2, m3, dx) \
     (((p3)-9 * (p2) + 45 * (p1)-45 * (m1) + 9 * (m2) - (m3)) / (60 * (dx)));
 
+#define Central8th(p1, p2, p3, p4, m1, m2, m3, m4, dx)                  \
+    ((-(p4) / 280) + (4 * (p3) / 105) + (-(p2) / 5) + (4 * (p1) / 5) +  \
+     ((m4) / 280) + (-4 * (m3) / 105) + ((m2) / 5) + (-4 * (m1) / 5)) / \
+        (dx);
+
 void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
                             ACC<Real>& w, const ACC<Real>& coordinates,
                             const int* idx) {
@@ -86,7 +91,8 @@ void KerTGV3DInit(ACC<Real>& f, const ACC<int>& nodeType, const ACC<Real>& Rho,
             const Real res{f(xiIdx, 0, 0, 0)};
             if (isnan(res) || res <= 0 || isinf(res)) {
                 ops_printf(
-                    "Error! Distribution function %f becomes invalid at the "
+                    "Error! Distribution function %f becomes invalid at "
+                    "the "
                     "lattice %i\n",
                     res, xiIdx);
                 assert(!(isnan(res) || res <= 0 || isinf(res)));
@@ -95,6 +101,43 @@ void KerTGV3DInit(ACC<Real>& f, const ACC<int>& nodeType, const ACC<Real>& Rho,
         }
     }
 #endif  // OPS_3D
+}
+
+void KerCalcTurburlentQuantities8th(Real* keSum, Real* kedSum, Real* enSum,
+                                    const ACC<Real>& u, const ACC<Real>& v,
+                                    const ACC<Real>& w, const Real* meshSize) {
+    const Real dx{*meshSize};
+    Real ux, uy, uz, vx, vy, vz, wx, wy, wz;
+
+    ux = Central8th(u(1, 0, 0), u(2, 0, 0), u(3, 0, 0), u(4, 0, 0), u(-1, 0, 0),
+                    u(-2, 0, 0), u(-3, 0, 0), u(-4, 0, 0), dx);
+    uy = Central8th(u(0, 1, 0), u(0, 2, 0), u(0, 3, 0), u(0, 4, 0), u(0, -1, 0),
+                    u(0, -2, 0), u(0, -3, 0), u(0, -4, 0), dx);
+    uz = Central8th(u(0, 0, 1), u(0, 0, 2), u(0, 0, 3), u(0, 0, 4), u(0, 0, -1),
+                    u(0, 0, -2), u(0, 0, -3), u(0, 0, -4), dx);
+
+    vx = Central8th(v(1, 0, 0), v(2, 0, 0), v(3, 0, 0), v(4, 0, 0), v(-1, 0, 0),
+                    v(-2, 0, 0), v(-3, 0, 0), v(-4, 0, 0), dx);
+    vy = Central8th(v(0, 1, 0), v(0, 2, 0), v(0, 3, 0), v(0, 4, 0), v(0, -1, 0),
+                    v(0, -2, 0), v(0, -3, 0), v(0, -4, 0), dx);
+    vz = Central8th(v(0, 0, 1), v(0, 0, 2), v(0, 0, 3), v(0, 0, 4), v(0, 0, -1),
+                    v(0, 0, -2), v(0, 0, -3), v(0, 0, -4), dx);
+
+    wx = Central8th(w(1, 0, 0), w(2, 0, 0), w(3, 0, 0), w(4, 0, 0), w(-1, 0, 0),
+                    w(-2, 0, 0), w(-3, 0, 0), w(-4, 0, 0), dx);
+    wy = Central8th(w(0, 1, 0), w(0, 2, 0), w(0, 3, 0), w(0, 4, 0), w(0, -1, 0),
+                    w(0, -2, 0), w(0, -3, 0), w(0, -4, 0), dx);
+    wz = Central8th(w(0, 0, 1), w(0, 0, 2), w(0, 0, 3), w(0, 0, 4), w(0, 0, -1),
+                    w(0, 0, -2), w(0, 0, -3), w(0, 0, -4), dx);
+
+    *enSum = *enSum + 0.5 * ((vx - uy) * (vx - uy) + (uz - wx) * (uz - wx) +
+                             (wy - vz) * (wy - vz));
+    *keSum = *keSum + 0.5 * (u(0, 0, 0) * u(0, 0, 0) + v(0, 0, 0) * v(0, 0, 0) +
+                             w(0, 0, 0) * w(0, 0, 0));
+    *kedSum =
+        *kedSum + 2 * (0.5 * ((vx + uy) * (vx + uy) + (uz + wx) * (uz + wx) +
+                              (wy + vz) * (wy + vz)) +
+                       ux * ux + vy * vy + wz * wz);
 }
 
 void KerCalcTurburlentQuantities6th(Real* keSum, Real* kedSum, Real* enSum,

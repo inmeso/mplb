@@ -45,7 +45,7 @@ long long totalMeshSize;
 ops_reduction KeHandle;
 ops_reduction KedHandle;
 ops_reduction EnHandle;
-std::ofstream datCentral2nd, datCentral4th, datCentral6th, datKed;
+std::ofstream datCentral2nd, datCentral4th, datCentral6th, datCentral8th;
 
 // Provide macroscopic initial conditions
 void SetInitialMacrosVars() {
@@ -167,6 +167,32 @@ void CalcTurburlentQuantities6th() {
     }
 }
 
+void CalcTurburlentQuantities8th() {
+    for (auto idBlock : g_Block()) {
+        Block& block{idBlock.second};
+        std::vector<int> iterRng;
+        iterRng.assign(block.WholeRange().begin(), block.WholeRange().end());
+        const int blockIdx{block.ID()};
+        for (auto& idCompo : g_Components()) {
+            const Component& compo{idCompo.second};
+            const int rhoId{compo.macroVars.at(Variable_Rho).id};
+            ops_par_loop(
+                KerCalcTurburlentQuantities8th,
+                "KerCalcTurburlentQuantities8th", block.Get(), SpaceDim(),
+                iterRng.data(), ops_arg_reduce(KeHandle, 1, "double", OPS_INC),
+                ops_arg_reduce(KedHandle, 1, "double", OPS_INC),
+                ops_arg_reduce(EnHandle, 1, "double", OPS_INC),
+                ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIdx), 1,
+                            THREEPTREGULARSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIdx), 1,
+                            THREEPTREGULARSTENCIL, "Real", OPS_READ),
+                ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIdx), 1,
+                            THREEPTREGULARSTENCIL, "Real", OPS_READ),
+                ops_arg_gbl(&Config().meshSize, 1, "double", OPS_READ));
+        }
+    }
+}
+
 void CalcTurburlentQuantities2nd() {
     for (auto idBlock : g_Block()) {
         Block& block{idBlock.second};
@@ -193,7 +219,6 @@ void CalcTurburlentQuantities2nd() {
     }
 }
 
-
 // Provide macroscopic body-force term
 void UpdateMacroscopicBodyForce(const Real time) {}
 
@@ -206,12 +231,9 @@ void TGVIterate(const SizeType steps, const SizeType checkPointPeriod,
                 const Real time{iter * TimeStep()};
                 StreamCollision(time);
                 if (((iter + 1) % checkPointPeriod) == 0) {
-                    Real ked2nd, ked4th, ked6th;
+                    Real ked2nd, ked4th, ked6th, ked8th;
 #ifdef OPS_3D
                     UpdateMacroVars3D();
-                    if ((90-TimeStep())<=(iter+1) *TimeStep()) && (iter+1) *TimeStep())<=(90+TimeStep())){
-                            WriteFieldsToHdf5(iter + 1);
-                        }
                     g_MacroVars().at(g_Components().at(0).uId).TransferHalos();
                     g_MacroVars().at(g_Components().at(0).vId).TransferHalos();
                     g_MacroVars().at(g_Components().at(0).wId).TransferHalos();
@@ -263,6 +285,22 @@ void TGVIterate(const SizeType steps, const SizeType checkPointPeriod,
                     }
 #endif
 
+                    CalcTurburlentQuantities8th();
+                    ops_reduction_result(KeHandle, &keRes);
+                    ops_reduction_result(KedHandle, &kedRes);
+                    ops_reduction_result(EnHandle, &enRes);
+                    ked8th = kedRes * Config().tauRef[0] / totalMeshSize / 0.01;
+#ifdef OPS_MPI
+                    if (ops_my_global_rank == MPI_ROOT) {
+#endif
+                        datCentral8th
+                            << TimeStep() * (iter + 1) << " "
+                            << keRes / totalMeshSize / 0.01 << " " << ked8th
+                            << " " << enRes / totalMeshSize / 0.01 << std::endl;
+#ifdef OPS_MPI
+                    }
+#endif
+
 #endif
 #ifdef OPS_2D
                     UpdateMacroVars();
@@ -292,9 +330,13 @@ void simulate(const Configuration& config) {
         datCentral6th.open(CaseName() +
                            std::to_string(g_Block().at(0).Size().at(0)) +
                            "6th.dat");
+        datCentral8th.open(CaseName() +
+                           std::to_string(g_Block().at(0).Size().at(0)) +
+                           "8th.dat");
         datCentral2nd.precision(16);
         datCentral4th.precision(16);
         datCentral6th.precision(16);
+        datCentral8th.precision(16);
         datCentral4th
             << "#Time kineticEnergy KineticEnergyDissipation Enstrophy "
             << std::endl;
@@ -302,6 +344,9 @@ void simulate(const Configuration& config) {
             << "#Time kineticEnergy KineticEnergyDissipation Enstrophy "
             << std::endl;
         datCentral6th
+            << "#Time kineticEnergy KineticEnergyDissipation Enstrophy "
+            << std::endl;
+        datCentral8th
             << "#Time kineticEnergy KineticEnergyDissipation Enstrophy "
             << std::endl;
 #ifdef OPS_MPI
@@ -321,7 +366,7 @@ void simulate(const Configuration& config) {
                      config.tauRef, config.currentTimeStep);
     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
                     config.macroVarIds, config.macroCompoIds,
-                    config.currentTimeStep, 3);
+                    config.currentTimeStep, 4);
     g_MacroVars().at(g_Components().at(0).uId).CreateHalos();
     g_MacroVars().at(g_Components().at(0).vId).CreateHalos();
     g_MacroVars().at(g_Components().at(0).wId).CreateHalos();
@@ -344,7 +389,7 @@ void simulate(const Configuration& config) {
     g_MacroVars().at(g_Components().at(0).uId).TransferHalos();
     g_MacroVars().at(g_Components().at(0).vId).TransferHalos();
     g_MacroVars().at(g_Components().at(0).wId).TransferHalos();
-    Real ked2nd, ked4th, ked6th;
+    Real ked2nd, ked4th, ked6th, ked8th;
     CalcTurburlentQuantities4th();
     Real enRes, keRes, kedRes;
     ops_reduction_result(KeHandle, &keRes);
@@ -389,8 +434,22 @@ void simulate(const Configuration& config) {
 #ifdef OPS_MPI
     }
 #endif
+    CalcTurburlentQuantities8th();
+    ops_reduction_result(KeHandle, &keRes);
+    ops_reduction_result(KedHandle, &kedRes);
+    ops_reduction_result(EnHandle, &enRes);
+    ked8th = kedRes * Config().tauRef[0] / totalMeshSize / 0.01;
+#ifdef OPS_MPI
+    if (ops_my_global_rank == MPI_ROOT) {
+#endif
+        datCentral8th << 0.0 << " " << keRes / totalMeshSize / 0.01 << " "
+                      << ked8th << " " << enRes / totalMeshSize / 0.01
+                      << std::endl;
+#ifdef OPS_MPI
+    }
+#endif
 
-    //WriteFieldsToHdf5(0);
+    // WriteFieldsToHdf5(0);
     SetTimeStep(config.meshSize / SoundSpeed());
     if (config.schemeType == Scheme_StreamCollision_Swap) {
     }
@@ -405,7 +464,7 @@ void simulate(const Configuration& config) {
         datCentral2nd.close();
         datCentral4th.close();
         datCentral6th.close();
-        datKed.close();
+        datCentral8th.close();
 #ifdef OPS_MPI
     }
 #endif
