@@ -20,9 +20,9 @@ if (NOT OPTIMISE)
 else()
     # set the files needed to be translated by ops.py from the app side
     # source file enclosing wrap function
-    set(AppSrcGenList lbm3d_cavity.cpp)
+    set(AppSrcGenList lbm3d_tgv.cpp)
     # source file for kernel functions
-    set(AppKernelGenList cavity3d_kernel.inc)
+    set(AppKernelGenList tgv3d_kernel.inc)
     # if any variables are declared in both CPU and GPU memory space.
     set(AppHeadList "")
     CreateTempDir()
