@@ -24,7 +24,7 @@ else()
     # source file for kernel functions
     set(AppKernelGenList tgv3d_kernel.inc)
     # if any variables are declared in both CPU and GPU memory space.
-    set(AppHeadList "")
+    set(AppHeadList "tgv3d_host_device.h")
     CreateTempDir()
     set(TMP_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp)
     set(HeadList ${LibHeadList} ${AppHeadList})
