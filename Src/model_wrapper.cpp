@@ -52,7 +52,7 @@ void PreDefinedCollision3D() {
                         "KerSwapCollideBGKIsothermal3D", block.Get(),
                         SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
-                                    "double", OPS_READ),
+                                    "double", OPS_RW),
                         ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
                                     LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_NodeType().at(compo.id).at(blockIndex), 1,
