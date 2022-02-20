@@ -1,6 +1,6 @@
 {
-  "CaseName": "Cavity",
-  "SpaceDim": 2,
+  "CaseName": "Cavity3D",
+  "SpaceDim": 3,
   "Transient": false,
   "BlockIds": [
     0
@@ -9,12 +9,14 @@
     "Cavity"
   ],
   "BlockSize": [
-    101,
-    101
+    33,
+    33,
+    33
   ],
-  "MeshSize": 0.01,
+  "MeshSize": 0.03125,
   "StartPos": {
     "0": [
+      0,
       0,
       0
     ]
@@ -26,7 +28,7 @@
     0
   ],
   "LatticeName": [
-    "d2q9"
+    "d3q19"
   ],
   "TauRef": [
     0.01
@@ -34,14 +36,17 @@
   "MacroVarNames": [
     "rho",
     "u",
-    "v"
+    "v",
+    "w"
   ],
   "MacroVarIds": [
     0,
     1,
-    2
+    2,
+    3
   ],
   "MacroCompoIds": [
+    0,
     0,
     0,
     0
@@ -49,7 +54,8 @@
   "MacroVarTypes": [
     "Variable_Rho",
     "Variable_U",
-    "Variable_V"
+    "Variable_V",
+    "Variable_W"
   ],
   "CollisionType": [
     "Collision_BGKIsothermal2nd"
@@ -74,37 +80,8 @@
     "BlockIndex": 0,
     "ComponentId": 0,
     "GivenVars": [
-      0.0,
-      0
-    ],
-    "BoundarySurface": "Left",
-    "BoundaryScheme": "EQMDiffuseREfl",
-    "BoundaryType": "Wall",
-    "MacroVarTypesatBoundary": [
-      "Variable_U",
-      "Variable_V"
-    ]
-  },
-  "BoundaryCondition1": {
-    "BlockIndex": 0,
-    "ComponentId": 0,
-    "GivenVars": [
-      0,
-      0
-    ],
-    "BoundarySurface": "Right",
-    "BoundaryScheme": "EQMDiffuseREfl",
-    "BoundaryType": "Wall",
-    "MacroVarTypesatBoundary": [
-      "Variable_U",
-      "Variable_V"
-    ]
-  },
-  "BoundaryCondition2": {
-    "BlockIndex": 0,
-    "ComponentId": 0,
-    "GivenVars": [
       0.01,
+      0,
       0
     ],
     "BoundarySurface": "Top",
@@ -112,13 +89,15 @@
     "BoundaryType": "Wall",
     "MacroVarTypesatBoundary": [
       "Variable_U",
-      "Variable_V"
+      "Variable_V",
+      "Variable_W"
     ]
   },
-  "BoundaryCondition3": {
+  "BoundaryCondition1": {
     "BlockIndex": 0,
     "ComponentId": 0,
     "GivenVars": [
+      0,
       0,
       0
     ],
@@ -127,12 +106,83 @@
     "BoundaryType": "Wall",
     "MacroVarTypesatBoundary": [
       "Variable_U",
-      "Variable_V"
+      "Variable_V",
+      "Variable_W"
     ]
   },
-
+  "BoundaryCondition2": {
+    "BlockIndex": 0,
+    "ComponentId": 0,
+    "GivenVars": [
+      0.0,
+      0,
+      0
+    ],
+    "BoundarySurface": "Left",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
+    "MacroVarTypesatBoundary": [
+      "Variable_U",
+      "Variable_V",
+      "Variable_W"
+    ]
+  },
+  "BoundaryCondition3": {
+    "BlockIndex": 0,
+    "ComponentId": 0,
+    "GivenVars": [
+      0,
+      0,
+      0
+    ],
+    "BoundarySurface": "Right",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
+    "MacroVarTypesatBoundary": [
+      "Variable_U",
+      "Variable_V",
+      "Variable_W"
+    ]
+  },
+  "BoundaryCondition4": {
+    "BlockIndex": 0,
+    "ComponentId": 0,
+    "GivenVars": [
+      0,
+      0,
+      0
+    ],
+    "BoundarySurface": "Front",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
+    "MacroVarTypesatBoundary": [
+      "Variable_U",
+      "Variable_V",
+      "Variable_W"
+    ]
+  },
+  "BoundaryCondition5": {
+    "BlockIndex": 0,
+    "ComponentId": 0,
+    "GivenVars": [
+      0,
+      0,
+      0
+    ],
+    "BoundarySurface": "Back",
+    "BoundaryScheme": "EQMDiffuseREfl",
+    "BoundaryType": "Wall",
+    "MacroVarTypesatBoundary": [
+      "Variable_U",
+      "Variable_V",
+      "Variable_W"
+    ]
+  },
   "TimeStepsToRun": 3,
   "CurrentTimeStep": 0,
   "ConvergenceCriteria": 1e-8,
-  "CheckPeriod": 1000
+  "CheckPeriod": 1000,
+  "ConvertOutputTo": "PlainH5",
+  "ConvertStartAt":3000,
+  "ConvertEndAt":3000
 }
