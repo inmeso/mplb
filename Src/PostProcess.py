@@ -39,6 +39,8 @@
 """
 # python 2 and python 3 compatibility for the print function
 from __future__ import print_function
+import json
+import sys
 
 try:
     import numpy as np
@@ -79,11 +81,21 @@ except ImportError:
     mlabLoaded = False
 if (not mlabLoaded):
     print("The mayavi module cannot be imported! Please install it for three-dimensional visualisation!")
+try:
+    from evtk import hl
+    vtkLoaded = True
+except ImportError:
+    vtkLoaded = False
+
+if (not vtkLoaded):
+    print("The pyevtk module cannot be imported! Please install it for exporting to VTK file")
+
 
 def ChangeShape(data, nx, ny, dataLength, haloNum):
     """Converting the storage order of multidim array in 2D space."""
     data = data.reshape((ny + 2 * haloNum, nx + 2 * haloNum, dataLength))
     return data.transpose((1, 0, 2))
+
 
 def ChangeShape3D(data, nx, ny, nz, dataLength, haloNum):
     """Converting the storage order of multidim array in 3D space."""
@@ -92,33 +104,35 @@ def ChangeShape3D(data, nx, ny, nz, dataLength, haloNum):
     return data.transpose((2, 1, 0, 3))
 
 
-def ReadVariableFromHDF5(fileName,varName,varLen=1,haloNum=1,withHalo=False):
+def ReadVariableFromHDF5(fileName, varName, varLen=1, haloNum=1, withHalo=False):
     if ((not h5Loaded) or (not numpyLoaded)):
         print("The h5py or numpy is not installed!")
         res = "The h5py or numpy is not installed!"
         return res
-    dataFile = h5.File(fileName,"r")
+    dataFile = h5.File(fileName, "r")
     blockName = list(dataFile.keys())[0]
     dataKey = varName+'_'+blockName
     rawData = np.array(dataFile[blockName][dataKey])
-    spaceDim=len(rawData.shape)
-    if spaceDim==3:
+    spaceDim = len(rawData.shape)
+    if spaceDim == 3:
         nx = int(rawData.shape[2]/varLen)-2*haloNum
         ny = rawData.shape[1]-2*haloNum
         nz = rawData.shape[0]-2*haloNum
         if (varLen == 1):
             if not withHalo:
-                data = rawData[haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum]
+                data = rawData[haloNum:-haloNum,
+                               haloNum:-haloNum, haloNum:-haloNum]
             else:
                 data = rawData
             res = data.transpose(2, 1, 0)
         if (varLen > 1):
             data = ChangeShape3D(rawData, nx, ny, nz, varLen, haloNum)
             if not withHalo:
-                res = data[haloNum:-haloNum, haloNum:-haloNum, haloNum:-haloNum,:]
+                res = data[haloNum:-haloNum, haloNum:-
+                           haloNum, haloNum:-haloNum, :]
             else:
                 res = data
-    if spaceDim==2:
+    if spaceDim == 2:
         nx = int(rawData.shape[1]/varLen)-2*haloNum
         ny = rawData.shape[0]-2*haloNum
         if (varLen == 1):
@@ -130,54 +144,57 @@ def ReadVariableFromHDF5(fileName,varName,varLen=1,haloNum=1,withHalo=False):
         if (varLen > 1):
             data = ChangeShape(rawData, nx, ny, varLen, haloNum)
             if not withHalo:
-                res = data[haloNum:-haloNum, haloNum:-haloNum,:]
+                res = data[haloNum:-haloNum, haloNum:-haloNum, :]
             else:
                 res = data
     dataFile.close()
-    return res
+    return np.ascontiguousarray(res)
 
-def ReadBlockData(fileName,variables):
+
+def ReadBlockData(fileName, variables):
     """Read a series of variables specified by a list of dictionary "variables" on a block from a file specified by "fileName" """
-    errorMsg="Please provide a list variables in the format [{'name':'rho','len':1,'haloNum':1,'withHalo':False}"
-    if not isinstance(variables,list):
+    errorMsg = "Please provide a list variables in the format [{'name':'rho','len':1,'haloNum':1,'withHalo':False}"
+    if not isinstance(variables, list):
         print(errorMsg)
         return None
     if not all(isinstance(var, dict) for var in variables):
         print(errorMsg)
         return None
-    invalidVars=[]
+    invalidVars = []
     for var in variables:
         if 'name' not in var.keys():
             invalidVars.append(var)
-            print("Please provide the name of varable:",var)
-    validVars=[var for var in variables if (var not in invalidVars)]
-    res={}
+            print("Please provide the name of varable:", var)
+    validVars = [var for var in variables if (var not in invalidVars)]
+    res = {}
     for var in validVars:
         name = var['name']
         len = 1
         haloNum = 1
         withHalo = False
         if 'len' in var.keys():
-            if isinstance(var['len'],int) and var['len']>1:
+            if isinstance(var['len'], int) and var['len'] > 1:
                 len = var['len']
         if 'haloNum' in var.keys():
-            if isinstance(var['haloNum'],int) and var['haloNum']>1:
+            if isinstance(var['haloNum'], int) and var['haloNum'] > 1:
                 haloNum = var['haloNum']
         if 'withHalo' in var.keys():
-            if isinstance(var['withHalo'],bool):
+            if isinstance(var['withHalo'], bool):
                 withHalo = var['withHalo']
-        print("Reading ",var,"...")
-        res[name]=ReadVariableFromHDF5(fileName,varName=name,varLen=len,haloNum=haloNum,withHalo=withHalo)
+        print("Reading ", var, "...")
+        res[name] = ReadVariableFromHDF5(
+            fileName, varName=name, varLen=len, haloNum=haloNum, withHalo=withHalo)
     if "CoordinateXYZ" in res.keys():
-        if res['CoordinateXYZ'].shape[-1]==3:
-            res['X']=np.copy(res['CoordinateXYZ'][:,:,:,0])
-            res['Y']=np.copy(res['CoordinateXYZ'][:,:,:,1])
-            res['Z']=np.copy(res['CoordinateXYZ'][:,:,:,2])
-        if res['CoordinateXYZ'].shape[-1]==2:
-            res['X']=np.copy(res['CoordinateXYZ'][:,:,0])
-            res['Y']=np.copy(res['CoordinateXYZ'][:,:,1])
+        if res['CoordinateXYZ'].shape[-1] == 3:
+            res['X'] = np.copy(res['CoordinateXYZ'][:, :, :, 0])
+            res['Y'] = np.copy(res['CoordinateXYZ'][:, :, :, 1])
+            res['Z'] = np.copy(res['CoordinateXYZ'][:, :, :, 2])
+        if res['CoordinateXYZ'].shape[-1] == 2:
+            res['X'] = np.copy(res['CoordinateXYZ'][:, :, 0])
+            res['Y'] = np.copy(res['CoordinateXYZ'][:, :, 1])
         del res['CoordinateXYZ']
     return res
+
 
 def WriteVariablesToPlainHDF5(res, fileName):
     """ Save the data into a plain HDF5 file"""
@@ -189,6 +206,40 @@ def WriteVariablesToPlainHDF5(res, fileName):
         dataFile.create_dataset(key, data=res[key])
     dataFile.flush()
     dataFile.close()
+
+
+def WriteMacroVarsVTK(res, fileName):
+    """
+    Save the data into a VTK file.
+
+    Currently only works for a single block.
+    """
+    if ((not vtkLoaded) or (not numpyLoaded)):
+        print("The pyevtk or numpy is not installed!")
+        return
+    spaceDim = len(res['X'].shape)
+
+    if (2 == spaceDim):
+        x = res['X'][:, 0].copy()
+        y = res['Y'][0, :].copy()
+        res.pop('X')
+        res.pop('Y')
+        z = np.zeros((1,))
+        nx = x.size
+        ny = y.size
+        for key in res.keys():
+            res[key] = res[key].reshape((nx, ny, 1))
+        hl.gridToVTK(fileName, x, y, z, pointData=res)
+
+    if (3 == spaceDim):
+        x = res['X'][:, 0, 0].copy()
+        y = res['Y'][0, :, 0].copy()
+        z = res['Z'][0, 0, :].copy()
+        res.pop('X')
+        res.pop('Y')
+        res.pop('Z')
+        hl.gridToVTK(fileName, x, y, z, pointData=res)
+
 
 def WriteMacroVarsTecplotHDF5(res, fileName):
     """
@@ -209,12 +260,13 @@ def WriteMacroVarsTecplotHDF5(res, fileName):
         dataFile.create_dataset('Y', data=res['Y'][0, :, 0])
         dataFile.create_dataset('Z', data=res['Z'][0, 0, :])
     for key in res.keys():
-        if key not in ['X','Y','Z']:
+        if key not in ['X', 'Y', 'Z']:
             dataFile.create_dataset(key, data=res[key])
     dataFile.flush()
     dataFile.close()
 
-def contourPlot(x,y,var,lineNum, imgSize=1,labels=('x','y')):
+
+def contourPlot(x, y, var, lineNum, imgSize=1, labels=('x', 'y')):
     if ((not mplLoaded) or (not numpyLoaded)):
         print("The matplotlib or numpy is not installed!")
         return
@@ -228,11 +280,12 @@ def contourPlot(x,y,var,lineNum, imgSize=1,labels=('x','y')):
         varMin, varMax, step), colors='black')
     plt.clabel(conPlot, inline=True, fontsize=10)
     plt.imshow(var, extent=[np.min(x), np.max(x), np.min(y), np.max(y)], origin='lower',
-           cmap='plasma', alpha=0.5)
-    plt.colorbar();
+               cmap='plasma', alpha=0.5)
+    plt.colorbar()
     plt.ylabel(labels[1])
     plt.xlabel(labels[0])
     plt.show()
+
 
 def ContourPlot(res, varName, lineNum, imgSize=1):
     """ Plot a scalar contour from 2D results at a single block"""
@@ -242,7 +295,8 @@ def ContourPlot(res, varName, lineNum, imgSize=1):
     x = res['X']
     y = res['Y']
     var = res[varName]
-    contourPlot(x,y,var,lineNum, imgSize)
+    contourPlot(x, y, var, lineNum, imgSize)
+
 
 def SliceContourPlot(res, varName, slice, lineNum, imgSize=1):
     """
@@ -253,27 +307,28 @@ def SliceContourPlot(res, varName, slice, lineNum, imgSize=1):
 
         Example: SliceContourPlot(right,'rho',['z',16],20,8)
     """
-    labels=['x','y']
+    labels = ['x', 'y']
     if (slice[0] == 'x'):
-        x = res['Z'][slice[1],:,:]
-        y = res['Y'][slice[1],:,:]
+        x = res['Z'][slice[1], :, :]
+        y = res['Y'][slice[1], :, :]
         var = res[varName][slice[1], :, :]
-        labels=['z','y']
+        labels = ['z', 'y']
 
     if (slice[0] == 'y'):
-        x = res['X'][:,slice[1],:]
-        y = res['Z'][:,slice[1],:]
+        x = res['X'][:, slice[1], :]
+        y = res['Z'][:, slice[1], :]
         var = res[varName][:, slice[1], :]
-        labels=['x','z']
+        labels = ['x', 'z']
 
     if (slice[0] == 'z'):
-        x = res['X'][:,:,slice[1]]
-        y = res['Y'][:,:,slice[1]]
+        x = res['X'][:, :, slice[1]]
+        y = res['Y'][:, :, slice[1]]
         var = res[varName][:, :, slice[1]]
 
-    contourPlot(x,y,var,lineNum, imgSize,labels)
+    contourPlot(x, y, var, lineNum, imgSize, labels)
 
-def vectorPlot(X,Y,U,V,imgSize=1,labels=('x','y')):
+
+def vectorPlot(X, Y, U, V, imgSize=1, labels=('x', 'y')):
     if ((not mplLoaded) or (not numpyLoaded) or (not mathLoaded)):
         print("The matplotlib, math or numpy is not installed!")
         return
@@ -291,6 +346,7 @@ def vectorPlot(X,Y,U,V,imgSize=1,labels=('x','y')):
     plt.xlabel(labels[0])
     plt.show()
 
+
 def VectorPlot(res, varName, imgSize=1):
     """ Plot a vector from 2D results at a single block"""
     if ((not mplLoaded) or (not numpyLoaded) or (not mathLoaded)):
@@ -300,7 +356,8 @@ def VectorPlot(res, varName, imgSize=1):
     y = res['Y']
     varX = res[varName[0]]
     varY = res[varName[1]]
-    vectorPlot(x,y,varX,varY,imgSize)
+    vectorPlot(x, y, varX, varY, imgSize)
+
 
 def SliceVectorPlot(res, varName, slice, imgSize=1):
     """ VectorPlot for a slice [dir,pos] perpendicular to dir='x' (|'y'|'z')
@@ -310,43 +367,43 @@ def SliceVectorPlot(res, varName, slice, imgSize=1):
 
         Example: SliceVectorPlot(middle,['u','v','w'],['y',16],8)
     """
-    labels=['x','y']
+    labels = ['x', 'y']
     if (slice[0] == 'x'):
-        x = res['Z'][slice[1],:,:]
-        y = res['Y'][slice[1],:,:]
-        varX = res[varName[2]][slice[1],:,:]
+        x = res['Z'][slice[1], :, :]
+        y = res['Y'][slice[1], :, :]
+        varX = res[varName[2]][slice[1], :, :]
         varY = res[varName[1]][slice[1], :, :]
-        labels=['z','y']
+        labels = ['z', 'y']
 
     if (slice[0] == 'y'):
-        x = res['X'][:,slice[1],:]
-        y = res['Z'][:,slice[1],:]
-        varX = res[varName[0]][:,slice[1],:]
+        x = res['X'][:, slice[1], :]
+        y = res['Z'][:, slice[1], :]
+        varX = res[varName[0]][:, slice[1], :]
         varY = res[varName[2]][:, slice[1], :]
-        labels=['x','z']
+        labels = ['x', 'z']
 
     if (slice[0] == 'z'):
-        x = res['X'][:,:,slice[1]]
-        y = res['Y'][:,:,slice[1]]
-        varX = res[varName[0]][:,:,slice[1]]
-        varY = res[varName[1]][:,:,slice[1]]
+        x = res['X'][:, :, slice[1]]
+        y = res['Y'][:, :, slice[1]]
+        varX = res[varName[0]][:, :, slice[1]]
+        varY = res[varName[1]][:, :, slice[1]]
 
-    vectorPlot(x,y,varX,varY,imgSize,labels)
-
+    vectorPlot(x, y, varX, varY, imgSize, labels)
 
 
 def VectorPlot3D(res, varName):
     if ((not mlabLoaded)):
         print("The mayavi is not installed!")
         return
-    x = res['X'].transpose(1,0,2)
-    y = res['Y'].transpose(1,0,2)
-    z = res['Z'].transpose(1,0,2)
-    varX = res[varName[0]].transpose(1,0,2)
-    varY = res[varName[1]].transpose(1,0,2)
-    varZ = res[varName[2]].transpose(1,0,2)
-    mlab.quiver3d(x,y,z,varX,varY,varZ)
+    x = res['X'].transpose(1, 0, 2)
+    y = res['Y'].transpose(1, 0, 2)
+    z = res['Z'].transpose(1, 0, 2)
+    varX = res[varName[0]].transpose(1, 0, 2)
+    varY = res[varName[1]].transpose(1, 0, 2)
+    varZ = res[varName[2]].transpose(1, 0, 2)
+    mlab.quiver3d(x, y, z, varX, varY, varZ)
     mlab.show()
+
 
 def ContourPlot3D(res, varName, contours):
     if ((not mlabLoaded)):
@@ -356,8 +413,9 @@ def ContourPlot3D(res, varName, contours):
     y = res['Y']
     z = res['Z']
     var = res[varName]
-    mlab.contour3d(x,y,z,var, contours=contours, transparent=True)
+    mlab.contour3d(x, y, z, var, contours=contours, transparent=True)
     mlab.show()
+
 
 def CornerValues(res, varName):
     """Get the macroscopic variable value at corners. """
@@ -369,6 +427,7 @@ def CornerValues(res, varName):
     corner["right bottom"] = var[nx-1, 0]
     corner["right top"] = var[nx-1, 0]
     return corner
+
 
 def CornerValues3D(res, varName):
     """Get the macroscopic variable value at corners. """
@@ -385,6 +444,7 @@ def CornerValues3D(res, varName):
     corner["right top front"] = var[nx-1, ny-1, nz-1]
     return corner
 
+
 def EdgeValue3D(res, varName, edge):
     """ Get macroscopic variable value at a edge:3D only """
     var = res[varName]
@@ -397,7 +457,7 @@ def EdgeValue3D(res, varName, edge):
     if ('right top' == edge):
         return var[-1, -1, :]
     if ('left back' == edge):
-            return var[0, :, 0]
+        return var[0, :, 0]
     if ('left front' == edge):
         return var[0, :, -1]
     if ('right back' == edge):
@@ -405,13 +465,14 @@ def EdgeValue3D(res, varName, edge):
     if ('right front' == edge):
         return var[-1, :, -1]
     if ('bottom back' == edge):
-            return var[:, 0, 0]
+        return var[:, 0, 0]
     if ('bottom front' == edge):
         return var[:, 0, -1]
     if ('top back' == edge):
         return var[:, -1, 0]
     if ('top front' == edge):
         return var[:, -1, -1]
+
 
 def FaceValue(res, varName, face):
     """ Get macroscopic variable value at a face"""
@@ -424,6 +485,7 @@ def FaceValue(res, varName, face):
         return var[:, 0]
     if ('top' == face):
         return var[:, -1]
+
 
 def FaceValue3D(res, varName, face):
     """ Get macroscopic variable value at a face:3D"""
@@ -440,3 +502,62 @@ def FaceValue3D(res, varName, face):
         return var[:, :, 0]
     if ('front' == face):
         return var[:, :, -1]
+
+
+def JsonErrorHandle(key):
+    print(key, "is not in the configuration file!Please supply.\n")
+    sys.exit(1)
+
+
+def ReadJson(jsonFile):
+    with open(jsonFile) as jsonData:
+        options = json.load(jsonData)
+    keys = ["CaseName", "BlockNames", "MacroVarNames", "CheckPeriod",
+            "ConvertOutputTo", "ConvertStartAt", "ConvertEndAt", "SpaceDim"]
+    for key in keys:
+        if not (key in options):
+            JsonErrorHandle(key)
+    if not ("DeleteH5" in options):
+        print("DeleteH5 is not in the configuration. Make it True to delete original H5 Files after converstion!")
+    options["DeleteH5"] = False
+    return options
+
+
+def PrepareVariables(options):
+    variables = [{'name': 'CoordinateXYZ', 'len': options['SpaceDim']}]
+    for varName in options['MacroVarNames']:
+        variables.append({'name': varName})
+    return variables
+
+
+def PrepareFileName(options):
+    fileNames = []
+    timeRange = range(options['ConvertStartAt'],options['ConvertEndAt']+1,options['CheckPeriod'])
+    for blockName in options['BlockNames']:
+        base = options['CaseName'] + '_'+blockName+'_T'
+        for time in timeRange:
+            fileNames.append(base+str(time))
+    return fileNames
+
+
+
+def main(jsonFile):
+    options = ReadJson(jsonFile)
+    variables = PrepareVariables(options)
+    for fileName in PrepareFileName(options):
+        h5file = fileName+'.h5'
+        if options['ConvertOutputTo']=='VTK':
+            WriteMacroVarsVTK(ReadBlockData(h5file,variables),fileName)
+        if options['ConvertOutputTo']=='Tecplot':
+            WriteMacroVarsTecplotHDF5(ReadBlockData(h5file,variables),fileName+'_Tecplot.h5')
+        if options['ConvertOutputTo']=='PlainH5':
+            WriteVariablesToPlainHDF5(ReadBlockData(h5file,variables),fileName+'_Plain.h5')
+    return 0
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        main(jsonFile=sys.argv[1])
+    else:
+        print("Please specify the configuration JSON file for converting results into 'Tecplot', 'VTK', or 'PlainH5' format!")
+        sys.exit(1)
+
