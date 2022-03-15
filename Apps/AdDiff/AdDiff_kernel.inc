@@ -55,7 +55,7 @@ void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex, co
     Real y=(xiIndexVar2-x0[1]);
     Real R=sqrt(x*x+y*y);
     Real r=70.0;
-    
+
     if (R<=r){
         concentration(0,0) = 1;
     }
@@ -70,30 +70,30 @@ void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex, co
 void KerCalcGradients(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType, const ACC<int>&geometry, const ACC<Real>& coordinates, const int *lattIdx, const int *Order, const int *idx){
     VertexType vt = (VertexType)nodeType(0, 0);
     int order={*Order};
-        
+
         if (order == 1){
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
                 vt == VertexType::VirtualBoundary || vt == VertexType::Wall) {
                 grad(0,0,0) = 0.5*(f(1, 0)-f(-1, 0));
                 grad(1,0,0) = 0.5*(f(0, 1)-f(0, -1));
                 //std::cout<<grad(0,0,0)<<" "<<grad(1,0,0)<<" ";
-            }    
-        }  
-        else if (order == 2){     
+            }
+        }
+        else if (order == 2){
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
                 vt == VertexType::VirtualBoundary || vt == VertexType::Wall) {
                 grad(0,0,0) = f(-1, 0)-2*f(0, 0)+f(1, 0);
                 grad(1,0,0) = f(0, -1)-2*f(0, 0)+f(0, 1);
-                
+
             }
         }
         else{
             std::cout << order << "\n";
         }
-    
+
 }
 
-void KerUpdateRhoWetting(ACC<Real>& rho,const ACC<int>& geometry, const ACC<int>&nodeType,const ACC<Real>& coordinates) {
+void KerUpdateRhoWettingAdDiff(ACC<Real>& rho,const ACC<int>& geometry, const ACC<int>&nodeType,const ACC<Real>& coordinates) {
     const Real teta={2*M_PI/3};
     const Real alpha={acos(sin(teta)*sin(teta))};
     const Real Omga={2*((teta <= M_PI/2) - (M_PI/2 < teta))*sqrt(cos(alpha/3)*(1-cos(alpha/3)))};
@@ -179,7 +179,7 @@ void KerUpdateRhoWetting(ACC<Real>& rho,const ACC<int>& geometry, const ACC<int>
     }
 }
 
-void KerCalcMu(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi, const ACC<int>& geometry, const ACC<int>&nodeType,const ACC<Real>& coordinates){
+void KerCalcMuAdDiff(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi, const ACC<int>& geometry, const ACC<int>&nodeType,const ACC<Real>& coordinates){
     Real phi{Phi(0,0)};
     Real phi3 = {phi*phi*phi};
     Real d2phix = {d2phi(0,0,0)};
@@ -197,7 +197,7 @@ void KerPrintPhi(const ACC<Real>& Phi){
     std::cout << Phi(0,0) << " ";
 }
 
-void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& Phi, const ACC<Real>& dmu, const ACC<int>& geometry, const ACC<int>&nodeType, const ACC<Real>& coordinates,
+void KerUpdateMacroBodyForceAdDiff(ACC<Real>& force, const ACC<Real>& Phi, const ACC<Real>& dmu, const ACC<int>& geometry, const ACC<int>&nodeType, const ACC<Real>& coordinates,
                             const int* idx) {
     Real phi = {Phi(0,0)};
     Real dmux = {dmu(0,0,0)};
@@ -205,7 +205,7 @@ void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& Phi, const ACC<R
     VertexType vt = (VertexType)nodeType(0, 0);
     VertexGeometryType vg = (VertexGeometryType)geometry(0, 0);
     if (vt == VertexType::Wall) {
-        
+
         switch (vg) {
             case VG_IP: {
                 dmux=0;
@@ -253,7 +253,7 @@ void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& Phi, const ACC<R
             } break;
         }
     }
-    
+
     force(0,0,0) = -phi*dmux;
     force(1,0,0) = -phi*dmuy;
 }
@@ -308,7 +308,7 @@ void KerSetEmbeddedBodyGeometry(ACC<int>& geometryProperty,
             }
         }
         if (fluidNeiborNum > 0) {
-            
+
             // outer corner
             if (2 == solidNeiborNumatCoord) {
                 if ((VertexType::ImmersedSolid == neiborVertexType[0] &&
@@ -438,16 +438,16 @@ void KerCalcConcentration3D(ACC<Real>& concentration, const ACC<Real>& xiIndex, 
 void KerCalcGradients3D(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType, const ACC<int>&geometry, const ACC<Real>& coordinates, const int *lattIdx, const int *Order, const int *idx){
     VertexType vt = (VertexType)nodeType(0, 0, 0);
     int order={*Order};
-        
+
         if (order == 1){
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
                 vt == VertexType::VirtualBoundary || vt==VertexType::Wall) {
                 grad(0,0,0,0) = 0.5*(f(1, 0, 0)-f(-1, 0, 0));
                 grad(1,0,0,0) = 0.5*(f(0, 1, 0)-f(0, -1, 0));
                 grad(2,0,0,0) = 0.5*(f(0, 0, 1)-f(0, 0, -1));
-            }    
-        }  
-        else if (order == 2){     
+            }
+        }
+        else if (order == 2){
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
                 vt == VertexType::VirtualBoundary || vt==VertexType::Wall) {
                 grad(0,0,0,0) = f(-1, 0, 0)-2*f(0, 0, 0)+f(1, 0, 0);
@@ -458,10 +458,10 @@ void KerCalcGradients3D(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeTy
         else{
             std::cout << order << "\n";
         }
-    
+
 }
 
-void KerUpdateRhoWetting3D(ACC<Real>& rho,const ACC<int>& geometry, const ACC<int>&nodeType, const ACC<Real>& coordinates) {
+void KerUpdateRhoWettingAdDiff3D(ACC<Real>& rho,const ACC<int>& geometry, const ACC<int>&nodeType, const ACC<Real>& coordinates) {
     const Real teta={M_PI/3};
     const Real alpha={acos(sin(teta)*sin(teta))};
     const Real Omga={2*((teta <= M_PI/2) - (M_PI/2 < teta))*sqrt(cos(alpha/3)*(1-cos(alpha/3)))};
@@ -1018,7 +1018,7 @@ void KerUpdateRhoWetting3D(ACC<Real>& rho,const ACC<int>& geometry, const ACC<in
 }
 
 //Calculate chemical potential within Free Energy Model
-void KerCalcMu3D(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi, const ACC<int>&nodeType){
+void KerCalcMu3DAdDiff(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi, const ACC<int>&nodeType){
     Real phi{Phi(0,0,0)};
     Real phi3 = {phi*phi*phi};
     Real A=0.05;
@@ -1037,7 +1037,7 @@ void KerPrintPhi3D(const ACC<Real>& Phi, const ACC<Real>& coordinates){
 }
 
 //Update surface tension force between fluid components
-void KerUpdateMacroBodyForce3D(ACC<Real>& force, const ACC<Real>& Phi, const ACC<Real>& dmu, const ACC<int>& geometry, const ACC<int>&nodeType, const ACC<Real>& coordinates,
+void KerUpdateMacroBodyForce3DAddiff(ACC<Real>& force, const ACC<Real>& Phi, const ACC<Real>& dmu, const ACC<int>& geometry, const ACC<int>&nodeType, const ACC<Real>& coordinates,
                             const int* idx) {
     Real phi = {Phi(0,0,0)};
     Real dmux = {dmu(0,0,0,0)};
@@ -1048,7 +1048,7 @@ void KerUpdateMacroBodyForce3D(ACC<Real>& force, const ACC<Real>& Phi, const ACC
     VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
     //Set gradient of chemical potential perpendicular to wall = 0
     if (vt == VertexType::Wall) {
-        
+
         switch (vg) {
             case VG_IP: {
                 dmux=0;
@@ -1586,28 +1586,28 @@ void KerSetSolid3D(ACC<int>& nodeType, ACC<int>& geometry, const ACC<Real>& coor
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Y dir wall
   if ( (yk==0 || yk==LY-1) && (xk>=0) && (xk<LX) )  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Entrance channel
   if ( (zk>CZ*j+height+tnss	|| zk<CZ*j+height) && (xk>=rightLeft*rsv-5) && (xk<-ww*(rightLeft-1)+rsv*rightLeft) && (zk<(j+1)*CZ) && (zk>=j*CZ) && (yk<CY+5))  {nodeType(0,0,0)=(int)VertexType::ImmersedSolid;geometry(0,0,0)=(int)VG_ImmersedSolid;}
-  
+
   //Entrance slope (upper)
   if ( ((zk-j*CZ)+grad1*(xk-rightLeft*rsv-i*CX)<=height+tnss2) && (zk>CZ*j+height+tnss	) && (xk>=rightLeft*rsv+i*CX) && (xk-rightLeft*rsv<=i*CX+((tnss2-tnss)/grad1)) && (zk<(j+1)*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Entrance slope (lower)
   if ( (zk<CZ*j+height) && (xk>=rightLeft*rsv+i*CX) && ((zk-j*CZ)+grad1*(xk-rightLeft*rsv-i*CX)<height) && (zk>j*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Conical left wall
   if ( ((zk-j*CZ)+grad1*(xk-rightLeft*rsv-i*CX)>height+tnss2) && (xk>=rightLeft*rsv+i*CX) && ((zk-2*tnss-j*CZ)+(1 / tan (ang2))*(xk-rightLeft*rsv-i*CX-CX+tnss+res2)<0) && ((xk-rightLeft*rsv-i*CX+res2)>((tnss2-tnss)/grad1)) && ((xk-rightLeft*rsv-i*CX)<CX-tnss-res2) && (zk-CZ*j>tnss) && ((zk-CZ*j-2*tnss)-grad1*0.3*(xk-rightLeft*rsv-i*CX-CX+res2)>0) && (zk<(j+1)*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
@@ -1617,13 +1617,13 @@ void KerSetSolid3D(ACC<int>& nodeType, ACC<int>& geometry, const ACC<Real>& coor
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Lower channel slope
   if ( ((zk-j*CZ-tnss)-grad1*0.3*(xk-rightLeft*rsv-CX-i*CX+res2)<0) && (xk-rightLeft*rsv-i*CX+res2<CX) && (xk>=rightLeft*rsv+i*CX) && (zk>j*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Pitch
   if ( (zk>CZ*j+height+tnss	|| zk<CZ*j+height) && (xk<=rightLeft*rsv+i*CX+CX) && (xk>=rightLeft*rsv+i*CX+CX-res2) && (zk<(j+1)*CZ) && (zk>=j*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
@@ -1633,14 +1633,14 @@ void KerSetSolid3D(ACC<int>& nodeType, ACC<int>& geometry, const ACC<Real>& coor
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Exit channel
   if ( (zk>CZ*j+height+tnss	|| zk<CZ*j+height) && (xk<=rightLeft*rsv+NCX*CX+ww) && (xk>=rightLeft*rsv+NCX*CX) && (zk<(j+1)*CZ) && (zk>=j*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
-  
+
+
 }
 */
 
@@ -1701,7 +1701,7 @@ void KerSetEmbeddedBodyGeometry3D(ACC<int>& geometryProperty,
         }
         //std::cout<<solidNeiborNumatCoord<<" ";
         if (fluidNeiborNum > 0) {
-            
+
             // outer corner
             if (3 == solidNeiborNumatCoord) {
                 if ((VertexType::ImmersedSolid == neiborVertexType[5]||VertexType::Wall == neiborVertexType[5]) &&
@@ -1782,7 +1782,7 @@ void KerSetEmbeddedBodyGeometry3D(ACC<int>& geometryProperty,
                     if (VertexType::ImmersedSolid == neiborVertexType[8]||VertexType::Wall == neiborVertexType[8]) {
                         nodeType(0,0,0)=(int)VertexType::Wall;
                         geometryProperty(0,0,0) = (int)VG_IPJM_O;
-                        
+
                     } else {
                         ops_printf("%s\n",
                                    "There appears to be hanged solid points2");
@@ -1929,7 +1929,7 @@ void KerSetEmbeddedBodyGeometry3D(ACC<int>& geometryProperty,
                     }
                     if(VertexType::ImmersedSolid != neiborVertexType[17]&&VertexType::Wall != neiborVertexType[17]) {
                         geometryProperty(0,0,0) = (int)VG_JMKM_O_IP;
-                    }   
+                    }
                     else{
                         geometryProperty(0,0,0) = (int)VG_IP;
                     }
@@ -1946,7 +1946,7 @@ void KerSetEmbeddedBodyGeometry3D(ACC<int>& geometryProperty,
                     }
                     if(VertexType::ImmersedSolid != neiborVertexType[17]&&VertexType::Wall != neiborVertexType[17]){
                         geometryProperty(0,0,0) = (int)VG_JMKM_O_IM;
-                    } 
+                    }
                     else{
                         geometryProperty(0,0,0) = (int)VG_IM;
                     }

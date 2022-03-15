@@ -60,7 +60,7 @@ std::vector<std::vector<Real> > KerMultMatrix(std::vector<std::vector<double> > 
     Real S{0};
     std::vector<std::vector<Real> > mA{matA};
     std::vector<std::vector<Real> > mB{matB};
-    int rowsA =  mA.size(); 
+    int rowsA =  mA.size();
     int colsA = mA[0].size();
     int rowsB =  mB.size();
     int colsB = mB[0].size();
@@ -82,7 +82,7 @@ std::vector<std::vector<Real> > KerMultMatrix(std::vector<std::vector<double> > 
                 mult[i][j]=0.0;
             }
     if (colsA==rowsB){
-        
+
 
         for(i = 0; i < rowsA; ++i)
             for(j = 0; j < colsB; ++j)
@@ -95,7 +95,7 @@ std::vector<std::vector<Real> > KerMultMatrix(std::vector<std::vector<double> > 
         }
     else{
         std::cout<<"Number of columns in the second matrix must equal the number of rows of the first matrix!\n";
-        
+
     }
     return mult;
 }
@@ -112,25 +112,26 @@ void KerCalcGradients(ACC<Real>&grad, const ACC<Real>&f, const ACC<int>&nodeType
                 vt == VertexType::VirtualBoundary || vt == VertexType::Wall) {
                 grad(0,0,0) = 0.5*(f(1, 0)-f(-1, 0));
                 grad(1,0,0) = 0.5*(f(0, 1)-f(0, -1));
-            }    
-        }  
+            }
+        }
         //Second order
-        else if (order == 2){     
+        else if (order == 2){
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
                 vt == VertexType::VirtualBoundary || vt == VertexType::Wall) {
                 grad(0,0,0) = f(-1, 0)-2*f(0, 0)+f(1, 0);
                 grad(1,0,0) = f(0, -1)-2*f(0, 0)+f(0, 1);
-                
+
             }
         }
         else{
-            std::cout << "Only First and Second order finite difference gradients" 
+            std::cout << "Only First and Second order finite difference gradients"
                       << " are supported\n";
         }
-    
+
 }
 
 //Wetting boundary implementation
+//TODO: this kernel name is repeated in the AdDiff app
 void KerUpdateRhoWetting(ACC<Real>& rho,const ACC<int>& geometry,
                          const ACC<int>&nodeType,const ACC<Real>& coordinates,
                          const Real *theta, const Real *Aconst, const Real *Kappa) {
@@ -238,6 +239,7 @@ void KerUpdateRhoWetting(ACC<Real>& rho,const ACC<int>& geometry,
 }
 
 //Calculates chemical potential in the Free Energy model
+//TODO: This kernel name is repeated in the AdDiff App
 void KerCalcMu(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi,
                const ACC<int>& geometry, const ACC<int>&nodeType,
                const ACC<Real>& coordinates, const Real *Aconst, const Real *Kappa){
@@ -254,6 +256,7 @@ void KerCalcMu(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi,
 
 
 //Update surface tension force between fluid components
+//TODO: this kernel name is reserved for an app. Also, this function should be named more close to multiphase
 void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& Phi,
                              const ACC<Real>& dmu, const ACC<int>& geometry,
                              const ACC<int>&nodeType,
@@ -265,7 +268,7 @@ void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& Phi,
     VertexGeometryType vg = (VertexGeometryType)geometry(0, 0);
     //Set gradient of chemical potential perpendicular to wall = 0
     if (vt == VertexType::Wall) {
-        
+
         switch (vg) {
             case VG_IP: {
                 dmux=0;
@@ -313,7 +316,7 @@ void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& Phi,
             } break;
         }
     }
-    
+
     force(0,0,0) = -phi*dmux;
     force(1,0,0) = -phi*dmuy;
 
@@ -327,10 +330,10 @@ void KerCalcDensity(ACC<Real>& Rho, const ACC<Real>& f,
     if (vt != VertexType::ImmersedSolid) {
         Real rho{0};
         for (int xiIdx = lattIdx[0]; xiIdx <= lattIdx[1]; xiIdx++) {
-            
+
             rho += f(xiIdx, 0, 0);
         }
-        
+
 #ifdef CPU
         if (isnan(rho) || rho <= -10 || isinf(rho)) {
             ops_printf(
@@ -635,7 +638,7 @@ void KerCollideBGKADF(ACC<Real>& gStage, const ACC<Real>& g,
                              const ACC<Real>& coordinates,
                              const ACC<int>& nodeType, const ACC<Real>& Conc,
                              const ACC<Real>& U, const ACC<Real>& V,
-                             const ACC<Real>& acceleration, 
+                             const ACC<Real>& acceleration,
                               const Real* tauRef,
                              const Real* dt, const int* lattIdx) {
 #ifdef OPS_2D
@@ -677,7 +680,7 @@ void KerCollideBGKADF(ACC<Real>& gStage, const ACC<Real>& g,
             }
 #endif  // CPU
         }
-        
+
     }
 #endif  // OPS_2D
 }
@@ -689,7 +692,7 @@ void KerCollideBGKFEF(ACC<Real>& gStage, const ACC<Real>& g,
                              const ACC<int>& nodeType, const ACC<Real>& Conc,
                              const ACC<Real>& Phi,
                              const ACC<Real>& U, const ACC<Real>& V,
-                             const ACC<Real>& acceleration, 
+                             const ACC<Real>& acceleration,
                               const Real* tauRef,
                              const Real* dt, const int* lattIdx) {
 #ifdef OPS_2D
@@ -743,7 +746,7 @@ void KerCollideBGKFEF(ACC<Real>& gStage, const ACC<Real>& g,
             }
 #endif  // CPU
         }
-        
+
     }
 #endif  // OPS_2D
 }
@@ -752,7 +755,7 @@ void KerCollideBGKFEF(ACC<Real>& gStage, const ACC<Real>& g,
 void KerCollideBGKFEG(ACC<Real>& gStage, const ACC<Real>& g,
                              const ACC<Real>& coordinates,
                              const ACC<int>& nodeType,const ACC<int>& geometry, const ACC<Real>& Conc,
-                             const ACC<Real>& U, const ACC<Real>& V, const ACC<Real>& Mu, 
+                             const ACC<Real>& U, const ACC<Real>& V, const ACC<Real>& Mu,
                               const Real* tauRef,
                              const Real* dt, const int* lattIdx) {
 #ifdef OPS_2D
@@ -781,7 +784,7 @@ void KerCollideBGKFEG(ACC<Real>& gStage, const ACC<Real>& g,
                     geq - (dtOvertauPlusdt-1) * (g(xiIndex, 0, 0) - geq);
             }
             S+=gStage(xiIndex,0,0);
-        
+
 #ifdef CPU
             const Real res{gStage(xiIndex, 0, 0)};
             if (isnan(res) || res <= -100.01 || isinf(res)) {
@@ -809,7 +812,7 @@ void KerCollideMRTFEF(ACC<Real>& gStage, const ACC<Real>& g,
                              const ACC<Real>& coordinates,
                              const ACC<int>& nodeType, const ACC<Real>& Conc,
                              const ACC<Real>& U, const ACC<Real>& V,
-                             const ACC<Real>& acceleration, 
+                             const ACC<Real>& acceleration,
                               const Real* tauRef,
                              const Real* dt, const int* lattIdx) {
 #ifdef OPS_2D
@@ -833,17 +836,17 @@ void KerCollideMRTFEF(ACC<Real>& gStage, const ACC<Real>& g,
         Real vg=CS*CS*(taug-Dt/2);
         Real V=vg+(C+1.0)/2.0*(vl-vg);
         Real W=2.0/(6.0*V+1.0);
-        
+
         std::vector<std::vector<Real> > S = {
-            {0, 0, 0, 0, 0, 0, 0, 0, 0} , 
-            {0, Dt, 0, 0, 0, 0, 0, 0, 0} , 
-            {0, 0, Dt, 0, 0, 0, 0, 0, 0} , 
-            {0, 0, 0, 0, 0, 0, 0, 0, 0} , 
-            {0, 0, 0, 0, Dt, 0, 0, 0, 0} , 
-            {0, 0, 0, 0, 0, 0, 0, 0, 0} , 
-            {0, 0, 0, 0, 0, 0, Dt, 0, 0} , 
-            {0, 0, 0, 0, 0, 0, 0, Dt*W, 0} , 
-            {0, 0, 0, 0, 0, 0, 0, 0, Dt*W} , 
+            {0, 0, 0, 0, 0, 0, 0, 0, 0} ,
+            {0, Dt, 0, 0, 0, 0, 0, 0, 0} ,
+            {0, 0, Dt, 0, 0, 0, 0, 0, 0} ,
+            {0, 0, 0, 0, 0, 0, 0, 0, 0} ,
+            {0, 0, 0, 0, Dt, 0, 0, 0, 0} ,
+            {0, 0, 0, 0, 0, 0, 0, 0, 0} ,
+            {0, 0, 0, 0, 0, 0, Dt, 0, 0} ,
+            {0, 0, 0, 0, 0, 0, 0, Dt*W, 0} ,
+            {0, 0, 0, 0, 0, 0, 0, 0, Dt*W} ,
         };
         const Real T{1};
         /*
@@ -887,14 +890,14 @@ void KerCollideMRTFEF(ACC<Real>& gStage, const ACC<Real>& g,
         std::vector<std::vector<Real> > SMF=KerMultMatrix(S,MF);
         std::vector<std::vector<Real> > MinvSMgm=KerMultMatrix(Minv,SMgm);
         std::vector<std::vector<Real> > MinvSMF=KerMultMatrix(Minv,SMF);
-        
-        
+
+
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
                 std::cout<<Mgm[0][xiIndex]<<" "<<SMgm[0][xiIndex]<<" "<<MinvSMgm[0][xiIndex]<<" ";
                 gStage(xiIndex, 0, 0) =
                     g(xiIndex, 0, 0) + gStage(xiIndex, 0, 0) - MinvSMgm[0][xiIndex] - MinvSMF[0][xiIndex];
-                
+
             } else {
                 gStage(xiIndex, 0, 0) =
                     g(xiIndex, 0, 0) - MinvSMgm[0][xiIndex];
@@ -913,7 +916,7 @@ void KerCollideMRTFEF(ACC<Real>& gStage, const ACC<Real>& g,
             }
 #endif  // CPU
         }
-        
+
     }
 #endif  // OPS_2D
 }
@@ -1020,7 +1023,7 @@ void KerCalcGuoForce(ACC<Real>& fStage, const ACC<Real>& acceration,
             else {
                 fStage(xiIndex, 0, 0) = bodyForce;
             }
-            
+
         }
     }
 #endif  // OPS_2D
@@ -1268,7 +1271,7 @@ void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
                              const ACC<Real>& coordinates,
                              const ACC<int>& nodeType, const ACC<Real>& Conc,
                              const ACC<Real>& U, const ACC<Real>& V, const ACC<Real>& W,
-                             const ACC<Real>& acceleration, 
+                             const ACC<Real>& acceleration,
                               const Real* tauRef,
                              const Real* dt, const int* lattIdx) {
 #ifdef OPS_3D
@@ -1288,13 +1291,13 @@ void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
         Real tau = (*tauRef);
         Real test=0;
         Real dtOvertauPlusdt = (*dt) / (tau);
-        
+
         //Real dtOvertauPlusdt = (*dt) / (tau + 0.5 * (*dt));
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real geq{CalcBGKFeqAD3D(xiIndex, C, u, v, w, T, polyOrder)};
             test=gStage(xiIndex, 0, 0, 0);
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
-                
+
                 gStage(xiIndex, 0, 0, 0) =
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0, 0) - geq) +
                     //tau * dtOvertauPlusdt * gStage(xiIndex, 0, 0, 0);
@@ -1318,7 +1321,7 @@ void KerCollideBGKADF3D(ACC<Real>& gStage, const ACC<Real>& g,
             }
 #endif  // CPU
         }
-        
+
     }
 #endif  // OPS_3D
 }
@@ -1328,7 +1331,7 @@ void KerCollideBGKFEF3D(ACC<Real>& gStage, const ACC<Real>& g,
                              const ACC<Real>& coordinates,
                              const ACC<int>& nodeType, const ACC<Real>& Conc,
                              const ACC<Real>& U, const ACC<Real>& V, const ACC<Real>& W,
-                             const ACC<Real>& acceleration, 
+                             const ACC<Real>& acceleration,
                               const Real* tauRef,
                              const Real* dt, const int* lattIdx) {
 #ifdef OPS_3D
@@ -1350,7 +1353,7 @@ void KerCollideBGKFEF3D(ACC<Real>& gStage, const ACC<Real>& g,
         for (int xiIndex = lattIdx[0]; xiIndex <= lattIdx[1]; xiIndex++) {
             const Real geq{CalcBGKFeqFE3D(xiIndex, C, u, v, w, ff, dt, T, polyOrder)};
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic) {
-                
+
                 gStage(xiIndex, 0, 0, 0) =
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0, 0) - geq) +
                     (1-1/(2*tau)) * gStage(xiIndex, 0, 0, 0);
@@ -1372,7 +1375,7 @@ void KerCollideBGKFEF3D(ACC<Real>& gStage, const ACC<Real>& g,
             }
 #endif  // CPU
         }
-        
+
     }
 #endif  // OPS_3D
 }
@@ -1409,7 +1412,7 @@ void KerCollideBGKFEG3D(ACC<Real>& gStage, const ACC<Real>& g,
                     geq + (1 - dtOvertauPlusdt) * (g(xiIndex, 0, 0, 0) - geq);
             }
             S+=gStage(xiIndex,0,0,0);
-        
+
 #ifdef CPU
             const Real res{gStage(xiIndex, 0, 0,0)};
             if (isnan(res) || res <= -10.01 || isinf(res)) {
@@ -1459,7 +1462,7 @@ void KerCalcGuoForce3D(ACC<Real>& fStage, const ACC<Real>& acceleration,
             else {
                 fStage(xiIndex, 0, 0, 0) = bodyForce;
             }
-            
+
         }
     }
 #endif  // OPS_3D
@@ -1720,10 +1723,10 @@ void KerCalcGradients3D(ACC<Real>&grad, const ACC<Real>&f,
                 grad(0,0,0,0) = 0.5*(f(1, 0, 0)-f(-1, 0, 0));
                 grad(1,0,0,0) = 0.5*(f(0, 1, 0)-f(0, -1, 0));
                 grad(2,0,0,0) = 0.5*(f(0, 0, 1)-f(0, 0, -1));
-            }    
+            }
         }
         //Second order
-        else if (order == 2){     
+        else if (order == 2){
             if (vt == VertexType::Fluid || vt == VertexType::MDPeriodic ||
                 vt == VertexType::VirtualBoundary || vt==VertexType::Wall) {
                 grad(0,0,0,0) = f(-1, 0, 0)-2*f(0, 0, 0)+f(1, 0, 0);
@@ -1732,13 +1735,14 @@ void KerCalcGradients3D(ACC<Real>&grad, const ACC<Real>&f,
             }
         }
         else{
-            std::cout << "Only First and Second order finite difference gradients" 
+            std::cout << "Only First and Second order finite difference gradients"
                       << " are supported\n";
         }
-    
+
 }
 
 //Wetting boundary implementation
+//TODO: this kernel name is repeated in the AdDiff app
 void KerUpdateRhoWetting3D(ACC<Real>& rho,const ACC<int>& geometry,
                            const ACC<int>&nodeType,
                            const ACC<Real>& coordinates,
@@ -2350,6 +2354,7 @@ void KerUpdateRhoWetting3D(ACC<Real>& rho,const ACC<int>& geometry,
 }
 
 //Calculate chemical potential within Free Energy Model
+//TODO:This kernel name is repeated in the AdDiff App
 void KerCalcMu3D(ACC<Real>&mu,const ACC<Real>&Phi,const ACC<Real>&d2phi,
                  const ACC<int>&nodeType, const Real *Aconst, const Real *Kappa){
     Real phi{Phi(0,0,0)};
@@ -2381,7 +2386,7 @@ void KerUpdateMacroBodyForce3D(ACC<Real>& force, const ACC<Real>& Phi,
     VertexGeometryType vg = (VertexGeometryType)geometry(0, 0, 0);
     //Set gradient of chemical potential perpendicular to wall = 0
     if (vt == VertexType::Wall) {
-        
+
         switch (vg) {
             case VG_IP: {
                 dmux=0;

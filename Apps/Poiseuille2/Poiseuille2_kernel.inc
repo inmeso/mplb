@@ -39,8 +39,8 @@
 //////////////////////                  2D                  //////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-#ifndef CAVITY2D_KERNEL_INC
-#define CAVITY2D_KERNEL_INC
+#ifndef POISEUILLE2_KERNEL_INC
+#define POISEUILLE2_KERNEL_INC
 #ifdef OPS_2D
 
 /**
@@ -66,7 +66,7 @@ void KerCalcConcentration(ACC<Real>& concentration, const ACC<Real>& xiIndex,
     Real y=(xiIndexVar2-x0[1]);
     Real R=sqrt(x*x+y*y);
     Real r=70.0;
-    
+
     if (R<=r){
         concentration(0,0) = 1;
     }
@@ -152,7 +152,7 @@ void KerSetEmbeddedBodyGeometry(ACC<int>& geometryProperty,
             }
         }
         if (fluidNeiborNum > 0) {
-            
+
             // outer corner
             if (2 == solidNeiborNumatCoord) {
                 if ((VertexType::ImmersedSolid == neiborVertexType[0] &&
@@ -339,7 +339,7 @@ void KerSetSolid3D(ACC<int>& nodeType, ACC<int>& geometry,
     }
 }
 
-void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& coordinates,
+void KerUpdateMacroBodyForcePoiseuille2(ACC<Real>& force, const ACC<Real>& coordinates,
                             const int* idx) {
     force(0, 0, 0, 0) = 0.001;
     force(1, 0, 0, 0) = 0;
@@ -415,28 +415,28 @@ void KerSetSolid3D(ACC<int>& nodeType, ACC<int>& geometry, const ACC<Real>& coor
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Y dir wall
   if ( (yk==0 || yk==LY-1) && (xk>=0) && (xk<LX) )  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Entrance channel
   if ( (zk>CZ*j+height+tnss	|| zk<CZ*j+height) && (xk>=rightLeft*rsv-5) && (xk<-ww*(rightLeft-1)+rsv*rightLeft) && (zk<(j+1)*CZ) && (zk>=j*CZ) && (yk<CY+5))  {nodeType(0,0,0)=(int)VertexType::ImmersedSolid;geometry(0,0,0)=(int)VG_ImmersedSolid;}
-  
+
   //Entrance slope (upper)
   if ( ((zk-j*CZ)+grad1*(xk-rightLeft*rsv-i*CX)<=height+tnss2) && (zk>CZ*j+height+tnss	) && (xk>=rightLeft*rsv+i*CX) && (xk-rightLeft*rsv<=i*CX+((tnss2-tnss)/grad1)) && (zk<(j+1)*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Entrance slope (lower)
   if ( (zk<CZ*j+height) && (xk>=rightLeft*rsv+i*CX) && ((zk-j*CZ)+grad1*(xk-rightLeft*rsv-i*CX)<height) && (zk>j*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Conical left wall
   if ( ((zk-j*CZ)+grad1*(xk-rightLeft*rsv-i*CX)>height+tnss2) && (xk>=rightLeft*rsv+i*CX) && ((zk-2*tnss-j*CZ)+(1 / tan (ang2))*(xk-rightLeft*rsv-i*CX-CX+tnss+res2)<0) && ((xk-rightLeft*rsv-i*CX+res2)>((tnss2-tnss)/grad1)) && ((xk-rightLeft*rsv-i*CX)<CX-tnss-res2) && (zk-CZ*j>tnss) && ((zk-CZ*j-2*tnss)-grad1*0.3*(xk-rightLeft*rsv-i*CX-CX+res2)>0) && (zk<(j+1)*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
@@ -446,13 +446,13 @@ void KerSetSolid3D(ACC<int>& nodeType, ACC<int>& geometry, const ACC<Real>& coor
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Lower channel slope
   if ( ((zk-j*CZ-tnss)-grad1*0.3*(xk-rightLeft*rsv-CX-i*CX+res2)<0) && (xk-rightLeft*rsv-i*CX+res2<CX) && (xk>=rightLeft*rsv+i*CX) && (zk>j*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Pitch
   if ( (zk>CZ*j+height+tnss	|| zk<CZ*j+height) && (xk<=rightLeft*rsv+i*CX+CX) && (xk>=rightLeft*rsv+i*CX+CX-res2) && (zk<(j+1)*CZ) && (zk>=j*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
@@ -462,14 +462,14 @@ void KerSetSolid3D(ACC<int>& nodeType, ACC<int>& geometry, const ACC<Real>& coor
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
+
   //Exit channel
   if ( (zk>CZ*j+height+tnss	|| zk<CZ*j+height) && (xk<=rightLeft*rsv+NCX*CX+ww) && (xk>=rightLeft*rsv+NCX*CX) && (zk<(j+1)*CZ) && (zk>=j*CZ) && (yk<CY+5))  {
       nodeType(0,0,0)=(int)VertexType::ImmersedSolid;
       geometry(0,0,0)=(int)VG_ImmersedSolid;
   }
-  
-  
+
+
 }
 */
 
@@ -530,7 +530,7 @@ void KerSetEmbeddedBodyGeometry3D(ACC<int>& geometryProperty,
         }
         //std::cout<<solidNeiborNumatCoord<<" ";
         if (fluidNeiborNum > 0) {
-            
+
             //Outer corner
             if (3 == solidNeiborNumatCoord) {
                 if ((VertexType::ImmersedSolid == neiborVertexType[5]
@@ -646,7 +646,7 @@ void KerSetEmbeddedBodyGeometry3D(ACC<int>& geometryProperty,
                         ||VertexType::Wall == neiborVertexType[8]) {
                         nodeType(0,0,0)=(int)VertexType::Wall;
                         geometryProperty(0,0,0) = (int)VG_IPJM_O;
-                        
+
                     } else {
                         ops_printf("%s\n",
                                    "There appears to be hanged solid points2");
@@ -847,7 +847,7 @@ void KerSetEmbeddedBodyGeometry3D(ACC<int>& geometryProperty,
                     if(VertexType::ImmersedSolid != neiborVertexType[17]
                        &&VertexType::Wall != neiborVertexType[17]) {
                         geometryProperty(0,0,0) = (int)VG_JMKM_I_IP;
-                    }   
+                    }
                     else{
                         geometryProperty(0,0,0) = (int)VG_IP;
                     }
@@ -869,7 +869,7 @@ void KerSetEmbeddedBodyGeometry3D(ACC<int>& geometryProperty,
                     if(VertexType::ImmersedSolid != neiborVertexType[17]
                        &&VertexType::Wall != neiborVertexType[17]){
                         geometryProperty(0,0,0) = (int)VG_JMKM_I_IM;
-                    } 
+                    }
                     else{
                         geometryProperty(0,0,0) = (int)VG_IM;
                     }
@@ -1207,4 +1207,4 @@ void KerSetEmbeddedBodyGeometry3D(ACC<int>& geometryProperty,
 #endif
 }
 #endif
-#endif // CAVITY2D_KERNEL_INC
+#endif // POISEUILLE2_KERNEL_INC

@@ -6,6 +6,8 @@
 #include "scheme.h"
 #include "ops_seq_v2.h"
 #include "model_kernel.inc"
+
+//TODO: Consider to implement the free energy model in a separate file
 #ifdef OPS_3D
 void PreDefinedCollision3D() {
 #ifdef OPS_3D
@@ -410,12 +412,12 @@ void PreDefinedInitialConditionAD3D() {
                         ops_arg_dat(
                             g_MacroBodyforce().at(compo.id).at(blockIndex),
                             SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_gbl(pdt, 1, "double", OPS_READ),    
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
                 } break;
                 case Initial_BGKFeq2ndFE: {
                     ops_par_loop(
-                        KerInitialiseBGKFEF3D, "KerInitialiseBGKAD3D",
+                        KerInitialiseBGKFEF3D, "KerInitialiseBGKFEF3D",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
@@ -434,12 +436,12 @@ void PreDefinedInitialConditionAD3D() {
                         ops_arg_dat(
                             g_MacroBodyforce().at(compo.id).at(blockIndex),
                             SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_gbl(pdt, 1, "double", OPS_READ),    
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
                 } break;
                 case Initial_BGKGeq2ndFE: {
                     ops_par_loop(
-                        KerInitialiseBGKFEG3D, "KerInitialiseBGKADG3D",
+                        KerInitialiseBGKFEG3D, "KerInitialiseBGKFEG3D",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_f()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
@@ -465,9 +467,9 @@ void PreDefinedInitialConditionAD3D() {
                         "The specified initial type is not implemented!\n");
                     break;
             }
-            
+
         }
-    
+
     }
 
     // TODO this may be better arranged.
@@ -495,7 +497,7 @@ void PreDefinedCollisionAD3D() {
             switch (collisionType) {
                 case Collision_BGKIsothermal2nd:
                     ops_par_loop(
-                        KerCollideBGKADF3D, "KerCollideBGKIsothermal",
+                        KerCollideBGKIsothermal3D, "KerCollideBGKIsothermal3D",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
@@ -515,16 +517,13 @@ void PreDefinedCollisionAD3D() {
                                     1, LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIndex),
                                     1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(
-                            g_MacroBodyforce().at(compo.id).at(blockIndex),
-                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_gbl(&tau, 1, "double", OPS_READ),
                         ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
                     break;
                 case Collision_BGKADF:
                     ops_par_loop(
-                        KerCollideBGKADF3D, "KerCollideBGKADF",
+                        KerCollideBGKADF3D, "KerCollideBGKADF3D",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_RW),
@@ -553,7 +552,7 @@ void PreDefinedCollisionAD3D() {
                     break;
                 case Collision_BGKFEF:
                     ops_par_loop(
-                        KerCollideBGKFEF3D, "KerCollideBGKADF",
+                        KerCollideBGKFEF3D, "KerCollideBGKFEF3D",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_RW),
@@ -582,7 +581,7 @@ void PreDefinedCollisionAD3D() {
                     break;
                 case Collision_BGKFEG:
                     ops_par_loop(
-                        KerCollideBGKFEG3D, "KerCollideBGKADG",
+                        KerCollideBGKFEG3D, "KerCollideBGKFEG3D",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_RW),
@@ -652,7 +651,7 @@ void Calcphi2Gradients3D() {
             ops_arg_gbl(compoRho.index, 2, "int", OPS_READ),
             ops_arg_gbl(&order, 1, "int", OPS_READ),
             ops_arg_idx());
-        
+
     }
 }
 
@@ -689,11 +688,11 @@ void CalcMu3D() {
                         LOCALSTENCIL, "int", OPS_READ),
             ops_arg_gbl(&A, 1, "Real", OPS_READ),
             ops_arg_gbl(&Kappa, 1, "Real", OPS_READ));
-            
 
-        
+
+
     }
-} 
+}
 
 //Subroutine to calculate the chemical potential gradients at each lattice point
 void CalcmuGradients3D() {
@@ -726,9 +725,9 @@ void CalcmuGradients3D() {
             ops_arg_gbl(&order, 1, "int", OPS_READ),
             ops_arg_idx());
 
-        
+
     }
-} 
+}
 
 
 
@@ -757,7 +756,7 @@ void CalcPhiWetting3D() {
                         ops_arg_gbl(&theta, 1, "Real", OPS_READ),
                         ops_arg_gbl(&A, 1, "Real", OPS_READ),
                         ops_arg_gbl(&Kappa, 1, "Real", OPS_READ));
-        
+
     }
 }
 
@@ -797,7 +796,7 @@ void UpdateMacroscopicBodyForceFE3D(const Real time) {
                                     LOCALSTENCIL, "Real", OPS_READ),
                         ops_arg_idx());
 
-        
+
     }
 }
 
@@ -912,7 +911,7 @@ void PreDefinedCollisionAD() {
             switch (collisionType) {
                 case Collision_BGKIsothermal2nd:
                     ops_par_loop(
-                        KerCollideBGKADF, "KerCollideBGKIsothermal",
+                        KerCollideBGKIsothermal, "KerCollideBGKIsothermal",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_WRITE),
@@ -930,9 +929,6 @@ void PreDefinedCollisionAD() {
                                     1, LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIndex),
                                     1, LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_dat(
-                            g_MacroBodyforce().at(compo.id).at(blockIndex),
-                            SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
                         ops_arg_gbl(&tau, 1, "double", OPS_READ),
                         ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
@@ -966,7 +962,7 @@ void PreDefinedCollisionAD() {
                     break;
                 case Collision_BGKFEF:
                     ops_par_loop(
-                        KerCollideBGKFEF, "KerCollideBGKADF",
+                        KerCollideBGKFEF, "KerCollideBGKFEF",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_RW),
@@ -997,7 +993,7 @@ void PreDefinedCollisionAD() {
                     break;
                 case Collision_BGKFEG:
                     ops_par_loop(
-                        KerCollideBGKFEG, "KerCollideBGKADG",
+                        KerCollideBGKFEG, "KerCollideBGKFEG",
                         block.Get(), SpaceDim(), iterRng.data(),
                         ops_arg_dat(g_fStage()[blockIndex], NUMXI, LOCALSTENCIL,
                                     "double", OPS_RW),
@@ -1088,7 +1084,7 @@ void PreDefinedCollisionAD() {
                             "The specified collision type is not "
                             "implemented!\n");
                         break;
-            
+
             }
         }
     }
@@ -1376,7 +1372,7 @@ void PreDefinedInitialConditionAD() {
                         ops_arg_dat(
                             g_MacroBodyforce().at(compo.id).at(blockIndex),
                             SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_gbl(pdt, 1, "double", OPS_READ),    
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
                 } break;
                 case Initial_BGKFeq2ndFE: {
@@ -1398,7 +1394,7 @@ void PreDefinedInitialConditionAD() {
                         ops_arg_dat(
                             g_MacroBodyforce().at(compo.id).at(blockIndex),
                             SpaceDim(), LOCALSTENCIL, "double", OPS_READ),
-                        ops_arg_gbl(pdt, 1, "double", OPS_READ),    
+                        ops_arg_gbl(pdt, 1, "double", OPS_READ),
                         ops_arg_gbl(compo.index, 2, "int", OPS_READ));
                 } break;
                 case Initial_BGKGeq2ndFE: {
@@ -1429,9 +1425,9 @@ void PreDefinedInitialConditionAD() {
                         "The specified initial type is not implemented!\n");
                     break;
             }
-            
+
         }
-    
+
     }
 
     // TODO this may be better arranged.
@@ -1475,7 +1471,7 @@ void Calcphi2Gradients() {
             ops_arg_gbl(compoRho.index, 2, "int", OPS_READ),
             ops_arg_gbl(&order, 1, "int", OPS_READ),
             ops_arg_idx());
-        
+
     }
 }
 
@@ -1516,11 +1512,11 @@ void CalcMu() {
                                     LOCALSTENCIL, "Real", OPS_READ),
             ops_arg_gbl(&A, 1, "Real", OPS_READ),
             ops_arg_gbl(&Kappa, 1, "Real", OPS_READ));
-            
 
-        
+
+
     }
-} 
+}
 
 //Subroutine to calculate the chemical potential gradients at each lattice point
 void CalcmuGradients() {
@@ -1553,9 +1549,9 @@ void CalcmuGradients() {
             ops_arg_gbl(&order, 1, "int", OPS_READ),
             ops_arg_idx());
 
-        
+
     }
-} 
+}
 
 
 
@@ -1584,7 +1580,7 @@ void CalcPhiWetting() {
                         ops_arg_gbl(&theta, 1, "Real", OPS_READ),
                         ops_arg_gbl(&A, 1, "Real", OPS_READ),
                         ops_arg_gbl(&Kappa, 1, "Real", OPS_READ));
-        
+
     }
 }
 
@@ -1624,7 +1620,7 @@ void UpdateMacroscopicBodyForceFE(const Real time) {
                                     LOCALSTENCIL, "Real", OPS_READ),
                         ops_arg_idx());
 
-        
+
     }
 }
 

@@ -28,10 +28,10 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
-#ifndef CAVITY3D_KERNEL_INC
-#define CAVITY3D_KERNEL_INC
+#ifndef POISEUILLE_KERNEL_INC
+#define POISEUILLE_KERNEL_INC
 
 void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
                             ACC<Real>& w, const ACC<Real>& coordinates,
@@ -42,10 +42,10 @@ void KerSetInitialMacroVars(ACC<Real>& rho, ACC<Real>& u, ACC<Real>& v,
     w(0, 0, 0) = 0;
 }
 
-void KerUpdateMacroBodyForce(ACC<Real>& force, const ACC<Real>& coordinates,
-                            const int* idx) {
+void KerUpdateMacroBodyForcePoiseuille(ACC<Real>& force, const ACC<Real>& coordinates,
+                             const int* idx) {
     force(0, 0, 0, 0) = 0.001;
     force(1, 0, 0, 0) = 0;
     force(2, 0, 0, 0) = 0;
 }
-#endif // CAVITY3D_KERNEL_INC
+#endif  // POISEUILLE_KERNEL_INC

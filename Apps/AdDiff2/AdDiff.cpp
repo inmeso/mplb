@@ -82,8 +82,8 @@ void UpdateConcentration() {
                                      1, LOCALSTENCIL, "Real", OPS_READ),
                 ops_arg_gbl(pdt, 1, "double", OPS_READ));
             //break;
-        
-        
+
+
     }
 }
 
@@ -119,7 +119,7 @@ void Calcphi2Gradients() {
                 ops_arg_gbl(Iter2.second.index, 2, "int", OPS_READ),
                 ops_arg_gbl(&order, 1, "int", OPS_READ),
                 ops_arg_idx());
-        
+
     }
 }
 
@@ -151,9 +151,9 @@ void CalcmuGradients() {
                 ops_arg_gbl(&order, 1, "int", OPS_READ),
                 ops_arg_idx());
 
-        
+
     }
-} 
+}
 
 void CalcMu() {
     for (const auto& idBlock : g_Block()) {
@@ -167,7 +167,7 @@ void CalcMu() {
             const Component& compoRho{Iter2.second};
             const int compoRhoId{compoRho.id};
             ops_par_loop(
-                KerCalcMu, "KerCalcMu", block.Get(), SpaceDim(),
+                KerCalcMuAdDiff, "KerCalcMuAdDiff", block.Get(), SpaceDim(),
                 iterRng.data(),
                 ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
                             OPS_RW),
@@ -183,11 +183,11 @@ void CalcMu() {
                                      LOCALSTENCIL, "int", OPS_READ),
                 ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
                                      LOCALSTENCIL, "Real", OPS_READ));
-            
 
-        
+
+
     }
-} 
+}
 
 
 void SetInitialMacrosVars() {
@@ -211,7 +211,7 @@ void SetInitialMacrosVars() {
                          ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
                                      LOCALSTENCIL, "Real", OPS_READ),
                          ops_arg_idx());
-        
+
     }
 }
 
@@ -224,7 +224,7 @@ void CalcPhiWetting() {
         auto compo = g_Components().at(1);
             //const Component& compo{idCompo.second};
             //const int rhoId{compo.macroVars.at(Variable_Rho).id};
-            ops_par_loop(KerUpdateRhoWetting, "KerUpdateRhoWetting",
+            ops_par_loop(KerUpdateRhoWettingAdDiff, "KerUpdateRhoWettingAdDiff",
                          block.Get(), SpaceDim(), iterRng.data(),
                          ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_Rho).id).at(blockIndex), 1,
                                      ONEPTLATTICESTENCIL, "Real", OPS_RW),
@@ -234,7 +234,7 @@ void CalcPhiWetting() {
                                      LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
                                      LOCALSTENCIL, "Real", OPS_READ));
-        
+
     }
 }
 
@@ -290,7 +290,7 @@ void UpdateMacroscopicBodyForce(const Real time) {
                                      LOCALSTENCIL, "Real", OPS_READ),
                          ops_arg_idx());
 
-        
+
     }
 }
 
@@ -376,8 +376,8 @@ void UpdateConcentration3D() {
                                      1, LOCALSTENCIL, "Real", OPS_READ),
                 ops_arg_gbl(pdt, 1, "double", OPS_READ));
             //break;
-        
-        
+
+
     }
 }
 
@@ -411,7 +411,7 @@ void Calcphi2Gradients3D() {
                 ops_arg_gbl(Iter2.second.index, 2, "int", OPS_READ),
                 ops_arg_gbl(&order, 1, "int", OPS_READ),
                 ops_arg_idx());
-        
+
     }
 }
 
@@ -442,9 +442,9 @@ void CalcmuGradients3D() {
                 ops_arg_gbl(&order, 1, "int", OPS_READ),
                 ops_arg_idx());
 
-        
+
     }
-} 
+}
 
 void CalcMu3D() {
     for (const auto& idBlock : g_Block()) {
@@ -458,7 +458,7 @@ void CalcMu3D() {
             const Component& compoRho{Iter2.second};
             const int compoRhoId{compoRho.id};
             ops_par_loop(
-                KerCalcMu3D, "KerCalcMu", block.Get(), SpaceDim(),
+                KerCalcMu3DAdDiff, "KerCalcMu3DAdDiff", block.Get(), SpaceDim(),
                 iterRng.data(),
                 ops_arg_dat(g_mu()[blockIndex], 1, LOCALSTENCIL, "double",
                             OPS_RW),
@@ -470,11 +470,11 @@ void CalcMu3D() {
                             LOCALSTENCIL, "double", OPS_READ),
                          ops_arg_dat(g_NodeType().at(compoRho.id).at(blockIndex), 1,
                                      LOCALSTENCIL, "int", OPS_READ));
-            
 
-        
+
+
     }
-} 
+}
 
 
 void SetInitialMacrosVars3D() {
@@ -500,7 +500,7 @@ void SetInitialMacrosVars3D() {
                          ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
                                      LOCALSTENCIL, "Real", OPS_READ),
                          ops_arg_idx());
-        
+
     }
 }
 
@@ -513,7 +513,7 @@ void CalcPhiWetting3D() {
         auto compo = g_Components().at(1);
             //const Component& compo{idCompo.second};
             //const int rhoId{compo.macroVars.at(Variable_Rho).id};
-            ops_par_loop(KerUpdateRhoWetting3D, "KerUpdateRhoWetting3D",
+            ops_par_loop(KerUpdateRhoWettingAdDiff3D, "KerUpdateRhoWettingAdDiff3D",
                          block.Get(), SpaceDim(), iterRng.data(),
                          ops_arg_dat(g_MacroVars().at(compo.macroVars.at(Variable_Rho).id).at(blockIndex), 1,
                                      ONEPTLATTICESTENCIL, "Real", OPS_RW),
@@ -523,7 +523,7 @@ void CalcPhiWetting3D() {
                                      LOCALSTENCIL, "int", OPS_READ),
                          ops_arg_dat(g_CoordinateXYZ()[blockIndex], SpaceDim(),
                                      LOCALSTENCIL, "Real", OPS_READ));
-        
+
     }
 }
 
@@ -584,7 +584,7 @@ void UpdateMacroscopicBodyForce3D(const Real time) {
                                      LOCALSTENCIL, "Real", OPS_READ),
                          ops_arg_idx());
 
-        
+
     }
 }
 
@@ -699,7 +699,7 @@ void simulate() {
     std::vector<Real> noSlipStationaryWall{0, 0};
 
     // Periodic Boundary Conditions
-    
+
     DefineBlockBoundary(0, componentId, BoundarySurface::Top,
                         BoundaryScheme::MDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall, VertexType::MDPeriodic);
@@ -768,12 +768,12 @@ void simulate() {
     //CalcPhiWetting();
     //std::cout << "test1\n";
     //PreDefinedInitialCondition();
-    
+
     //PreDefinedInitialConditionADF();
     //PrintPhi();
     PreDefinedInitialConditionAD();
     UpdateMacroVars();
-    
+
     //PrintPhi();
     std::cout<<"test2\n";
     SetTimeStep(1);
@@ -929,7 +929,7 @@ void simulate() {
     SetEmbeddedBodyGeometry3D();
     ops_diagnostic_output();
     SetInitialMacrosVars3D();
-    
+
     std::cout << "test\n";
     UpdateConcentration3D();
     CalcPhiWetting3D();
@@ -937,7 +937,7 @@ void simulate() {
     PrintPhi3D();
     PreDefinedInitialConditionAD3D();
     UpdateMacroVars3D();
-    
+
     std::cout<<"test2\n";
     SetTimeStep(1);
     PrintPhi3D();

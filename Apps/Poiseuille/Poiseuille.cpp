@@ -28,7 +28,7 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
-*/
+ */
 
 /** @brief An example main source code of stimulating 3D lid-driven cavity flow
  *  @author Jianping Meng
@@ -40,7 +40,7 @@
 #include "mplb.h"
 #include "ops_seq_v2.h"
 #include "Poiseuille_kernel.inc"
-//Provide macroscopic initial conditions
+// Provide macroscopic initial conditions
 void SetInitialMacrosVars() {
     for (auto idBlock : g_Block()) {
         Block& block{idBlock.second};
@@ -53,15 +53,15 @@ void SetInitialMacrosVars() {
             ops_par_loop(KerSetInitialMacroVars, "KerSetInitialMacroVars",
                          block.Get(), SpaceDim(), iterRng.data(),
                          ops_arg_dat(g_MacroVars().at(rhoId).at(blockIdx), 1,
-                                     LOCALSTENCIL, "Real", OPS_RW),
+                                     LOCALSTENCIL, "double", OPS_RW),
                          ops_arg_dat(g_MacroVars().at(compo.uId).at(blockIdx),
-                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                                     1, LOCALSTENCIL, "double", OPS_RW),
                          ops_arg_dat(g_MacroVars().at(compo.vId).at(blockIdx),
-                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                                     1, LOCALSTENCIL, "double", OPS_RW),
                          ops_arg_dat(g_MacroVars().at(compo.wId).at(blockIdx),
-                                     1, LOCALSTENCIL, "Real", OPS_RW),
+                                     1, LOCALSTENCIL, "double", OPS_RW),
                          ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
-                                     LOCALSTENCIL, "Real", OPS_READ),
+                                     LOCALSTENCIL, "double", OPS_READ),
                          ops_arg_idx());
         }
     }
@@ -75,20 +75,20 @@ void UpdateMacroscopicBodyForce(const Real time) {
         const int blockIdx{block.ID()};
         for (auto& idCompo : g_Components()) {
             const Component& compo{idCompo.second};
-
-            ops_par_loop(KerUpdateMacroBodyForce, "KerUpdateMacroBodyForce",
-                         block.Get(), SpaceDim(), iterRng.data(),
-                         ops_arg_dat(g_MacroBodyforce().at(compo.id).at(blockIdx), 3,
-                                     LOCALSTENCIL, "Real", OPS_RW),
-                         ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
-                                     LOCALSTENCIL, "Real", OPS_READ),
-                         ops_arg_idx());
+            ops_par_loop(
+                KerUpdateMacroBodyForcePoiseuille,
+                "KerUpdateMacroBodyForcePoiseuille", block.Get(), SpaceDim(),
+                iterRng.data(),
+                ops_arg_dat(g_MacroBodyforce().at(compo.id).at(blockIdx),
+                            SpaceDim(), LOCALSTENCIL, "double", OPS_RW),
+                ops_arg_dat(g_CoordinateXYZ()[blockIdx], SpaceDim(),
+                            LOCALSTENCIL, "double", OPS_READ),
+                ops_arg_idx());
         }
     }
 }
 
 void simulate() {
-
     std::string caseName{"Poiseuille"};
     SizeType spaceDim{3};
     DefineCase(caseName, spaceDim);
@@ -99,7 +99,6 @@ void simulate() {
     std::map<int, std::vector<Real>> startPos{{0, {0.0, 0.0, 0.0}}};
     DefineBlocks(blockIds, blockNames, blockSize, meshSize, startPos);
 
-
     std::vector<std::string> compoNames{"Fluid"};
     std::vector<int> compoid{0};
     std::vector<std::string> lattNames{"d3q19"};
@@ -107,7 +106,7 @@ void simulate() {
     DefineComponents(compoNames, compoid, lattNames, tauRef);
 
     std::vector<VariableTypes> marcoVarTypes{Variable_Rho, Variable_U,
-                                                 Variable_V, Variable_W};
+                                             Variable_V, Variable_W};
     std::vector<std::string> macroVarNames{"rho", "u", "v", "w"};
     std::vector<int> macroVarId{0, 1, 2, 3};
     std::vector<int> macroCompoId{0, 0, 0, 0};
@@ -130,7 +129,7 @@ void simulate() {
                                                        Variable_W};
     std::vector<Real> noSlipStationaryWall{0, 0, 0};
 
-    //Top and Bottom No Slip Walls
+    // Top and Bottom No Slip Walls
     DefineBlockBoundary(0, componentId, BoundarySurface::Top,
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
@@ -138,7 +137,7 @@ void simulate() {
                         BoundaryScheme::EQMDiffuseRefl, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
-    //Periodic Boundary Conditions
+    // Periodic Boundary Conditions
     DefineBlockBoundary(0, componentId, BoundarySurface::Front,
                         BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall);
@@ -152,31 +151,32 @@ void simulate() {
                         BoundaryScheme::FDPeriodic, macroVarTypesatBoundary,
                         noSlipStationaryWall);
 
-
     std::vector<InitialType> initType{Initial_BGKFeq2nd};
     std::vector<SizeType> initalCompoId{0};
-    DefineInitialCondition(initType,initalCompoId);
+    DefineInitialCondition(initType, initalCompoId);
     Partition();
     SetInitialMacrosVars();
     PreDefinedInitialCondition3D();
-    SetTimeStep(meshSize/ SoundSpeed());
+    SetTimeStep(meshSize / SoundSpeed());
 
     const Real convergenceCriteria{1E-5};
     const SizeType checkPeriod{200};
-    Iterate(StreamCollision,convergenceCriteria, checkPeriod);
+    Iterate(StreamCollision, convergenceCriteria, checkPeriod);
 }
 
-void simulate(const Configuration & config, const SizeType timeStep=0) {
+void simulate(const Configuration& config, const SizeType timeStep = 0) {
     // DefineCase(config.caseName, config.spaceDim);
     // DefineBlocks(config.blockNum, config.blockSize, config.meshSize,
     //                     config.startPos);
     // if (timeStep == 0) {
-    //     DefineComponents(config.compoNames, config.compoIds, config.lattNames);
-    //     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
+    //     DefineComponents(config.compoNames, config.compoIds,
+    //     config.lattNames); DefineMacroVars(config.macroVarTypes,
+    //     config.macroVarNames,
     //                     config.macroVarIds, config.macroCompoIds);
     // } else {
     //     // restart from a time step
-    //     DefineComponents(config.compoNames, config.compoIds, config.lattNames,
+    //     DefineComponents(config.compoNames, config.compoIds,
+    //     config.lattNames,
     //                      timeStep);
     //     DefineMacroVars(config.macroVarTypes, config.macroVarNames,
     //                     config.macroVarIds, config.macroCompoIds,timeStep);
@@ -188,7 +188,8 @@ void simulate(const Configuration & config, const SizeType timeStep=0) {
     // DefineInitialCondition(config.initialTypes,config.initialConditionCompoId);
     // for (auto& bcConfig : config.blockBoundaryConfig) {
     //     DefineBlockBoundary(bcConfig.blockIndex, bcConfig.componentID,
-    //                         bcConfig.boundarySurface, bcConfig.boundaryScheme,
+    //                         bcConfig.boundarySurface,
+    //                         bcConfig.boundaryScheme,
     //                         bcConfig.macroVarTypesatBoundary,
     //                         bcConfig.givenVars, bcConfig.boundaryType);
     // }
@@ -221,22 +222,22 @@ int main(int argc, const char** argv) {
         simulate();
     }
     // start a new simulaton from a configuration file
-    if (argc>1 && argc <=2){
+    if (argc > 1 && argc <= 2) {
         std::string configFileName(argv[1]);
         ReadConfiguration(configFileName);
         simulate(Config());
     }
     // restart from the time step specified by argv[2]
-    if (argc>2 && argc <=3){
+    if (argc > 2 && argc <= 3) {
         std::string configFileName(argv[1]);
         ReadConfiguration(configFileName);
         const SizeType timeStep{static_cast<SizeType>(std::stoi(argv[2]))};
-        simulate(Config(),timeStep);
+        simulate(Config(), timeStep);
     }
 
     ops_timers(&ct1, &et1);
     ops_printf("\nTotal Wall time %lf\n", et1 - et0);
-    //Print OPS performance details to output stream
+    // Print OPS performance details to output stream
     ops_timing_output(std::cout);
     ops_exit();
 }
