@@ -9,6 +9,10 @@ endif()
 if (NOT OPTIMISE)
     message("We use the development mode by defautl! Use -DOPTIMISE=ON to use the optimised mode.")
 endif()
+
+if (NOT SoA)
+    message("We use the AoS mode by defautl! Use -DSoA=ON to greatly improve peformance on GPU.")
+endif()
 set(CMAKE_VERBOSE_MAKEFILE ${VERBOSE})
 set(LibDir ${CMAKE_SOURCE_DIR}/Src)
 # Use the Release mode by default
@@ -230,11 +234,15 @@ function (WriteJsonConfig Dir AppName LibSrc AppSrcGenList AppKernelGenList Head
     endif()
 
     set(SpaceDimKey "\"spacedim\": ${SpaceDim},")
+    set(SoAKey "\"SoA\": False,")
+    if (SoA)
+        set(SoAKey "\"SoA\": True,")
+    endif
     set(CaseKey "\"case\": \"${AppName}\",")
     set(BackendKey "\"backend\":[\"mpi_lazy\",\"mpi_cuda\"]")
     set(TypeDefKey "\"typedef\": { \"Real\": \"double\"},")
 
-    file(WRITE "${Dir}/OPSPYConfig.json" "{ ${CaseKey} ${SourceKey} ${KernelKey} ${TypeDefKey} ${HeadKey} ${SpaceDimKey} ${BackendKey} }")
+    file(WRITE "${Dir}/OPSPYConfig.json" "{ ${CaseKey} ${SourceKey} ${KernelKey} ${TypeDefKey} ${HeadKey} ${SpaceDimKey} ${SoAKey} ${BackendKey} }")
 endfunction(WriteJsonConfig AppName AppSrcGenList AppKernelGenList AppHeadGenList SpaceDim)
 
 macro (TranslateSourceCodes LibDir LibSrcGenList AppSrcGenList Destination)
@@ -276,6 +284,9 @@ macro(SeqTarget SpaceDim)
     target_include_directories(${AppName}Seq PRIVATE ${TMP_SOURCE_DIR})
     target_link_libraries(${AppName}Seq PRIVATE OPS::ops_hdf5_seq OPS::ops_seq hdf5::hdf5 hdf5::hdf5_hl MPI::MPI_CXX)
     target_compile_definitions(${AppName}Seq PRIVATE -DOPS_${SpaceDim}D -DLEVEL=DebugLevel=0)
+    if (SoA)
+        target_compile_definitions(${AppName}Seq PRIVATE -DOPS_SOA)
+    endif
 endmacro(SeqTarget)
 
 macro(MpiTarget SpaceDim)
@@ -284,6 +295,9 @@ macro(MpiTarget SpaceDim)
         target_include_directories(${AppName}Mpi PRIVATE ${TMP_SOURCE_DIR})
         target_link_libraries(${AppName}Mpi PRIVATE OPS::ops_hdf5_mpi OPS::ops_mpi hdf5::hdf5 hdf5::hdf5_hl MPI::MPI_CXX)
         target_compile_definitions(${AppName}Mpi PRIVATE -DOPS_${SpaceDim}D -DOPS_MPI -DLEVEL=DebugLevel=0 )
+        if (SoA)
+            target_compile_definitions(${AppName}Seq PRIVATE -DOPS_SOA)
+        endif
     endif()
 endmacro(MpiTarget)
 
@@ -294,6 +308,9 @@ if (CUDAToolkit_FOUND)
     target_include_directories(${AppName}Cuda PRIVATE ${TMP_SOURCE_DIR})
     target_link_libraries(${AppName}Cuda PRIVATE OPS::ops_hdf5_seq OPS::ops_cuda CUDA::cudart_static hdf5::hdf5 hdf5::hdf5_hl MPI::MPI_CXX)
     target_compile_definitions(${AppName}Cuda PRIVATE -DOPS_${SpaceDim}D -DLEVEL=DebugLevel=0)
+    if (SoA)
+        target_compile_definitions(${AppName}Seq PRIVATE -DOPS_SOA)
+    endif
 endif()
 endmacro(CudaTarget)
 add_subdirectory(Apps/3DCavity)
