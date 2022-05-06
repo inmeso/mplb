@@ -50,6 +50,9 @@
 int main(int argc, const char** argv) {
     // OPS initialisation
     ops_init(argc, argv, 3);
+#ifdef OPS_SOA
+    OPS_instance::getOPSInstance()->OPS_soa = 1;
+#endif
     double ct0, ct1, et0, et1;
     ops_timers(&ct0, &et0);
     const int nxyz{32};

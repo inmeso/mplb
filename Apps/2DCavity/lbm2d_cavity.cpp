@@ -181,6 +181,9 @@ int main(int argc, const char** argv) {
     // OPS initialisation where a few arguments can be passed to set
     // the simulation
     ops_init(argc, argv, 4);
+#ifdef OPS_SOA
+    OPS_instance::getOPSInstance()->OPS_soa = 1;
+#endif
     bool configFileFound{false};
     std::string configFileName;
     GetConfigFileFromCmd(configFileFound, configFileName, argc, argv);

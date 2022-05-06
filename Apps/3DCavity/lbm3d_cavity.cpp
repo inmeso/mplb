@@ -151,7 +151,7 @@ void simulate() {
 }
 
 void simulate(const Configuration& config) {
-    DefineCase(config.caseName, config.spaceDim,config.transient);
+    DefineCase(config.caseName, config.spaceDim, config.transient);
     DefineBlocks(config.blockIds, config.blockNames, config.blockSize,
                  config.meshSize, config.startPos);
     DefineComponents(config.compoNames, config.compoIds, config.lattNames,
@@ -177,7 +177,8 @@ void simulate(const Configuration& config) {
     };
     SetTimeStep(config.meshSize / SoundSpeed());
     if (config.transient) {
-        Iterate(config.timeStepsToRun, config.checkPeriod, config.currentTimeStep);
+        Iterate(config.timeStepsToRun, config.checkPeriod,
+                config.currentTimeStep);
     } else {
         Iterate(config.convergenceCriteria, config.checkPeriod,
                 config.currentTimeStep);
@@ -188,6 +189,9 @@ int main(int argc, const char** argv) {
     // OPS initialisation where a few arguments can be passed to set
     // the simulation
     ops_init(argc, argv, 4);
+#ifdef OPS_SOA
+    OPS_instance::getOPSInstance()->OPS_soa = 1;
+#endif
     bool configFileFound{false};
     std::string configFileName;
     GetConfigFileFromCmd(configFileFound, configFileName, argc, argv);

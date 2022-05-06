@@ -42,7 +42,7 @@
 #include <random>
 std::random_device rd;
 std::mt19937 gen(rd());
-std::uniform_real_distribution<> range(0.001,0.01);
+std::uniform_real_distribution<> range(0.001, 0.01);
 #include "conservation3d_kernel.inc"
 // Provide macroscopic initial conditions
 void SetInitialMacrosVars() {
@@ -75,6 +75,9 @@ int main(int argc, const char** argv) {
     // OPS initialisation where a few arguments can be passed to set
     // the simulation
     ops_init(argc, argv, 4);
+#ifdef OPS_SOA
+    OPS_instance::getOPSInstance()->OPS_soa = 1;
+#endif
     bool configFileFound{false};
     std::string configFileName;
     GetConfigFileFromCmd(configFileFound, configFileName, argc, argv);

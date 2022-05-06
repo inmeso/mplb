@@ -96,11 +96,11 @@ void simulate(const Configuration& config) {
     };
     SetTimeStep(config.meshSize / SoundSpeed());
     if (config.transient) {
-        Iterate(SwapStreamCollision,config.timeStepsToRun, config.checkPeriod,
+        Iterate(SwapStreamCollision, config.timeStepsToRun, config.checkPeriod,
                 config.currentTimeStep);
     } else {
-        Iterate(SwapStreamCollision,config.convergenceCriteria, config.checkPeriod,
-                config.currentTimeStep);
+        Iterate(SwapStreamCollision, config.convergenceCriteria,
+                config.checkPeriod, config.currentTimeStep);
     }
 }
 
@@ -108,6 +108,9 @@ int main(int argc, const char** argv) {
     // OPS initialisation where a few arguments can be passed to set
     // the simulation
     ops_init(argc, argv, 4);
+#ifdef OPS_SOA
+    OPS_instance::getOPSInstance()->OPS_soa = 1;
+#endif
     bool configFileFound{false};
     std::string configFileName;
     GetConfigFileFromCmd(configFileFound, configFileName, argc, argv);
