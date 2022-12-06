@@ -30,15 +30,32 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CAVITY2D_KERNEL_INC
-#define CAVITY2D_KERNEL_INC
-#include "element.h"
-void KerSetInitialMacroVars(KernelArg(Real, rho), KernelArg(Real, u),
-                            KernelArg(Real, v),
-                            const KernelArg(Real, coordinates),
-                            KernelIJK) {
-    rho(IND(0, 0)) = 1;
-    u(IND(0, 0)) = 0;
-    v(IND(0, 0)) = 0;
-}
-#endif  // CAVITY2D_KERNEL_INC
+/*! @brief   Implementing functions related to the flow field
+ * @author  Jianping Meng
+ * @details Implementing functions related to create the flow
+ * field (allocate memory), set up the geometry and the boundary
+ * property, and deallocate the memory.
+ */
+
+#ifndef ELEMENT_H
+#define ELEMENT_H
+#ifdef OPS_2D
+#define IND(x,y) (x),(y)
+#define MIND(l,x,y) (l),(x),(y)
+#endif
+#ifdef OPS_3D
+#define IND(x,y,z) (x),(y),(z)
+#define MIND(l,x,y,z) (l),(x),(y),(z)
+#endif
+#define KernelArg(type,name) ACC<type>& name
+//IJK gives the absolute index of I, J, K
+#define KernelIJK const int* idx
+#define IJK_I (idx[0])
+#define IJK_J (idx[1])
+#ifdef OPS_3D
+#define IJK_K (idx[2])
+#endif
+#define LoopIJK ops_arg_idx()
+
+
+#endif  // ELEMENT_H
